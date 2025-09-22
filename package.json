@@ -1,0 +1,78 @@
+{
+  "name": "photify",
+  "version": "1.0.0",
+  "description": "A professional photo management editor application with React frontend and Node.js backend",
+  "private": true,
+  "workspaces": [
+    "app",
+    "server"
+  ],
+  "scripts": {
+    "dev": "concurrently \"npm run dev:app\" \"npm run dev:server\"",
+    "dev:app": "cd app && npm run dev",
+    "dev:server": "cd server && npm run dev",
+    "build": "npm run build:app && npm run build:server",
+    "build:app": "cd app && npm run build",
+    "build:server": "cd server && npm run build",
+    "lint": "npm run lint:app && npm run lint:server",
+    "lint:fix": "npm run lint:fix:app && npm run lint:fix:server",
+    "lint:app": "cd app && npm run lint",
+    "lint:fix:app": "cd app && npm run lint:fix",
+    "lint:server": "cd server && npm run lint",
+    "lint:fix:server": "cd server && npm run lint:fix",
+    "type-check": "npm run type-check:app && npm run type-check:server",
+    "type-check:app": "cd app && npm run type-check",
+    "type-check:server": "cd server && npm run type-check",
+    "format": "npm run format:app && npm run format:server",
+    "format:check": "npm run format:check:app && npm run format:check:server",
+    "format:app": "cd app && npm run format",
+    "format:check:app": "cd app && npm run format:check",
+    "format:server": "cd server && npm run format",
+    "format:check:server": "cd server && npm run format:check",
+    "prepare": "husky install",
+    "commit": "cz",
+    "release": "standard-version"
+  },
+  "keywords": [
+    "photo",
+    "management",
+    "react",
+    "nodejs",
+    "typescript",
+    "express"
+  ],
+  "author": "Your Name",
+  "license": "MIT",
+  "devDependencies": {
+    "@commitlint/cli": "^18.4.3",
+    "@commitlint/config-conventional": "^18.4.3",
+    "commitizen": "^4.3.0",
+    "concurrently": "^8.2.2",
+    "cz-conventional-changelog": "^3.3.0",
+    "husky": "^8.0.3",
+    "lint-staged": "^15.2.0",
+    "standard-version": "^9.5.0"
+  },
+  "engines": {
+    "node": ">=18.0.0",
+    "npm": ">=8.0.0"
+  },
+  "config": {
+    "commitizen": {
+      "path": "./node_modules/cz-conventional-changelog"
+    }
+  },
+  "lint-staged": {
+    "app/**/*.{ts,tsx,js,jsx}": [
+      "cd app && npm run lint:fix",
+      "cd app && npm run format"
+    ],
+    "server/**/*.{ts,js}": [
+      "cd server && npm run lint:fix",
+      "cd server && npm run format"
+    ],
+    "*.{json,md}": [
+      "prettier --write"
+    ]
+  }
+}

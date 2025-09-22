@@ -49,16 +49,19 @@ server/
 ### Installation
 
 1. **Navigate to server directory:**
+
    ```bash
    cd server
    ```
 
 2. **Install dependencies:**
+
    ```bash
    npm install
    ```
 
 3. **Copy environment file:**
+
    ```bash
    cp .env.example .env
    ```
@@ -76,6 +79,7 @@ server/
 ### Development
 
 **Start development server:**
+
 ```bash
 npm run dev
 ```
@@ -85,11 +89,13 @@ The server will start on `http://localhost:5000` with hot reloading enabled.
 ### Production
 
 **Build the project:**
+
 ```bash
 npm run build
 ```
 
 **Start production server:**
+
 ```bash
 npm start
 ```
@@ -111,14 +117,14 @@ npm start
 
 ### Environment Variables
 
-| Variable | Description | Default | Required |
-|----------|-------------|---------|----------|
-| `NODE_ENV` | Environment mode | `development` | No |
-| `PORT` | Server port | `5000` | No |
-| `CLIENT_URL` | Frontend URL for CORS | `http://localhost:3000` | No |
-| `JWT_SECRET` | JWT secret key | - | Yes (production) |
-| `DB_URL` | Database connection string | - | No |
-| `LOG_LEVEL` | Logging level | `info` | No |
+| Variable     | Description                | Default                 | Required         |
+| ------------ | -------------------------- | ----------------------- | ---------------- |
+| `NODE_ENV`   | Environment mode           | `development`           | No               |
+| `PORT`       | Server port                | `5000`                  | No               |
+| `CLIENT_URL` | Frontend URL for CORS      | `http://localhost:3000` | No               |
+| `JWT_SECRET` | JWT secret key             | -                       | Yes (production) |
+| `DB_URL`     | Database connection string | -                       | No               |
+| `LOG_LEVEL`  | Logging level              | `info`                  | No               |
 
 ### Security Features
 
@@ -152,6 +158,7 @@ throw new ValidationError('Invalid email format');
 ## 🚦 API Endpoints
 
 ### Health Check
+
 - `GET /health` - Server health status
 - `GET /api/health` - API health status
 - `GET /api/` - API information
@@ -159,6 +166,7 @@ throw new ValidationError('Invalid email format');
 ### Response Format
 
 **Success Response:**
+
 ```json
 {
   "success": true,
@@ -168,6 +176,7 @@ throw new ValidationError('Invalid email format');
 ```
 
 **Error Response:**
+
 ```json
 {
   "success": false,
@@ -182,18 +191,21 @@ throw new ValidationError('Invalid email format');
 ## 🧪 Development Best Practices
 
 ### Code Quality
+
 - ESLint enforces consistent code style
 - Prettier formats code automatically
 - TypeScript provides type safety
 - Strict TypeScript configuration enabled
 
 ### Error Handling
+
 - Use custom error classes for different error types
 - Always use `asyncHandler` for async route handlers
 - Validate input data using express-validator
 - Log errors appropriately
 
 ### Security
+
 - Never expose sensitive data in error messages
 - Use environment variables for configuration
 - Implement proper authentication and authorization
@@ -202,6 +214,7 @@ throw new ValidationError('Invalid email format');
 ## 🔍 Monitoring and Logging
 
 The server includes request logging middleware that tracks:
+
 - HTTP method and URL
 - Response status code
 - Response time
@@ -210,6 +223,7 @@ The server includes request logging middleware that tracks:
 - User agent
 
 Log levels:
+
 - `error` - Errors only
 - `warn` - Warnings and errors
 - `info` - General information, warnings, and errors
@@ -218,6 +232,7 @@ Log levels:
 ## 🚀 Deployment
 
 ### Docker (Optional)
+
 Create a `Dockerfile` for containerized deployment:
 
 ```dockerfile
@@ -231,6 +246,7 @@ CMD ["node", "dist/index.js"]
 ```
 
 ### Environment Setup
+
 1. Set `NODE_ENV=production`
 2. Configure all required environment variables
 3. Ensure JWT_SECRET is set and secure

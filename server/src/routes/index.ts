@@ -12,7 +12,6 @@ router.get('/health', (_req: Request, res: Response) => {
   });
 });
 
-// API version info
 router.get('/', (_req: Request, res: Response) => {
   res.status(200).json({
     message: 'Photify API v1.0.0',

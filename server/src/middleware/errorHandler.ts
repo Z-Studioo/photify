@@ -112,10 +112,15 @@ export const errorHandler = (
   res.status(statusCode).json(response);
 };
 
-export const notFoundHandler = (_req: Request, _res: Response, next: NextFunction): void => {
+export const notFoundHandler = (
+  _req: Request,
+  _res: Response,
+  next: NextFunction
+): void => {
   const error = new NotFoundError('Route not found');
   next(error);
 };
 
-export const asyncHandler = (fn: Function) => (req: Request, res: Response, next: NextFunction) =>
-  Promise.resolve(fn(req, res, next)).catch(next);
+export const asyncHandler =
+  (fn: Function) => (req: Request, res: Response, next: NextFunction) =>
+    Promise.resolve(fn(req, res, next)).catch(next);
