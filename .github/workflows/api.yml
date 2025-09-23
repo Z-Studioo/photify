@@ -3,13 +3,13 @@ name: Backend CI
 on:
   push:
     paths:
-      - 'server/**'
-      - '.github/workflows/api.yml'
+      - "server/**"
+      - ".github/workflows/api.yml"
     branches:
       - main
   pull_request:
     paths:
-      - 'server/**'
+      - "server/**"
     branches:
       - main
 
@@ -30,7 +30,7 @@ jobs:
       - name: Install dependencies
         run: |
           cd server
-          npm ci || npm install
+          npm ci --ignore-scripts || npm install --ignore-scripts
 
       - name: Build
         run: |
