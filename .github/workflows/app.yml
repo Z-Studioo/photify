@@ -30,7 +30,9 @@ jobs:
       - name: Install dependencies
         run: |
           cd app
-          npm ci --ignore-scripts || npm install --ignore-scripts
+          npm ci || npm install
+        env:
+          HUSKY: 0
 
       - name: Build
         run: |
