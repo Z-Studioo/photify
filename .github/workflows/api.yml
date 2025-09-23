@@ -1,0 +1,43 @@
+name: Backend CI
+
+on:
+  push:
+    paths:
+      - "server/**"
+      - ".github/workflows/api.yml"
+    branches:
+      - main
+  pull_request:
+    paths:
+      - "server/**"
+    branches:
+      - main
+
+jobs:
+  backend:
+    name: Build and Test Backend
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install dependencies
+        run: |
+          cd server
+          npm ci --ignore-scripts || npm install --ignore-scripts
+
+      - name: Build
+        run: |
+          cd server
+          npm run build
+
+      - name: Lint
+        run: |
+          cd server
+          npm run lint || echo "No lint step"

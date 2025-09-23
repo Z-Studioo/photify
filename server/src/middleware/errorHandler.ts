@@ -51,7 +51,7 @@ export const errorHandler = (
   res: Response,
   _next: NextFunction
 ): void => {
-  let error = { ...err } as CustomError;
+  const error = { ...err } as CustomError;
   error.message = err.message;
 
   // Log error
