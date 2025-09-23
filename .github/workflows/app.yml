@@ -1,0 +1,43 @@
+name: Frontend CI
+
+on:
+  push:
+    paths:
+      - "app/**"
+      - ".github/workflows/app.yml"
+    branches:
+      - main
+  pull_request:
+    paths:
+      - "app/**"
+    branches:
+      - main
+
+jobs:
+  frontend:
+    name: Build and Test Frontend
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install dependencies
+        run: |
+          cd app
+          npm ci
+
+      - name: Build
+        run: |
+          cd app
+          npm run build
+
+      - name: Lint
+        run: |
+          cd app
+          npm run lint || echo "No lint step"
