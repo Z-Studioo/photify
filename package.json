@@ -29,7 +29,7 @@
     "format:check:app": "cd app && npm run format:check",
     "format:server": "cd server && npm run format",
     "format:check:server": "cd server && npm run format:check",
-    "prepare": "is-ci || husky install",
+    "prepare": "husky install || true",
     "commit": "cz",
     "release": "standard-version"
   },
