@@ -1,11 +1,9 @@
-import { Button } from './components/ui/button';
+import UploadImage from './pages/Upload-Image/page';
 
 export default function ThemeTest() {
   return (
     <>
-      <h1 className='text-center'>Photify</h1>
-
-      <Button>Button</Button>
+      <UploadImage />
     </>
   );
 }
