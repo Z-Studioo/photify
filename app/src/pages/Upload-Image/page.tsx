@@ -21,6 +21,7 @@ const Page = () => {
     <div className='w-full min-h-screen flex flex-col items-center justify-center font-[var(--font-heading)] p-0 m-0'>
       <h1 className='text-2xl font-bold mb-8'>Upload your photo</h1>
 
+      {/* Image section */}
       <Card className='w-[744px] mx-auto flex flex-col items-center border-none p-0 shadow-none'>
         {!preview ? (
           <>
