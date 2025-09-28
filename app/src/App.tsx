@@ -1,11 +1,13 @@
-import { Button } from './components/ui/button';
+import React from 'react';
+import {FeatureProvider} from '@/context/dashboard/FeatureContext'
+import Dashboard from '@/pages/dashboard/index'
 
-export default function ThemeTest() {
+const App: React.FC = () => {
   return (
-    <>
-      <h1 className='text-center'>Photify</h1>
-
-      <Button>Button</Button>
-    </>
+    <FeatureProvider>
+      <Dashboard />
+    </FeatureProvider>
   );
-}
+};
+
+export default App;
