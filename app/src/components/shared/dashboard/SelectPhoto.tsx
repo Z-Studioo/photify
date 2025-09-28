@@ -49,9 +49,11 @@ const SelectPhoto: React.FC<SelectPhotoProps> = ({ onPhotoSelected }) => {
     fileInput?.click()
   }
 
-  const handleUploadMore = () => {
-    triggerFileUpload()
-  }
+
+  //Required later
+  // const handleUploadMore = () => {
+  //   triggerFileUpload()
+  // }
 
   const handleMultipleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files) {

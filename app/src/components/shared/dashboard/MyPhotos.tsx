@@ -1,5 +1,5 @@
 import React from "react"
-import { Upload, Check, Trash2 } from "lucide-react"
+import { Upload, Check } from "lucide-react"
 
 interface UploadedImage {
   id: string
@@ -22,8 +22,8 @@ const MyPhotos: React.FC<ImageSelectionPanelProps> = ({
   selectedImageId,
   onImageSelect,
   onUploadMore,
-  onClose,
-  onConfirm
+  // onClose,
+  // onConfirm
 }) => {
   return (
     <div className="flex flex-col h-full">
