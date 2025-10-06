@@ -1,4 +1,5 @@
-import { useState } from 'react';
+import { useNavigate } from 'react-router';
+import { useUpload } from '@/context/UploadContext';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -6,8 +7,8 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Crop, Image, Info, Scan, ShoppingBag } from 'lucide-react';
 
 const Page = () => {
-  const [, setFile] = useState<File | null>(null);
-  const [preview, setPreview] = useState<string | null>(null);
+  // local temporary state for drag/drop could be added later; persisted state lives in UploadContext
+  const { file: _file, setFile, preview, setPreview } = useUpload();
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const f = e.target.files?.[0];
@@ -17,17 +18,19 @@ const Page = () => {
     }
   };
 
+  const navigate = useNavigate();
+
   return (
     <div className='w-full min-h-screen flex flex-col items-center justify-center font-[var(--font-heading)] p-0 m-0'>
       <h1 className='text-2xl font-bold mb-8'>Upload your photo</h1>
 
       {/* Image section */}
-      <Card className='w-[744px] mx-auto flex flex-col items-center border-none p-0 shadow-none'>
+      <Card className='w-full max-w-[744px] mx-auto flex flex-col items-center border-none p-0 shadow-none'>
         {!preview ? (
           <>
             <label
               htmlFor='file-upload'
-              className='w-[744px] h-[300px] border-1 border-dashed border-gray-300 rounded-[var(--radius-lg)] flex flex-col items-center justify-center cursor-pointer text-gray-500 hover:border-gray-400 transition bg-[#FCFCFD]'
+              className='w-full max-w-[744px] h-[220px] md:h-[300px] border border-dashed border-gray-300 rounded-[var(--radius-lg)] flex flex-col items-center justify-center cursor-pointer text-gray-500 hover:border-gray-400 transition bg-[#FCFCFD]'
             >
               <div className='flex flex-col justify-center items-center gap-4'>
                 <span className='border-px rounded-full p-3 bg-[var(--accent)] text-[#98A2B3]'>
@@ -48,7 +51,11 @@ const Page = () => {
               className='hidden'
               onChange={handleFileChange}
             />
-            <Button className='w-auto h-12 mt-1 px-14 rounded-[var(--radius-lg)] text-base'>
+            <Button
+              className={`w-auto h-12 mt-1 px-6 md:px-14 rounded-[var(--radius-lg)] text-base ${!preview ? 'opacity-50 cursor-not-allowed' : ''}`}
+              onClick={() => preview && navigate('/dashboard')}
+              disabled={!preview}
+            >
               Continue
             </Button>
           </>
@@ -57,9 +64,9 @@ const Page = () => {
             <img
               src={preview}
               alt='Preview'
-              className='rounded-lg object-cover w-[744px] h-[300px]'
+              className='rounded-lg object-cover w-full max-w-[744px] h-[220px] md:h-[300px]'
             />
-            <div className='flex justify-end mt-2'>
+            <div className='flex justify-between mt-2 items-center gap-2'>
               <Button
                 variant='link'
                 className='cursor-pointer text-[var(--foreground)] underline'
@@ -70,26 +77,34 @@ const Page = () => {
               >
                 Change photo
               </Button>
+              <div className='ml-auto'>
+                <Button
+                  className='w-auto h-12 px-6 md:px-14 rounded-[var(--radius-lg)] text-base'
+                  onClick={() => navigate('/dashboard')}
+                >
+                  Continue
+                </Button>
+              </div>
             </div>
           </div>
         )}
       </Card>
 
       {/* Steps */}
-      <Card className='mt-16 p-0 flex flex-col justify-center items-center border-none shadow-none'>
+      <Card className='mt-16 p-0 flex flex-col justify-center items-center border-none shadow-none w-full max-w-[744px]'>
         <span className='text-[var(--muted-foreground)] text-lg'>
           Just 3 more steps to go
         </span>
 
-        <div className='flex flex-row justify-center items-center'>
-          <div className='relative flex items-center justify-around w-138'>
-            <div className='absolute w-full h-16 flex top-0 items-center z-1'>
-              <hr className='w-full border-t border-[#E0E3E7] border-dashed z-1' />
+        <div className='flex w-full justify-center items-center px-4'>
+          <div className='relative flex flex-col md:flex-row items-center justify-between w-full gap-6'>
+            <div className='absolute hidden md:flex w-full h-16 top-0 items-center z-0'>
+              <hr className='w-full border-t border-[#E0E3E7] border-dashed z-0' />
             </div>
 
             {/* First Icon */}
-            <div className='flex flex-col items-center gap-2 z-2'>
-              <div className='w-16 h-16 flex justify-center items-center rounded-full bg-[#3AF66C]'>
+            <div className='flex flex-col items-center gap-2 z-10'>
+              <div className='w-12 h-12 md:w-16 md:h-16 flex justify-center items-center rounded-full bg-[#3AF66C]'>
                 <span className='!text-white '>
                   <Scan />
                 </span>
@@ -98,8 +113,8 @@ const Page = () => {
             </div>
 
             {/* Second Icon */}
-            <div className='flex flex-col items-center gap-2 z-2'>
-              <div className='w-16 h-16 flex justify-center items-center rounded-full bg-[#B625FE]'>
+            <div className='flex flex-col items-center gap-2 z-10'>
+              <div className='w-12 h-12 md:w-16 md:h-16 flex justify-center items-center rounded-full bg-[#B625FE]'>
                 <span className='!text-white '>
                   <Crop />
                 </span>
@@ -108,8 +123,8 @@ const Page = () => {
             </div>
 
             {/* Third Icon */}
-            <div className='flex flex-col items-center gap-2 z-2'>
-              <div className='w-16 h-16 flex justify-center items-center rounded-full bg-[#F63A53]'>
+            <div className='flex flex-col items-center gap-2 z-10'>
+              <div className='w-12 h-12 md:w-16 md:h-16 flex justify-center items-center rounded-full bg-[#F63A53]'>
                 <span className='!text-white'>
                   <ShoppingBag />
                 </span>
@@ -121,7 +136,7 @@ const Page = () => {
       </Card>
 
       {/* Info Alert */}
-      <Alert className='mt-6 bg-[#FFF9DA] text-yellow-700 border-[#FFF9DA] w-138 flex justify-center gap-2'>
+      <Alert className='mt-6 bg-[#FFF9DA] text-yellow-700 border-[#FFF9DA] w-full max-w-[744px] flex justify-center gap-2 px-4'>
         <span className='text-[var(--chart-4)]'>
           <Info />
         </span>
