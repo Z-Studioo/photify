@@ -25,7 +25,11 @@ const RoomFrame3D = ({ imageUrl, shape, onInteraction }: { imageUrl: string; sha
         loadedTexture.minFilter = THREE.LinearFilter
         loadedTexture.magFilter = THREE.LinearFilter
         loadedTexture.generateMipmaps = false
-        loadedTexture.colorSpace = THREE.SRGBColorSpace
+        if ('colorSpace' in loadedTexture) {
+          ;(loadedTexture as any).colorSpace = THREE.SRGBColorSpace
+        } else {
+          ;(loadedTexture as any).encoding = THREE.SRGBColorSpace
+        }
         setTexture(loadedTexture)
       })
     }
@@ -118,12 +122,14 @@ const RoomFrame3D = ({ imageUrl, shape, onInteraction }: { imageUrl: string; sha
       {texture && (
         <mesh position={[0, 0, 0.01]} rotation={[0, 0, 0]} castShadow>
           <primitive object={createGeometry()} />
-          <meshStandardMaterial 
-            map={texture} 
+          <meshStandardMaterial
+            map={texture}
             transparent={shape !== 'rectangle'}
             side={THREE.FrontSide}
-            roughness={0.1}
+            roughness={0.08}
             metalness={0.0}
+            emissive={'#181818'}
+            emissiveIntensity={0.1}
           />
         </mesh>
       )}
@@ -146,7 +152,7 @@ const RoomFrame3DCanvas = ({ onInteraction }: RoomFrame3DProps) => {
           <ambientLight intensity={0.3} />
           <directionalLight
             position={[3, 4, 3]}
-            intensity={0.8}
+            intensity={1.2}
             castShadow
             shadow-mapSize-width={1024}
             shadow-mapSize-height={1024}

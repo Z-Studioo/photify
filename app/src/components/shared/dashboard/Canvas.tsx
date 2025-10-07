@@ -1,5 +1,3 @@
-"use client"
-
 import React, { useRef, useEffect, useState } from "react"
 import { useUpload, type CanvasShape } from "@/context/UploadContext"
 
@@ -54,55 +52,122 @@ useEffect(() => {
 
   // Create clipping path for image based on shape
   ctx.save()
-  
+
   switch (shape) {
-    case 'rectangle':
+    case 'rectangle': {
       const innerWidth = canvas.width - frameWidth * 2
       const innerHeight = canvas.height - frameWidth * 2
-      ctx.rect(frameWidth, frameWidth, innerWidth, innerHeight)
-      break
-    case 'round':
       ctx.beginPath()
-      ctx.arc(centerX, centerY, radius - frameWidth/2, 0, 2 * Math.PI)
+      ctx.rect(frameWidth, frameWidth, innerWidth, innerHeight)
+      ctx.closePath()
       break
-    case 'hexagon':
-      drawPolygon(ctx, centerX, centerY, radius - frameWidth/2, 6)
+    }
+    case 'round': {
+      ctx.beginPath()
+      ctx.arc(centerX, centerY, radius - frameWidth / 2, 0, 2 * Math.PI)
+      ctx.closePath()
       break
-    case 'octagon':
-      drawPolygon(ctx, centerX, centerY, radius - frameWidth/2, 8)
+    }
+    case 'hexagon': {
+      ctx.beginPath()
+      drawPolygon(ctx, centerX, centerY, radius - frameWidth / 2, 6)
+      ctx.closePath()
       break
-    case 'dodecagon':
-      drawPolygon(ctx, centerX, centerY, radius - frameWidth/2, 12)
+    }
+    case 'octagon': {
+      ctx.beginPath()
+      drawPolygon(ctx, centerX, centerY, radius - frameWidth / 2, 8)
+      ctx.closePath()
+      break
+    }
+    case 'dodecagon': {
+      ctx.beginPath()
+      drawPolygon(ctx, centerX, centerY, radius - frameWidth / 2, 12)
+      ctx.closePath()
+      break
+    }
+    default:
       break
   }
-  
+
   ctx.clip()
 
   const img = new Image()
   img.src = src
   img.onload = () => {
-    // Draw image within clipped area
+    // Prepare target drawing area
+    let targetX = 0
+    let targetY = 0
+    let targetW = 0
+    let targetH = 0
     if (shape === 'rectangle') {
-      const innerWidth = canvas.width - frameWidth * 2
-      const innerHeight = canvas.height - frameWidth * 2
-      ctx.drawImage(img, frameWidth, frameWidth, innerWidth, innerHeight)
+      targetX = frameWidth
+      targetY = frameWidth
+      targetW = canvas.width - frameWidth * 2
+      targetH = canvas.height - frameWidth * 2
     } else {
-      // For circular and polygon shapes, center the image
-      const imageSize = (radius - frameWidth/2) * 2
-      const x = centerX - imageSize/2
-      const y = centerY - imageSize/2
-      ctx.drawImage(img, x, y, imageSize, imageSize)
+      const imageSize = (radius - frameWidth / 2) * 2
+      targetW = imageSize
+      targetH = imageSize
+      targetX = Math.round(centerX - imageSize / 2)
+      targetY = Math.round(centerY - imageSize / 2)
     }
-    
+
+    // Offscreen canvas to preprocess image (center-crop + brightness/contrast)
+    const off = document.createElement('canvas')
+    off.width = targetW
+    off.height = targetH
+    const offCtx = off.getContext('2d')
+    if (!offCtx) return
+
+    // Compute source crop for cover effect
+    const imgAspect = img.width / img.height
+    const tgtAspect = targetW / targetH
+    let sx = 0, sy = 0, sw = img.width, sh = img.height
+    if (imgAspect > tgtAspect) {
+      // source wider -> crop sides
+      sw = Math.round(img.height * tgtAspect)
+      sx = Math.round((img.width - sw) / 2)
+    } else if (imgAspect < tgtAspect) {
+      // source taller -> crop top/bottom
+      sh = Math.round(img.width / tgtAspect)
+      sy = Math.round((img.height - sh) / 2)
+    }
+
+    offCtx.drawImage(img, sx, sy, sw, sh, 0, 0, targetW, targetH)
+
+    // Apply aggressive brightness/contrast adjustment to make image pop
+    try {
+      const id = offCtx.getImageData(0, 0, targetW, targetH)
+      const data = id.data
+      const brightness = 35 // additive - much higher
+      const contrast = 1.15 // multiplier - more dramatic
+      const intercept = 128 * (1 - contrast)
+      for (let i = 0; i < data.length; i += 4) {
+        data[i] = Math.min(255, Math.max(0, data[i] * contrast + intercept + brightness)) // R
+        data[i + 1] = Math.min(255, Math.max(0, data[i + 1] * contrast + intercept + brightness)) // G
+        data[i + 2] = Math.min(255, Math.max(0, data[i + 2] * contrast + intercept + brightness)) // B
+        // alpha stays the same
+      }
+      offCtx.putImageData(id, 0, 0)
+    } catch (e) {
+      // If CORS blocks pixel access, fall back to direct draw
+      // (can't adjust), so do nothing
+    }
+
+    // Draw processed image into main canvas
+    ctx.drawImage(off, targetX, targetY, targetW, targetH)
+
     ctx.restore()
-    
+
     // Draw realistic frame edges and highlights
     drawFrameDetails(ctx, centerX, centerY, radius, frameWidth, shape)
   }
 }, [src, canvasDims, shape])
 
-// Helper function to draw polygons
-const drawPolygon = (ctx: CanvasRenderingContext2D, centerX: number, centerY: number, radius: number, sides: number, strokeOnly = false) => {
+// Helper function to draw polygons (accept nullable ctx for safety)
+const drawPolygon = (ctx: CanvasRenderingContext2D | null, centerX: number, centerY: number, radius: number, sides: number, strokeOnly = false) => {
+  if (!ctx) return
   ctx.beginPath()
   for (let i = 0; i < sides; i++) {
     const angle = (i * 2 * Math.PI) / sides - Math.PI / 2
@@ -124,16 +189,16 @@ const drawPolygon = (ctx: CanvasRenderingContext2D, centerX: number, centerY: nu
 const drawRealisticShadow = (ctx: CanvasRenderingContext2D, centerX: number, centerY: number, radius: number, shape: CanvasShape) => {
   ctx.save()
   
-  // Create shadow gradient
-  const shadowOffset = 8
-  const shadowBlur = 15
+  // Create shadow gradient - reduced to prevent darkening
+  const shadowOffset = 4
+  const shadowBlur = 8
   
-  ctx.shadowColor = "rgba(0, 0, 0, 0.3)"
+  ctx.shadowColor = "rgba(0, 0, 0, 0.15)"
   ctx.shadowBlur = shadowBlur
   ctx.shadowOffsetX = shadowOffset
   ctx.shadowOffsetY = shadowOffset
   
-  ctx.fillStyle = "rgba(0, 0, 0, 0.1)"
+  ctx.fillStyle = "rgba(0, 0, 0, 0.05)"
   
   switch (shape) {
     case 'rectangle':
@@ -165,12 +230,12 @@ const drawRealisticShadow = (ctx: CanvasRenderingContext2D, centerX: number, cen
 const drawFrameBackground = (ctx: CanvasRenderingContext2D, centerX: number, centerY: number, radius: number, frameWidth: number, shape: CanvasShape) => {
   ctx.save()
   
-  // Create frame gradient (simulating wood or metal frame)
+  // Create frame gradient (lighter colors to reduce darkening)
   const gradient = ctx.createLinearGradient(0, 0, frameWidth, frameWidth)
-  gradient.addColorStop(0, "#8B4513")   // Dark brown
-  gradient.addColorStop(0.3, "#CD853F") // Sandy brown
-  gradient.addColorStop(0.7, "#A0522D") // Sienna
-  gradient.addColorStop(1, "#654321")   // Dark brown
+  gradient.addColorStop(0, "#D2B48C")   // Tan
+  gradient.addColorStop(0.3, "#F5DEB3") // Wheat
+  gradient.addColorStop(0.7, "#DEB887") // Burlywood
+  gradient.addColorStop(1, "#BC9A6A")   // Light brown
   
   ctx.fillStyle = gradient
   
