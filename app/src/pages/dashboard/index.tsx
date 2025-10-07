@@ -17,8 +17,11 @@ import Wall from '@/assets/images/wall.jpg';
 import featuresBase from '@/constants/dashboard/index';
 import { useFeature } from '@/context/dashboard/FeatureContext';
 import FeaturePanel from '@/components/shared/dashboard/FeaturePanel';
-import Canvas from '@/components/shared/dashboard/Canvas';
+
+import ThreeDCanvas from '@/components/shared/dashboard/ThreeDCanvas';
+import RoomFrame3D from '@/components/shared/dashboard/RoomFrame3D';
 import { useUpload } from '@/context/UploadContext';
+import { useView } from '@/context/ViewContext';
 
 interface MenuFeature {
   id: number;
@@ -29,14 +32,11 @@ interface MenuFeature {
   component: string | null;
 }
 
-type ViewMode = 'room' | '3d';
-
 const Dashboard: React.FC = () => {
   const [quantity, setQuantity] = useState<number>(1);
-  const [selectedView, setSelectedView] = useState<ViewMode>('room');
-
   const { selectedFeature, setSelectedFeature } = useFeature();
-  const { preview, shape } = useUpload();
+  const { shape } = useUpload();
+  const { selectedView, setSelectedView } = useView();
   const pricePerItem: number = 100;
 
   // Create dynamic features with updated shape subtitle
@@ -44,7 +44,7 @@ const Dashboard: React.FC = () => {
     if (feature.name === 'ROUND FORMATS AND SHAPES') {
       return {
         ...feature,
-        subtitle: shape.charAt(0).toUpperCase() + shape.slice(1)
+        subtitle: shape.charAt(0).toUpperCase() + shape.slice(1),
       };
     }
     return feature;
@@ -57,7 +57,6 @@ const Dashboard: React.FC = () => {
     setSelectedFeature(selectedFeature?.id === item.id ? null : item);
   };
 
-  const handleViewChange = (view: ViewMode) => setSelectedView(view);
   const handleAddToCart = () => {};
 
   const triggerFileUpload = () => {
@@ -72,10 +71,29 @@ const Dashboard: React.FC = () => {
       <Navbar />
       <div className='flex-1 w-full flex flex-col md:flex-row gap-0 overflow-hidden'>
         {/* Left: Image Section */}
-        <div className='md:w-8/12 w-full relative h-64 md:h-full'>
-          <img src={Wall} alt='Room' className='w-full h-full object-cover' />
+        <div className='md:w-8/12 w-full relative h-64 md:h-full overflow-hidden'>
+          {/* Room View with 3D Frame */}
+          <div
+            className={`absolute inset-0 transition-all duration-500 ${
+              selectedView === 'room'
+                ? 'opacity-100 scale-100'
+                : 'opacity-0 scale-95 pointer-events-none'
+            }`}
+          >
+            <img src={Wall} alt='Room' className='w-full h-full object-cover' />
+            <RoomFrame3D onInteraction={() => setSelectedView('3d')} />
+          </div>
 
-          <Canvas src={preview ?? '/api/placeholder/200/200'} />
+          {/* 3D View */}
+          <div
+            className={`absolute inset-0 transition-all duration-700 ease-out ${
+              selectedView === '3d'
+                ? 'opacity-100 scale-100'
+                : 'opacity-0 scale-110 pointer-events-none'
+            }`}
+          >
+            <ThreeDCanvas isVisible={selectedView === '3d'} />
+          </div>
 
           {/* Top left add button */}
           <div className='absolute top-0 left-0 md:top-4 md:left-4'>
@@ -94,16 +112,24 @@ const Dashboard: React.FC = () => {
           {/* Top right view buttons */}
           <div className='absolute top-0 right-0 flex border border-gray-300 divide-x divide-gray-300 md:top-4 md:right-4'>
             <button
-              onClick={() => handleViewChange('room')}
-              className={`flex items-center justify-center px-2 py-2 md:px-5 md:py-3 text-xs md:text-sm font-medium rounded-none cursor-pointer ${selectedView === 'room' ? 'bg-primary text-white' : 'bg-white text-gray-700 hover:bg-gray-100'}`}
+              onClick={() => setSelectedView('room')}
+              className={`flex items-center justify-center px-2 py-2 md:px-5 md:py-3 text-xs md:text-sm font-medium rounded-none cursor-pointer transition-all ${
+                selectedView === 'room'
+                  ? 'bg-primary text-white'
+                  : 'bg-white text-gray-700 hover:bg-gray-100'
+              }`}
               type='button'
             >
               <Eye className='h-4 w-4 md:h-5 md:w-5' />
               <span className='hidden md:inline ml-1'>Room View</span>
             </button>
             <button
-              onClick={() => handleViewChange('3d')}
-              className={`flex items-center justify-center px-2 py-2 md:px-5 md:py-3 text-xs md:text-sm font-medium rounded-none cursor-pointer ${selectedView === '3d' ? 'bg-primary text-white' : 'bg-white text-gray-700 hover:bg-gray-100'}`}
+              onClick={() => setSelectedView('3d')}
+              className={`flex items-center justify-center px-2 py-2 md:px-5 md:py-3 text-xs md:text-sm font-medium rounded-none cursor-pointer transition-all ${
+                selectedView === '3d'
+                  ? 'bg-primary text-white'
+                  : 'bg-white text-gray-700 hover:bg-gray-100'
+              }`}
               type='button'
             >
               <Box className='h-4 w-4 md:h-5 md:w-5' />
