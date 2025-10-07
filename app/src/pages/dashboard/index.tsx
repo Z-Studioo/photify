@@ -14,7 +14,7 @@ import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import Navbar from '@/components/shared/dashboard/Navbar';
 import Wall from '@/assets/images/wall.jpg';
-import features from '@/constants/dashboard/index';
+import featuresBase from '@/constants/dashboard/index';
 import { useFeature } from '@/context/dashboard/FeatureContext';
 import FeaturePanel from '@/components/shared/dashboard/FeaturePanel';
 import Canvas from '@/components/shared/dashboard/Canvas';
@@ -36,8 +36,19 @@ const Dashboard: React.FC = () => {
   const [selectedView, setSelectedView] = useState<ViewMode>('room');
 
   const { selectedFeature, setSelectedFeature } = useFeature();
-  const { preview } = useUpload();
+  const { preview, shape } = useUpload();
   const pricePerItem: number = 100;
+
+  // Create dynamic features with updated shape subtitle
+  const features = featuresBase.map(feature => {
+    if (feature.name === 'ROUND FORMATS AND SHAPES') {
+      return {
+        ...feature,
+        subtitle: shape.charAt(0).toUpperCase() + shape.slice(1)
+      };
+    }
+    return feature;
+  });
 
   const handleIncrement = () => setQuantity(q => q + 1);
   const handleDecrement = () => setQuantity(q => Math.max(1, q - 1));
