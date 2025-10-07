@@ -95,19 +95,21 @@ const Dashboard: React.FC = () => {
             <ThreeDCanvas isVisible={selectedView === '3d'} />
           </div>
 
-          {/* Top left add button */}
-          <div className='absolute top-0 left-0 md:top-4 md:left-4'>
-            <button
-              className='flex flex-col items-center justify-center p-2 md:px-4 md:py-3 bg-primary text-white hover:bg-primary/90 cursor-pointer'
-              onClick={triggerFileUpload}
-              type='button'
-            >
-              <ImagePlus className='h-4 w-4 md:h-5 md:w-5 mb-0 md:mb-1' />
-              <span className='hidden md:inline text-xs md:text-sm font-medium'>
-                Add
-              </span>
-            </button>
-          </div>
+          {/* Top left add button - Hidden in 3D view */}
+          {selectedView !== '3d' && (
+            <div className='absolute top-0 left-0 md:top-4 md:left-4'>
+              <button
+                className='flex flex-col items-center justify-center p-2 md:px-4 md:py-3 bg-primary text-white hover:bg-primary/90 cursor-pointer'
+                onClick={triggerFileUpload}
+                type='button'
+              >
+                <ImagePlus className='h-4 w-4 md:h-5 md:w-5 mb-0 md:mb-1' />
+                <span className='hidden md:inline text-xs md:text-sm font-medium'>
+                  Add
+                </span>
+              </button>
+            </div>
+          )}
 
           {/* Top right view buttons */}
           <div className='absolute top-0 right-0 flex border border-gray-300 divide-x divide-gray-300 md:top-4 md:right-4'>
