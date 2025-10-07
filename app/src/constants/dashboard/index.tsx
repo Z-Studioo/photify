@@ -109,7 +109,7 @@ const features: MenuFeature[] = [
     icon: Circle,
     subtitle: 'Rectangle',
     step: 11,
-    component: null,
+    component: 'ShapeSelector',
   },
   {
     id: 12,
