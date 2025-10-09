@@ -1,8 +1,8 @@
-'use client';
 import { ChevronLeft } from 'lucide-react';
 import { useFeature } from '@/context/dashboard/FeatureContext';
 import SelectPhoto from '@/components/shared/dashboard/SelectPhoto';
 import ShapeSelector from '@/components/shared/dashboard/ShapeSelector';
+import RatioSizePanel from '@/components/shared/dashboard/RatioSizePanel';
 
 const FeaturePanel = () => {
   const { selectedFeature, setSelectedFeature } = useFeature();
@@ -12,7 +12,9 @@ const FeaturePanel = () => {
   const renderFeatureContent = () => {
     switch (selectedFeature.name) {
       case 'SELECT PHOTO':
-        return <SelectPhoto />; // render your SelectPhoto component
+        return <SelectPhoto />;
+      case 'IMAGE SIZE AND CROP PHOTO':
+        return <RatioSizePanel />;
       case 'ROUND FORMATS AND SHAPES':
         return <ShapeSelector />;
       default:

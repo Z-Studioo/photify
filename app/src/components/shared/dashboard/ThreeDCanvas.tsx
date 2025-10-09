@@ -393,6 +393,23 @@ const ThreeDCanvas = ({ isVisible }: ThreeDCanvasProps) => {
     }
   };
 
+  // Auto-center when switching to 3D view so users see a nicely framed image immediately
+  useEffect(() => {
+    if (isVisible && preview) {
+      // small delay to ensure controls & camera are mounted
+      const t = setTimeout(() => {
+        try {
+          handleCenter();
+        } catch (e) {
+          // ignore - defensive
+          // console.warn('auto-center failed', e)
+        }
+      }, 220);
+
+      return () => clearTimeout(t);
+    }
+  }, [isVisible, preview]);
+
   if (!isVisible) return null;
 
   // Debug: Log when component renders

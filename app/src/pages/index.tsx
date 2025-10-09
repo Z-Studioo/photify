@@ -66,20 +66,24 @@ const Page = () => {
               alt='Preview'
               className='rounded-lg object-cover w-full max-w-[744px] h-[220px] md:h-[300px]'
             />
-            <div className='flex justify-between mt-2 items-center gap-2'>
-              <Button
-                variant='link'
-                className='cursor-pointer text-[var(--foreground)] underline'
-                onClick={() => {
-                  setFile(null);
-                  setPreview(null);
-                }}
-              >
-                Change photo
-              </Button>
-              <div className='ml-auto'>
+            {/* Stack upload/change and continue vertically */}
+            <div className='mt-3 flex flex-col items-stretch gap-3'>
+              <div className='flex items-center'>
                 <Button
-                  className='w-auto h-12 px-6 md:px-14 rounded-[var(--radius-lg)] text-base'
+                  variant='link'
+                  className='cursor-pointer text-[var(--foreground)] underline'
+                  onClick={() => {
+                    setFile(null);
+                    setPreview(null);
+                  }}
+                >
+                  Change photo
+                </Button>
+              </div>
+
+              <div className='flex'>
+                <Button
+                  className='w-full h-12 px-6 md:px-14 rounded-[var(--radius-lg)] text-base'
                   onClick={() => navigate('/dashboard')}
                 >
                   Continue
