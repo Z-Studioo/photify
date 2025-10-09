@@ -8,12 +8,15 @@ import {
   PlusCircle,
   MinusCircle,
   ShoppingCart,
+  ChevronLeft,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import Navbar from '@/components/shared/dashboard/Navbar';
 import Wall from '@/assets/images/wall.jpg';
+import Wall1 from '@/assets/images/wall1.jpg';
+import Wall2 from '@/assets/images/wall2.jpg';
 import featuresBase from '@/constants/dashboard/index';
 import { useFeature } from '@/context/dashboard/FeatureContext';
 import FeaturePanel from '@/components/shared/dashboard/FeaturePanel';
@@ -34,10 +37,32 @@ interface MenuFeature {
 
 const Dashboard: React.FC = () => {
   const [quantity, setQuantity] = useState<number>(1);
+  const [currentWallIndex, setCurrentWallIndex] = useState<number>(0);
   const { selectedFeature, setSelectedFeature } = useFeature();
-  const { shape, setFile, setPreview, applyPendingChanges, selectedRatio, selectedSize } = useUpload();
+  const {
+    shape,
+    setFile,
+    setPreview,
+    applyPendingChanges,
+    selectedRatio,
+    selectedSize,
+  } = useUpload();
   const { selectedView, setSelectedView } = useView();
   const pricePerItem: number = selectedSize?.sell_price || 100;
+
+  const wallImages = [Wall, Wall1, Wall2];
+
+  const handlePreviousWall = () => {
+    setCurrentWallIndex(prev =>
+      prev === 0 ? wallImages.length - 1 : prev - 1
+    );
+  };
+
+  const handleNextWall = () => {
+    setCurrentWallIndex(prev =>
+      prev === wallImages.length - 1 ? 0 : prev + 1
+    );
+  };
 
   // Create dynamic features with updated subtitles
   const features = featuresBase.map(feature => {
@@ -50,8 +75,8 @@ const Dashboard: React.FC = () => {
     if (feature.name === 'IMAGE SIZE AND CROP PHOTO') {
       return {
         ...feature,
-        subtitle: selectedSize 
-          ? `${selectedSize.width}" × ${selectedSize.height}" (${selectedRatio})` 
+        subtitle: selectedSize
+          ? `${selectedSize.width}" × ${selectedSize.height}" (${selectedRatio})`
           : '24 by 16 (External: 24 by 16)',
       };
     }
@@ -96,8 +121,30 @@ const Dashboard: React.FC = () => {
                 : 'opacity-0 scale-95 pointer-events-none'
             }`}
           >
-            <img src={Wall} alt='Room' className='w-full h-full object-cover' />
+            <img
+              src={wallImages[currentWallIndex]}
+              alt='Room'
+              className='w-full h-full object-cover'
+            />
             <RoomFrame3D onInteraction={() => setSelectedView('3d')} />
+
+            {/* Left Arrow */}
+            <button
+              onClick={handlePreviousWall}
+              className='cursor-pointer absolute left-4 top-1/2 -translate-y-1/2 bg-white/80 hover:bg-white p-3 rounded-full shadow-lg transition-all z-10'
+              type='button'
+            >
+              <ChevronLeft className='h-6 w-6 text-gray-800 ' />
+            </button>
+
+            {/* Right Arrow */}
+            <button
+              onClick={handleNextWall}
+              className='cursor-pointer absolute right-4 top-1/2 -translate-y-1/2 bg-white/80 hover:bg-white p-3 rounded-full shadow-lg transition-all z-10'
+              type='button'
+            >
+              <ChevronRight className='h-6 w-6 text-gray-800' />
+            </button>
           </div>
 
           {/* 3D View */}
@@ -209,7 +256,7 @@ const Dashboard: React.FC = () => {
                             </p>
                           </div>
                         </div>
-                        <ChevronRight className='h-4 w-4 text-gray-400 flex-shrink-0' />
+                        <ChevronRight className='h-4 w-4 text-gray-400 flex-shrink-0 cursor-pointer' />
                       </div>
                       {index !== features.length - 1 && (
                         <div className='border-b border-gray-200 w-full' />
@@ -268,16 +315,23 @@ const Dashboard: React.FC = () => {
                   <span className='text-xl font-semibold'>
                     ${(pricePerItem * quantity).toFixed(2)}
                   </span>
-                  {selectedSize && selectedSize.actual_price > selectedSize.sell_price && (
-                    <div className='text-sm'>
-                      <span className='line-through text-gray-500'>
-                        ${(selectedSize.actual_price * quantity).toFixed(2)}
-                      </span>
-                      <span className='ml-2 text-green-600 font-medium'>
-                        {Math.round(((selectedSize.actual_price - selectedSize.sell_price) / selectedSize.actual_price) * 100)}% OFF
-                      </span>
-                    </div>
-                  )}
+                  {selectedSize &&
+                    selectedSize.actual_price > selectedSize.sell_price && (
+                      <div className='text-sm'>
+                        <span className='line-through text-gray-500'>
+                          ${(selectedSize.actual_price * quantity).toFixed(2)}
+                        </span>
+                        <span className='ml-2 text-green-600 font-medium'>
+                          {Math.round(
+                            ((selectedSize.actual_price -
+                              selectedSize.sell_price) /
+                              selectedSize.actual_price) *
+                              100
+                          )}
+                          % OFF
+                        </span>
+                      </div>
+                    )}
                 </div>
                 <Button
                   variant='default'
