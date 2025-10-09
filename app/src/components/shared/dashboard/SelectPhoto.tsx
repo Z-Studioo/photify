@@ -1,7 +1,8 @@
-import React, { useState } from "react"
-import { ImagePlus, Layout, Crop, Square } from "lucide-react"
+import React, { useState, useEffect } from "react"
+import { ImagePlus, Layout, Crop, Square, X } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import MyPhotos from '@/components/shared/dashboard/MyPhotos'
+import { useUpload } from '@/context/UploadContext'
 
 interface UploadedImage {
   id: string
@@ -24,6 +25,30 @@ const SelectPhoto: React.FC<SelectPhotoProps> = ({ onPhotoSelected }) => {
   const [selectedCanvas, setSelectedCanvas] = useState<string>("landscape")
   const [uploadedImages, setUploadedImages] = useState<UploadedImage[]>([])
   const [selectedImageId, setSelectedImageId] = useState<string | null>(null)
+  const { setPendingFile, setPendingPreview } = useUpload()
+
+  // Local storage key for uploaded images
+  const STORAGE_KEY = 'photify_uploaded_images'
+
+  // Load images from localStorage on component mount
+  useEffect(() => {
+    const savedImages = localStorage.getItem(STORAGE_KEY)
+    if (savedImages) {
+      try {
+        const parsedImages = JSON.parse(savedImages) as UploadedImage[]
+        setUploadedImages(parsedImages)
+      } catch (error) {
+        console.error('Error loading images from localStorage:', error)
+      }
+    }
+  }, [])
+
+  // Save images to localStorage whenever uploadedImages changes
+  useEffect(() => {
+    if (uploadedImages.length > 0) {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(uploadedImages))
+    }
+  }, [uploadedImages])
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
@@ -40,6 +65,11 @@ const SelectPhoto: React.FC<SelectPhotoProps> = ({ onPhotoSelected }) => {
       
       setUploadedImages(prev => [...prev, newImage])
       setSelectedImageId(imageId)
+      
+      // Store as pending photo - don't update main context yet
+      setPendingFile(file)
+      setPendingPreview(imageUrl)
+      
       onPhotoSelected?.(file)
     }
   }
@@ -88,20 +118,52 @@ const SelectPhoto: React.FC<SelectPhotoProps> = ({ onPhotoSelected }) => {
 
   const handleImageSelect = (imageId: string) => {
     setSelectedImageId(imageId)
+    
+    // Store as pending photo - don't update main context yet
+    const selectedImage = uploadedImages.find(img => img.id === imageId)
+    if (selectedImage) {
+      setPendingFile(selectedImage.file)
+      setPendingPreview(selectedImage.url)
+      onPhotoSelected?.(selectedImage.file)
+    }
   }
 
   const handleConfirmSelection = () => {
     const selectedImage = uploadedImages.find(img => img.id === selectedImageId)
     if (selectedImage) {
+      // Store as pending photo - don't update main context yet
+      setPendingFile(selectedImage.file)
+      setPendingPreview(selectedImage.url)
       onPhotoSelected?.(selectedImage.file)
     }
     // Don't close the panel - stay in MyPhotos view
+  }
+
+  const handleDeleteImage = (imageId: string) => {
+    const updatedImages = uploadedImages.filter(img => img.id !== imageId)
+    setUploadedImages(updatedImages)
+    
+    // Update localStorage
+    if (updatedImages.length > 0) {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(updatedImages))
+    } else {
+      localStorage.removeItem(STORAGE_KEY)
+    }
+    
+    // If the deleted image was selected, clear selection
+    if (selectedImageId === imageId) {
+      setSelectedImageId(null)
+      setPendingFile(null)
+      setPendingPreview(null)
+    }
   }
 
   const handleGoBackToUpload = () => {
     // Clear all uploaded images to go back to SelectPhoto view
     setUploadedImages([])
     setSelectedImageId(null)
+    // Clear localStorage as well
+    localStorage.removeItem(STORAGE_KEY)
   }
 
   // If user has uploaded at least one image, show MyPhotos component
@@ -128,6 +190,7 @@ const SelectPhoto: React.FC<SelectPhotoProps> = ({ onPhotoSelected }) => {
           }}
           onClose={handleGoBackToUpload}
           onConfirm={handleConfirmSelection}
+          onDeleteImage={handleDeleteImage}
         />
       </div>
     )

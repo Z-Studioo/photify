@@ -1,5 +1,5 @@
 import React from "react"
-import { Upload, Check } from "lucide-react"
+import { Upload, Check, X } from "lucide-react"
 
 interface UploadedImage {
   id: string
@@ -15,6 +15,7 @@ interface ImageSelectionPanelProps {
   onUploadMore: () => void
   onClose: () => void
   onConfirm: () => void
+  onDeleteImage: (imageId: string) => void
 }
 
 const MyPhotos: React.FC<ImageSelectionPanelProps> = ({
@@ -22,6 +23,7 @@ const MyPhotos: React.FC<ImageSelectionPanelProps> = ({
   selectedImageId,
   onImageSelect,
   onUploadMore,
+  onDeleteImage,
   // onClose,
   // onConfirm
 }) => {
@@ -48,8 +50,7 @@ const MyPhotos: React.FC<ImageSelectionPanelProps> = ({
           {uploadedImages.map((image) => (
             <div
               key={image.id}
-              onClick={() => onImageSelect(image.id)}
-              className={`flex-shrink-0 w-20 h-20 rounded-lg overflow-hidden relative cursor-pointer border-2 transition-all ${
+              className={`flex-shrink-0 w-20 h-20 rounded-lg overflow-hidden relative cursor-pointer border-2 transition-all group ${
                 selectedImageId === image.id
                   ? "border-primary shadow-md ring-2 ring-primary/20"
                   : "border-gray-200 hover:border-gray-300"
@@ -59,14 +60,30 @@ const MyPhotos: React.FC<ImageSelectionPanelProps> = ({
                 src={image.url}
                 alt={image.name}
                 className="w-full h-full object-cover"
+                onClick={() => onImageSelect(image.id)}
               />
 
+              {/* Delete Button */}
+              <button
+                onClick={(e) => {
+                  e.stopPropagation()
+                  onDeleteImage(image.id)
+                }}
+                className="absolute -top-1 -right-1 bg-red-500 hover:bg-red-600 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity z-10"
+                title="Delete photo"
+              >
+                <X className="h-3 w-3" />
+              </button>
+
               {/* Selection Overlay */}
-              <div className={`absolute inset-0 flex items-center justify-center transition-opacity ${
-                selectedImageId === image.id
-                  ? "bg-primary/20 opacity-100"
-                  : "bg-black/0 opacity-0 hover:bg-black/10 hover:opacity-100"
-              }`}>
+              <div 
+                onClick={() => onImageSelect(image.id)}
+                className={`absolute inset-0 flex items-center justify-center transition-opacity ${
+                  selectedImageId === image.id
+                    ? "bg-primary/20 opacity-100"
+                    : "bg-black/0 opacity-0 hover:bg-black/10 hover:opacity-100"
+                }`}
+              >
                 {selectedImageId === image.id && (
                   <div className="bg-primary rounded-full p-1">
                     <Check className="h-3 w-3 text-white" />

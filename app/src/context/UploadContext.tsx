@@ -10,6 +10,11 @@ interface UploadContextType {
   setPreview: (p: string | null) => void;
   shape: CanvasShape;
   setShape: (s: CanvasShape) => void;
+  pendingFile: File | null;
+  setPendingFile: (f: File | null) => void;
+  pendingPreview: string | null;
+  setPendingPreview: (p: string | null) => void;
+  applyPendingChanges: () => void;
 }
 
 const UploadContext = createContext<UploadContextType | undefined>(undefined);
@@ -18,9 +23,24 @@ export const UploadProvider = ({ children }: { children: ReactNode }) => {
   const [file, setFile] = useState<File | null>(null);
   const [preview, setPreview] = useState<string | null>(null);
   const [shape, setShape] = useState<CanvasShape>('rectangle');
+  const [pendingFile, setPendingFile] = useState<File | null>(null);
+  const [pendingPreview, setPendingPreview] = useState<string | null>(null);
+
+  const applyPendingChanges = () => {
+    if (pendingFile && pendingPreview) {
+      setFile(pendingFile);
+      setPreview(pendingPreview);
+      setPendingFile(null);
+      setPendingPreview(null);
+    }
+  };
 
   return (
-    <UploadContext.Provider value={{ file, setFile, preview, setPreview, shape, setShape }}>
+    <UploadContext.Provider value={{ 
+      file, setFile, preview, setPreview, shape, setShape,
+      pendingFile, setPendingFile, pendingPreview, setPendingPreview,
+      applyPendingChanges
+    }}>
       {children}
     </UploadContext.Provider>
   );

@@ -35,7 +35,7 @@ interface MenuFeature {
 const Dashboard: React.FC = () => {
   const [quantity, setQuantity] = useState<number>(1);
   const { selectedFeature, setSelectedFeature } = useFeature();
-  const { shape } = useUpload();
+  const { shape, setFile, setPreview, applyPendingChanges } = useUpload();
   const { selectedView, setSelectedView } = useView();
   const pricePerItem: number = 100;
 
@@ -58,6 +58,14 @@ const Dashboard: React.FC = () => {
   };
 
   const handleAddToCart = () => {};
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const f = e.target.files?.[0];
+    if (f) {
+      setFile(f);
+      setPreview(URL.createObjectURL(f));
+    }
+  };
 
   const triggerFileUpload = () => {
     const fileInput = document.querySelector(
@@ -254,7 +262,10 @@ const Dashboard: React.FC = () => {
                 <Button
                   variant='default'
                   className='px-6 py-2 rounded-none whitespace-nowrap'
-                  onClick={() => setSelectedFeature(null)}
+                  onClick={() => {
+                    applyPendingChanges();
+                    setSelectedFeature(null);
+                  }}
                 >
                   Apply Changes
                 </Button>
@@ -263,6 +274,14 @@ const Dashboard: React.FC = () => {
           </div>
         </div>
       </div>
+
+      {/* Hidden file input for photo selection */}
+      <input
+        type='file'
+        accept='image/*'
+        className='hidden'
+        onChange={handleFileChange}
+      />
     </div>
   );
 };
