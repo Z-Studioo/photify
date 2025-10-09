@@ -1,4 +1,3 @@
-'use client';
 import { ChevronLeft } from 'lucide-react';
 import { useFeature } from '@/context/dashboard/FeatureContext';
 import SelectPhoto from '@/components/shared/dashboard/SelectPhoto';
@@ -12,7 +11,7 @@ const FeaturePanel = () => {
   const renderFeatureContent = () => {
     switch (selectedFeature.name) {
       case 'SELECT PHOTO':
-        return <SelectPhoto />; // render your SelectPhoto component
+        return <SelectPhoto />;
       case 'ROUND FORMATS AND SHAPES':
         return <ShapeSelector />;
       default:

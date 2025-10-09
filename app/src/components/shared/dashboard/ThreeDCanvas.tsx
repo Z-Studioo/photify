@@ -399,16 +399,16 @@ const ThreeDCanvas = ({ isVisible }: ThreeDCanvasProps) => {
       // small delay to ensure controls & camera are mounted
       const t = setTimeout(() => {
         try {
-          handleCenter()
+          handleCenter();
         } catch (e) {
           // ignore - defensive
           // console.warn('auto-center failed', e)
         }
-      }, 220)
+      }, 220);
 
-      return () => clearTimeout(t)
+      return () => clearTimeout(t);
     }
-  }, [isVisible, preview])
+  }, [isVisible, preview]);
 
   if (!isVisible) return null;
 
