@@ -37,7 +37,7 @@ const features: MenuFeature[] = [
     icon: Crop,
     subtitle: '24 by 16 (External: 24 by 16)',
     step: 2,
-    component: 'SizeSelector',
+    component: 'RatioSizePanel',
   },
   {
     id: 3,

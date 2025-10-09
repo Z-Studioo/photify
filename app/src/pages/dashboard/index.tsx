@@ -35,16 +35,24 @@ interface MenuFeature {
 const Dashboard: React.FC = () => {
   const [quantity, setQuantity] = useState<number>(1);
   const { selectedFeature, setSelectedFeature } = useFeature();
-  const { shape, setFile, setPreview, applyPendingChanges } = useUpload();
+  const { shape, setFile, setPreview, applyPendingChanges, selectedRatio, selectedSize } = useUpload();
   const { selectedView, setSelectedView } = useView();
-  const pricePerItem: number = 100;
+  const pricePerItem: number = selectedSize?.sell_price || 100;
 
-  // Create dynamic features with updated shape subtitle
+  // Create dynamic features with updated subtitles
   const features = featuresBase.map(feature => {
     if (feature.name === 'ROUND FORMATS AND SHAPES') {
       return {
         ...feature,
         subtitle: shape.charAt(0).toUpperCase() + shape.slice(1),
+      };
+    }
+    if (feature.name === 'IMAGE SIZE AND CROP PHOTO') {
+      return {
+        ...feature,
+        subtitle: selectedSize 
+          ? `${selectedSize.width}" × ${selectedSize.height}" (${selectedRatio})` 
+          : '24 by 16 (External: 24 by 16)',
       };
     }
     return feature;
@@ -256,9 +264,21 @@ const Dashboard: React.FC = () => {
             ) : (
               // Feature panel open -> Price + Apply Changes in same line
               <div className='flex items-center justify-between gap-3 flex-shrink-0'>
-                <span className='text-xl font-semibold'>
-                  ${pricePerItem * quantity}
-                </span>
+                <div className='flex flex-col'>
+                  <span className='text-xl font-semibold'>
+                    ${(pricePerItem * quantity).toFixed(2)}
+                  </span>
+                  {selectedSize && selectedSize.actual_price > selectedSize.sell_price && (
+                    <div className='text-sm'>
+                      <span className='line-through text-gray-500'>
+                        ${(selectedSize.actual_price * quantity).toFixed(2)}
+                      </span>
+                      <span className='ml-2 text-green-600 font-medium'>
+                        {Math.round(((selectedSize.actual_price - selectedSize.sell_price) / selectedSize.actual_price) * 100)}% OFF
+                      </span>
+                    </div>
+                  )}
+                </div>
                 <Button
                   variant='default'
                   className='px-6 py-2 rounded-none whitespace-nowrap'
