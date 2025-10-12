@@ -429,7 +429,7 @@ const ThreeDCanvas = ({ isVisible }: ThreeDCanvasProps) => {
           <ambientLight intensity={0.4} color='#ffffff' />
           <directionalLight
             position={[5, 8, 5]}
-            intensity={2.0}
+            intensity={7.0}
             color='#ffffff'
             castShadow
             shadow-mapSize-width={2048}
