@@ -157,10 +157,10 @@ const RoomFrame3DCanvas = ({ onInteraction }: RoomFrame3DProps) => {
       >
         <Suspense fallback={null}>
           {/* Lighting optimized for room integration */}
-          <ambientLight intensity={0.3} />
+          <ambientLight intensity={1} />
           <directionalLight
             position={[3, 4, 3]}
-            intensity={1.2}
+            intensity={3}
             castShadow
             shadow-mapSize-width={1024}
             shadow-mapSize-height={1024}
