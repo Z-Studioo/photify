@@ -61,13 +61,13 @@ const RoomFrame3D = ({
 
   // Simplified frame for room view
   const createFrameGeometry = () => {
-    const frameDepth = 0.06;
+    const frameDepth = 0.6;
 
     if (shape === 'rectangle') {
       return (
         <group>
           <mesh position={[0, 0, -frameDepth / 2]}>
-            <boxGeometry args={[2.0, 1.55, frameDepth]} />
+            {/* <boxGeometry args={[2.0, 1.55, frameDepth]} /> */}
             <meshStandardMaterial
               color={isHovered ? '#404040' : '#2c2c2c'}
               roughness={0.3}
@@ -102,7 +102,7 @@ const RoomFrame3D = ({
       onPointerEnter={() => setIsHovered(true)}
       onPointerLeave={() => setIsHovered(false)}
       onClick={onInteraction}
-      scale={isHovered ? 1.05 : 1}
+      scale={isHovered ? 1.2 : 1.15}
     >
       {/* Frame */}
       {createFrameGeometry()}

@@ -3,6 +3,7 @@ import { useFeature } from '@/context/dashboard/FeatureContext';
 import SelectPhoto from '@/components/shared/dashboard/SelectPhoto';
 import ShapeSelector from '@/components/shared/dashboard/ShapeSelector';
 import RatioSizePanel from '@/components/shared/dashboard/RatioSizePanel';
+import AcrylicGlass from './AcrylicGlass';
 
 const FeaturePanel = () => {
   const { selectedFeature, setSelectedFeature } = useFeature();
@@ -17,6 +18,8 @@ const FeaturePanel = () => {
         return <RatioSizePanel />;
       case 'ROUND FORMATS AND SHAPES':
         return <ShapeSelector />;
+      case 'ACRYLIC GLASS':
+        return <AcrylicGlass />;
       default:
         return (
           <div className='text-gray-500'>Feature configuration coming soon</div>
