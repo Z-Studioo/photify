@@ -1,5 +1,3 @@
-import { Button } from '@/components/ui/button';
-import { User, ShoppingCart } from 'lucide-react';
 import logo from '@/assets/images/logo.svg';
 
 const Navbar = () => {

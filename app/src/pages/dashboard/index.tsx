@@ -8,7 +8,7 @@ import {
   MinusCircle,
   ChevronLeft,
 } from 'lucide-react';
-import { motion, AnimatePresence, type Variants } from 'framer-motion';
+import { motion, AnimatePresence, type Variants } from 'motion/react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -60,12 +60,10 @@ const Dashboard: React.FC = () => {
   const slideVariants: Variants = {
     enter: (direction: 'left' | 'right') => ({
       x: direction === 'right' ? '100%' : '-100%',
-      opacity: 0,
     }),
-    center: { x: 0, opacity: 1 },
+    center: { x: 0 },
     exit: (direction: 'left' | 'right') => ({
       x: direction === 'right' ? '-100%' : '100%',
-      opacity: 0,
     }),
   };
 
