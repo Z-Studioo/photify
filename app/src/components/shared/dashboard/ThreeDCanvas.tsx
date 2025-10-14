@@ -54,82 +54,38 @@ const Frame3D = ({
       case 'dodecagon':
         return new THREE.CircleGeometry(0.9, 12);
       default: // rectangle
-        return new THREE.PlaneGeometry(1.8, 1.35); // Adjusted to fit inside frame
+        return new THREE.PlaneGeometry(1.8, 1.35);
     }
   };
 
-  // Frame geometry based on shape - optimized for standalone view
+  // Frame geometry with depth but no visible border
   const createFrameGeometry = () => {
-    const frameThickness = 0.08;
     const frameDepth = 0.06;
 
     if (shape === 'rectangle') {
       return (
         <group>
-          {/* Main frame - sleek modern design */}
+          {/* Backing plate for depth - matches background */}
           <mesh position={[0, 0, -frameDepth / 2]}>
-            <boxGeometry args={[2.0, 1.55, frameDepth]} />
+            <boxGeometry args={[1.8, 1.35, frameDepth]} />
             <meshStandardMaterial
-              color='#2c2c2c'
+              color='#f8f9fa'
               roughness={0.3}
-              metalness={0.7}
-            />
-          </mesh>
-
-          {/* Inner bevel edges for depth */}
-          <mesh position={[0, 0.775, -frameDepth / 4]}>
-            <boxGeometry args={[2.0, frameThickness / 2, frameDepth / 2]} />
-            <meshStandardMaterial
-              color='#1a1a1a'
-              roughness={0.2}
-              metalness={0.8}
-            />
-          </mesh>
-          <mesh position={[0, -0.775, -frameDepth / 4]}>
-            <boxGeometry args={[2.0, frameThickness / 2, frameDepth / 2]} />
-            <meshStandardMaterial
-              color='#1a1a1a'
-              roughness={0.2}
-              metalness={0.8}
-            />
-          </mesh>
-          <mesh position={[1.0, 0, -frameDepth / 4]}>
-            <boxGeometry args={[frameThickness / 2, 1.55, frameDepth / 2]} />
-            <meshStandardMaterial
-              color='#1a1a1a'
-              roughness={0.2}
-              metalness={0.8}
-            />
-          </mesh>
-          <mesh position={[-1.0, 0, -frameDepth / 4]}>
-            <boxGeometry args={[frameThickness / 2, 1.55, frameDepth / 2]} />
-            <meshStandardMaterial
-              color='#1a1a1a'
-              roughness={0.2}
-              metalness={0.8}
+              metalness={0.0}
             />
           </mesh>
         </group>
       );
     } else {
-      // Circular frame for other shapes
+      // Circular backing for other shapes
       return (
         <group>
           <mesh position={[0, 0, -frameDepth / 2]}>
-            <cylinderGeometry args={[1.15, 1.15, frameDepth, 64]} />
+            <cylinderGeometry args={[0.9, 0.9, frameDepth, 64]} />
             <meshStandardMaterial
-              color='#2c2c2c'
+              color='#f8f9fa'
               roughness={0.3}
-              metalness={0.7}
-            />
-          </mesh>
-          {/* Inner ring for depth */}
-          <mesh position={[0, 0, -frameDepth / 4]}>
-            <cylinderGeometry args={[1.0, 1.0, frameDepth / 2, 64]} />
-            <meshStandardMaterial
-              color='#1a1a1a'
-              roughness={0.2}
-              metalness={0.8}
+              metalness={0.0}
             />
           </mesh>
         </group>
@@ -145,27 +101,8 @@ const Frame3D = ({
       castShadow
       receiveShadow
     >
-      {/* Frame */}
+      {/* Backing for depth */}
       {createFrameGeometry()}
-
-      {/* Acrylic glass effect */}
-      <mesh position={[0, 0, 0.02]}>
-        {shape === 'rectangle' ? (
-          <planeGeometry args={[1.8, 1.35]} />
-        ) : (
-          <primitive object={new THREE.CircleGeometry(0.9, 64)} />
-        )}
-        <meshPhysicalMaterial
-          color='white'
-          transparent
-          opacity={0.02}
-          roughness={0.05}
-          metalness={0.0}
-          transmission={0.98}
-          thickness={0.005}
-          ior={1.5}
-        />
-      </mesh>
 
       {/* Photo/Image with enhanced material */}
       {texture && (
@@ -177,23 +114,12 @@ const Frame3D = ({
             side={THREE.FrontSide}
             roughness={0.08}
             metalness={0.0}
-            // stronger emissive to brighten dark images
             emissive={'#1a1a1a'}
             emissiveIntensity={0.12}
             toneMapped={true}
           />
         </mesh>
       )}
-
-      {/* Minimal inner shadow to avoid darkening */}
-      <mesh position={[0, 0, 0.005]}>
-        {shape === 'rectangle' ? (
-          <planeGeometry args={[1.8, 1.35]} />
-        ) : (
-          <primitive object={new THREE.CircleGeometry(0.9, 64)} />
-        )}
-        <meshBasicMaterial color='black' transparent opacity={0.01} />
-      </mesh>
     </group>
   );
 };
@@ -244,16 +170,16 @@ const ThreeDCanvas = ({ isVisible }: ThreeDCanvasProps) => {
       const controls = controlsRef.current;
       const camera = controls.object;
 
-      // Frame bounds for different shapes (including frame border)
+      // Image bounds for different shapes (no frame)
       const getFrameBounds = () => {
         switch (shape) {
           case 'round':
           case 'hexagon':
           case 'octagon':
           case 'dodecagon':
-            return { width: 2.3, height: 2.3 }; // Circular bounds with frame
+            return { width: 1.8, height: 1.8 };
           default:
-            return { width: 2.2, height: 1.75 }; // Rectangle bounds with frame
+            return { width: 1.8, height: 1.35 };
         }
       };
 
@@ -402,7 +328,6 @@ const ThreeDCanvas = ({ isVisible }: ThreeDCanvasProps) => {
           handleCenter();
         } catch (e) {
           // ignore - defensive
-          // console.warn('auto-center failed', e)
         }
       }, 220);
 
@@ -411,9 +336,6 @@ const ThreeDCanvas = ({ isVisible }: ThreeDCanvasProps) => {
   }, [isVisible, preview]);
 
   if (!isVisible) return null;
-
-  // Debug: Log when component renders
-  console.log('ThreeDCanvas rendering with controls');
 
   return (
     <div className='w-full h-full relative'>
@@ -429,7 +351,7 @@ const ThreeDCanvas = ({ isVisible }: ThreeDCanvasProps) => {
           <ambientLight intensity={0.4} color='#ffffff' />
           <directionalLight
             position={[5, 8, 5]}
-            intensity={7.0}
+            intensity={8.0}
             color='#ffffff'
             castShadow
             shadow-mapSize-width={2048}
