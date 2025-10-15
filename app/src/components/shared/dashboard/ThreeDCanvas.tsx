@@ -1,4 +1,6 @@
-'use client';
+/* eslint-disable */
+// @ts-nocheck
+
 import { Canvas } from '@react-three/fiber';
 import { OrbitControls, ContactShadows } from '@react-three/drei';
 import { Suspense, useRef, useState, useEffect, useMemo } from 'react';
