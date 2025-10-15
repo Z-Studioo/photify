@@ -372,19 +372,6 @@ const Dashboard: React.FC = () => {
                     Change Product
                   </motion.p>
                 </div>
-                <motion.img
-                  initial={{ scale: 0.8, opacity: 0 }}
-                  animate={{ scale: 1, opacity: 1 }}
-                  transition={{
-                    delay: 0.1,
-                    duration: 0.3,
-                    type: 'spring',
-                    stiffness: 300,
-                  }}
-                  src='/api/placeholder/48/48'
-                  alt='Thumbnail'
-                  className='w-12 h-12 object-cover rounded ml-2 flex-shrink-0'
-                />
               </motion.div>
             )}
           </AnimatePresence>

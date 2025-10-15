@@ -332,116 +332,187 @@ const ThreeDCanvas = ({ isVisible }: ThreeDCanvasProps) => {
           <CameraControls controlsRef={controlsRef} />
         </Suspense>
       </Canvas>
-      <div className='absolute top-4 left-4 z-50 flex items-start gap-2'>
-        <div className='relative group'>
-          <button className='bg-white/80 backdrop-blur-sm rounded-full p-3 shadow-lg border border-gray-200/50'>
+      {/* 3D Controls - Responsive */}
+      <div className='absolute top-2 left-2 md:top-4 md:left-4 z-50'>
+        {/* Desktop Layout - Horizontal */}
+        <div className='hidden md:flex bg-white rounded-full px-2 py-1.5 shadow-lg border border-gray-200 items-center gap-2 hover:shadow-xl transition-shadow duration-300'>
+          {/* Play/Rotate Button */}
+          <button
+            onClick={handleAutoRotate}
+            className='flex items-center gap-1 px-2 py-1.5 rounded-full transition-all duration-200 hover:bg-pink-50 hover:scale-105 active:scale-95 cursor-pointer'
+          >
             <svg
-              className='w-6 h-6 text-gray-700'
+              className='w-3 h-3 text-pink-500 transition-transform duration-200 hover:rotate-12'
+              fill='currentColor'
+              viewBox='0 0 24 24'
+            >
+              <path d='M8 5v14l11-7z' />
+            </svg>
+            <span className='text-xs font-medium text-pink-500 transition-colors duration-200'>
+              {isAutoRotating ? 'Stop' : 'Play'}
+            </span>
+          </button>
+
+          {/* Divider */}
+          <div className='w-px h-5 bg-gray-200'></div>
+
+          {/* Center Button */}
+          <button
+            onClick={handleCenter}
+            className='flex items-center gap-1 px-2 py-1.5 rounded-full transition-all duration-200 hover:bg-pink-50 hover:scale-105 active:scale-95 cursor-pointer'
+          >
+            <svg
+              className='w-3 h-3 text-pink-500 transition-transform duration-200 hover:scale-110'
               fill='none'
               stroke='currentColor'
               viewBox='0 0 24 24'
             >
+              <circle cx='12' cy='12' r='3' />
               <path
                 strokeLinecap='round'
                 strokeLinejoin='round'
                 strokeWidth={2}
-                d='M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z'
+                d='M12 1v6m0 10v6m11-7h-6m-10 0H1'
+              />
+            </svg>
+            <span className='text-xs font-medium text-pink-500 transition-colors duration-200'>
+              Center
+            </span>
+          </button>
+
+          {/* Divider */}
+          <div className='w-px h-5 bg-gray-200'></div>
+
+          {/* Zoom In Button */}
+          <button
+            onClick={() => handleZoom(0.7)}
+            className='flex items-center gap-1 px-2 py-1.5 rounded-full transition-all duration-200 hover:bg-pink-50 hover:scale-105 active:scale-95 cursor-pointer'
+          >
+            <svg
+              className='w-3 h-3 text-pink-500 transition-transform duration-200 hover:scale-125'
+              fill='none'
+              stroke='currentColor'
+              viewBox='0 0 24 24'
+            >
+              <circle cx='11' cy='11' r='8' />
+              <path
+                strokeLinecap='round'
+                strokeLinejoin='round'
+                strokeWidth={2}
+                d='m21 21-4.35-4.35M11 8v6m-3-3h6'
+              />
+            </svg>
+            <span className='text-xs font-medium text-pink-500 transition-colors duration-200'>
+              Zoom In
+            </span>
+          </button>
+
+          {/* Divider */}
+          <div className='w-px h-5 bg-gray-200'></div>
+
+          {/* Zoom Out Button */}
+          <button
+            onClick={() => handleZoom(1.4)}
+            className='flex items-center gap-1 px-2 py-1.5 rounded-full transition-all duration-200 hover:bg-pink-50 hover:scale-105 active:scale-95 cursor-pointer'
+          >
+            <svg
+              className='w-3 h-3 text-pink-500 transition-transform duration-200 hover:scale-90'
+              fill='none'
+              stroke='currentColor'
+              viewBox='0 0 24 24'
+            >
+              <circle cx='11' cy='11' r='8' />
+              <path
+                strokeLinecap='round'
+                strokeLinejoin='round'
+                strokeWidth={2}
+                d='m21 21-4.35-4.35M8 11h6'
+              />
+            </svg>
+            <span className='text-xs font-medium text-pink-500 transition-colors duration-200'>
+              Zoom Out
+            </span>
+          </button>
+        </div>
+
+        {/* Mobile Layout - Vertical Stack */}
+        <div className='md:hidden flex flex-col gap-2'>
+          {/* Play/Rotate Button */}
+          <button
+            onClick={handleAutoRotate}
+            className='bg-white rounded-full p-2.5 shadow-lg border border-gray-200 transition-all duration-200 hover:bg-pink-50 active:scale-95 cursor-pointer'
+          >
+            <svg
+              className='w-4 h-4 text-pink-500'
+              fill='currentColor'
+              viewBox='0 0 24 24'
+            >
+              <path d='M8 5v14l11-7z' />
+            </svg>
+          </button>
+
+          {/* Center Button */}
+          <button
+            onClick={handleCenter}
+            className='bg-white rounded-full p-2.5 shadow-lg border border-gray-200 transition-all duration-200 hover:bg-pink-50 active:scale-95 cursor-pointer'
+          >
+            <svg
+              className='w-4 h-4 text-pink-500'
+              fill='none'
+              stroke='currentColor'
+              viewBox='0 0 24 24'
+            >
+              <circle cx='12' cy='12' r='3' />
+              <path
+                strokeLinecap='round'
+                strokeLinejoin='round'
+                strokeWidth={2}
+                d='M12 1v6m0 10v6m11-7h-6m-10 0H1'
               />
             </svg>
           </button>
-          <div className='absolute top-0 left-full ml-2 bg-white/80 backdrop-blur-sm rounded-xl p-2 shadow-lg border border-gray-200/50 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-300 transform translate-x-2 group-hover:translate-x-0'>
-            <div className='flex flex-col gap-1'>
-              <button
-                onClick={handleCenter}
-                className='text-gray-700 hover:bg-gray-200/60 rounded-lg p-2 transition-colors flex items-center gap-2'
-              >
-                <svg
-                  className='w-4 h-4'
-                  fill='none'
-                  stroke='currentColor'
-                  viewBox='0 0 24 24'
-                >
-                  <circle cx='12' cy='12' r='3' />
-                  <path
-                    strokeLinecap='round'
-                    strokeLinejoin='round'
-                    strokeWidth={2}
-                    d='M12 1v6m0 10v6m11-7h-6m-10 0H1'
-                  />
-                </svg>
-                <span className='text-sm font-medium whitespace-nowrap'>
-                  Center
-                </span>
-              </button>
-              <button
-                onClick={() => handleZoom(0.7)}
-                className='text-gray-700 hover:bg-gray-200/60 rounded-lg p-2 transition-colors flex items-center gap-2'
-              >
-                <svg
-                  className='w-4 h-4'
-                  fill='none'
-                  stroke='currentColor'
-                  viewBox='0 0 24 24'
-                >
-                  <circle cx='11' cy='11' r='8' />
-                  <path
-                    strokeLinecap='round'
-                    strokeLinejoin='round'
-                    strokeWidth={2}
-                    d='m21 21-4.35-4.35M11 8v6m-3-3h6'
-                  />
-                </svg>
-                <span className='text-sm font-medium whitespace-nowrap'>
-                  Zoom In
-                </span>
-              </button>
-              <button
-                onClick={() => handleZoom(1.4)}
-                className='text-gray-700 hover:bg-gray-200/60 rounded-lg p-2 transition-colors flex items-center gap-2'
-              >
-                <svg
-                  className='w-4 h-4'
-                  fill='none'
-                  stroke='currentColor'
-                  viewBox='0 0 24 24'
-                >
-                  <circle cx='11' cy='11' r='8' />
-                  <path
-                    strokeLinecap='round'
-                    strokeLinejoin='round'
-                    strokeWidth={2}
-                    d='m21 21-4.35-4.35M8 11h6'
-                  />
-                </svg>
-                <span className='text-sm font-medium whitespace-nowrap'>
-                  Zoom Out
-                </span>
-              </button>
-              <button
-                onClick={handleAutoRotate}
-                className={`text-gray-700 hover:bg-gray-200/60 rounded-lg p-2 transition-colors flex items-center gap-2 ${
-                  isAutoRotating ? 'bg-blue-100 text-blue-600' : ''
-                }`}
-              >
-                <svg
-                  className='w-4 h-4'
-                  fill='none'
-                  stroke='currentColor'
-                  viewBox='0 0 24 24'
-                >
-                  <path
-                    strokeLinecap='round'
-                    strokeLinejoin='round'
-                    strokeWidth={2}
-                    d='M4 12a8 8 0 0 1 8-8V2.5M20 12a8 8 0 0 1-8 8v1.5M8 6l4-4 4 4M16 18l-4 4-4-4'
-                  />
-                </svg>
-                <span className='text-sm font-medium whitespace-nowrap'>
-                  {isAutoRotating ? 'Stop' : 'Rotate'}
-                </span>
-              </button>
-            </div>
-          </div>
+
+          {/* Zoom In Button */}
+          <button
+            onClick={() => handleZoom(0.7)}
+            className='bg-white rounded-full p-2.5 shadow-lg border border-gray-200 transition-all duration-200 hover:bg-pink-50 active:scale-95 cursor-pointer'
+          >
+            <svg
+              className='w-4 h-4 text-pink-500'
+              fill='none'
+              stroke='currentColor'
+              viewBox='0 0 24 24'
+            >
+              <circle cx='11' cy='11' r='8' />
+              <path
+                strokeLinecap='round'
+                strokeLinejoin='round'
+                strokeWidth={2}
+                d='m21 21-4.35-4.35M11 8v6m-3-3h6'
+              />
+            </svg>
+          </button>
+
+          {/* Zoom Out Button */}
+          <button
+            onClick={() => handleZoom(1.4)}
+            className='bg-white rounded-full p-2.5 shadow-lg border border-gray-200 transition-all duration-200 hover:bg-pink-50 active:scale-95 cursor-pointer'
+          >
+            <svg
+              className='w-4 h-4 text-pink-500'
+              fill='none'
+              stroke='currentColor'
+              viewBox='0 0 24 24'
+            >
+              <circle cx='11' cy='11' r='8' />
+              <path
+                strokeLinecap='round'
+                strokeLinejoin='round'
+                strokeWidth={2}
+                d='m21 21-4.35-4.35M8 11h6'
+              />
+            </svg>
+          </button>
         </div>
       </div>
     </div>
