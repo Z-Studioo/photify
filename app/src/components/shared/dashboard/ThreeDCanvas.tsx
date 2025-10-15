@@ -4,6 +4,7 @@ import { OrbitControls, ContactShadows } from '@react-three/drei';
 import { Suspense, useRef, useState, useEffect, useMemo } from 'react';
 import * as THREE from 'three';
 import { useUpload, type CanvasShape } from '@/context/UploadContext';
+import type { OrbitControls as OrbitControlsImpl } from 'three-stdlib';
 
 interface ThreeDCanvasProps {
   isVisible: boolean;
@@ -138,7 +139,7 @@ const Frame3D = ({
     );
   } else {
     // Fallback for non-rectangular shapes
-    const createGeometry = () => {
+    const createGeometry = (): THREE.BufferGeometry => {
       switch (shape) {
         case 'round':
           return new THREE.CircleGeometry(0.9, 64);
@@ -175,7 +176,7 @@ const Frame3D = ({
 const CameraControls = ({
   controlsRef,
 }: {
-  controlsRef: React.MutableRefObject<any>;
+  controlsRef: React.MutableRefObject<OrbitControlsImpl | null>;
 }) => {
   return (
     <OrbitControls
@@ -198,13 +199,13 @@ const CameraControls = ({
 
 const ThreeDCanvas = ({ isVisible }: ThreeDCanvasProps) => {
   const { preview, shape } = useUpload();
-  const controlsRef = useRef<any>(null);
+  const controlsRef = useRef<OrbitControlsImpl | null>(null);
   const [isAutoRotating, setIsAutoRotating] = useState(false);
 
   const handleCenter = () => {
     if (controlsRef.current) {
       const controls = controlsRef.current;
-      const camera = controls.object;
+      const camera = controls.object as THREE.PerspectiveCamera;
 
       const bounds = { width: 1.8, height: 1.35 };
       const maxDimension = Math.max(bounds.width, bounds.height);
@@ -241,23 +242,35 @@ const ThreeDCanvas = ({ isVisible }: ThreeDCanvasProps) => {
   const handleZoom = (factor: number) => {
     if (controlsRef.current) {
       const controls = controlsRef.current;
+      const camera = controls.object as THREE.PerspectiveCamera;
+
       const duration = 500;
       const startTime = Date.now();
-      const startDistance = controls.getDistance();
+      const startPosition = camera.position.clone();
+      const currentDistance = controls.target.distanceTo(camera.position);
       const targetDistance = THREE.MathUtils.clamp(
-        startDistance * factor,
+        currentDistance * factor,
         controls.minDistance,
         controls.maxDistance
       );
+
+      const direction = camera.position
+        .clone()
+        .sub(controls.target)
+        .normalize();
 
       const animateZoom = () => {
         const elapsed = Date.now() - startTime;
         const progress = Math.min(elapsed / duration, 1);
         const easeProgress = 1 - Math.pow(1 - progress, 3);
 
-        controls.dollyTo(
-          startDistance + (targetDistance - startDistance) * easeProgress
-        );
+        const newDistance =
+          currentDistance + (targetDistance - currentDistance) * easeProgress;
+        const newPosition = controls.target
+          .clone()
+          .add(direction.clone().multiplyScalar(newDistance));
+
+        camera.position.copy(newPosition);
         controls.update();
 
         if (progress < 1) requestAnimationFrame(animateZoom);
@@ -294,11 +307,11 @@ const ThreeDCanvas = ({ isVisible }: ThreeDCanvasProps) => {
       >
         <Suspense fallback={null}>
           <ambientLight intensity={0.7} />
-          <hemisphereLight
+          {/* <hemisphereLight
             skyColor='#ffffff'
-            groundColor='#dcdcdc'
+            groundColor='#c50909'
             intensity={0.6}
-          />
+          /> */}
           <directionalLight
             position={[5, 8, 5]}
             intensity={4}
