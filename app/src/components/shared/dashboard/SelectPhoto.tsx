@@ -9,6 +9,7 @@ interface UploadedImage {
   file: File;
   url: string;
   name: string;
+  base64?: string; // Add base64 for persistence
 }
 
 interface SelectPhotoProps {
@@ -30,15 +31,56 @@ const SelectPhoto: React.FC<SelectPhotoProps> = ({ onPhotoSelected }) => {
   // Local storage key for uploaded images
   const STORAGE_KEY = 'photify_uploaded_images';
 
+  // Helper function to convert File to base64
+  const fileToBase64 = (file: File): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.readAsDataURL(file);
+      reader.onload = () => resolve(reader.result as string);
+      reader.onerror = error => reject(error);
+    });
+  };
+
+  // Helper function to convert base64 to File
+  const base64ToFile = (base64Data: string, fileName: string, fileType: string): File => {
+    const byteCharacters = atob(base64Data.split(',')[1]);
+    const byteNumbers = new Array(byteCharacters.length);
+    for (let i = 0; i < byteCharacters.length; i++) {
+      byteNumbers[i] = byteCharacters.charCodeAt(i);
+    }
+    const byteArray = new Uint8Array(byteNumbers);
+    return new File([byteArray], fileName, { type: fileType });
+  };
+
   // Load images from localStorage on component mount
   useEffect(() => {
     const savedImages = localStorage.getItem(STORAGE_KEY);
     if (savedImages) {
       try {
-        const parsedImages = JSON.parse(savedImages) as UploadedImage[];
-        setUploadedImages(parsedImages);
+        const parsedImages = JSON.parse(savedImages);
+        const restoredImages: UploadedImage[] = parsedImages.map((img: any) => {
+          if (img.base64) {
+            // Restore File object from base64
+            const restoredFile = base64ToFile(
+              img.base64, 
+              img.name, 
+              img.file?.type || 'image/jpeg'
+            );
+            return {
+              id: img.id,
+              name: img.name,
+              file: restoredFile,
+              url: img.base64, // Use base64 as URL for persistence
+              base64: img.base64
+            };
+          }
+          return img;
+        });
+        setUploadedImages(restoredImages);
       } catch (error) {
         console.error('Error loading images from localStorage:', error);
+        // Clear corrupted data
+        localStorage.removeItem(STORAGE_KEY);
       }
     }
   }, []);
@@ -46,31 +88,63 @@ const SelectPhoto: React.FC<SelectPhotoProps> = ({ onPhotoSelected }) => {
   // Save images to localStorage whenever uploadedImages changes
   useEffect(() => {
     if (uploadedImages.length > 0) {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(uploadedImages));
+      // Create serializable data (exclude File objects)
+      const serializableImages = uploadedImages.map(img => ({
+        id: img.id,
+        name: img.name,
+        base64: img.base64,
+        url: img.url,
+        file: {
+          name: img.file.name,
+          type: img.file.type,
+          size: img.file.size
+        }
+      }));
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(serializableImages));
     }
   }, [uploadedImages]);
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
       const file = e.target.files[0];
       const imageId = Date.now().toString();
-      const imageUrl = URL.createObjectURL(file);
+      
+      try {
+        const base64Data = await fileToBase64(file);
+        
+        const newImage: UploadedImage = {
+          id: imageId,
+          file,
+          url: base64Data, // Use base64 as URL
+          name: file.name,
+          base64: base64Data,
+        };
 
-      const newImage: UploadedImage = {
-        id: imageId,
-        file,
-        url: imageUrl,
-        name: file.name,
-      };
+        setUploadedImages(prev => [...prev, newImage]);
+        setSelectedImageId(imageId);
 
-      setUploadedImages(prev => [...prev, newImage]);
-      setSelectedImageId(imageId);
+        // Store as pending photo - don't update main context yet
+        setPendingFile(file);
+        setPendingPreview(base64Data);
 
-      // Store as pending photo - don't update main context yet
-      setPendingFile(file);
-      setPendingPreview(imageUrl);
+        onPhotoSelected?.(file);
+      } catch (error) {
+        console.error('Error converting file to base64:', error);
+        // Fallback to blob URL if base64 conversion fails
+        const imageUrl = URL.createObjectURL(file);
+        const newImage: UploadedImage = {
+          id: imageId,
+          file,
+          url: imageUrl,
+          name: file.name,
+        };
 
-      onPhotoSelected?.(file);
+        setUploadedImages(prev => [...prev, newImage]);
+        setSelectedImageId(imageId);
+        setPendingFile(file);
+        setPendingPreview(imageUrl);
+        onPhotoSelected?.(file);
+      }
     }
   };
 
@@ -86,24 +160,39 @@ const SelectPhoto: React.FC<SelectPhotoProps> = ({ onPhotoSelected }) => {
   //   triggerFileUpload()
   // }
 
-  const handleMultipleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleMultipleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files) {
       const files = Array.from(e.target.files);
       const newImages: UploadedImage[] = [];
 
-      files.forEach(file => {
+      // Process files sequentially to avoid overwhelming the browser
+      for (const file of files) {
         const imageId =
           Date.now().toString() + Math.random().toString(36).substr(2, 9);
-        const imageUrl = URL.createObjectURL(file);
-
-        const newImage: UploadedImage = {
-          id: imageId,
-          file,
-          url: imageUrl,
-          name: file.name,
-        };
-        newImages.push(newImage);
-      });
+        
+        try {
+          const base64Data = await fileToBase64(file);
+          const newImage: UploadedImage = {
+            id: imageId,
+            file,
+            url: base64Data,
+            name: file.name,
+            base64: base64Data,
+          };
+          newImages.push(newImage);
+        } catch (error) {
+          console.error('Error converting file to base64:', error);
+          // Fallback to blob URL
+          const imageUrl = URL.createObjectURL(file);
+          const newImage: UploadedImage = {
+            id: imageId,
+            file,
+            url: imageUrl,
+            name: file.name,
+          };
+          newImages.push(newImage);
+        }
+      }
 
       setUploadedImages(prev => [...prev, ...newImages]);
 

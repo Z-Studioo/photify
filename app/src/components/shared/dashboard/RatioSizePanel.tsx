@@ -46,18 +46,11 @@ const RatioSizePanel: React.FC<RatioSizePanelProps> = ({
     const fetchData = async () => {
       try {
         setLoading(true);
-        console.log('Starting API fetch...');
 
         const [ratiosResponse, inchesResponse] = await Promise.all([
           fetch('https://photify.co/version-923ig/api/1.1/obj/ratios'),
           fetch('https://photify.co/version-923ig/api/1.1/obj/inches'),
         ]);
-
-        console.log(
-          'API responses:',
-          ratiosResponse.status,
-          inchesResponse.status
-        );
 
         if (!ratiosResponse.ok || !inchesResponse.ok) {
           throw new Error(
@@ -70,15 +63,6 @@ const RatioSizePanel: React.FC<RatioSizePanelProps> = ({
 
         setRatios(ratiosData.response?.results || []);
         setInches(inchesData.response?.results || []);
-
-        console.log(
-          'Fetched ratios:',
-          ratiosData.response?.results?.length || 0
-        );
-        console.log(
-          'Fetched inches:',
-          inchesData.response?.results?.length || 0
-        );
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Failed to load data');
       } finally {
