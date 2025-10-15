@@ -53,7 +53,7 @@ const Page = () => {
             />
             <Button
               className={`w-auto h-12 mt-1 px-6 md:px-14 rounded-[var(--radius-lg)] text-base ${!preview ? 'opacity-50 cursor-not-allowed' : ''}`}
-              onClick={() => preview && navigate('/dashboard')}
+              onClick={() => preview && navigate('/crop')}
               disabled={!preview}
             >
               Continue
@@ -84,7 +84,7 @@ const Page = () => {
               <div className='flex'>
                 <Button
                   className='w-full h-12 px-6 md:px-14 rounded-[var(--radius-lg)] text-base'
-                  onClick={() => navigate('/dashboard')}
+                  onClick={() => navigate('/crop')}
                 >
                   Continue
                 </Button>

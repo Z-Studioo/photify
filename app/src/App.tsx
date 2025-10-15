@@ -5,6 +5,7 @@ import { ViewProvider } from '@/context/ViewContext';
 import Dashboard from '@/pages/dashboard/index';
 import UploadImage from './pages';
 import { BrowserRouter, Route, Routes } from 'react-router';
+import CropPage from '@/pages/crop';
 
 const App: React.FC = () => {
   return (
@@ -22,6 +23,14 @@ const App: React.FC = () => {
             }
           />
           <Route path='/' element={<UploadImage />} />
+          <Route
+            path='/crop'
+            element={
+              <ViewProvider>
+                <CropPage />
+              </ViewProvider>
+            }
+          />
         </Routes>
       </UploadProvider>
     </BrowserRouter>

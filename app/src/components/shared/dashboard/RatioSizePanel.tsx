@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Loader2, Check } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useUpload, type SizeData } from '@/context/UploadContext';
+import { useView } from '@/context/ViewContext';
 
 interface RatioData {
   _id: string;
@@ -34,6 +35,7 @@ const RatioSizePanel: React.FC<RatioSizePanelProps> = ({
 }) => {
   const { selectedRatio, setSelectedRatio, selectedSize, setSelectedSize } =
     useUpload();
+  const { setSelectedView } = useView();
   const [ratios, setRatios] = useState<RatioData[]>([]);
   const [inches, setInches] = useState<InchData[]>([]);
   const [loading, setLoading] = useState(true);
@@ -98,6 +100,7 @@ const RatioSizePanel: React.FC<RatioSizePanelProps> = ({
     setSelectedRatio(ratio.ratio);
     setSelectedSize(null);
     onSelectionChange?.(ratio.ratio, null);
+    setSelectedView('crop');
   };
 
   const handleSizeChange = (size: InchData) => {

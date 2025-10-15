@@ -1,7 +1,12 @@
 import { createContext, useContext, useState } from 'react';
 import type { ReactNode } from 'react';
 
-export type CanvasShape = 'rectangle' | 'round' | 'hexagon' | 'octagon' | 'dodecagon';
+export type CanvasShape =
+  | 'rectangle'
+  | 'round'
+  | 'hexagon'
+  | 'octagon'
+  | 'dodecagon';
 
 export interface SizeData {
   _id: string;
@@ -53,12 +58,25 @@ export const UploadProvider = ({ children }: { children: ReactNode }) => {
   };
 
   return (
-    <UploadContext.Provider value={{ 
-      file, setFile, preview, setPreview, shape, setShape,
-      pendingFile, setPendingFile, pendingPreview, setPendingPreview,
-      selectedRatio, setSelectedRatio, selectedSize, setSelectedSize,
-      applyPendingChanges
-    }}>
+    <UploadContext.Provider
+      value={{
+        file,
+        setFile,
+        preview,
+        setPreview,
+        shape,
+        setShape,
+        pendingFile,
+        setPendingFile,
+        pendingPreview,
+        setPendingPreview,
+        selectedRatio,
+        setSelectedRatio,
+        selectedSize,
+        setSelectedSize,
+        applyPendingChanges,
+      }}
+    >
       {children}
     </UploadContext.Provider>
   );

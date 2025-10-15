@@ -25,6 +25,7 @@ import ThreeDCanvas from '@/components/shared/dashboard/ThreeDCanvas';
 import RoomFrame3D from '@/components/shared/dashboard/RoomFrame3D';
 import { useUpload } from '@/context/UploadContext';
 import { useView } from '@/context/ViewContext';
+import { ImageCropper } from '@/components/shared/dashboard/ImageCropper';
 
 interface MenuFeature {
   id: number;
@@ -111,6 +112,7 @@ const Dashboard: React.FC = () => {
     <div className='h-screen flex flex-col overflow-hidden'>
       <Navbar />
       <div className='flex-1 w-full flex flex-col md:flex-row gap-0 overflow-hidden'>
+        {selectedView === 'crop' && <ImageCropper />}
         {/* Left: Image Section */}
         <div className='md:w-8/12 w-full relative h-64 md:h-full overflow-hidden'>
           {/* Room View with 3D Frame */}
