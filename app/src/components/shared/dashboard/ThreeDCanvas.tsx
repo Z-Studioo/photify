@@ -47,50 +47,51 @@ const Frame3D = ({
   const geometry = useMemo(() => {
     if (shape !== 'rectangle') return null;
 
-    const box = new THREE.BoxGeometry(1.8, 1.35, frameDepth);
+    const frameWidth = 1.8;
+    const frameHeight = 1.35;
+    const box = new THREE.BoxGeometry(frameWidth, frameHeight, frameDepth);
     const uv = box.getAttribute('uv');
 
-    // BoxGeometry UV Map Layout:
-    // 4 triangles per side * 2 UVs per triangle vertex * 6 sides = 48 UVs
-    // Each face consists of 2 triangles (4 vertices).
-    // The order is: Right, Left, Top, Bottom, Front, Back
+    // Compute UV wrap amount based on actual frame proportions
+    const wrapX = frameDepth / frameWidth;
+    const wrapY = frameDepth / frameHeight;
 
-    // We will modify the UVs for the edge faces to map to the very edge pixels
-    // of the texture.
+    // Tiny UV bleed to hide seams
+    const bleed = 0.002;
 
-    // Right Face (indices 0 to 3) -> Use U = 1 (right edge of texture)
+    // Right Face (0–3)
     uv.setXY(0, 1, 1);
-    uv.setXY(1, 1, 1);
+    uv.setXY(1, 1 - wrapX - bleed, 1);
     uv.setXY(2, 1, 0);
-    uv.setXY(3, 1, 0);
+    uv.setXY(3, 1 - wrapX - bleed, 0);
 
-    // Left Face (indices 4 to 7) -> Use U = 0 (left edge of texture)
-    uv.setXY(4, 0, 1);
+    // Left Face (4–7)
+    uv.setXY(4, wrapX + bleed, 1);
     uv.setXY(5, 0, 1);
-    uv.setXY(6, 0, 0);
+    uv.setXY(6, wrapX + bleed, 0);
     uv.setXY(7, 0, 0);
 
-    // Top Face (indices 8 to 11) -> Use V = 1 (top edge of texture)
-    uv.setXY(8, 0, 1);
-    uv.setXY(9, 1, 1);
+    // Top Face (8–11)
+    uv.setXY(8, 0, 1 - wrapY - bleed);
+    uv.setXY(9, 1, 1 - wrapY - bleed);
     uv.setXY(10, 0, 1);
     uv.setXY(11, 1, 1);
 
-    // Bottom Face (indices 12 to 15) -> Use V = 0 (bottom edge of texture)
+    // Bottom Face (12–15)
     uv.setXY(12, 0, 0);
     uv.setXY(13, 1, 0);
-    uv.setXY(14, 0, 0);
-    uv.setXY(15, 1, 0);
+    uv.setXY(14, 0, wrapY + bleed);
+    uv.setXY(15, 1, wrapY + bleed);
 
-    // Front Face (indices 16 to 19) -> Use full texture (0,0 to 1,1)
-    // This is the default, but we set it explicitly for clarity.
+    // Front Face (16–19)
     uv.setXY(16, 0, 1);
     uv.setXY(17, 1, 1);
     uv.setXY(18, 0, 0);
     uv.setXY(19, 1, 0);
 
-    // Back Face (indices 20 to 23) -> We don't care about its UVs
-    // since it will have a solid color.
+    // Back Face (20–23) -> stays default solid color
+
+    // --- Alignment Fix Ends Here ---
 
     return box;
   }, [shape]);
@@ -101,8 +102,7 @@ const Frame3D = ({
     return (
       <group castShadow receiveShadow>
         <mesh position={[0, 0, -frameDepth / 2]} geometry={geometry}>
-          {/* We provide 6 materials, one for each face of the box. */}
-          {/* 0: Right, 1: Left, 2: Top, 3: Bottom, 4: Front, 5: Back */}
+          {/* Materials for each face */}
           <meshStandardMaterial
             attach='material-0'
             map={texture}
@@ -132,9 +132,9 @@ const Frame3D = ({
             map={texture}
             roughness={0.08}
             metalness={0.0}
-            emissive={'#1a1a1a'}
             emissiveIntensity={0.12}
           />
+
           <meshStandardMaterial attach='material-5' color='#333333' />
         </mesh>
       </group>
@@ -309,11 +309,6 @@ const ThreeDCanvas = ({ isVisible }: ThreeDCanvasProps) => {
       >
         <Suspense fallback={null}>
           <ambientLight intensity={0.7} />
-          {/* <hemisphereLight
-            skyColor='#ffffff'
-            groundColor='#c50909'
-            intensity={0.6}
-          /> */}
           <directionalLight
             position={[5, 8, 5]}
             intensity={4}
@@ -424,7 +419,9 @@ const ThreeDCanvas = ({ isVisible }: ThreeDCanvasProps) => {
               </button>
               <button
                 onClick={handleAutoRotate}
-                className={`text-gray-700 hover:bg-gray-200/60 rounded-lg p-2 transition-colors flex items-center gap-2 ${isAutoRotating ? 'bg-blue-100 text-blue-600' : ''}`}
+                className={`text-gray-700 hover:bg-gray-200/60 rounded-lg p-2 transition-colors flex items-center gap-2 ${
+                  isAutoRotating ? 'bg-blue-100 text-blue-600' : ''
+                }`}
               >
                 <svg
                   className='w-4 h-4'
