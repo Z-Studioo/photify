@@ -244,23 +244,6 @@ const CropPanel: React.FC<CropPanelProps> = ({
           );
         })}
       </div>
-
-      {/* Price Summary */}
-      {selectedRatio && selectedSize && (
-        <div className='border-t pt-4'>
-          <div className='bg-gray-50 p-4 rounded-lg space-y-1 text-sm'>
-            <h4 className='font-semibold text-gray-800 mb-2'>Canvas Price</h4>
-            <div>
-              <span className='text-primary font-bold text-lg'>
-                ${selectedSize.sell_price.toFixed(2)}
-              </span>{' '}
-              <span className='line-through text-gray-400'>
-                ${selectedSize.actual_price.toFixed(2)}
-              </span>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 };
