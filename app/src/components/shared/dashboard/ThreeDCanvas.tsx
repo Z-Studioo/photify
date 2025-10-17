@@ -6,6 +6,7 @@ import { OrbitControls, ContactShadows } from '@react-three/drei';
 import { Suspense, useRef, useState, useEffect, useMemo } from 'react';
 import * as THREE from 'three';
 import { useUpload, type CanvasShape } from '@/context/UploadContext';
+import { useEdge } from '@/context/EdgeContext';
 import type { OrbitControls as OrbitControlsImpl } from 'three-stdlib';
 
 interface ThreeDCanvasProps {
@@ -16,9 +17,11 @@ interface ThreeDCanvasProps {
 const Frame3D = ({
   imageUrl,
   shape,
+  edgeType,
 }: {
   imageUrl: string;
   shape: CanvasShape;
+  edgeType: 'wrapped' | 'mirrored';
 }) => {
   const [texture, setTexture] = useState<THREE.Texture | null>(null);
 
@@ -26,8 +29,13 @@ const Frame3D = ({
     if (imageUrl) {
       const loader = new THREE.TextureLoader();
       loader.load(imageUrl, loadedTexture => {
-        loadedTexture.wrapS = THREE.ClampToEdgeWrapping;
-        loadedTexture.wrapT = THREE.ClampToEdgeWrapping;
+        if (edgeType === 'mirrored') {
+          loadedTexture.wrapS = THREE.MirroredRepeatWrapping;
+          loadedTexture.wrapT = THREE.MirroredRepeatWrapping;
+        } else {
+          loadedTexture.wrapS = THREE.ClampToEdgeWrapping;
+          loadedTexture.wrapT = THREE.ClampToEdgeWrapping;
+        }
         loadedTexture.minFilter = THREE.LinearFilter;
         loadedTexture.magFilter = THREE.LinearFilter;
         loadedTexture.generateMipmaps = false;
@@ -201,6 +209,7 @@ const CameraControls = ({
 
 const ThreeDCanvas = ({ isVisible }: ThreeDCanvasProps) => {
   const { preview, shape } = useUpload();
+  const { edgeType } = useEdge();
   const controlsRef = useRef<OrbitControlsImpl | null>(null);
   const [isAutoRotating, setIsAutoRotating] = useState(false);
 
@@ -318,7 +327,7 @@ const ThreeDCanvas = ({ isVisible }: ThreeDCanvasProps) => {
           />
           <directionalLight position={[-4, 6, -4]} intensity={1.5} />
 
-          {preview && <Frame3D imageUrl={preview} shape={shape} />}
+          {preview && <Frame3D imageUrl={preview} shape={shape} edgeType={edgeType} />}
 
           <ContactShadows
             rotation-x={Math.PI / 2}
