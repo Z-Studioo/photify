@@ -40,6 +40,14 @@ const features: MenuFeature[] = [
     component: 'RatioSizePanel',
   },
   {
+    id: 6,
+    name: 'SIDE APPEARANCE',
+    icon: Droplet,
+    subtitle: 'Wrapped edges',
+    step: 6,
+    component: 'EdgeSelector',
+  },
+  {
     id: 3,
     name: 'IMAGE OPTIMIZATION',
     icon: Zap,
@@ -63,14 +71,7 @@ const features: MenuFeature[] = [
     step: 5,
     component: null,
   },
-  {
-    id: 6,
-    name: 'ACRYLIC GLASS',
-    icon: Droplet,
-    subtitle: 'Wrapped edges',
-    step: 6,
-    component: 'EdgeSelector',
-  },
+
   {
     id: 7,
     name: 'PAPER',
