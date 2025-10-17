@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { Loader2, Check } from 'lucide-react';
+import { Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useUpload, type SizeData } from '@/context/UploadContext';
 import { useView } from '@/context/ViewContext';
+import { AspectRatioIcon } from '../common/icons';
 
 interface RatioData {
   _id: string;
@@ -30,7 +31,7 @@ const RatioSizePanel: React.FC<RatioSizePanelProps> = ({
 }) => {
   const { selectedRatio, setSelectedRatio, selectedSize, setSelectedSize } =
     useUpload();
-  const { setSelectedView } = useView();
+  const { setSelectedView, selectedView } = useView();
 
   const [ratios, setRatios] = useState<RatioData[]>([]);
   const [inches, setInches] = useState<InchData[]>([]);
@@ -159,7 +160,11 @@ const RatioSizePanel: React.FC<RatioSizePanelProps> = ({
 
     // Only trigger crop if ratio or size of another ratio is selected
     if (isDifferentRatio) {
+      // Different ratio → go to crop
       setSelectedView('crop');
+    } else if (selectedView === '3d') {
+      // Same ratio group but in 3D view → go to room view first
+      setSelectedView('room');
     }
   };
 
@@ -215,7 +220,8 @@ const RatioSizePanel: React.FC<RatioSizePanelProps> = ({
 
           return (
             <div key={ratio._id}>
-              <h3 className='font-semibold text-lg mb-3 text-gray-800'>
+              <h3 className='flex items-center gap-2 font-semibold text-lg mb-3 text-gray-800 ml-4'>
+                <AspectRatioIcon ratio={ratio.ratio} />
                 {ratio.ratio}
               </h3>
 
@@ -266,9 +272,6 @@ const RatioSizePanel: React.FC<RatioSizePanelProps> = ({
                           )}
                         </div>
                       </div>
-                      {isSelected && (
-                        <Check className='absolute top-3 right-3 text-primary h-5 w-5' />
-                      )}
                     </button>
                   );
                 })}

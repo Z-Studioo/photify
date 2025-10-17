@@ -19,6 +19,7 @@ import {
 } from 'react';
 import ReactCrop, {
   centerCrop,
+  convertToPixelCrop,
   makeAspectCrop,
   type PercentCrop,
   type PixelCrop,
@@ -210,8 +211,13 @@ export const ImageCrop = ({
       const newCrop = centerAspectCrop(width, height, reactCropProps.aspect);
       setCrop(newCrop);
       setInitialCrop(newCrop);
+
+      const pixelCrop = convertToPixelCrop(newCrop, width, height);
+      if (generateImageOnChange) {
+        setDebouncedCrop({ percent: newCrop, pixel: pixelCrop });
+      }
     },
-    [reactCropProps.aspect]
+    [reactCropProps.aspect, generateImageOnChange]
   );
 
   const handleChange = (pixelCrop: PixelCrop, percentCrop: PercentCrop) => {

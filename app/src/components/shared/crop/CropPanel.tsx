@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { Loader2, Check } from 'lucide-react';
+import { Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useUpload, type SizeData } from '@/context/UploadContext';
 import { useView } from '@/context/ViewContext';
+import { AspectRatioIcon } from '../common/icons';
 
 interface RatioData {
   _id: string;
@@ -25,9 +26,7 @@ interface CropPanelProps {
   onSelectionChange?: (ratio: string, size: InchData | null) => void;
 }
 
-const CropPanel: React.FC<CropPanelProps> = ({
-  onSelectionChange,
-}) => {
+const CropPanel: React.FC<CropPanelProps> = ({ onSelectionChange }) => {
   const { selectedRatio, setSelectedRatio, selectedSize, setSelectedSize } =
     useUpload();
   const { setSelectedView } = useView();
@@ -150,7 +149,7 @@ const CropPanel: React.FC<CropPanelProps> = ({
         </Button>
       </div>
     );
-    console.log(selectedRatio, selectedSize)
+  console.log(selectedRatio, selectedSize);
   return (
     <div className='py-6 space-y-6'>
       <h2 className='text-xl font-semibold text-gray-800 mb-2'>
@@ -182,7 +181,8 @@ const CropPanel: React.FC<CropPanelProps> = ({
 
           return (
             <div key={ratio._id}>
-              <h3 className='font-semibold text-lg mb-3 text-gray-800'>
+              <h3 className='flex items-center gap-2 font-semibold text-lg mb-3 text-gray-800 ml-4'>
+                <AspectRatioIcon ratio={ratio.ratio} />
                 {ratio.ratio}
               </h3>
 
@@ -233,9 +233,6 @@ const CropPanel: React.FC<CropPanelProps> = ({
                           )}
                         </div>
                       </div>
-                      {isSelected && (
-                        <Check className='absolute top-3 right-3 text-primary h-5 w-5' />
-                      )}
                     </button>
                   );
                 })}
