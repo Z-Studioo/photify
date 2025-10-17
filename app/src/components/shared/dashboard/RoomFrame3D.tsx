@@ -106,7 +106,6 @@ const RoomFrame3D = ({
           ]}
           position={[0, 0, -frameDepth / 2]}
         >
-          <boxGeometry args={[2, 1.5, frameDepth]} />
           <meshStandardMaterial
             color={isHovered ? '#404040' : '#2c2c2c'}
             roughness={0.3}
