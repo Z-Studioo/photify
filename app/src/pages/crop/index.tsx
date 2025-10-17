@@ -1,9 +1,9 @@
 import { useNavigate } from 'react-router';
-import CropRatioSelector from '@/components/shared/crop/CropRatioSelector';
-import CropImage from '@/components/shared/crop/CropImage';
+import ImageCropper from '@/components/shared/common/ImageCropper';
 import { Button } from '@/components/ui/button';
 import { Check } from 'lucide-react';
 import { useUpload } from '@/context/UploadContext';
+import CropPanel from '@/components/shared/crop/CropPanel';
 
 export default function CropPage() {
   const navigate = useNavigate();
@@ -20,14 +20,14 @@ export default function CropPage() {
       {/* Left - Cropper */}
       <div className='flex-1 flex items-center justify-center p-4 md:p-8 bg-white/80 backdrop-blur-sm'>
         <div className='w-full max-w-[90%] max-h-[90vh] flex items-center justify-center'>
-          <CropImage />
+          <ImageCropper />
         </div>
       </div>
 
       {/* Right - Ratio / Size Panel */}
       <div className='w-full md:w-[380px] bg-white h-full flex flex-col border-t md:border-t-0 md:border-l'>
         <div className='flex-1 overflow-y-auto p-4 md:p-6'>
-          <CropRatioSelector />
+          <CropPanel />
         </div>
 
         {/* Apply Button */}

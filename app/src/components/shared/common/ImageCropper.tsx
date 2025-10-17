@@ -1,8 +1,7 @@
 import { useUpload } from '@/context/UploadContext';
 import { ImageCrop, ImageCropContent } from '@/components/ui/crop';
-import { useMemo } from 'react';
 
-export default function CropImageInstant() {
+export default function ImageCropper() {
   const { file, selectedRatio, setPendingFile, setPendingPreview } =
     useUpload();
 
@@ -18,18 +17,11 @@ export default function CropImageInstant() {
       })()
     : 1;
 
-  // Calculate aspect ratio in Tailwind-friendly format
-  const aspectClass = useMemo(() => {
-    if (!selectedRatio) return 'aspect-square';
-    const parts = selectedRatio.split(':');
-    if (parts.length === 2) return `aspect-[${parts[0]}/${parts[1]}]`;
-    return 'aspect-square';
-  }, [selectedRatio]);
 
   return (
     <div className='flex flex-col items-center justify-center w-full h-full px-2 md:px-0 overflow-hidden gap-4'>
       <div
-        className={`w-[400px] max-w-full ${aspectClass} bg-app-muted border border-primary flex items-center justify-center`}
+        className={`w-[400px] max-w-full bg-app-muted border border-primary flex items-center justify-center`}
       >
         <ImageCrop
           key={aspect}

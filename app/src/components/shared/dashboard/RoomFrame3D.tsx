@@ -1,9 +1,13 @@
 'use client';
 import { Canvas } from '@react-three/fiber';
 import { OrbitControls } from '@react-three/drei';
-import { Suspense, useRef, useState, useEffect } from 'react';
+import { Suspense, useRef, useState, useEffect, useMemo } from 'react';
 import * as THREE from 'three';
-import { useUpload, type CanvasShape } from '@/context/UploadContext';
+import {
+  useUpload,
+  type CanvasShape,
+  type SizeData,
+} from '@/context/UploadContext';
 
 interface RoomFrame3DProps {
   onInteraction: () => void;
@@ -14,14 +18,28 @@ const RoomFrame3D = ({
   imageUrl,
   shape,
   onInteraction,
+  selectedSize,
 }: {
   imageUrl: string;
   shape: CanvasShape;
   onInteraction: () => void;
+  selectedSize: SizeData;
 }) => {
   const frameRef = useRef<THREE.Group>(null);
   const [texture, setTexture] = useState<THREE.Texture | null>(null);
   const [isHovered, setIsHovered] = useState(false);
+
+  const BASE_SIZE = 12;
+  const HOVER_FACTOR = 1.1;
+
+  const scaleX = useMemo(
+    () => selectedSize.width / BASE_SIZE,
+    [selectedSize.width]
+  );
+  const scaleY = useMemo(
+    () => selectedSize.height / BASE_SIZE,
+    [selectedSize.height]
+  );
 
   useEffect(() => {
     if (imageUrl) {
@@ -43,54 +61,65 @@ const RoomFrame3D = ({
     }
   }, [imageUrl]);
 
-  // Create geometry based on shape with proper scaling
-  const createGeometry = () => {
+  // --- Image geometry (photo plane / shape) ---
+  const geometry = useMemo(() => {
+    let geo: THREE.BufferGeometry;
+
     switch (shape) {
       case 'round':
-        return new THREE.CircleGeometry(0.9, 64);
+        geo = new THREE.CircleGeometry(0.9, 64);
+        break;
       case 'hexagon':
-        return new THREE.CircleGeometry(0.9, 6);
+        geo = new THREE.CircleGeometry(0.9, 6);
+        break;
       case 'octagon':
-        return new THREE.CircleGeometry(0.9, 8);
+        geo = new THREE.CircleGeometry(0.9, 8);
+        break;
       case 'dodecagon':
-        return new THREE.CircleGeometry(0.9, 12);
-      default: // rectangle
-        return new THREE.PlaneGeometry(1.8, 1.35);
+        geo = new THREE.CircleGeometry(0.9, 12);
+        break;
+      default:
+        // rectangle
+        geo = new THREE.PlaneGeometry(1.8, 1.35);
     }
-  };
+    return geo;
+  }, [shape]);
 
-  // Simplified frame for room view
-  const createFrameGeometry = () => {
+  // --- Frame geometry (3D physical border) ---
+  const frameGeometry = useMemo(() => {
     const frameDepth = 0.6;
 
     if (shape === 'rectangle') {
       return (
-        <group>
-          <mesh position={[0, 0, -frameDepth / 2]}>
-            {/* <boxGeometry args={[2.0, 1.55, frameDepth]} /> */}
-            <meshStandardMaterial
-              color={isHovered ? '#404040' : '#2c2c2c'}
-              roughness={0.3}
-              metalness={0.7}
-            />
-          </mesh>
-        </group>
+        <mesh
+          scale={[
+            scaleX * (isHovered ? HOVER_FACTOR : 1),
+            scaleY * (isHovered ? HOVER_FACTOR : 1),
+            1,
+          ]}
+          position={[0, 0, -frameDepth / 2]}
+        >
+          <boxGeometry args={[2, 1.5, frameDepth]} />
+          <meshStandardMaterial
+            color={isHovered ? '#404040' : '#2c2c2c'}
+            roughness={0.3}
+            metalness={0.7}
+          />
+        </mesh>
       );
     } else {
       return (
-        <group>
-          <mesh position={[0, 0, -frameDepth / 2]}>
-            <cylinderGeometry args={[1.15, 1.15, frameDepth, 64]} />
-            <meshStandardMaterial
-              color={isHovered ? '#404040' : '#2c2c2c'}
-              roughness={0.3}
-              metalness={0.7}
-            />
-          </mesh>
-        </group>
+        <mesh position={[0, 0, -frameDepth / 2]}>
+          <cylinderGeometry args={[1.15, 1.15, frameDepth, 64]} />
+          <meshStandardMaterial
+            color={isHovered ? '#404040' : '#2c2c2c'}
+            roughness={0.3}
+            metalness={0.7}
+          />
+        </mesh>
       );
     }
-  };
+  }, [shape, isHovered, scaleX, scaleY]);
 
   return (
     <group
@@ -102,10 +131,9 @@ const RoomFrame3D = ({
       onPointerEnter={() => setIsHovered(true)}
       onPointerLeave={() => setIsHovered(false)}
       onClick={onInteraction}
-      scale={isHovered ? 1.2 : 1.15}
     >
       {/* Frame */}
-      {createFrameGeometry()}
+      {frameGeometry}
 
       {/* Acrylic glass effect */}
       <mesh position={[0, 0, 0.02]}>
@@ -128,8 +156,17 @@ const RoomFrame3D = ({
 
       {/* Photo/Image */}
       {texture && (
-        <mesh position={[0, 0, 0.01]} rotation={[0, 0, 0]} castShadow>
-          <primitive object={createGeometry()} />
+        <mesh
+          scale={[
+            scaleX * (isHovered ? HOVER_FACTOR : 1),
+            scaleY * (isHovered ? HOVER_FACTOR : 1),
+            1,
+          ]}
+          position={[0, 0, 0.01]}
+          rotation={[0, 0, 0]}
+          castShadow
+        >
+          <primitive object={geometry} />
           <meshStandardMaterial
             map={texture}
             transparent={shape !== 'rectangle'}
@@ -146,7 +183,7 @@ const RoomFrame3D = ({
 };
 
 const RoomFrame3DCanvas = ({ onInteraction }: RoomFrame3DProps) => {
-  const { preview, shape } = useUpload();
+  const { preview, shape, selectedSize } = useUpload();
 
   return (
     <div className='absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-80 h-60 cursor-pointer'>
@@ -168,11 +205,12 @@ const RoomFrame3DCanvas = ({ onInteraction }: RoomFrame3DProps) => {
           <pointLight position={[2, 2, 2]} intensity={0.4} />
 
           {/* Frame with image */}
-          {preview && (
+          {preview && selectedSize && (
             <RoomFrame3D
               imageUrl={preview}
               shape={shape}
               onInteraction={onInteraction}
+              selectedSize={selectedSize}
             />
           )}
 

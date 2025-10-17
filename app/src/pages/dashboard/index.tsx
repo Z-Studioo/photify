@@ -24,7 +24,7 @@ import ThreeDCanvas from '@/components/shared/dashboard/ThreeDCanvas';
 import RoomFrame3D from '@/components/shared/dashboard/RoomFrame3D';
 import { useUpload } from '@/context/UploadContext';
 import { useView } from '@/context/ViewContext';
-import { ImageCropper } from '@/components/shared/dashboard/ImageCropper';
+import ImageCropper from '@/components/shared/common/ImageCropper';
 
 interface MenuFeature {
   id: number;
@@ -700,6 +700,8 @@ const Dashboard: React.FC = () => {
                       className='px-6 py-2 rounded-none whitespace-nowrap transition-all duration-200'
                       onClick={() => {
                         applyPendingChanges();
+                        
+                        if (selectedView === 'crop') setSelectedView('room');
                         setSelectedFeature(null);
                       }}
                     >

@@ -21,11 +21,11 @@ interface InchData {
   actual_price: number;
 }
 
-interface CropRatioSelectorProps {
+interface CropPanelProps {
   onSelectionChange?: (ratio: string, size: InchData | null) => void;
 }
 
-const CropRatioSelector: React.FC<CropRatioSelectorProps> = ({
+const CropPanel: React.FC<CropPanelProps> = ({
   onSelectionChange,
 }) => {
   const { selectedRatio, setSelectedRatio, selectedSize, setSelectedSize } =
@@ -265,4 +265,4 @@ const CropRatioSelector: React.FC<CropRatioSelectorProps> = ({
   );
 };
 
-export default CropRatioSelector;
+export default CropPanel;

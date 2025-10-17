@@ -27,6 +27,7 @@ import ReactCrop, {
 import { cn } from '@/lib/utils';
 
 import 'react-image-crop/dist/ReactCrop.css';
+import { useDebounceEffect } from '@/hooks/useDebounceEffect';
 
 const centerAspectCrop = (
   mediaWidth: number,
@@ -166,6 +167,10 @@ export const ImageCrop = ({
   const [crop, setCrop] = useState<PercentCrop>();
   const [completedCrop, setCompletedCrop] = useState<PixelCrop | null>(null);
   const [initialCrop, setInitialCrop] = useState<PercentCrop>();
+  const [debouncedCrop, setDebouncedCrop] = useState<{
+    pixel?: PixelCrop;
+    percent?: PercentCrop;
+  }>({});
 
   useEffect(() => {
     const reader = new FileReader();
@@ -174,6 +179,30 @@ export const ImageCrop = ({
     );
     reader.readAsDataURL(file);
   }, [file]);
+
+  // Debounce the expensive image generation
+  useDebounceEffect(
+    () => {
+      if (!generateImageOnChange || !imgRef.current || !debouncedCrop.pixel)
+        return;
+
+      (async () => {
+        try {
+          const croppedImage = await getCroppedPngImage(
+            imgRef.current!,
+            1,
+            debouncedCrop.pixel!,
+            maxImageSize
+          );
+          onChangeCustom?.(croppedImage);
+        } catch (err) {
+          console.error('Failed to generate image on change:', err);
+        }
+      })();
+    },
+    100,
+    [debouncedCrop]
+  );
 
   const onImageLoad = useCallback(
     (e: SyntheticEvent<HTMLImageElement>) => {
@@ -185,25 +214,13 @@ export const ImageCrop = ({
     [reactCropProps.aspect]
   );
 
-  const handleChange = async (
-    pixelCrop: PixelCrop,
-    percentCrop: PercentCrop
-  ) => {
+  const handleChange = (pixelCrop: PixelCrop, percentCrop: PercentCrop) => {
     setCrop(percentCrop);
     onChange?.(pixelCrop, percentCrop);
 
-    if (generateImageOnChange && imgRef.current) {
-      try {
-        const croppedImage = await getCroppedPngImage(
-          imgRef.current,
-          1,
-          pixelCrop,
-          maxImageSize
-        );
-        onChangeCustom?.(croppedImage);
-      } catch (err) {
-        console.error('Failed to generate image on change:', err);
-      }
+    // store latest crop for debounce
+    if (generateImageOnChange) {
+      setDebouncedCrop({ pixel: pixelCrop, percent: percentCrop });
     }
   };
 

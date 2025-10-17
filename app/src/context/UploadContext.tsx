@@ -67,7 +67,11 @@ export const UploadProvider = ({ children }: { children: ReactNode }) => {
   };
 
   // Helper function to convert base64 to File
-  const base64ToFile = (base64Data: string, fileName: string, fileType: string): File => {
+  const base64ToFile = (
+    base64Data: string,
+    fileName: string,
+    fileType: string
+  ): File => {
     const byteCharacters = atob(base64Data.split(',')[1]);
     const byteNumbers = new Array(byteCharacters.length);
     for (let i = 0; i < byteCharacters.length; i++) {
@@ -78,27 +82,37 @@ export const UploadProvider = ({ children }: { children: ReactNode }) => {
   };
 
   // Enhanced setFile function that persists to localStorage
-  const setFileWithPersistence = async (f: File | null) => {
+  const setFileWithPersistence = async (f: File | null, p: string | null) => {
     setFile(f);
-    
-    if (f) {
-      try {
+
+    // If both file and pending preview are null, reset everything
+    if (!f && !p) {
+      localStorage.removeItem('photify_uploaded_image');
+      setPreview(null);
+      return;
+    }
+
+    try {
+      if (p) {
+        setPreview(p);
+      } else if (f) {
+        // 🟣 Convert File → Base64 and persist
         const base64Data = await fileToBase64(f);
         const imageData: StoredImageData = {
           fileName: f.name,
           fileType: f.type,
           fileSize: f.size,
           base64Data,
-          preview: base64Data
+          preview: base64Data,
         };
-        localStorage.setItem('photify_uploaded_image', JSON.stringify(imageData));
+        localStorage.setItem(
+          'photify_uploaded_image',
+          JSON.stringify(imageData)
+        );
         setPreview(base64Data);
-      } catch (error) {
-        console.error('Error storing image:', error);
       }
-    } else {
-      localStorage.removeItem('photify_uploaded_image');
-      setPreview(null);
+    } catch (error) {
+      console.error('Error storing image:', error);
     }
   };
 
@@ -124,7 +138,7 @@ export const UploadProvider = ({ children }: { children: ReactNode }) => {
 
   const applyPendingChanges = () => {
     if (pendingFile && pendingPreview) {
-      setFileWithPersistence(pendingFile);
+      setFileWithPersistence(pendingFile, pendingPreview);
       setPendingFile(null);
       setPendingPreview(null);
     }
