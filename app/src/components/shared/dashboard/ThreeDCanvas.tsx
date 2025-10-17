@@ -6,6 +6,7 @@ import { OrbitControls, ContactShadows } from '@react-three/drei';
 import { Suspense, useRef, useState, useEffect, useMemo } from 'react';
 import * as THREE from 'three';
 import { useUpload, type CanvasShape } from '@/context/UploadContext';
+import { useEdge } from '@/context/EdgeContext';
 import type { OrbitControls as OrbitControlsImpl } from 'three-stdlib';
 
 interface ThreeDCanvasProps {
@@ -16,9 +17,11 @@ interface ThreeDCanvasProps {
 const Frame3D = ({
   imageUrl,
   shape,
+  edgeType,
 }: {
   imageUrl: string;
   shape: CanvasShape;
+  edgeType: 'wrapped' | 'mirrored';
 }) => {
   const [texture, setTexture] = useState<THREE.Texture | null>(null);
 
@@ -26,8 +29,14 @@ const Frame3D = ({
     if (imageUrl) {
       const loader = new THREE.TextureLoader();
       loader.load(imageUrl, loadedTexture => {
-        loadedTexture.wrapS = THREE.ClampToEdgeWrapping;
-        loadedTexture.wrapT = THREE.ClampToEdgeWrapping;
+        if (edgeType === 'mirrored') {
+          loadedTexture.wrapS = THREE.MirroredRepeatWrapping;
+          loadedTexture.wrapT = THREE.MirroredRepeatWrapping;
+        } else {
+          // Wrapped edges clamp to edge - extends the edge pixels
+          loadedTexture.wrapS = THREE.ClampToEdgeWrapping;
+          loadedTexture.wrapT = THREE.ClampToEdgeWrapping;
+        }
         loadedTexture.minFilter = THREE.LinearFilter;
         loadedTexture.magFilter = THREE.LinearFilter;
         loadedTexture.generateMipmaps = false;
@@ -39,7 +48,7 @@ const Frame3D = ({
         setTexture(loadedTexture);
       });
     }
-  }, [imageUrl]);
+  }, [imageUrl, edgeType]);
 
   const frameDepth = 0.06;
 
@@ -56,34 +65,70 @@ const Frame3D = ({
     const wrapX = frameDepth / frameWidth;
     const wrapY = frameDepth / frameHeight;
 
-    // Tiny UV bleed to hide seams
-    const bleed = 0.002;
+    // For better visibility, increase the wrap amount
+    const sideWrapX = wrapX * 3; // Make sides more visible
+    const sideWrapY = wrapY * 3;
 
-    // Right Face (0–3)
-    uv.setXY(0, 1, 1);
-    uv.setXY(1, 1 - wrapX - bleed, 1);
-    uv.setXY(2, 1, 0);
-    uv.setXY(3, 1 - wrapX - bleed, 0);
+    if (edgeType === 'mirrored') {
+      // MIRRORED EDGES - Uses negative/beyond-1 UVs with MirroredRepeatWrapping
+      // This creates a mirror/reflection effect on the sides
+      
+      // Right Face (0–3) - extend beyond 1.0 to trigger mirroring
+      uv.setXY(0, 1 + sideWrapX, 1);     // outer edge (will mirror back)
+      uv.setXY(1, 1, 1);                 // at the edge
+      uv.setXY(2, 1 + sideWrapX, 0);     // outer edge (will mirror back)
+      uv.setXY(3, 1, 0);                 // at the edge
 
-    // Left Face (4–7)
-    uv.setXY(4, wrapX + bleed, 1);
-    uv.setXY(5, 0, 1);
-    uv.setXY(6, wrapX + bleed, 0);
-    uv.setXY(7, 0, 0);
+      // Left Face (4–7) - extend below 0.0 to trigger mirroring
+      uv.setXY(4, 0, 1);                 // at the edge
+      uv.setXY(5, 0 - sideWrapX, 1);     // outer edge (will mirror back)
+      uv.setXY(6, 0, 0);                 // at the edge
+      uv.setXY(7, 0 - sideWrapX, 0);     // outer edge (will mirror back)
 
-    // Top Face (8–11)
-    uv.setXY(8, 0, 1 - wrapY - bleed);
-    uv.setXY(9, 1, 1 - wrapY - bleed);
-    uv.setXY(10, 0, 1);
-    uv.setXY(11, 1, 1);
+      // Top Face (8–11) - extend beyond 1.0 to trigger mirroring
+      uv.setXY(8, 0, 1);                 // at the edge
+      uv.setXY(9, 1, 1);                 // at the edge
+      uv.setXY(10, 0, 1 + sideWrapY);    // outer edge (will mirror back)
+      uv.setXY(11, 1, 1 + sideWrapY);    // outer edge (will mirror back)
 
-    // Bottom Face (12–15)
-    uv.setXY(12, 0, 0);
-    uv.setXY(13, 1, 0);
-    uv.setXY(14, 0, wrapY + bleed);
-    uv.setXY(15, 1, wrapY + bleed);
+      // Bottom Face (12–15) - extend below 0.0 to trigger mirroring
+      uv.setXY(12, 0, 0 - sideWrapY);    // outer edge (will mirror back)
+      uv.setXY(13, 1, 0 - sideWrapY);    // outer edge (will mirror back)
+      uv.setXY(14, 0, 0);                // at the edge
+      uv.setXY(15, 1, 0);                // at the edge
+    } else {
+      // WRAPPED EDGES - Takes a very thin slice from the edge of the image
+      // Uses ClampToEdgeWrapping to smoothly extend the edge
+      
+      // Use a much smaller wrap amount for smoother appearance
+      const edgeSlice = 0.005; // Very thin slice from edge (0.5% of image)
+      
+      // Right Face (0–3) - thin slice from right edge
+      uv.setXY(0, 1, 1);                        // outer edge
+      uv.setXY(1, 1 - edgeSlice, 1);            // inner edge (very close to edge)
+      uv.setXY(2, 1, 0);                        // outer edge
+      uv.setXY(3, 1 - edgeSlice, 0);            // inner edge (very close to edge)
 
-    // Front Face (16–19)
+      // Left Face (4–7) - thin slice from left edge
+      uv.setXY(4, edgeSlice, 1);                // inner edge (very close to edge)
+      uv.setXY(5, 0, 1);                        // outer edge
+      uv.setXY(6, edgeSlice, 0);                // inner edge (very close to edge)
+      uv.setXY(7, 0, 0);                        // outer edge
+
+      // Top Face (8–11) - thin slice from top edge
+      uv.setXY(8, 0, 1 - edgeSlice);            // inner edge (very close to edge)
+      uv.setXY(9, 1, 1 - edgeSlice);            // inner edge (very close to edge)
+      uv.setXY(10, 0, 1);                       // outer edge
+      uv.setXY(11, 1, 1);                       // outer edge
+
+      // Bottom Face (12–15) - thin slice from bottom edge
+      uv.setXY(12, 0, 0);                       // outer edge
+      uv.setXY(13, 1, 0);                       // outer edge
+      uv.setXY(14, 0, edgeSlice);               // inner edge (very close to edge)
+      uv.setXY(15, 1, edgeSlice);               // inner edge (very close to edge)
+    }
+
+    // Front Face (16–19) - always the same
     uv.setXY(16, 0, 1);
     uv.setXY(17, 1, 1);
     uv.setXY(18, 0, 0);
@@ -91,10 +136,8 @@ const Frame3D = ({
 
     // Back Face (20–23) -> stays default solid color
 
-    // --- Alignment Fix Ends Here ---
-
     return box;
-  }, [shape]);
+  }, [shape, edgeType]);
 
   if (!texture) return null;
 
@@ -201,6 +244,7 @@ const CameraControls = ({
 
 const ThreeDCanvas = ({ isVisible }: ThreeDCanvasProps) => {
   const { preview, shape } = useUpload();
+  const { edgeType } = useEdge();
   const controlsRef = useRef<OrbitControlsImpl | null>(null);
   const [isAutoRotating, setIsAutoRotating] = useState(false);
 
@@ -318,7 +362,7 @@ const ThreeDCanvas = ({ isVisible }: ThreeDCanvasProps) => {
           />
           <directionalLight position={[-4, 6, -4]} intensity={1.5} />
 
-          {preview && <Frame3D imageUrl={preview} shape={shape} />}
+          {preview && <Frame3D imageUrl={preview} shape={shape} edgeType={edgeType} />}
 
           <ContactShadows
             rotation-x={Math.PI / 2}

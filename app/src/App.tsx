@@ -2,6 +2,7 @@ import React from 'react';
 import { FeatureProvider } from '@/context/dashboard/FeatureContext';
 import { UploadProvider } from '@/context/UploadContext';
 import { ViewProvider } from '@/context/ViewContext';
+import { EdgeProvider } from '@/context/EdgeContext';
 import Dashboard from '@/pages/dashboard/index';
 import UploadImage from './pages';
 import { BrowserRouter, Route, Routes } from 'react-router';
@@ -17,7 +18,9 @@ const App: React.FC = () => {
             element={
               <FeatureProvider>
                 <ViewProvider>
-                  <Dashboard />
+                  <EdgeProvider>
+                    <Dashboard />
+                  </EdgeProvider>
                 </ViewProvider>
               </FeatureProvider>
             }

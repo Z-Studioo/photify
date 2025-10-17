@@ -8,6 +8,7 @@ import {
   type CanvasShape,
   type SizeData,
 } from '@/context/UploadContext';
+import { useEdge } from '@/context/EdgeContext';
 
 interface RoomFrame3DProps {
   onInteraction: () => void;
@@ -28,6 +29,7 @@ const RoomFrame3D = ({
   const frameRef = useRef<THREE.Group>(null);
   const [texture, setTexture] = useState<THREE.Texture | null>(null);
   const [isHovered, setIsHovered] = useState(false);
+  const { edgeType } = useEdge();
 
   const BASE_SIZE = 12;
   const HOVER_FACTOR = 1.1;
@@ -46,8 +48,13 @@ const RoomFrame3D = ({
       const loader = new THREE.TextureLoader();
       loader.load(imageUrl, loadedTexture => {
         loadedTexture.flipY = true;
-        loadedTexture.wrapS = THREE.ClampToEdgeWrapping;
-        loadedTexture.wrapT = THREE.ClampToEdgeWrapping;
+        if (edgeType === 'mirrored') {
+          loadedTexture.wrapS = THREE.MirroredRepeatWrapping;
+          loadedTexture.wrapT = THREE.MirroredRepeatWrapping;
+        } else {
+          loadedTexture.wrapS = THREE.ClampToEdgeWrapping;
+          loadedTexture.wrapT = THREE.ClampToEdgeWrapping;
+        }
         loadedTexture.minFilter = THREE.LinearFilter;
         loadedTexture.magFilter = THREE.LinearFilter;
         loadedTexture.generateMipmaps = false;

@@ -25,6 +25,7 @@ import RoomFrame3D from '@/components/shared/dashboard/RoomFrame3D';
 import { useUpload } from '@/context/UploadContext';
 import { useView } from '@/context/ViewContext';
 import ImageCropper from '@/components/shared/common/ImageCropper';
+import { useEdge } from '@/context/EdgeContext';
 
 interface MenuFeature {
   id: number;
@@ -82,6 +83,7 @@ const Dashboard: React.FC = () => {
     selectedSize,
   } = useUpload();
   const { selectedView, setSelectedView } = useView();
+  const { edgeType } = useEdge();
   const pricePerItem: number = selectedSize?.sell_price || 100;
 
   const wallImages = [Wall, Wall1, Wall2];
@@ -114,6 +116,12 @@ const Dashboard: React.FC = () => {
         subtitle: selectedSize
           ? `${selectedSize.width}" × ${selectedSize.height}" (${selectedRatio})`
           : '24 by 16 (External: 24 by 16)',
+      };
+    }
+    if (feature.name === 'SIDE APPEARANCE') {
+      return {
+        ...feature,
+        subtitle: edgeType === 'wrapped' ? 'Wrapped edges' : 'Mirrored edges',
       };
     }
     return feature;
