@@ -20,11 +20,13 @@ const RoomFrame3D = ({
   shape,
   onInteraction,
   selectedSize,
+  selectedRatio,
 }: {
   imageUrl: string;
   shape: CanvasShape;
   onInteraction: () => void;
   selectedSize: SizeData;
+  selectedRatio: string | null;
 }) => {
   const frameRef = useRef<THREE.Group>(null);
   const [texture, setTexture] = useState<THREE.Texture | null>(null);
@@ -189,7 +191,7 @@ const RoomFrame3D = ({
 };
 
 const RoomFrame3DCanvas = ({ onInteraction }: RoomFrame3DProps) => {
-  const { preview, shape, selectedSize } = useUpload();
+  const { preview, shape, selectedSize, selectedRatio } = useUpload();
 
   return (
     <div className='absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-80 h-60 cursor-pointer'>
@@ -217,6 +219,7 @@ const RoomFrame3DCanvas = ({ onInteraction }: RoomFrame3DProps) => {
               shape={shape}
               onInteraction={onInteraction}
               selectedSize={selectedSize}
+              selectedRatio={selectedRatio}
             />
           )}
 

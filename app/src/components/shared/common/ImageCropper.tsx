@@ -1,7 +1,11 @@
 import { useUpload } from '@/context/UploadContext';
 import { ImageCrop, ImageCropContent } from '@/components/ui/crop';
 
-export default function ImageCropper() {
+interface ImageCropperProps {
+  isVisible?: boolean;
+}
+
+export default function ImageCropper({ isVisible = true }: ImageCropperProps) {
   const { file, selectedRatio, setPendingFile, setPendingPreview } =
     useUpload();
 
@@ -17,11 +21,11 @@ export default function ImageCropper() {
       })()
     : 1;
 
-
+  if (!isVisible) return null;
   return (
     <div className='flex flex-col items-center justify-center w-full h-full px-2 md:px-0 overflow-hidden gap-4'>
       <div
-        className={`w-[400px] max-w-full bg-app-muted border border-primary flex items-center justify-center`}
+        className={`max-w-full bg-app-muted border border-primary flex items-center justify-center`}
       >
         <ImageCrop
           key={aspect}
@@ -32,6 +36,7 @@ export default function ImageCropper() {
             setPendingFile(file);
             setPendingPreview(croppedImage);
           }}
+          className='absolute inset-0 w-full h-full'
         >
           <ImageCropContent className='w-full h-full object-contain rounded-xl' />
         </ImageCrop>
