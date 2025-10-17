@@ -18,7 +18,7 @@ const FeaturePanel = () => {
         return <RatioSizePanel />;
       case 'ROUND FORMATS AND SHAPES':
         return <ShapeSelector />;
-      case 'ACRYLIC GLASS':
+      case 'SIDE APPEARANCE':
         return <EdgeSelector />;
       default:
         return (

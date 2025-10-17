@@ -117,7 +117,7 @@ const Dashboard: React.FC = () => {
           : '24 by 16 (External: 24 by 16)',
       };
     }
-    if (feature.name === 'ACRYLIC GLASS') {
+    if (feature.name === 'SIDE APPEARANCE') {
       return {
         ...feature,
         subtitle: edgeType === 'wrapped' ? 'Wrapped edges' : 'Mirrored edges',
