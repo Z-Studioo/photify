@@ -45,6 +45,26 @@ const RoomFrame3D = ({
         } else {
           (loadedTexture as any).encoding = THREE.SRGBColorSpace;
         }
+
+        // Center the texture based on aspect ratio (cover behavior)
+        const img = loadedTexture.image;
+        if (img && img.width && img.height) {
+          const frameAspect = 1.8 / 1.35; // width / height
+          const imageAspect = img.width / img.height;
+
+          if (imageAspect > frameAspect) {
+            // Image is wider - fit to height, crop width
+            const scale = frameAspect / imageAspect;
+            loadedTexture.repeat.set(scale, 1);
+            loadedTexture.offset.set((1 - scale) / 2, 0);
+          } else {
+            // Image is taller - fit to width, crop height
+            const scale = imageAspect / frameAspect;
+            loadedTexture.repeat.set(1, scale);
+            loadedTexture.offset.set(0, (1 - scale) / 2);
+          }
+        }
+
         setTexture(loadedTexture);
       });
     }
@@ -109,7 +129,8 @@ const RoomFrame3D = ({
       onPointerEnter={() => setIsHovered(true)}
       onPointerLeave={() => setIsHovered(false)}
       onClick={onInteraction}
-      scale={isHovered ? 1.2 : 1.15}
+      // scale={isHovered ? 1.2 : 1.15}
+      scale={isHovered ? 2 : 1.8}
     >
       {/* Frame */}
       {createFrameGeometry()}
@@ -157,6 +178,7 @@ const RoomFrame3DCanvas = ({ onInteraction }: RoomFrame3DProps) => {
 
   return (
     <div className='absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-80 h-60 cursor-pointer'>
+      
       <Canvas
         shadows
         camera={{ position: [0, 0, 4], fov: 50 }}

@@ -296,7 +296,7 @@ const Dashboard: React.FC = () => {
             {/* Add Image Button or Placeholder */}
             <motion.button
               onClick={handleAddImageClick}
-              className={`flex flex-col items-center justify-center px-2 py-2 md:px-4 md:py-3 bg-[var(--primary)] border border-gray-300 text-white hover:transition-all cursor-pointer shadow-sm ${
+              className={`flex flex-col items-center justify-center px-2 py-2 md:px-2 md:py-2 bg-[var(--primary)] border border-gray-300 text-white hover:transition-all cursor-pointer shadow-sm ${
                 selectedView !== 'room' ? 'invisible' : ''
               }`}
               type='button'
@@ -304,7 +304,7 @@ const Dashboard: React.FC = () => {
               whileTap={{ scale: 0.98 }}
             >
               <ImagePlus className='h-4 w-4 md:h-5 md:w-5 mb-1' />
-              <span className='text-md font-medium hidden sm:block'>
+              <span className='text-sm font-medium hidden sm:block'>
                 Add Image
               </span>
             </motion.button>
