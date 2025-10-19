@@ -1,5 +1,5 @@
 import type React from 'react';
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import {
   Box,
   Eye,
@@ -7,6 +7,7 @@ import {
   PlusCircle,
   MinusCircle,
   ChevronLeft,
+  ImagePlus,
 } from 'lucide-react';
 import { motion, AnimatePresence, type Variants } from 'motion/react';
 import { Button } from '@/components/ui/button';
@@ -42,6 +43,8 @@ const Dashboard: React.FC = () => {
   const [slideDirection, setSlideDirection] = useState<'left' | 'right'>(
     'right'
   );
+  const [customWalls, setCustomWalls] = useState<string[]>([]);
+  const wallImageInputRef = useRef<HTMLInputElement>(null);
   const { selectedFeature, setSelectedFeature } = useFeature();
 
   // Animation variants
@@ -74,6 +77,7 @@ const Dashboard: React.FC = () => {
     hover: { scale: 1.02 },
     tap: { scale: 0.98 },
   };
+
   const {
     shape,
     setFile,
@@ -86,7 +90,7 @@ const Dashboard: React.FC = () => {
   const { edgeType } = useEdge();
   const pricePerItem: number = selectedSize?.sell_price || 100;
 
-  const wallImages = [Wall, Wall1, Wall2];
+  const wallImages = [...[Wall, Wall1, Wall2], ...customWalls];
 
   const handlePreviousWall = () => {
     setSlideDirection('left');
@@ -142,6 +146,21 @@ const Dashboard: React.FC = () => {
       setFile(f);
       setPreview(URL.createObjectURL(f));
     }
+  };
+
+  const handleWallImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const f = e.target.files?.[0];
+    if (f) {
+      const imageUrl = URL.createObjectURL(f);
+      setCustomWalls(prev => [...prev, imageUrl]);
+      // Set to the newly added wall
+      setCurrentWallIndex(wallImages.length);
+      setSlideDirection('right');
+    }
+  };
+
+  const handleAddImageClick = () => {
+    wallImageInputRef.current?.click();
   };
 
   return (
@@ -368,7 +387,7 @@ const Dashboard: React.FC = () => {
                   paddingBottom: 0,
                 }}
                 transition={{ duration: 0.25, ease: [0.22, 1, 0.36, 1] }}
-                className='flex items-center justify-between p-4 overflow-hidden'
+                className='flex flex-col sm:flex-row items-start sm:items-center justify-between p-4 sm:p-6 overflow-visible min-h-[80px] md:min-h-[auto] w-full'
               >
                 <div className='flex-1 min-w-0'>
                   <motion.h2
@@ -401,6 +420,7 @@ const Dashboard: React.FC = () => {
             }}
             transition={{ duration: 0.25, ease: [0.22, 1, 0.36, 1] }}
           />
+
           {/* Features list + Feature Panel */}
           <motion.div
             className='relative md:overflow-hidden flex-1'
@@ -409,13 +429,8 @@ const Dashboard: React.FC = () => {
           >
             <motion.div
               className='md:absolute md:inset-0'
-              animate={{
-                x: selectedFeature ? '-100%' : '0%',
-              }}
-              transition={{
-                duration: 0.3,
-                ease: [0.22, 1, 0.36, 1],
-              }}
+              animate={{ x: selectedFeature ? '-100%' : '0%' }}
+              transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
             >
               <ScrollArea className='md:h-full'>
                 <motion.div
@@ -447,48 +462,34 @@ const Dashboard: React.FC = () => {
                           damping: 25,
                         }}
                       >
-                        {/* Gradient Hover Overlay */}
                         <motion.div
                           className='absolute inset-0 opacity-0 pointer-events-none'
                           style={{
                             background:
                               'linear-gradient(90deg, rgba(var(--primary-rgb, 59, 130, 246), 0.08) 0%, rgba(var(--primary-rgb, 59, 130, 246), 0.03) 50%, transparent 100%)',
                           }}
-                          whileHover={{
-                            opacity: 1,
-                          }}
+                          whileHover={{ opacity: 1 }}
                           transition={{
                             duration: 0.3,
                             ease: [0.22, 1, 0.36, 1],
                           }}
                         />
-
-                        {/* Subtle Left Border Animation */}
                         <motion.div
                           className='absolute left-0 top-0 bottom-0 w-1 bg-primary opacity-0 pointer-events-none'
-                          whileHover={{
-                            opacity: 1,
-                          }}
+                          whileHover={{ opacity: 1 }}
                           transition={{
                             duration: 0.3,
                             ease: [0.22, 1, 0.36, 1],
                           }}
                         />
-
-                        {/* Radial Glow Effect */}
                         <motion.div
                           className='absolute inset-0 opacity-0 pointer-events-none'
                           style={{
                             background:
                               'radial-gradient(600px circle at 20% 50%, rgba(var(--primary-rgb, 59, 130, 246), 0.04), transparent 60%)',
                           }}
-                          whileHover={{
-                            opacity: 1,
-                          }}
-                          transition={{
-                            duration: 0.4,
-                            ease: 'easeOut',
-                          }}
+                          whileHover={{ opacity: 1 }}
+                          transition={{ duration: 0.4, ease: 'easeOut' }}
                         />
                         <div className='flex items-center space-x-2 flex-1 min-w-0 relative z-10'>
                           <motion.div
@@ -571,7 +572,6 @@ const Dashboard: React.FC = () => {
           >
             <AnimatePresence mode='wait'>
               {!selectedFeature ? (
-                // Default quantity + Add to Cart
                 <motion.div
                   key='default-actions'
                   initial={{ opacity: 0, y: 20 }}
@@ -653,7 +653,6 @@ const Dashboard: React.FC = () => {
                   </motion.div>
                 </motion.div>
               ) : (
-                // Feature panel open -> Price + Apply Changes in same line
                 <motion.div
                   key='feature-actions'
                   initial={{ opacity: 0, y: 20 }}
@@ -736,6 +735,15 @@ const Dashboard: React.FC = () => {
         accept='image/*'
         className='hidden'
         onChange={handleFileChange}
+      />
+
+      {/* Hidden file input for wall image upload */}
+      <input
+        ref={wallImageInputRef}
+        type='file'
+        accept='image/*'
+        className='hidden'
+        onChange={handleWallImageUpload}
       />
     </div>
   );
