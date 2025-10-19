@@ -91,14 +91,21 @@ const Frame3D = ({
   }, [imageUrl, edgeType]);
 
   const frameDepth = 0.06;
-  const BASE_SIZE = 12;
+  const BASE_SIZE = 15;
 
   // Memoize the geometry so it's only created once
   const geometry = useMemo(() => {
     if (shape !== 'rectangle') return null;
 
-    const frameWidth = selectedSize?.width / BASE_SIZE ?? 1.8;
-    const frameHeight = selectedSize?.height / BASE_SIZE ?? 1.35;
+    const frameWidth =
+      selectedSize?.width && !isNaN(selectedSize.width / BASE_SIZE)
+        ? selectedSize.width / BASE_SIZE
+        : 1.8;
+
+    const frameHeight =
+      selectedSize?.height && !isNaN(selectedSize.height / BASE_SIZE)
+        ? selectedSize.height / BASE_SIZE
+        : 1.35;
     const box = new THREE.BoxGeometry(frameWidth, frameHeight, frameDepth);
     const uv = box.getAttribute('uv');
 

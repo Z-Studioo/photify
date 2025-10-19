@@ -295,78 +295,89 @@ const Dashboard: React.FC = () => {
               <ThreeDCanvas isVisible={selectedView === '3d'} />
             </div>
 
-            {/* Top right view buttons */}
-            <motion.div
-              className='absolute top-0 right-0 flex border border-gray-300 divide-x divide-gray-300 md:top-4 md:right-4'
-              initial={{ opacity: 0, scale: 0.9 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{
-                delay: 0.5,
-                duration: 0.3,
-                ease: [0.22, 1, 0.36, 1],
-              }}
-            >
+            {/* Top overlay buttons */}
+            <div className='absolute top-0 left-0 right-0 flex justify-between items-start md:top-4 md:px-4'>
+              {/* Add Image Button or Placeholder */}
               <motion.button
-                onClick={() => setSelectedView('room')}
-                className={`flex items-center justify-center px-2 py-2 md:px-5 md:py-3 text-xs md:text-sm font-medium rounded-none cursor-pointer transition-all ${
-                  selectedView === 'room'
-                    ? 'bg-primary text-white'
-                    : 'bg-white text-gray-700 hover:bg-gray-100'
+                onClick={handleAddImageClick}
+                className={`flex flex-col items-center justify-center px-2 py-2 md:px-2 md:py-2 bg-[var(--primary)] border border-gray-300 text-white hover:transition-all cursor-pointer shadow-sm ${
+                  selectedView !== 'room' ? 'invisible' : ''
                 }`}
                 type='button'
                 whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.98 }}
-                animate={{
-                  backgroundColor:
-                    selectedView === 'room' ? 'var(--primary)' : '#ffffff',
-                }}
-                transition={{ duration: 0.2 }}
               >
-                <motion.div
-                  animate={{
-                    rotate: selectedView === 'room' ? 360 : 0,
-                    scale: selectedView === 'room' ? 1.1 : 1,
-                  }}
-                  transition={{
-                    rotate: { duration: 0.3, ease: [0.22, 1, 0.36, 1] },
-                    scale: { duration: 0.2 },
-                  }}
-                >
-                  <Eye className='h-4 w-4 md:h-5 md:w-5' />
-                </motion.div>
-                <span className='hidden md:inline ml-1'>Room View</span>
+                <ImagePlus className='h-4 w-4 md:h-5 md:w-5 mb-1' />
+                <span className='text-sm font-medium hidden sm:block'>
+                  Add Image
+                </span>
               </motion.button>
-              <motion.button
-                onClick={() => setSelectedView('3d')}
-                className={`flex items-center justify-center px-2 py-2 md:px-5 md:py-3 text-xs md:text-sm font-medium rounded-none cursor-pointer transition-all ${
-                  selectedView === '3d'
-                    ? 'bg-primary text-white'
-                    : 'bg-white text-gray-700 hover:bg-gray-100'
-                }`}
-                type='button'
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
-                animate={{
-                  backgroundColor:
-                    selectedView === '3d' ? 'var(--primary)' : '#ffffff',
+
+              {/* Room + 3D View buttons */}
+              <motion.div
+                className='flex gap-2'
+                initial={{ opacity: 0, scale: 0.9 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{
+                  delay: 0.5,
+                  duration: 0.3,
+                  ease: [0.22, 1, 0.36, 1],
                 }}
-                transition={{ duration: 0.2 }}
               >
-                <motion.div
-                  animate={{
-                    rotateY: selectedView === '3d' ? 360 : 0,
-                    scale: selectedView === '3d' ? 1.1 : 1,
-                  }}
-                  transition={{
-                    rotateY: { duration: 0.3, ease: [0.22, 1, 0.36, 1] },
-                    scale: { duration: 0.2 },
-                  }}
-                >
-                  <Box className='h-4 w-4 md:h-5 md:w-5' />
-                </motion.div>
-                <span className='hidden md:inline ml-1'>3D View</span>
-              </motion.button>
-            </motion.div>
+                <div className='flex border border-gray-300 divide-x divide-gray-300'>
+                  <motion.button
+                    onClick={() => setSelectedView('room')}
+                    className={`flex items-center justify-center px-2 py-2 md:px-5 md:py-3 text-xs md:text-sm font-medium rounded-none cursor-pointer transition-all ${
+                      selectedView === 'room'
+                        ? 'bg-primary text-white'
+                        : 'bg-white text-gray-700 hover:bg-gray-100'
+                    }`}
+                    type='button'
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
+                  >
+                    <motion.div
+                      animate={{
+                        rotate: selectedView === 'room' ? 360 : 0,
+                        scale: selectedView === 'room' ? 1.1 : 1,
+                      }}
+                      transition={{
+                        rotate: { duration: 0.3, ease: [0.22, 1, 0.36, 1] },
+                        scale: { duration: 0.2 },
+                      }}
+                    >
+                      <Eye className='h-4 w-4 md:h-5 md:w-5' />
+                    </motion.div>
+                    <span className='hidden md:inline ml-1'>Room View</span>
+                  </motion.button>
+                  <motion.button
+                    onClick={() => setSelectedView('3d')}
+                    className={`flex items-center justify-center px-2 py-2 md:px-5 md:py-3 text-xs md:text-sm font-medium rounded-none cursor-pointer transition-all ${
+                      selectedView === '3d'
+                        ? 'bg-primary text-white'
+                        : 'bg-white text-gray-700 hover:bg-gray-100'
+                    }`}
+                    type='button'
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
+                  >
+                    <motion.div
+                      animate={{
+                        rotateY: selectedView === '3d' ? 360 : 0,
+                        scale: selectedView === '3d' ? 1.1 : 1,
+                      }}
+                      transition={{
+                        rotateY: { duration: 0.3, ease: [0.22, 1, 0.36, 1] },
+                        scale: { duration: 0.2 },
+                      }}
+                    >
+                      <Box className='h-4 w-4 md:h-5 md:w-5' />
+                    </motion.div>
+                    <span className='hidden md:inline ml-1'>3D View</span>
+                  </motion.button>
+                </div>
+              </motion.div>
+            </div>
           </div>
         )}
 
