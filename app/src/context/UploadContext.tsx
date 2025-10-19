@@ -20,6 +20,13 @@ interface StoredImageData {
   fileSize: number;
   base64Data: string;
   preview: string;
+  version: number;
+}
+
+interface Metadata {
+  selectedRatio?: string | null;
+  selectedSize?: SizeData | null;
+  shape?: CanvasShape;
 }
 
 interface UploadContextType {
@@ -51,87 +58,115 @@ export const UploadProvider = ({ children }: { children: ReactNode }) => {
   const [selectedRatio, setSelectedRatio] = useState<string | null>(null);
   const [selectedSize, setSelectedSize] = useState<SizeData | null>(null);
 
-  // Helper function to convert File to base64
-  const fileToBase64 = (file: File): Promise<string> => {
-    return new Promise((resolve, reject) => {
+  // Helpers
+  const fileToBase64 = (file: File): Promise<string> =>
+    new Promise((resolve, reject) => {
       const reader = new FileReader();
       reader.readAsDataURL(file);
       reader.onload = () => resolve(reader.result as string);
-      reader.onerror = error => reject(error);
+      reader.onerror = reject;
     });
+
+  const base64ToFile = (base64Data: string, name: string, type: string): File => {
+    const byteChars = atob(base64Data.split(',')[1]);
+    const byteArray = Uint8Array.from([...byteChars].map((c) => c.charCodeAt(0)));
+    return new File([byteArray], name, { type });
   };
 
-  // Helper function to convert base64 to File
-  const base64ToFile = (base64Data: string, fileName: string, fileType: string): File => {
-    const byteCharacters = atob(base64Data.split(',')[1]);
-    const byteNumbers = new Array(byteCharacters.length);
-    for (let i = 0; i < byteCharacters.length; i++) {
-      byteNumbers[i] = byteCharacters.charCodeAt(i);
-    }
-    const byteArray = new Uint8Array(byteNumbers);
-    return new File([byteArray], fileName, { type: fileType });
-  };
-
-  // Enhanced setFile function that persists to localStorage
-  const setFileWithPersistence = async (f: File | null) => {
-    setFile(f);
-    
-    if (f) {
-      try {
-        const base64Data = await fileToBase64(f);
-        const imageData: StoredImageData = {
-          fileName: f.name,
-          fileType: f.type,
-          fileSize: f.size,
-          base64Data,
-          preview: base64Data
-        };
-        localStorage.setItem('photify_uploaded_image', JSON.stringify(imageData));
-        setPreview(base64Data);
-      } catch (error) {
-        console.error('Error storing image:', error);
-      }
-    } else {
+  // Persist file (only when image changes)
+  const persistFile = async (f: File | null, p: string | null) => {
+    if (!f && !p) {
       localStorage.removeItem('photify_uploaded_image');
-      setPreview(null);
+      return;
     }
+
+    const base64Data = p || (f ? await fileToBase64(f) : null);
+    if (!base64Data) return;
+
+    const imageData: StoredImageData = {
+      fileName: f?.name || 'unknown',
+      fileType: f?.type || '',
+      fileSize: f?.size || 0,
+      base64Data,
+      preview: base64Data,
+      version: 1,
+    };
+    localStorage.setItem('photify_uploaded_image', JSON.stringify(imageData));
   };
 
-  // Restore image from localStorage on component mount
+  // Persist metadata (ratio, size, shape)
+  const persistMetadata = (meta: Metadata) => {
+    localStorage.setItem('photify_metadata', JSON.stringify(meta));
+  };
+
+  // Restore from localStorage
   useEffect(() => {
-    const storedImageData = localStorage.getItem('photify_uploaded_image');
-    if (storedImageData) {
+    // Image restore
+    const storedImage = localStorage.getItem('photify_uploaded_image');
+    if (storedImage) {
       try {
-        const imageData: StoredImageData = JSON.parse(storedImageData);
-        const restoredFile = base64ToFile(
-          imageData.base64Data,
-          imageData.fileName,
-          imageData.fileType
-        );
+        const data: StoredImageData = JSON.parse(storedImage);
+        const restoredFile = base64ToFile(data.base64Data, data.fileName, data.fileType);
         setFile(restoredFile);
-        setPreview(imageData.preview);
-      } catch (error) {
-        console.error('Error restoring image:', error);
+        setPreview(data.preview);
+      } catch {
         localStorage.removeItem('photify_uploaded_image');
+      }
+    }
+
+    // Metadata restore
+    const storedMeta = localStorage.getItem('photify_metadata');
+    if (storedMeta) {
+      try {
+        const meta: Metadata = JSON.parse(storedMeta);
+        if (meta.selectedRatio) setSelectedRatio(meta.selectedRatio);
+        if (meta.selectedSize) setSelectedSize(meta.selectedSize);
+        if (meta.shape) setShape(meta.shape);
+      } catch {
+        localStorage.removeItem('photify_metadata');
       }
     }
   }, []);
 
+  // Auto-persist when metadata changes
+  useEffect(() => {
+    persistMetadata({ selectedRatio, selectedSize, shape });
+  }, [selectedRatio, selectedSize, shape]);
+
+  const setFileWithPersistence = async (f: File | null, p: string | null) => {
+    setFile(f);
+    setPreview(p);
+    await persistFile(f, p);
+  };
+
   const applyPendingChanges = () => {
     if (pendingFile && pendingPreview) {
-      setFileWithPersistence(pendingFile);
+      setFileWithPersistence(pendingFile, pendingPreview);
       setPendingFile(null);
       setPendingPreview(null);
     }
   };
 
   return (
-    <UploadContext.Provider value={{ 
-      file, setFile: setFileWithPersistence, preview, setPreview, shape, setShape,
-      pendingFile, setPendingFile, pendingPreview, setPendingPreview,
-      selectedRatio, setSelectedRatio, selectedSize, setSelectedSize,
-      applyPendingChanges
-    }}>
+    <UploadContext.Provider
+      value={{
+        file,
+        setFile,
+        preview,
+        setPreview,
+        shape,
+        setShape,
+        pendingFile,
+        setPendingFile,
+        pendingPreview,
+        setPendingPreview,
+        selectedRatio,
+        setSelectedRatio,
+        selectedSize,
+        setSelectedSize,
+        applyPendingChanges,
+      }}
+    >
       {children}
     </UploadContext.Provider>
   );
@@ -142,5 +177,3 @@ export const useUpload = () => {
   if (!ctx) throw new Error('useUpload must be used within UploadProvider');
   return ctx;
 };
-
-export default UploadContext;

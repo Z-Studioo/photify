@@ -4,9 +4,11 @@ import SelectPhoto from '@/components/shared/dashboard/SelectPhoto';
 import ShapeSelector from '@/components/shared/dashboard/ShapeSelector';
 import RatioSizePanel from '@/components/shared/dashboard/RatioSizePanel';
 import EdgeSelector from './EdgeSelector';
+import { useView } from '@/context/ViewContext';
 
 const FeaturePanel = () => {
   const { selectedFeature, setSelectedFeature } = useFeature();
+  const { selectedView, setSelectedView } = useView();
 
   if (!selectedFeature) return null;
 
@@ -27,6 +29,11 @@ const FeaturePanel = () => {
     }
   };
 
+  const handleGoBack = () => {
+    if (selectedView === 'crop') setSelectedView('room');
+    setSelectedFeature(null);
+  };
+
   return (
     <div
       className={`absolute inset-0 transition-transform duration-300 ease-in-out ${
@@ -37,7 +44,7 @@ const FeaturePanel = () => {
       <div className='relative flex items-center p-4 flex-shrink-0'>
         <ChevronLeft
           className='h-4 w-4 text-gray-600 cursor-pointer'
-          onClick={() => setSelectedFeature(null)}
+          onClick={handleGoBack}
         />
         <h3 className='absolute left-1/2 transform -translate-x-1/2 text-lg font-bold text-center'>
           {selectedFeature.name}

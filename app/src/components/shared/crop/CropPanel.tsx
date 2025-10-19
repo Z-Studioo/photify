@@ -22,13 +22,11 @@ interface InchData {
   actual_price: number;
 }
 
-interface RatioSizePanelProps {
+interface CropPanelProps {
   onSelectionChange?: (ratio: string, size: InchData | null) => void;
 }
 
-const RatioSizePanel: React.FC<RatioSizePanelProps> = ({
-  onSelectionChange,
-}) => {
+const CropPanel: React.FC<CropPanelProps> = ({ onSelectionChange }) => {
   const { selectedRatio, setSelectedRatio, selectedSize, setSelectedSize } =
     useUpload();
   const { setSelectedView } = useView();
@@ -55,52 +53,31 @@ const RatioSizePanel: React.FC<RatioSizePanelProps> = ({
         const ratiosData = await ratiosResponse.json();
         const inchesData = await inchesResponse.json();
 
-        const fetchedRatios: RatioData[] = ratiosData.response?.results || [];
-        const fetchedInches: InchData[] = inchesData.response?.results || [];
+        const fetchedRatios = ratiosData.response?.results || [];
+        const fetchedInches = inchesData.response?.results || [];
 
         setRatios(fetchedRatios);
         setInches(fetchedInches);
 
-        let defaultRatio: RatioData | null = null;
-        let defaultSize: InchData | null = null;
+        // Default selection: 1:1 smallest size
+        const defaultRatio =
+          fetchedRatios.find((r: RatioData) => r.ratio === '1:1') ||
+          fetchedRatios[0];
+        if (defaultRatio) {
+          const available: InchData[] = fetchedInches
+            .filter((inch: InchData) => defaultRatio.Inches.includes(inch._id))
+            .sort(
+              (a: InchData, b: InchData) =>
+                a.width * a.height - b.width * b.height
+            );
 
-        // Use existing selectedRatio and selectedSize if available
-        if (selectedRatio && selectedSize) {
-          defaultRatio =
-            fetchedRatios.find(r => r.ratio === selectedRatio) || null;
-          defaultSize = selectedSize;
-        }
+          const smallest = available[0] || null;
 
-        // Fallback to 1:1 smallest size if no current selection
-        if (!defaultRatio || !defaultSize) {
-          defaultRatio =
-            fetchedRatios.find(r => r.ratio === '1:1') ||
-            fetchedRatios[0] ||
-            null;
-
-          if (defaultRatio) {
-            const availableSizes: InchData[] = fetchedInches
-              .filter(inch => defaultRatio!.Inches.includes(inch._id))
-              .sort((a, b) => a.width * a.height - b.width * b.height);
-
-            defaultSize = availableSizes[0] || null;
+          if (smallest) {
+            setSelectedRatio(defaultRatio.ratio);
+            setSelectedSize(smallest);
+            onSelectionChange?.(defaultRatio.ratio, smallest);
           }
-        }
-
-        // Set the context
-        if (defaultRatio && defaultSize) {
-          setSelectedRatio(defaultRatio.ratio);
-          setSelectedSize({
-            _id: defaultSize._id,
-            width: defaultSize.width,
-            height: defaultSize.height,
-            w: defaultSize.w,
-            h: defaultSize.h,
-            Slug: defaultSize.Slug,
-            sell_price: defaultSize.sell_price,
-            actual_price: defaultSize.actual_price,
-          });
-          onSelectionChange?.(defaultRatio.ratio, defaultSize);
         }
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Error loading data');
@@ -127,23 +104,14 @@ const RatioSizePanel: React.FC<RatioSizePanelProps> = ({
     const available = getAvailableSizes(ratioData);
     if (available.length > 0) {
       const smallest = available[0];
-
-      const isDifferentRatio = selectedRatio !== ratioData.ratio;
-
       setSelectedRatio(ratioData.ratio);
       setSelectedSize(smallest);
       onSelectionChange?.(ratioData.ratio, smallest);
-
-      // Only trigger crop if the ratio actually changed
-      if (isDifferentRatio) {
-        setSelectedView('crop');
-      }
+      setSelectedView('crop');
     }
   };
 
   const handleSizeChange = (ratio: string, size: InchData) => {
-    const isDifferentRatio = selectedRatio !== ratio;
-
     setSelectedRatio(ratio);
     const sizeData: SizeData = {
       _id: size._id,
@@ -157,12 +125,7 @@ const RatioSizePanel: React.FC<RatioSizePanelProps> = ({
     };
     setSelectedSize(sizeData);
     onSelectionChange?.(ratio, size);
-
-    // Only trigger crop if ratio or size of another ratio is selected
-    if (isDifferentRatio) {
-      // Different ratio → go to crop
-      setSelectedView('crop');
-    }
+    setSelectedView('crop');
   };
 
   if (loading)
@@ -186,6 +149,7 @@ const RatioSizePanel: React.FC<RatioSizePanelProps> = ({
         </Button>
       </div>
     );
+  console.log(selectedRatio, selectedSize);
   return (
     <div className='py-6 space-y-6'>
       <h2 className='text-xl font-semibold text-gray-800 mb-2'>
@@ -277,25 +241,8 @@ const RatioSizePanel: React.FC<RatioSizePanelProps> = ({
           );
         })}
       </div>
-
-      {/* Price Summary */}
-      {selectedRatio && selectedSize && (
-        <div className='border-t pt-4'>
-          <div className='bg-gray-50 p-4 rounded-lg space-y-1 text-sm'>
-            <h4 className='font-semibold text-gray-800 mb-2'>Canvas Price</h4>
-            <div>
-              <span className='text-primary font-bold text-lg'>
-                ${selectedSize.sell_price.toFixed(2)}
-              </span>{' '}
-              <span className='line-through text-gray-400'>
-                ${selectedSize.actual_price.toFixed(2)}
-              </span>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 };
 
-export default RatioSizePanel;
+export default CropPanel;

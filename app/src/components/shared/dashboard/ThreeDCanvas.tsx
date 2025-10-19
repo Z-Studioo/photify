@@ -24,25 +24,7 @@ const Frame3D = ({
   edgeType: 'wrapped' | 'mirrored';
 }) => {
   const [texture, setTexture] = useState<THREE.Texture | null>(null);
-
-  // useEffect(() => {
-  // if (imageUrl) {
-  // const loader = new THREE.TextureLoader();
-  // loader.load(imageUrl, loadedTexture => {
-  // loadedTexture.wrapS = THREE.ClampToEdgeWrapping;
-  // loadedTexture.wrapT = THREE.ClampToEdgeWrapping;
-  // loadedTexture.minFilter = THREE.LinearFilter;
-  // loadedTexture.magFilter = THREE.LinearFilter;
-  // loadedTexture.generateMipmaps = false;
-  // if ('colorSpace' in loadedTexture) {
-  // (loadedTexture as any).colorSpace = THREE.SRGBColorSpace;
-  // } else {
-  // (loadedTexture as any).encoding = THREE.SRGBColorSpace;
-  // }
-  // setTexture(loadedTexture);
-  // });
-  // }
-  // }, [imageUrl]);
+  const { selectedSize } = useUpload();
 
   useEffect(() => {
     if (imageUrl) {
@@ -89,14 +71,22 @@ const Frame3D = ({
     }
   }, [imageUrl, edgeType]);
 
-  const frameDepth = 0.04;
+  const frameDepth = 0.06;
+  const BASE_SIZE = 15;
 
   // Memoize the geometry so it's only created once
   const geometry = useMemo(() => {
     if (shape !== 'rectangle') return null;
 
-    const frameWidth = 1.8;
-    const frameHeight = 1.35;
+    const frameWidth =
+      selectedSize?.width && !isNaN(selectedSize.width / BASE_SIZE)
+        ? selectedSize.width / BASE_SIZE
+        : 1.8;
+
+    const frameHeight =
+      selectedSize?.height && !isNaN(selectedSize.height / BASE_SIZE)
+        ? selectedSize.height / BASE_SIZE
+        : 1.35;
     const box = new THREE.BoxGeometry(frameWidth, frameHeight, frameDepth);
     const uv = box.getAttribute('uv');
 
@@ -111,60 +101,60 @@ const Frame3D = ({
     if (edgeType === 'mirrored') {
       // MIRRORED EDGES - Uses negative/beyond-1 UVs with MirroredRepeatWrapping
       // This creates a mirror/reflection effect on the sides
-      
+
       // Right Face (0–3) - extend beyond 1.0 to trigger mirroring
-      uv.setXY(0, 1 + sideWrapX, 1);     // outer edge (will mirror back)
-      uv.setXY(1, 1, 1);                 // at the edge
-      uv.setXY(2, 1 + sideWrapX, 0);     // outer edge (will mirror back)
-      uv.setXY(3, 1, 0);                 // at the edge
+      uv.setXY(0, 1 + sideWrapX, 1); // outer edge (will mirror back)
+      uv.setXY(1, 1, 1); // at the edge
+      uv.setXY(2, 1 + sideWrapX, 0); // outer edge (will mirror back)
+      uv.setXY(3, 1, 0); // at the edge
 
       // Left Face (4–7) - extend below 0.0 to trigger mirroring
-      uv.setXY(4, 0, 1);                 // at the edge
-      uv.setXY(5, 0 - sideWrapX, 1);     // outer edge (will mirror back)
-      uv.setXY(6, 0, 0);                 // at the edge
-      uv.setXY(7, 0 - sideWrapX, 0);     // outer edge (will mirror back)
+      uv.setXY(4, 0, 1); // at the edge
+      uv.setXY(5, 0 - sideWrapX, 1); // outer edge (will mirror back)
+      uv.setXY(6, 0, 0); // at the edge
+      uv.setXY(7, 0 - sideWrapX, 0); // outer edge (will mirror back)
 
       // Top Face (8–11) - extend beyond 1.0 to trigger mirroring
-      uv.setXY(8, 0, 1);                 // at the edge
-      uv.setXY(9, 1, 1);                 // at the edge
-      uv.setXY(10, 0, 1 + sideWrapY);    // outer edge (will mirror back)
-      uv.setXY(11, 1, 1 + sideWrapY);    // outer edge (will mirror back)
+      uv.setXY(8, 0, 1); // at the edge
+      uv.setXY(9, 1, 1); // at the edge
+      uv.setXY(10, 0, 1 + sideWrapY); // outer edge (will mirror back)
+      uv.setXY(11, 1, 1 + sideWrapY); // outer edge (will mirror back)
 
       // Bottom Face (12–15) - extend below 0.0 to trigger mirroring
-      uv.setXY(12, 0, 0 - sideWrapY);    // outer edge (will mirror back)
-      uv.setXY(13, 1, 0 - sideWrapY);    // outer edge (will mirror back)
-      uv.setXY(14, 0, 0);                // at the edge
-      uv.setXY(15, 1, 0);                // at the edge
+      uv.setXY(12, 0, 0 - sideWrapY); // outer edge (will mirror back)
+      uv.setXY(13, 1, 0 - sideWrapY); // outer edge (will mirror back)
+      uv.setXY(14, 0, 0); // at the edge
+      uv.setXY(15, 1, 0); // at the edge
     } else {
       // WRAPPED EDGES - Takes a very thin slice from the edge of the image
       // Uses ClampToEdgeWrapping to smoothly extend the edge
-      
+
       // Use a much smaller wrap amount for smoother appearance
       const edgeSlice = 0.005; // Very thin slice from edge (0.5% of image)
-      
+
       // Right Face (0–3) - thin slice from right edge
-      uv.setXY(0, 1, 1);                        // outer edge
-      uv.setXY(1, 1 - edgeSlice, 1);            // inner edge (very close to edge)
-      uv.setXY(2, 1, 0);                        // outer edge
-      uv.setXY(3, 1 - edgeSlice, 0);            // inner edge (very close to edge)
+      uv.setXY(0, 1, 1); // outer edge
+      uv.setXY(1, 1 - edgeSlice, 1); // inner edge (very close to edge)
+      uv.setXY(2, 1, 0); // outer edge
+      uv.setXY(3, 1 - edgeSlice, 0); // inner edge (very close to edge)
 
       // Left Face (4–7) - thin slice from left edge
-      uv.setXY(4, edgeSlice, 1);                // inner edge (very close to edge)
-      uv.setXY(5, 0, 1);                        // outer edge
-      uv.setXY(6, edgeSlice, 0);                // inner edge (very close to edge)
-      uv.setXY(7, 0, 0);                        // outer edge
+      uv.setXY(4, edgeSlice, 1); // inner edge (very close to edge)
+      uv.setXY(5, 0, 1); // outer edge
+      uv.setXY(6, edgeSlice, 0); // inner edge (very close to edge)
+      uv.setXY(7, 0, 0); // outer edge
 
       // Top Face (8–11) - thin slice from top edge
-      uv.setXY(8, 0, 1 - edgeSlice);            // inner edge (very close to edge)
-      uv.setXY(9, 1, 1 - edgeSlice);            // inner edge (very close to edge)
-      uv.setXY(10, 0, 1);                       // outer edge
-      uv.setXY(11, 1, 1);                       // outer edge
+      uv.setXY(8, 0, 1 - edgeSlice); // inner edge (very close to edge)
+      uv.setXY(9, 1, 1 - edgeSlice); // inner edge (very close to edge)
+      uv.setXY(10, 0, 1); // outer edge
+      uv.setXY(11, 1, 1); // outer edge
 
       // Bottom Face (12–15) - thin slice from bottom edge
-      uv.setXY(12, 0, 0);                       // outer edge
-      uv.setXY(13, 1, 0);                       // outer edge
-      uv.setXY(14, 0, edgeSlice);               // inner edge (very close to edge)
-      uv.setXY(15, 1, edgeSlice);               // inner edge (very close to edge)
+      uv.setXY(12, 0, 0); // outer edge
+      uv.setXY(13, 1, 0); // outer edge
+      uv.setXY(14, 0, edgeSlice); // inner edge (very close to edge)
+      uv.setXY(15, 1, edgeSlice); // inner edge (very close to edge)
     }
 
     // Front Face (16–19) - always the same
@@ -176,7 +166,7 @@ const Frame3D = ({
     // Back Face (20–23) -> stays default solid color
 
     return box;
-  }, [shape, edgeType]);
+  }, [shape, edgeType, selectedSize?.width, selectedSize?.height]);
 
   if (!texture) return null;
 
@@ -382,13 +372,15 @@ const ThreeDCanvas = ({ isVisible }: ThreeDCanvasProps) => {
   if (!isVisible) return null;
 
   return (
-    <div className='w-full h-full relative'>
+    <div className='w-full h-full relative' style={{ isolation: 'isolate' }}>
       <Canvas
         shadows
         camera={{ position: [0, 0, 4], fov: 50 }}
         style={{
           background: 'linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%)',
+          pointerEvents: 'auto',
         }}
+        className='pointer-events-auto'
       >
         <Suspense fallback={null}>
           <ambientLight intensity={0.7} />
@@ -401,7 +393,9 @@ const ThreeDCanvas = ({ isVisible }: ThreeDCanvasProps) => {
           />
           <directionalLight position={[-4, 6, -4]} intensity={1.5} />
 
-          {preview && <Frame3D imageUrl={preview} shape={shape} edgeType={edgeType} />}
+          {preview && (
+            <Frame3D imageUrl={preview} shape={shape} edgeType={edgeType} />
+          )}
 
           <ContactShadows
             rotation-x={Math.PI / 2}
@@ -416,13 +410,21 @@ const ThreeDCanvas = ({ isVisible }: ThreeDCanvasProps) => {
         </Suspense>
       </Canvas>
       {/* 3D Controls - Responsive */}
-      <div className='absolute top-2 left-2 md:top-4 md:left-4 z-50'>
+      <div
+        className='absolute top-2 left-2 md:top-4 md:left-4 z-[9999]'
+        style={{ pointerEvents: 'auto', isolation: 'isolate' }}
+      >
         {/* Desktop Layout - Horizontal */}
-        <div className='hidden md:flex bg-white rounded-full px-2 py-1.5 shadow-lg border border-gray-200 items-center gap-2 hover:shadow-xl transition-shadow duration-300'>
+        <div
+          className='hidden md:flex bg-white rounded-full px-2 py-1.5 shadow-lg border border-gray-200 items-center gap-2 hover:shadow-xl transition-shadow duration-300'
+          style={{ pointerEvents: 'auto' }}
+        >
           {/* Play/Rotate Button */}
           <button
             onClick={handleAutoRotate}
+            type='button'
             className='flex items-center gap-1 px-2 py-1.5 rounded-full transition-all duration-200 hover:bg-pink-50 hover:scale-105 active:scale-95 cursor-pointer'
+            style={{ pointerEvents: 'auto', position: 'relative', zIndex: 1 }}
           >
             <svg
               className='w-3 h-3 text-pink-500 transition-transform duration-200 hover:rotate-12'
@@ -442,7 +444,9 @@ const ThreeDCanvas = ({ isVisible }: ThreeDCanvasProps) => {
           {/* Center Button */}
           <button
             onClick={handleCenter}
+            type='button'
             className='flex items-center gap-1 px-2 py-1.5 rounded-full transition-all duration-200 hover:bg-pink-50 hover:scale-105 active:scale-95 cursor-pointer'
+            style={{ pointerEvents: 'auto', position: 'relative', zIndex: 1 }}
           >
             <svg
               className='w-3 h-3 text-pink-500 transition-transform duration-200 hover:scale-110'
@@ -469,7 +473,9 @@ const ThreeDCanvas = ({ isVisible }: ThreeDCanvasProps) => {
           {/* Zoom In Button */}
           <button
             onClick={() => handleZoom(0.7)}
+            type='button'
             className='flex items-center gap-1 px-2 py-1.5 rounded-full transition-all duration-200 hover:bg-pink-50 hover:scale-105 active:scale-95 cursor-pointer'
+            style={{ pointerEvents: 'auto', position: 'relative', zIndex: 1 }}
           >
             <svg
               className='w-3 h-3 text-pink-500 transition-transform duration-200 hover:scale-125'
@@ -496,7 +502,9 @@ const ThreeDCanvas = ({ isVisible }: ThreeDCanvasProps) => {
           {/* Zoom Out Button */}
           <button
             onClick={() => handleZoom(1.4)}
+            type='button'
             className='flex items-center gap-1 px-2 py-1.5 rounded-full transition-all duration-200 hover:bg-pink-50 hover:scale-105 active:scale-95 cursor-pointer'
+            style={{ pointerEvents: 'auto', position: 'relative', zIndex: 1 }}
           >
             <svg
               className='w-3 h-3 text-pink-500 transition-transform duration-200 hover:scale-90'
@@ -519,11 +527,16 @@ const ThreeDCanvas = ({ isVisible }: ThreeDCanvasProps) => {
         </div>
 
         {/* Mobile Layout - Vertical Stack */}
-        <div className='md:hidden flex flex-col gap-2'>
+        <div
+          className='md:hidden flex flex-col gap-2'
+          style={{ pointerEvents: 'auto' }}
+        >
           {/* Play/Rotate Button */}
           <button
             onClick={handleAutoRotate}
+            type='button'
             className='bg-white rounded-full p-2.5 shadow-lg border border-gray-200 transition-all duration-200 hover:bg-pink-50 active:scale-95 cursor-pointer'
+            style={{ pointerEvents: 'auto', position: 'relative', zIndex: 1 }}
           >
             <svg
               className='w-4 h-4 text-pink-500'
@@ -537,7 +550,9 @@ const ThreeDCanvas = ({ isVisible }: ThreeDCanvasProps) => {
           {/* Center Button */}
           <button
             onClick={handleCenter}
+            type='button'
             className='bg-white rounded-full p-2.5 shadow-lg border border-gray-200 transition-all duration-200 hover:bg-pink-50 active:scale-95 cursor-pointer'
+            style={{ pointerEvents: 'auto', position: 'relative', zIndex: 1 }}
           >
             <svg
               className='w-4 h-4 text-pink-500'
@@ -558,7 +573,9 @@ const ThreeDCanvas = ({ isVisible }: ThreeDCanvasProps) => {
           {/* Zoom In Button */}
           <button
             onClick={() => handleZoom(0.7)}
+            type='button'
             className='bg-white rounded-full p-2.5 shadow-lg border border-gray-200 transition-all duration-200 hover:bg-pink-50 active:scale-95 cursor-pointer'
+            style={{ pointerEvents: 'auto', position: 'relative', zIndex: 1 }}
           >
             <svg
               className='w-4 h-4 text-pink-500'
@@ -579,7 +596,9 @@ const ThreeDCanvas = ({ isVisible }: ThreeDCanvasProps) => {
           {/* Zoom Out Button */}
           <button
             onClick={() => handleZoom(1.4)}
+            type='button'
             className='bg-white rounded-full p-2.5 shadow-lg border border-gray-200 transition-all duration-200 hover:bg-pink-50 active:scale-95 cursor-pointer'
+            style={{ pointerEvents: 'auto', position: 'relative', zIndex: 1 }}
           >
             <svg
               className='w-4 h-4 text-pink-500'

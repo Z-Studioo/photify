@@ -125,7 +125,7 @@ const Page = () => {
                 <div className='flex items-center justify-center'>
                   <Button
                     className={`w-full md:w-auto h-12 mt-4 px-6 md:px-14 rounded-[var(--radius-lg)] text-base font-semibold ${!preview ? 'opacity-50 cursor-not-allowed' : ''}`}
-                    onClick={() => preview && navigate('/dashboard')}
+                    onClick={() => preview && navigate('/crop')}
                     disabled={!preview}
                   >
                     Continue
@@ -184,7 +184,7 @@ const Page = () => {
                   >
                     <Button
                       className='w-full h-12 px-6 rounded-[var(--radius-lg)] text-base font-semibold'
-                      onClick={() => navigate('/dashboard')}
+                      onClick={() => navigate('/crop')}
                     >
                       Continue
                     </Button>
