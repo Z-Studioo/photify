@@ -20,7 +20,6 @@ const RoomFrame3D = ({
   shape,
   onInteraction,
   selectedSize,
-  selectedRatio,
 }: {
   imageUrl: string;
   shape: CanvasShape;
