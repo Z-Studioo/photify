@@ -31,7 +31,7 @@ const RatioSizePanel: React.FC<RatioSizePanelProps> = ({
 }) => {
   const { selectedRatio, setSelectedRatio, selectedSize, setSelectedSize } =
     useUpload();
-  const { setSelectedView, selectedView } = useView();
+  const { setSelectedView } = useView();
 
   const [ratios, setRatios] = useState<RatioData[]>([]);
   const [inches, setInches] = useState<InchData[]>([]);
@@ -162,9 +162,6 @@ const RatioSizePanel: React.FC<RatioSizePanelProps> = ({
     if (isDifferentRatio) {
       // Different ratio → go to crop
       setSelectedView('crop');
-    } else if (selectedView === '3d') {
-      // Same ratio group but in 3D view → go to room view first
-      setSelectedView('room');
     }
   };
 
