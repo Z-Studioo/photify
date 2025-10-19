@@ -1,5 +1,6 @@
 import React, { useRef, useEffect, useState } from 'react';
 import { useUpload, type CanvasShape } from '@/context/UploadContext';
+import { useEdge } from '@/context/EdgeContext';
 
 interface PhotoFrameProps {
   src: string;
@@ -15,6 +16,7 @@ const Canvas: React.FC<PhotoFrameProps> = ({
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [canvasDims, setCanvasDims] = useState({ width: 0, height: 0 });
   const { shape } = useUpload();
+  const { edgeType } = useEdge();
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -143,12 +145,101 @@ const Canvas: React.FC<PhotoFrameProps> = ({
         drawX = (targetW - drawW) / 2;
       }
       
-      // Fill background with a subtle color for areas not covered by image
-      offCtx.fillStyle = '#f8f9fa';
-      offCtx.fillRect(0, 0, targetW, targetH);
+      if (edgeType === 'mirrored') {
+        // For mirrored edges, create a seamless pattern by mirroring the image edges
+        
+        // First, draw the image at its natural aspect ratio, centered
+        offCtx.drawImage(img, 0, 0, img.width, img.height, drawX, drawY, drawW, drawH);
+        
+        // Fill remaining areas with mirrored edges
+        const mirrorSize = 50; // Size of the mirrored edge in pixels
+        
+        // Mirror left edge if there's space
+        if (drawX > 0) {
+          const stripWidth = Math.min(drawX, mirrorSize);
+          offCtx.save();
+          offCtx.scale(-1, 1);
+          offCtx.drawImage(img, 0, 0, stripWidth * (img.width / drawW), img.height,
+                          -(drawX), drawY, stripWidth, drawH);
+          offCtx.restore();
+          
+          // Fill the gap between edge and mirrored strip
+          if (drawX > stripWidth) {
+            offCtx.fillStyle = offCtx.createPattern(
+              (() => {
+                const patternCanvas = document.createElement('canvas');
+                const patternCtx = patternCanvas.getContext('2d')!;
+                patternCanvas.width = 20;
+                patternCanvas.height = 20;
+                patternCtx.fillStyle = '#e5e7eb';
+                patternCtx.fillRect(0, 0, 20, 20);
+                return patternCanvas;
+              })(), 'repeat'
+            )!;
+            offCtx.fillRect(0, drawY, drawX - stripWidth, drawH);
+          }
+        }
+        
+        // Mirror right edge if there's space
+        if (drawX + drawW < targetW) {
+          const rightSpace = targetW - (drawX + drawW);
+          const stripWidth = Math.min(rightSpace, mirrorSize);
+          offCtx.save();
+          offCtx.scale(-1, 1);
+          offCtx.drawImage(img, img.width - stripWidth * (img.width / drawW), 0, 
+                          stripWidth * (img.width / drawW), img.height,
+                          -(drawX + drawW + stripWidth), drawY, stripWidth, drawH);
+          offCtx.restore();
+          
+          // Fill remaining gap
+          if (rightSpace > stripWidth) {
+            offCtx.fillStyle = '#e5e7eb';
+            offCtx.fillRect(drawX + drawW + stripWidth, drawY, rightSpace - stripWidth, drawH);
+          }
+        }
+        
+        // Mirror top edge if there's space
+        if (drawY > 0) {
+          const stripHeight = Math.min(drawY, mirrorSize);
+          offCtx.save();
+          offCtx.scale(1, -1);
+          offCtx.drawImage(img, 0, 0, img.width, stripHeight * (img.height / drawH),
+                          drawX, -(drawY), drawW, stripHeight);
+          offCtx.restore();
+          
+          // Fill remaining gap
+          if (drawY > stripHeight) {
+            offCtx.fillStyle = '#e5e7eb';
+            offCtx.fillRect(drawX, 0, drawW, drawY - stripHeight);
+          }
+        }
+        
+        // Mirror bottom edge if there's space
+        if (drawY + drawH < targetH) {
+          const bottomSpace = targetH - (drawY + drawH);
+          const stripHeight = Math.min(bottomSpace, mirrorSize);
+          offCtx.save();
+          offCtx.scale(1, -1);
+          offCtx.drawImage(img, 0, img.height - stripHeight * (img.height / drawH), 
+                          img.width, stripHeight * (img.height / drawH),
+                          drawX, -(drawY + drawH + stripHeight), drawW, stripHeight);
+          offCtx.restore();
+          
+          // Fill remaining gap
+          if (bottomSpace > stripHeight) {
+            offCtx.fillStyle = '#e5e7eb';
+            offCtx.fillRect(drawX, drawY + drawH + stripHeight, drawW, bottomSpace - stripHeight);
+          }
+        }
+      } else {
+        // Wrapped edges (original behavior)
+        // Fill background with a subtle color for areas not covered by image
+        offCtx.fillStyle = '#f8f9fa';
+        offCtx.fillRect(0, 0, targetW, targetH);
 
-      // Draw the entire image scaled to fit within the frame
-      offCtx.drawImage(img, 0, 0, img.width, img.height, drawX, drawY, drawW, drawH);
+        // Draw the entire image scaled to fit within the frame
+        offCtx.drawImage(img, 0, 0, img.width, img.height, drawX, drawY, drawW, drawH);
+      }
 
       // Apply aggressive brightness/contrast adjustment to make image pop
       try {
