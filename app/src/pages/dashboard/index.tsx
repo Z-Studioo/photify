@@ -296,12 +296,12 @@ const Dashboard: React.FC = () => {
             </div>
 
             {/* Top overlay buttons */}
-            <div className='absolute top-0 left-0 right-0 flex justify-between items-start md:top-4 md:px-4'>
+            <div className='absolute top-0 left-0 right-0 flex justify-between items-start md:top-4 md:px-4' style={{ pointerEvents: 'none' }}>
               {/* Add Image Button or Placeholder */}
               <motion.button
                 onClick={handleAddImageClick}
                 className={`flex flex-col items-center justify-center px-2 py-2 md:px-2 md:py-2 bg-[var(--primary)] border border-gray-300 text-white hover:transition-all cursor-pointer shadow-sm ${
-                  selectedView !== 'room' ? 'invisible' : ''
+                  selectedView !== 'room' ? 'invisible pointer-events-none' : 'pointer-events-auto'
                 }`}
                 type='button'
                 whileHover={{ scale: 1.02 }}
@@ -315,7 +315,7 @@ const Dashboard: React.FC = () => {
 
               {/* Room + 3D View buttons */}
               <motion.div
-                className='flex gap-2'
+                className='flex gap-2 pointer-events-auto'
                 initial={{ opacity: 0, scale: 0.9 }}
                 animate={{ opacity: 1, scale: 1 }}
                 transition={{

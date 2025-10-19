@@ -26,25 +26,6 @@ const Frame3D = ({
   const [texture, setTexture] = useState<THREE.Texture | null>(null);
   const { selectedSize } = useUpload();
 
-  // useEffect(() => {
-  // if (imageUrl) {
-  // const loader = new THREE.TextureLoader();
-  // loader.load(imageUrl, loadedTexture => {
-  // loadedTexture.wrapS = THREE.ClampToEdgeWrapping;
-  // loadedTexture.wrapT = THREE.ClampToEdgeWrapping;
-  // loadedTexture.minFilter = THREE.LinearFilter;
-  // loadedTexture.magFilter = THREE.LinearFilter;
-  // loadedTexture.generateMipmaps = false;
-  // if ('colorSpace' in loadedTexture) {
-  // (loadedTexture as any).colorSpace = THREE.SRGBColorSpace;
-  // } else {
-  // (loadedTexture as any).encoding = THREE.SRGBColorSpace;
-  // }
-  // setTexture(loadedTexture);
-  // });
-  // }
-  // }, [imageUrl]);
-
   useEffect(() => {
     if (imageUrl) {
       const loader = new THREE.TextureLoader();
@@ -391,13 +372,15 @@ const ThreeDCanvas = ({ isVisible }: ThreeDCanvasProps) => {
   if (!isVisible) return null;
 
   return (
-    <div className='w-full h-full relative'>
+    <div className='w-full h-full relative' style={{ isolation: 'isolate' }}>
       <Canvas
         shadows
         camera={{ position: [0, 0, 4], fov: 50 }}
         style={{
           background: 'linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%)',
+          pointerEvents: 'auto',
         }}
+        className='pointer-events-auto'
       >
         <Suspense fallback={null}>
           <ambientLight intensity={0.7} />
@@ -427,13 +410,21 @@ const ThreeDCanvas = ({ isVisible }: ThreeDCanvasProps) => {
         </Suspense>
       </Canvas>
       {/* 3D Controls - Responsive */}
-      <div className='absolute top-2 left-2 md:top-4 md:left-4 z-50'>
+      <div
+        className='absolute top-2 left-2 md:top-4 md:left-4 z-[9999]'
+        style={{ pointerEvents: 'auto', isolation: 'isolate' }}
+      >
         {/* Desktop Layout - Horizontal */}
-        <div className='hidden md:flex bg-white rounded-full px-2 py-1.5 shadow-lg border border-gray-200 items-center gap-2 hover:shadow-xl transition-shadow duration-300'>
+        <div
+          className='hidden md:flex bg-white rounded-full px-2 py-1.5 shadow-lg border border-gray-200 items-center gap-2 hover:shadow-xl transition-shadow duration-300'
+          style={{ pointerEvents: 'auto' }}
+        >
           {/* Play/Rotate Button */}
           <button
             onClick={handleAutoRotate}
+            type='button'
             className='flex items-center gap-1 px-2 py-1.5 rounded-full transition-all duration-200 hover:bg-pink-50 hover:scale-105 active:scale-95 cursor-pointer'
+            style={{ pointerEvents: 'auto', position: 'relative', zIndex: 1 }}
           >
             <svg
               className='w-3 h-3 text-pink-500 transition-transform duration-200 hover:rotate-12'
@@ -453,7 +444,9 @@ const ThreeDCanvas = ({ isVisible }: ThreeDCanvasProps) => {
           {/* Center Button */}
           <button
             onClick={handleCenter}
+            type='button'
             className='flex items-center gap-1 px-2 py-1.5 rounded-full transition-all duration-200 hover:bg-pink-50 hover:scale-105 active:scale-95 cursor-pointer'
+            style={{ pointerEvents: 'auto', position: 'relative', zIndex: 1 }}
           >
             <svg
               className='w-3 h-3 text-pink-500 transition-transform duration-200 hover:scale-110'
@@ -480,7 +473,9 @@ const ThreeDCanvas = ({ isVisible }: ThreeDCanvasProps) => {
           {/* Zoom In Button */}
           <button
             onClick={() => handleZoom(0.7)}
+            type='button'
             className='flex items-center gap-1 px-2 py-1.5 rounded-full transition-all duration-200 hover:bg-pink-50 hover:scale-105 active:scale-95 cursor-pointer'
+            style={{ pointerEvents: 'auto', position: 'relative', zIndex: 1 }}
           >
             <svg
               className='w-3 h-3 text-pink-500 transition-transform duration-200 hover:scale-125'
@@ -507,7 +502,9 @@ const ThreeDCanvas = ({ isVisible }: ThreeDCanvasProps) => {
           {/* Zoom Out Button */}
           <button
             onClick={() => handleZoom(1.4)}
+            type='button'
             className='flex items-center gap-1 px-2 py-1.5 rounded-full transition-all duration-200 hover:bg-pink-50 hover:scale-105 active:scale-95 cursor-pointer'
+            style={{ pointerEvents: 'auto', position: 'relative', zIndex: 1 }}
           >
             <svg
               className='w-3 h-3 text-pink-500 transition-transform duration-200 hover:scale-90'
@@ -530,11 +527,16 @@ const ThreeDCanvas = ({ isVisible }: ThreeDCanvasProps) => {
         </div>
 
         {/* Mobile Layout - Vertical Stack */}
-        <div className='md:hidden flex flex-col gap-2'>
+        <div
+          className='md:hidden flex flex-col gap-2'
+          style={{ pointerEvents: 'auto' }}
+        >
           {/* Play/Rotate Button */}
           <button
             onClick={handleAutoRotate}
+            type='button'
             className='bg-white rounded-full p-2.5 shadow-lg border border-gray-200 transition-all duration-200 hover:bg-pink-50 active:scale-95 cursor-pointer'
+            style={{ pointerEvents: 'auto', position: 'relative', zIndex: 1 }}
           >
             <svg
               className='w-4 h-4 text-pink-500'
@@ -548,7 +550,9 @@ const ThreeDCanvas = ({ isVisible }: ThreeDCanvasProps) => {
           {/* Center Button */}
           <button
             onClick={handleCenter}
+            type='button'
             className='bg-white rounded-full p-2.5 shadow-lg border border-gray-200 transition-all duration-200 hover:bg-pink-50 active:scale-95 cursor-pointer'
+            style={{ pointerEvents: 'auto', position: 'relative', zIndex: 1 }}
           >
             <svg
               className='w-4 h-4 text-pink-500'
@@ -569,7 +573,9 @@ const ThreeDCanvas = ({ isVisible }: ThreeDCanvasProps) => {
           {/* Zoom In Button */}
           <button
             onClick={() => handleZoom(0.7)}
+            type='button'
             className='bg-white rounded-full p-2.5 shadow-lg border border-gray-200 transition-all duration-200 hover:bg-pink-50 active:scale-95 cursor-pointer'
+            style={{ pointerEvents: 'auto', position: 'relative', zIndex: 1 }}
           >
             <svg
               className='w-4 h-4 text-pink-500'
@@ -590,7 +596,9 @@ const ThreeDCanvas = ({ isVisible }: ThreeDCanvasProps) => {
           {/* Zoom Out Button */}
           <button
             onClick={() => handleZoom(1.4)}
+            type='button'
             className='bg-white rounded-full p-2.5 shadow-lg border border-gray-200 transition-all duration-200 hover:bg-pink-50 active:scale-95 cursor-pointer'
+            style={{ pointerEvents: 'auto', position: 'relative', zIndex: 1 }}
           >
             <svg
               className='w-4 h-4 text-pink-500'
