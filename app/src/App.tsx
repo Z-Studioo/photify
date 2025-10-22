@@ -28,9 +28,6 @@ const App: React.FC = () => {
                           duration: 0.3,
                           type: 'spring',
                         }}
-                        tourTransition={{
-                          duration: 0.5,
-                        }}
                         onComplete={tourId => {
                           // When welcome tour completes, automatically start main tour
                           if (tourId === 'welcome') {
