@@ -1,5 +1,5 @@
 import type React from 'react';
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import {
   Box,
   Eye,
@@ -27,6 +27,7 @@ import { useUpload } from '@/context/UploadContext';
 import { useView } from '@/context/ViewContext';
 import ImageCropper from '@/components/shared/common/ImageCropper';
 import { useEdge } from '@/context/EdgeContext';
+import { useNextStep } from 'nextstepjs';
 
 interface MenuFeature {
   id: number;
@@ -46,6 +47,12 @@ const Dashboard: React.FC = () => {
   const [customWalls, setCustomWalls] = useState<string[]>([]);
   const wallImageInputRef = useRef<HTMLInputElement>(null);
   const { selectedFeature, setSelectedFeature } = useFeature();
+
+  const { startNextStep } = useNextStep();
+  useEffect(() => {
+    startNextStep('dashboard-tour');
+  }, []);
+  // empty deps = run once after mount
 
   // Animation variants
   const listItemVariants: Variants = {
@@ -296,12 +303,18 @@ const Dashboard: React.FC = () => {
             </div>
 
             {/* Top overlay buttons */}
-            <div className='absolute top-0 left-0 right-0 flex justify-between items-start md:top-4 md:px-4' style={{ pointerEvents: 'none' }}>
+            <div
+              className='absolute top-0 left-0 right-0 flex justify-between items-start md:top-4 md:px-4'
+              style={{ pointerEvents: 'none' }}
+            >
               {/* Add Image Button or Placeholder */}
               <motion.button
+                data-tour='add-image-btn'
                 onClick={handleAddImageClick}
                 className={`flex flex-col items-center justify-center px-2 py-2 md:px-2 md:py-2 bg-[var(--primary)] border border-gray-300 text-white hover:transition-all cursor-pointer shadow-sm ${
-                  selectedView !== 'room' ? 'invisible pointer-events-none' : 'pointer-events-auto'
+                  selectedView !== 'room'
+                    ? 'invisible pointer-events-none'
+                    : 'pointer-events-auto'
                 }`}
                 type='button'
                 whileHover={{ scale: 1.02 }}
@@ -326,6 +339,7 @@ const Dashboard: React.FC = () => {
               >
                 <div className='flex border border-gray-300 divide-x divide-gray-300'>
                   <motion.button
+                    data-tour='room-view-btn'
                     onClick={() => setSelectedView('room')}
                     className={`flex items-center justify-center px-2 py-2 md:px-5 md:py-3 text-xs md:text-sm font-medium rounded-none cursor-pointer transition-all ${
                       selectedView === 'room'
@@ -351,6 +365,7 @@ const Dashboard: React.FC = () => {
                     <span className='hidden md:inline ml-1'>Room View</span>
                   </motion.button>
                   <motion.button
+                    data-tour='3d-view-btn'
                     onClick={() => setSelectedView('3d')}
                     className={`flex items-center justify-center px-2 py-2 md:px-5 md:py-3 text-xs md:text-sm font-medium rounded-none cursor-pointer transition-all ${
                       selectedView === '3d'
@@ -445,6 +460,7 @@ const Dashboard: React.FC = () => {
             >
               <ScrollArea className='md:h-full'>
                 <motion.div
+                  data-tour='features-list'
                   className='space-y-0'
                   initial='hidden'
                   animate='visible'
@@ -584,6 +600,7 @@ const Dashboard: React.FC = () => {
             <AnimatePresence mode='wait'>
               {!selectedFeature ? (
                 <motion.div
+                  data-tour='quantity-section'
                   key='default-actions'
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
@@ -721,6 +738,7 @@ const Dashboard: React.FC = () => {
                     whileTap={{ scale: 0.98 }}
                   >
                     <Button
+                      data-tour='apply-changes-btn'
                       variant='default'
                       className='px-6 py-2 rounded-none whitespace-nowrap transition-all duration-200'
                       onClick={() => {
