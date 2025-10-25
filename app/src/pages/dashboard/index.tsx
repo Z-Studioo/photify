@@ -27,6 +27,7 @@ import { useUpload } from '@/context/UploadContext';
 import { useView } from '@/context/ViewContext';
 import ImageCropper from '@/components/shared/common/ImageCropper';
 import { useEdge } from '@/context/EdgeContext';
+import OptimizationView from '@/components/shared/dashboard/OptimizationView';
 
 interface MenuFeature {
   id: number;
@@ -168,9 +169,10 @@ const Dashboard: React.FC = () => {
       <Navbar />
       <div className='flex-1 w-full flex flex-col md:flex-row gap-0 overflow-hidden'>
         <ImageCropper isVisible={selectedView === 'crop'} />
+        <OptimizationView isVisible={selectedView === 'optimization'} />
         {/* Left: Image Section */}
 
-        {selectedView !== 'crop' && (
+        {(selectedView !== 'crop' && selectedView !== 'optimization') && (
           <div className='md:w-8/12 w-full relative h-64 md:h-full overflow-hidden'>
             {/* Room View with 3D Frame */}
             <div
@@ -296,12 +298,17 @@ const Dashboard: React.FC = () => {
             </div>
 
             {/* Top overlay buttons */}
-            <div className='absolute top-0 left-0 right-0 flex justify-between items-start md:top-4 md:px-4' style={{ pointerEvents: 'none' }}>
+            <div
+              className='absolute top-0 left-0 right-0 flex justify-between items-start md:top-4 md:px-4'
+              style={{ pointerEvents: 'none' }}
+            >
               {/* Add Image Button or Placeholder */}
               <motion.button
                 onClick={handleAddImageClick}
                 className={`flex flex-col items-center justify-center px-2 py-2 md:px-2 md:py-2 bg-[var(--primary)] border border-gray-300 text-white hover:transition-all cursor-pointer shadow-sm ${
-                  selectedView !== 'room' ? 'invisible pointer-events-none' : 'pointer-events-auto'
+                  selectedView !== 'room'
+                    ? 'invisible pointer-events-none'
+                    : 'pointer-events-auto'
                 }`}
                 type='button'
                 whileHover={{ scale: 1.02 }}
@@ -726,7 +733,7 @@ const Dashboard: React.FC = () => {
                       onClick={() => {
                         applyPendingChanges();
 
-                        if (selectedView === 'crop') setSelectedView('room');
+                        if (selectedView === 'crop' || selectedView === "optimization") setSelectedView('room');
                         setSelectedFeature(null);
                       }}
                     >

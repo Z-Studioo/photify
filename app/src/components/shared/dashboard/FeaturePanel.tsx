@@ -5,6 +5,7 @@ import ShapeSelector from '@/components/shared/dashboard/ShapeSelector';
 import RatioSizePanel from '@/components/shared/dashboard/RatioSizePanel';
 import EdgeSelector from './EdgeSelector';
 import { useView } from '@/context/ViewContext';
+import OptimizationControl from './OptimizationControl';
 
 const FeaturePanel = () => {
   const { selectedFeature, setSelectedFeature } = useFeature();
@@ -22,6 +23,8 @@ const FeaturePanel = () => {
         return <ShapeSelector />;
       case 'SIDE APPEARANCE':
         return <EdgeSelector />;
+      case 'IMAGE OPTIMIZATION':
+        return <OptimizationControl />;
       default:
         return (
           <div className='text-gray-500'>Feature configuration coming soon</div>
@@ -30,7 +33,7 @@ const FeaturePanel = () => {
   };
 
   const handleGoBack = () => {
-    if (selectedView === 'crop') setSelectedView('room');
+    if (selectedView === 'crop' || selectedView === "optimization") setSelectedView('room');
     setSelectedFeature(null);
   };
 
