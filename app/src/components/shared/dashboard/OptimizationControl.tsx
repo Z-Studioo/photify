@@ -1,5 +1,3 @@
-'use client';
-
 import { Label } from '@/components/ui/label';
 import { Slider } from '@/components/ui/slider';
 import { useView } from '@/context/ViewContext';
@@ -79,11 +77,9 @@ const OptimizationControl: React.FC = () => {
     const handler = setTimeout(async () => {
       try {
         setIsProcessing(true);
-        console.log('Enhancing with canvas...');
 
         const enhanced = await enhanceImageWithCanvas(preview, quality[0]);
-
-        console.log('Enhanced image generated');
+        
         setPendingPreview(enhanced);
         setPendingFile(file);
       } catch (error) {
