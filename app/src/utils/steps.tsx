@@ -48,8 +48,8 @@ export const dashboardSteps: Tour[] = [
         side: 'bottom',
         showControls: true,
         showSkip: true,
-        pointerPadding: 2,
-        pointerRadius: 4,
+        pointerPadding: 0,
+        pointerRadius: 0,
       },
       {
         icon: <></>,
@@ -59,8 +59,8 @@ export const dashboardSteps: Tour[] = [
         side: 'bottom',
         showControls: true,
         showSkip: true,
-        pointerPadding: 2,
-        pointerRadius: 4,
+        pointerPadding: 0,
+        pointerRadius: 0,
       },
       {
         icon: <></>,

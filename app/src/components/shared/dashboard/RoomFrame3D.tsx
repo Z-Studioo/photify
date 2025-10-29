@@ -214,7 +214,6 @@ const RoomFrame3DCanvas = ({ onInteraction }: RoomFrame3DProps) => {
 
   return (
     <div className='absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-80 h-60 cursor-pointer'>
-      
       <Canvas
         shadows
         camera={{ position: [0, 0, 4], fov: 50 }}
