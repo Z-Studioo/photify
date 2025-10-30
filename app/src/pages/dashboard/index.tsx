@@ -296,12 +296,17 @@ const Dashboard: React.FC = () => {
             </div>
 
             {/* Top overlay buttons */}
-            <div className='absolute top-0 left-0 right-0 flex justify-between items-start md:top-4 md:px-4' style={{ pointerEvents: 'none' }}>
+            <div
+              className='absolute top-0 left-0 right-0 flex justify-between items-start md:top-4 md:px-4'
+              style={{ pointerEvents: 'none' }}
+            >
               {/* Add Image Button or Placeholder */}
               <motion.button
                 onClick={handleAddImageClick}
                 className={`flex flex-col items-center justify-center px-2 py-2 md:px-2 md:py-2 bg-[var(--primary)] border border-gray-300 text-white hover:transition-all cursor-pointer shadow-sm ${
-                  selectedView !== 'room' ? 'invisible pointer-events-none' : 'pointer-events-auto'
+                  selectedView !== 'room'
+                    ? 'invisible pointer-events-none'
+                    : 'pointer-events-auto'
                 }`}
                 type='button'
                 whileHover={{ scale: 1.02 }}
@@ -592,7 +597,7 @@ const Dashboard: React.FC = () => {
                   className='flex items-center justify-between gap-3'
                 >
                   <motion.div
-                    className='flex items-center justify-center space-x-2'
+                    className='flex items-center justify-center space-x-2 sm:space-x-3'
                     initial={{ scale: 0.9, opacity: 0 }}
                     animate={{ scale: 1, opacity: 1 }}
                     transition={{
@@ -612,11 +617,12 @@ const Dashboard: React.FC = () => {
                         variant='outline'
                         size='icon'
                         onClick={handleDecrement}
-                        className='h-12 w-12 rounded-none transition-all duration-200'
+                        className='h-8 w-8 sm:h-12 sm:w-12 rounded-none transition-all duration-200'
                       >
-                        <MinusCircle className='h-6 w-6' />
+                        <MinusCircle className='h-4 w-4 sm:h-6 sm:w-6' />
                       </Button>
                     </motion.div>
+
                     <motion.div
                       initial={{ scale: 0.8 }}
                       animate={{ scale: 1 }}
@@ -626,10 +632,11 @@ const Dashboard: React.FC = () => {
                         stiffness: 400,
                       }}
                     >
-                      <Badge className='px-4 py-2 text-base rounded-none'>
+                      <Badge className='px-2 sm:px-4 py-1 sm:py-2 text-sm sm:text-base rounded-none'>
                         {quantity}
                       </Badge>
                     </motion.div>
+
                     <motion.div
                       variants={buttonVariants}
                       initial='idle'
@@ -640,9 +647,9 @@ const Dashboard: React.FC = () => {
                         variant='outline'
                         size='icon'
                         onClick={handleIncrement}
-                        className='h-12 w-12 rounded-none transition-all duration-200'
+                        className='h-8 w-8 sm:h-12 sm:w-12 rounded-none transition-all duration-200'
                       >
-                        <PlusCircle className='h-6 w-6' />
+                        <PlusCircle className='h-4 w-4 sm:h-6 sm:w-6' />
                       </Button>
                     </motion.div>
                   </motion.div>
@@ -651,16 +658,37 @@ const Dashboard: React.FC = () => {
                     initial={{ opacity: 0, x: 20 }}
                     animate={{ opacity: 1, x: 0 }}
                     transition={{ delay: 0.2, duration: 0.3 }}
-                    whileHover={{ scale: 1.02 }}
-                    whileTap={{ scale: 0.98 }}
+                    className='flex items-center gap-2 w-full'
                   >
-                    <Button
-                      variant='default'
-                      className='flex-1 flex items-center justify-center px-8 py-4 text-base rounded-none transition-all duration-200'
-                      onClick={handleAddToCart}
+                    <motion.div
+                      className='flex-1'
+                      whileHover={{ scale: 1.02 }}
+                      whileTap={{ scale: 0.98 }}
                     >
-                      CONFIRM CHANGES
-                    </Button>
+                      <Button
+                        variant='default'
+                        className='w-full h-full flex items-center justify-center px-3 py-3 text-xs md:text-sm rounded-none transition-all duration-200'
+                        onClick={handleAddToCart}
+                      >
+                        CONFIRM
+                      </Button>
+                    </motion.div>
+
+                    <motion.div
+                      className='flex-1'
+                      whileHover={{ scale: 1.02 }}
+                      whileTap={{ scale: 0.98 }}
+                    >
+                      <Button
+                        variant='outline'
+                        className='w-full h-full flex items-center justify-center px-3 py-3 text-xs md:text-sm rounded-none transition-all duration-200 border-2'
+                        onClick={() => {
+                          /* handle reset */
+                        }}
+                      >
+                        RESET
+                      </Button>
+                    </motion.div>
                   </motion.div>
                 </motion.div>
               ) : (
