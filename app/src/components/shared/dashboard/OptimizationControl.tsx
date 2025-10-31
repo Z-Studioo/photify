@@ -8,6 +8,7 @@ const OptimizationControl: React.FC = () => {
   const { setSelectedView } = useView();
   const {
     preview,
+    originalPreview,
     setPendingPreview,
     file,
     setPendingFile,
@@ -21,13 +22,14 @@ const OptimizationControl: React.FC = () => {
     setSelectedView('optimization');
   }, [setSelectedView]);
 
-  // ADD THIS useEffect: Reset pending preview when component mounts
+  // Reset pending preview when component mounts
   useEffect(() => {
-    // Reset to original preview when entering optimization view
-    if (preview && !pendingPreview) {
-      setPendingPreview(preview);
+    // Use original preview as the base, or fall back to current preview
+    const basePreview = originalPreview || preview;
+    if (basePreview && !pendingPreview) {
+      setPendingPreview(basePreview);
     }
-  }, [preview, pendingPreview, setPendingPreview]);
+  }, [originalPreview, preview, pendingPreview, setPendingPreview]);
 
   // Core canvas enhancement logic
   const enhanceImageWithCanvas = async (
@@ -81,13 +83,15 @@ const OptimizationControl: React.FC = () => {
 
   // Debounced enhancement trigger
   useEffect(() => {
-    if (!preview) return;
+    // Use original preview as the base for optimization
+    const basePreview = originalPreview || preview;
+    if (!basePreview) return;
 
     const handler = setTimeout(async () => {
       try {
         setIsProcessing(true);
 
-        const enhanced = await enhanceImageWithCanvas(preview, quality[0]);
+        const enhanced = await enhanceImageWithCanvas(basePreview, quality[0]);
         
         setPendingPreview(enhanced);
         setPendingFile(file);
@@ -99,7 +103,7 @@ const OptimizationControl: React.FC = () => {
     }, 800);
 
     return () => clearTimeout(handler);
-  }, [quality, preview, setPendingPreview]);
+  }, [quality, originalPreview, preview, setPendingPreview, file, setPendingFile]);
 
   return (
     <div>
