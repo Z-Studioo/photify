@@ -1,7 +1,12 @@
 import { createContext, useContext, useState, useEffect } from 'react';
 import type { ReactNode } from 'react';
 
-export type CanvasShape = 'rectangle' | 'round' | 'hexagon' | 'octagon' | 'dodecagon';
+export type CanvasShape =
+  | 'rectangle'
+  | 'round'
+  | 'hexagon'
+  | 'octagon'
+  | 'dodecagon';
 
 export interface SizeData {
   _id: string;
@@ -27,6 +32,7 @@ interface Metadata {
   selectedRatio?: string | null;
   selectedSize?: SizeData | null;
   shape?: CanvasShape;
+  quality?: number[] | null;
 }
 
 interface UploadContextType {
@@ -44,6 +50,8 @@ interface UploadContextType {
   setSelectedRatio: (r: string | null) => void;
   selectedSize: SizeData | null;
   setSelectedSize: (s: SizeData | null) => void;
+  quality: number[];
+  setQuality: (q: number[]) => void;
   applyPendingChanges: () => void;
 }
 
@@ -57,6 +65,23 @@ export const UploadProvider = ({ children }: { children: ReactNode }) => {
   const [pendingPreview, setPendingPreview] = useState<string | null>(null);
   const [selectedRatio, setSelectedRatio] = useState<string | null>(null);
   const [selectedSize, setSelectedSize] = useState<SizeData | null>(null);
+  // CHANGED: Initialize quality from localStorage
+  const [quality, setQuality] = useState<number[]>(() => {
+    if (typeof window !== 'undefined') {
+      const storedMeta = localStorage.getItem('photify_metadata');
+      if (storedMeta) {
+        try {
+          const meta: Metadata = JSON.parse(storedMeta);
+          if (meta.quality && Array.isArray(meta.quality) && meta.quality.length > 0) {
+            return meta.quality;
+          }
+        } catch {
+          // Fall through to default
+        }
+      }
+    }
+    return [70]; // Default fallback
+  });
 
   // Helpers
   const fileToBase64 = (file: File): Promise<string> =>
@@ -67,9 +92,13 @@ export const UploadProvider = ({ children }: { children: ReactNode }) => {
       reader.onerror = reject;
     });
 
-  const base64ToFile = (base64Data: string, name: string, type: string): File => {
+  const base64ToFile = (
+    base64Data: string,
+    name: string,
+    type: string
+  ): File => {
     const byteChars = atob(base64Data.split(',')[1]);
-    const byteArray = Uint8Array.from([...byteChars].map((c) => c.charCodeAt(0)));
+    const byteArray = Uint8Array.from([...byteChars].map(c => c.charCodeAt(0)));
     return new File([byteArray], name, { type });
   };
 
@@ -94,7 +123,7 @@ export const UploadProvider = ({ children }: { children: ReactNode }) => {
     localStorage.setItem('photify_uploaded_image', JSON.stringify(imageData));
   };
 
-  // Persist metadata (ratio, size, shape)
+  // Persist metadata (ratio, size, shape, quality)
   const persistMetadata = (meta: Metadata) => {
     localStorage.setItem('photify_metadata', JSON.stringify(meta));
   };
@@ -106,7 +135,11 @@ export const UploadProvider = ({ children }: { children: ReactNode }) => {
     if (storedImage) {
       try {
         const data: StoredImageData = JSON.parse(storedImage);
-        const restoredFile = base64ToFile(data.base64Data, data.fileName, data.fileType);
+        const restoredFile = base64ToFile(
+          data.base64Data,
+          data.fileName,
+          data.fileType
+        );
         setFile(restoredFile);
         setPreview(data.preview);
       } catch {
@@ -114,7 +147,7 @@ export const UploadProvider = ({ children }: { children: ReactNode }) => {
       }
     }
 
-    // Metadata restore
+    // Metadata restore (quality is now handled in useState initialization above)
     const storedMeta = localStorage.getItem('photify_metadata');
     if (storedMeta) {
       try {
@@ -122,6 +155,7 @@ export const UploadProvider = ({ children }: { children: ReactNode }) => {
         if (meta.selectedRatio) setSelectedRatio(meta.selectedRatio);
         if (meta.selectedSize) setSelectedSize(meta.selectedSize);
         if (meta.shape) setShape(meta.shape);
+        // REMOVED: Quality restoration from here since it's now in useState initialization
       } catch {
         localStorage.removeItem('photify_metadata');
       }
@@ -130,8 +164,8 @@ export const UploadProvider = ({ children }: { children: ReactNode }) => {
 
   // Auto-persist when metadata changes
   useEffect(() => {
-    persistMetadata({ selectedRatio, selectedSize, shape });
-  }, [selectedRatio, selectedSize, shape]);
+    persistMetadata({ selectedRatio, selectedSize, shape, quality });
+  }, [selectedRatio, selectedSize, shape, quality]);
 
   const setFileWithPersistence = async (f: File | null, p: string | null) => {
     setFile(f);
@@ -165,6 +199,8 @@ export const UploadProvider = ({ children }: { children: ReactNode }) => {
         selectedSize,
         setSelectedSize,
         applyPendingChanges,
+        quality,
+        setQuality,
       }}
     >
       {children}

@@ -26,50 +26,120 @@ const Frame3D = ({
   const [texture, setTexture] = useState<THREE.Texture | null>(null);
   const { selectedSize } = useUpload();
 
+
+  //change
+
+
+  // useEffect(() => {
+  //   if (imageUrl) {
+  //     const loader = new THREE.TextureLoader();
+  //     loader.load(imageUrl, loadedTexture => {
+  //       if (edgeType === 'mirrored') {
+  //         loadedTexture.wrapS = THREE.MirroredRepeatWrapping;
+  //         loadedTexture.wrapT = THREE.MirroredRepeatWrapping;
+  //       } else {
+  //         // Wrapped edges clamp to edge - extends the edge pixels
+  //         loadedTexture.wrapS = THREE.ClampToEdgeWrapping;
+  //         loadedTexture.wrapT = THREE.ClampToEdgeWrapping;
+  //       }
+  //       loadedTexture.minFilter = THREE.LinearFilter;
+  //       loadedTexture.magFilter = THREE.LinearFilter;
+  //       loadedTexture.generateMipmaps = false;
+  //       if ('colorSpace' in loadedTexture) {
+  //         (loadedTexture as any).colorSpace = THREE.SRGBColorSpace;
+  //       } else {
+  //         (loadedTexture as any).encoding = THREE.SRGBColorSpace;
+  //       }
+
+  //       // Center the texture based on aspect ratio (cover behavior)
+  //       const img = loadedTexture.image;
+  //       if (img && img.width && img.height) {
+  //         const frameAspect = 1.8 / 1.35; // width / height
+  //         const imageAspect = img.width / img.height;
+
+  //         if (imageAspect > frameAspect) {
+  //           // Image is wider - fit to height, crop width
+  //           const scale = frameAspect / imageAspect;
+  //           loadedTexture.repeat.set(scale, 1);
+  //           loadedTexture.offset.set((1 - scale) / 2, 0);
+  //         } else {
+  //           // Image is taller - fit to width, crop height
+  //           const scale = imageAspect / frameAspect;
+  //           loadedTexture.repeat.set(1, scale);
+  //           loadedTexture.offset.set(0, (1 - scale) / 2);
+  //         }
+  //       }
+
+  //       setTexture(loadedTexture);
+  //     });
+  //   }
+  // }, [imageUrl, edgeType]);
+
   useEffect(() => {
-    if (imageUrl) {
-      const loader = new THREE.TextureLoader();
-      loader.load(imageUrl, loadedTexture => {
-        if (edgeType === 'mirrored') {
-          loadedTexture.wrapS = THREE.MirroredRepeatWrapping;
-          loadedTexture.wrapT = THREE.MirroredRepeatWrapping;
+  if (!imageUrl) {
+    setTexture(null);
+    return;
+  }
+
+  const isBase64 = imageUrl.startsWith('data:');
+  const uniqueUrl = isBase64 ? imageUrl : `${imageUrl}?v=${Date.now()}`;
+
+  const loader = new THREE.TextureLoader();
+
+  // Dispose old texture
+  if (texture) texture.dispose();
+
+  loader.load(
+    uniqueUrl,
+    loadedTexture => {
+      loadedTexture.needsUpdate = true;
+      loadedTexture.flipY = true;
+
+      if (edgeType === 'mirrored') {
+        loadedTexture.wrapS = THREE.MirroredRepeatWrapping;
+        loadedTexture.wrapT = THREE.MirroredRepeatWrapping;
+      } else {
+        loadedTexture.wrapS = THREE.ClampToEdgeWrapping;
+        loadedTexture.wrapT = THREE.ClampToEdgeWrapping;
+      }
+
+      loadedTexture.minFilter = THREE.LinearFilter;
+      loadedTexture.magFilter = THREE.LinearFilter;
+      loadedTexture.generateMipmaps = false;
+
+      if ('colorSpace' in loadedTexture) {
+        (loadedTexture as any).colorSpace = THREE.SRGBColorSpace;
+      } else {
+        (loadedTexture as any).encoding = THREE.SRGBColorSpace;
+      }
+
+      // Center image based on aspect ratio
+      const img = loadedTexture.image;
+      if (img && img.width && img.height) {
+        const frameAspect = 1.8 / 1.35;
+        const imageAspect = img.width / img.height;
+
+        if (imageAspect > frameAspect) {
+          const scale = frameAspect / imageAspect;
+          loadedTexture.repeat.set(scale, 1);
+          loadedTexture.offset.set((1 - scale) / 2, 0);
         } else {
-          // Wrapped edges clamp to edge - extends the edge pixels
-          loadedTexture.wrapS = THREE.ClampToEdgeWrapping;
-          loadedTexture.wrapT = THREE.ClampToEdgeWrapping;
+          const scale = imageAspect / frameAspect;
+          loadedTexture.repeat.set(1, scale);
+          loadedTexture.offset.set(0, (1 - scale) / 2);
         }
-        loadedTexture.minFilter = THREE.LinearFilter;
-        loadedTexture.magFilter = THREE.LinearFilter;
-        loadedTexture.generateMipmaps = false;
-        if ('colorSpace' in loadedTexture) {
-          (loadedTexture as any).colorSpace = THREE.SRGBColorSpace;
-        } else {
-          (loadedTexture as any).encoding = THREE.SRGBColorSpace;
-        }
+      }
 
-        // Center the texture based on aspect ratio (cover behavior)
-        const img = loadedTexture.image;
-        if (img && img.width && img.height) {
-          const frameAspect = 1.8 / 1.35; // width / height
-          const imageAspect = img.width / img.height;
-
-          if (imageAspect > frameAspect) {
-            // Image is wider - fit to height, crop width
-            const scale = frameAspect / imageAspect;
-            loadedTexture.repeat.set(scale, 1);
-            loadedTexture.offset.set((1 - scale) / 2, 0);
-          } else {
-            // Image is taller - fit to width, crop height
-            const scale = imageAspect / frameAspect;
-            loadedTexture.repeat.set(1, scale);
-            loadedTexture.offset.set(0, (1 - scale) / 2);
-          }
-        }
-
-        setTexture(loadedTexture);
-      });
+      setTexture(loadedTexture);
+    },
+    undefined,
+    err => {
+      console.error('❌ Texture load failed:', err);
+      setTexture(null);
     }
-  }, [imageUrl, edgeType]);
+  );
+}, [imageUrl, edgeType]);
+
 
   const frameDepth = 0.06;
   const BASE_SIZE = 15;

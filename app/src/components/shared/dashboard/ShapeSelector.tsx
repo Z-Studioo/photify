@@ -1,4 +1,3 @@
-'use client';
 import { Square, Circle, Hexagon, Octagon } from 'lucide-react';
 import { useUpload, type CanvasShape } from '@/context/UploadContext';
 

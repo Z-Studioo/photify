@@ -20,6 +20,7 @@ interface MenuFeature {
   subtitle: string;
   step: number;
   component: string | null;
+  disabled?: boolean; // Add disabled property
 }
 
 const features: MenuFeature[] = [
@@ -62,6 +63,7 @@ const features: MenuFeature[] = [
   //   subtitle: 'Activated',
   //   step: 4,
   //   component: null,
+  //   disabled: true, // Disable this feature
   // },
   // {
   //   id: 5,
@@ -70,8 +72,8 @@ const features: MenuFeature[] = [
   //   subtitle: 'Frame',
   //   step: 5,
   //   component: null,
+  //   disabled: true, // Disable this feature
   // },
-
   // {
   //   id: 7,
   //   name: 'PAPER',
@@ -79,6 +81,7 @@ const features: MenuFeature[] = [
   //   subtitle: 'Fuji Crystal Archive Glossy',
   //   step: 7,
   //   component: null,
+  //   disabled: true, // Disable this feature
   // },
   // {
   //   id: 8,
@@ -87,6 +90,7 @@ const features: MenuFeature[] = [
   //   subtitle: 'Aluminum Rails',
   //   step: 8,
   //   component: null,
+  //   disabled: true, // Disable this feature
   // },
   // {
   //   id: 9,
@@ -95,6 +99,7 @@ const features: MenuFeature[] = [
   //   subtitle: 'Without White Border',
   //   step: 9,
   //   component: null,
+  //   disabled: true, // Disable this feature
   // },
   {
     id: 10,
@@ -103,6 +108,7 @@ const features: MenuFeature[] = [
     subtitle: 'Standard',
     step: 10,
     component: null,
+    disabled: true, // Disable this feature
   },
   {
     id: 11,
@@ -110,7 +116,8 @@ const features: MenuFeature[] = [
     icon: Circle,
     subtitle: 'Rectangle',
     step: 11,
-    component: 'ShapeSelector',
+    component: null,
+    disabled: true, // Disable this feature
   },
   {
     id: 12,
@@ -119,6 +126,7 @@ const features: MenuFeature[] = [
     subtitle: 'One Piece',
     step: 12,
     component: null,
+    disabled: true, // Disable this feature
   },
 ];
 

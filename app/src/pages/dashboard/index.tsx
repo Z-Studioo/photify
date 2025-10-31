@@ -27,6 +27,7 @@ import { useUpload } from '@/context/UploadContext';
 import { useView } from '@/context/ViewContext';
 import ImageCropper from '@/components/shared/common/ImageCropper';
 import { useEdge } from '@/context/EdgeContext';
+import OptimizationView from '@/components/shared/dashboard/OptimizationView';
 
 interface MenuFeature {
   id: number;
@@ -85,6 +86,7 @@ const Dashboard: React.FC = () => {
     applyPendingChanges,
     selectedRatio,
     selectedSize,
+    quality,
   } = useUpload();
   const { selectedView, setSelectedView } = useView();
   const { edgeType } = useEdge();
@@ -107,6 +109,32 @@ const Dashboard: React.FC = () => {
   };
 
   // Create dynamic features with updated subtitles
+
+  //change
+  // const features = featuresBase.map(feature => {
+  //   if (feature.name === 'ROUND FORMATS AND SHAPES') {
+  //     return {
+  //       ...feature,
+  //       subtitle: shape.charAt(0).toUpperCase() + shape.slice(1),
+  //     };
+  //   }
+  //   if (feature.name === 'IMAGE SIZE AND CROP PHOTO') {
+  //     return {
+  //       ...feature,
+  //       subtitle: selectedSize
+  //         ? `${selectedSize.width}" × ${selectedSize.height}" (${selectedRatio})`
+  //         : '24 by 16 (External: 24 by 16)',
+  //     };
+  //   }
+  //   if (feature.name === 'SIDE APPEARANCE') {
+  //     return {
+  //       ...feature,
+  //       subtitle: edgeType === 'wrapped' ? 'Wrapped edges' : 'Mirrored edges',
+  //     };
+  //   }
+  //   return feature;
+  // });
+
   const features = featuresBase.map(feature => {
     if (feature.name === 'ROUND FORMATS AND SHAPES') {
       return {
@@ -120,6 +148,12 @@ const Dashboard: React.FC = () => {
         subtitle: selectedSize
           ? `${selectedSize.width}" × ${selectedSize.height}" (${selectedRatio})`
           : '24 by 16 (External: 24 by 16)',
+      };
+    }
+    if (feature.name === 'IMAGE OPTIMIZATION') {
+      return {
+        ...feature,
+        subtitle: `${quality[0]}%`,
       };
     }
     if (feature.name === 'SIDE APPEARANCE') {
@@ -168,9 +202,10 @@ const Dashboard: React.FC = () => {
       <Navbar />
       <div className='flex-1 w-full flex flex-col md:flex-row gap-0 overflow-hidden'>
         <ImageCropper isVisible={selectedView === 'crop'} />
+        <OptimizationView isVisible={selectedView === 'optimization'} />
         {/* Left: Image Section */}
 
-        {selectedView !== 'crop' && (
+        {selectedView !== 'crop' && selectedView !== 'optimization' && (
           <div className='md:w-8/12 w-full relative h-64 md:h-full overflow-hidden'>
             {/* Room View with 3D Frame */}
             <div
@@ -296,12 +331,17 @@ const Dashboard: React.FC = () => {
             </div>
 
             {/* Top overlay buttons */}
-            <div className='absolute top-0 left-0 right-0 flex justify-between items-start md:top-4 md:px-4' style={{ pointerEvents: 'none' }}>
+            <div
+              className='absolute top-0 left-0 right-0 flex justify-between items-start md:top-4 md:px-4'
+              style={{ pointerEvents: 'none' }}
+            >
               {/* Add Image Button or Placeholder */}
               <motion.button
                 onClick={handleAddImageClick}
                 className={`flex flex-col items-center justify-center px-2 py-2 md:px-2 md:py-2 bg-[var(--primary)] border border-gray-300 text-white hover:transition-all cursor-pointer shadow-sm ${
-                  selectedView !== 'room' ? 'invisible pointer-events-none' : 'pointer-events-auto'
+                  selectedView !== 'room'
+                    ? 'invisible pointer-events-none'
+                    : 'pointer-events-auto'
                 }`}
                 type='button'
                 whileHover={{ scale: 1.02 }}
@@ -463,53 +503,87 @@ const Dashboard: React.FC = () => {
                       variants={listItemVariants}
                     >
                       <motion.div
-                        className={`flex items-center justify-between p-4 md:p-6 cursor-pointer relative overflow-hidden group ${selectedFeature?.id === item.id ? 'bg-blue-50 border-l-4 border-primary' : ''}`}
-                        onClick={() => handleFeatureClick(item)}
-                        whileHover={{ scale: 1.002 }}
-                        whileTap={{ scale: 0.998 }}
+                        className={`flex items-center justify-between p-4 md:p-6 relative overflow-hidden group ${
+                          selectedFeature?.id === item.id
+                            ? 'bg-blue-50 border-l-4 border-primary'
+                            : ''
+                        } ${
+                          item.disabled
+                            ? 'cursor-not-allowed bg-gray-50/50'
+                            : 'cursor-pointer'
+                        }`}
+                        onClick={() =>
+                          !item.disabled && handleFeatureClick(item)
+                        }
+                        whileHover={!item.disabled ? { scale: 1.002 } : {}}
+                        whileTap={!item.disabled ? { scale: 0.998 } : {}}
                         transition={{
                           type: 'spring',
                           stiffness: 400,
                           damping: 25,
                         }}
                       >
-                        <motion.div
-                          className='absolute inset-0 opacity-0 pointer-events-none'
-                          style={{
-                            background:
-                              'linear-gradient(90deg, rgba(var(--primary-rgb, 59, 130, 246), 0.08) 0%, rgba(var(--primary-rgb, 59, 130, 246), 0.03) 50%, transparent 100%)',
-                          }}
-                          whileHover={{ opacity: 1 }}
-                          transition={{
-                            duration: 0.3,
-                            ease: [0.22, 1, 0.36, 1],
-                          }}
-                        />
-                        <motion.div
-                          className='absolute left-0 top-0 bottom-0 w-1 bg-primary opacity-0 pointer-events-none'
-                          whileHover={{ opacity: 1 }}
-                          transition={{
-                            duration: 0.3,
-                            ease: [0.22, 1, 0.36, 1],
-                          }}
-                        />
-                        <motion.div
-                          className='absolute inset-0 opacity-0 pointer-events-none'
-                          style={{
-                            background:
-                              'radial-gradient(600px circle at 20% 50%, rgba(var(--primary-rgb, 59, 130, 246), 0.04), transparent 60%)',
-                          }}
-                          whileHover={{ opacity: 1 }}
-                          transition={{ duration: 0.4, ease: 'easeOut' }}
-                        />
+                        {/* Disabled overlay with subtle pattern */}
+                        {item.disabled && (
+                          <motion.div
+                            className='absolute inset-0 bg-gradient-to-r from-gray-100/30 via-transparent to-gray-100/30 pointer-events-none'
+                            initial={{ x: '-100%' }}
+                            animate={{ x: '100%' }}
+                            transition={{
+                              duration: 3,
+                              repeat: Number.POSITIVE_INFINITY,
+                              ease: 'linear',
+                            }}
+                          />
+                        )}
+
+                        {/* Background effects for enabled items */}
+                        {!item.disabled && (
+                          <>
+                            <motion.div
+                              className='absolute inset-0 opacity-0 pointer-events-none'
+                              style={{
+                                background:
+                                  'linear-gradient(90deg, rgba(var(--primary-rgb, 59, 130, 246), 0.08) 0%, rgba(var(--primary-rgb, 59, 130, 246), 0.03) 50%, transparent 100%)',
+                              }}
+                              whileHover={{ opacity: 1 }}
+                              transition={{
+                                duration: 0.3,
+                                ease: [0.22, 1, 0.36, 1],
+                              }}
+                            />
+                            <motion.div
+                              className='absolute left-0 top-0 bottom-0 w-1 bg-primary opacity-0 pointer-events-none'
+                              whileHover={{ opacity: 1 }}
+                              transition={{
+                                duration: 0.3,
+                                ease: [0.22, 1, 0.36, 1],
+                              }}
+                            />
+                            <motion.div
+                              className='absolute inset-0 opacity-0 pointer-events-none'
+                              style={{
+                                background:
+                                  'radial-gradient(600px circle at 20% 50%, rgba(var(--primary-rgb, 59, 130, 246), 0.04), transparent 60%)',
+                              }}
+                              whileHover={{ opacity: 1 }}
+                              transition={{ duration: 0.4, ease: 'easeOut' }}
+                            />
+                          </>
+                        )}
+
                         <div className='flex items-center space-x-2 flex-1 min-w-0 relative z-10'>
                           <motion.div
-                            whileHover={{
-                              rotate: 5,
-                              scale: 1.1,
-                              filter:
-                                'drop-shadow(0 2px 8px rgba(var(--primary-rgb, 59, 130, 246), 0.3))',
-                            }}
+                            whileHover={
+                              !item.disabled
+                                ? {
+                                    rotate: 5,
+                                    scale: 1.1,
+                                    filter:
+                                      'drop-shadow(0 2px 8px rgba(var(--primary-rgb, 59, 130, 246), 0.3))',
+                                  }
+                                : {}
+                            }
                             transition={{
                               type: 'spring',
                               stiffness: 400,
@@ -517,40 +591,107 @@ const Dashboard: React.FC = () => {
                             }}
                           >
                             <item.icon
-                              className={`h-5 w-5 flex-shrink-0 transition-all duration-300 group-hover:text-primary ${selectedFeature?.id === item.id ? 'text-primary' : 'text-gray-500'}`}
+                              className={`h-5 w-5 flex-shrink-0 transition-all duration-300 ${
+                                item.disabled
+                                  ? 'text-gray-300'
+                                  : selectedFeature?.id === item.id
+                                    ? 'text-primary'
+                                    : 'text-gray-500 group-hover:text-primary'
+                              }`}
                             />
                           </motion.div>
-                          <div className='min-w-0'>
+                          <div className='min-w-0 flex-1'>
+                            <div className='flex items-center gap-2'>
+                              <motion.p
+                                className={`font-semibold text-sm leading-tight transition-all duration-300 ${
+                                  item.disabled
+                                    ? 'text-gray-400'
+                                    : selectedFeature?.id === item.id
+                                      ? 'text-primary'
+                                      : 'text-gray-900 group-hover:text-primary'
+                                }`}
+                                whileHover={
+                                  !item.disabled
+                                    ? {
+                                        textShadow:
+                                          '0 0 8px rgba(var(--primary-rgb, 59, 130, 246), 0.3)',
+                                      }
+                                    : {}
+                                }
+                              >
+                                {item.name}
+                              </motion.p>
+                              {item.disabled && (
+                                <motion.span
+                                  initial={{ scale: 0, opacity: 0 }}
+                                  animate={{ scale: 1, opacity: 1 }}
+                                  transition={{
+                                    delay: index * 0.05 + 0.3,
+                                    type: 'spring',
+                                    stiffness: 500,
+                                    damping: 15,
+                                  }}
+                                  className='inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium bg-gradient-to-r from-amber-100 to-orange-100 text-amber-700 border border-amber-200 shadow-sm'
+                                >
+                                  Coming Soon
+                                </motion.span>
+                              )}
+                            </div>
                             <motion.p
-                              className={`font-semibold text-sm leading-tight transition-all duration-300 group-hover:text-primary ${selectedFeature?.id === item.id ? 'text-primary' : 'text-gray-900'}`}
-                              whileHover={{
-                                textShadow:
-                                  '0 0 8px rgba(var(--primary-rgb, 59, 130, 246), 0.3)',
-                              }}
+                              className={`text-xs leading-tight transition-colors duration-300 ${
+                                item.disabled
+                                  ? 'text-gray-300'
+                                  : 'text-gray-500 group-hover:text-gray-600'
+                              }`}
                             >
-                              {item.name}
-                            </motion.p>
-                            <motion.p className='text-xs text-gray-500 leading-tight transition-colors duration-300 group-hover:text-gray-600'>
                               {item.subtitle}
                             </motion.p>
                           </div>
                         </div>
-                        <motion.div
-                          className='relative z-10'
-                          whileHover={{
-                            x: 4,
-                            scale: 1.1,
-                            filter:
-                              'drop-shadow(0 2px 6px rgba(var(--primary-rgb, 59, 130, 246), 0.25))',
-                          }}
-                          transition={{
-                            type: 'spring',
-                            stiffness: 400,
-                            damping: 10,
-                          }}
-                        >
-                          <ChevronRight className='h-4 w-4 text-gray-400 flex-shrink-0 cursor-pointer transition-all duration-300 group-hover:text-primary' />
-                        </motion.div>
+
+                        {/* Chevron icon or lock icon */}
+                        {!item.disabled ? (
+                          <motion.div
+                            className='relative z-10'
+                            whileHover={{
+                              x: 4,
+                              scale: 1.1,
+                              filter:
+                                'drop-shadow(0 2px 6px rgba(var(--primary-rgb, 59, 130, 246), 0.25))',
+                            }}
+                            transition={{
+                              type: 'spring',
+                              stiffness: 400,
+                              damping: 10,
+                            }}
+                          >
+                            <ChevronRight className='h-4 w-4 text-gray-400 flex-shrink-0 cursor-pointer transition-all duration-300 group-hover:text-primary' />
+                          </motion.div>
+                        ) : (
+                          <motion.div
+                            className='relative z-10'
+                            initial={{ rotate: 0 }}
+                            animate={{ rotate: [0, -10, 10, -10, 0] }}
+                            transition={{
+                              duration: 0.5,
+                              delay: index * 0.05 + 0.5,
+                            }}
+                          >
+                            <svg
+                              className='h-4 w-4 text-gray-300'
+                              fill='none'
+                              stroke='currentColor'
+                              viewBox='0 0 24 24'
+                            >
+                              <path
+                                strokeLinecap='round'
+                                strokeLinejoin='round'
+                                strokeWidth={2}
+                                d='M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z'
+                              />
+                            </svg>
+                          </motion.div>
+                        )}
                       </motion.div>
                       {index !== features.length - 1 && (
                         <motion.div
@@ -726,7 +867,11 @@ const Dashboard: React.FC = () => {
                       onClick={() => {
                         applyPendingChanges();
 
-                        if (selectedView === 'crop') setSelectedView('room');
+                        if (
+                          selectedView === 'crop' ||
+                          selectedView === 'optimization'
+                        )
+                          setSelectedView('room');
                         setSelectedFeature(null);
                       }}
                     >
