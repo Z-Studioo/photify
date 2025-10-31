@@ -28,21 +28,28 @@ interface RatioSizePanelProps {
 }
 
 const fetchRatios = async (): Promise<RatioData[]> => {
-  const res = await fetch('https://photify.co/version-923ig/api/1.1/obj/ratios');
+  const res = await fetch(
+    'https://photify.co/version-923ig/api/1.1/obj/ratios'
+  );
   if (!res.ok) throw new Error('Failed to fetch ratios');
   const data = await res.json();
   return data.response?.results || [];
 };
 
 const fetchInches = async (): Promise<InchData[]> => {
-  const res = await fetch('https://photify.co/version-923ig/api/1.1/obj/inches');
+  const res = await fetch(
+    'https://photify.co/version-923ig/api/1.1/obj/inches'
+  );
   if (!res.ok) throw new Error('Failed to fetch inches');
   const data = await res.json();
   return data.response?.results || [];
 };
 
-const RatioSizePanel: React.FC<RatioSizePanelProps> = ({ onSelectionChange }) => {
-  const { selectedRatio, setSelectedRatio, selectedSize, setSelectedSize } = useUpload();
+const RatioSizePanel: React.FC<RatioSizePanelProps> = ({
+  onSelectionChange,
+}) => {
+  const { selectedRatio, setSelectedRatio, selectedSize, setSelectedSize } =
+    useUpload();
   const { setSelectedView } = useView();
 
   const sectionRefs = useRef<Record<string, HTMLDivElement | null>>({});
@@ -98,7 +105,15 @@ const RatioSizePanel: React.FC<RatioSizePanelProps> = ({ onSelectionChange }) =>
       setSelectedSize(defaultSize);
       onSelectionChange?.(defaultRatio.ratio, defaultSize);
     }
-  }, [ratios, inches]);
+  }, [
+    ratios,
+    inches,
+    selectedRatio,
+    selectedSize,
+    setSelectedRatio,
+    setSelectedSize,
+    onSelectionChange,
+  ]);
 
   const calculateDiscount = (actual: number, sell: number) =>
     Math.round(((actual - sell) / actual) * 100);
@@ -121,7 +136,23 @@ const RatioSizePanel: React.FC<RatioSizePanelProps> = ({ onSelectionChange }) =>
       onSelectionChange?.(ratioData.ratio, smallest);
 
       const ref = sectionRefs.current[ratioData._id];
-      if (ref) ref.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      if (ref) {
+        const isFirstRatio = ratios[0]?._id === ratioData._id;
+
+        if (isFirstRatio) {
+          // For first ratio, scroll container to top
+          const container = ref.closest('.overflow-auto');
+          if (container) {
+            container.scrollTo({ top: 0, behavior: 'smooth' });
+          }
+        } else {
+          // For other ratios, use scrollIntoView
+          ref.scrollIntoView({
+            behavior: 'smooth',
+            block: 'start',
+          });
+        }
+      }
 
       if (isDifferentRatio) setSelectedView('crop');
     }
@@ -151,10 +182,14 @@ const RatioSizePanel: React.FC<RatioSizePanelProps> = ({ onSelectionChange }) =>
           {ratioErrObj instanceof Error
             ? ratioErrObj.message
             : inchErrObj instanceof Error
-            ? inchErrObj.message
-            : 'Unknown error'}
+              ? inchErrObj.message
+              : 'Unknown error'}
         </p>
-        <Button variant='outline' className='mt-2' onClick={() => window.location.reload()}>
+        <Button
+          variant='outline'
+          className='mt-2'
+          onClick={() => window.location.reload()}
+        >
           Retry
         </Button>
       </div>
@@ -164,7 +199,9 @@ const RatioSizePanel: React.FC<RatioSizePanelProps> = ({ onSelectionChange }) =>
     <div className='space-y-6'>
       {/* Sticky Header + Ratios */}
       <div className='sticky top-0 bg-gray-50 z-10 pt-1 pb-2'>
-        <h2 className='text-xl font-semibold text-gray-800 mb-2 pl-4'>Customize Image</h2>
+        <h2 className='text-xl font-semibold text-gray-800 mb-2 pl-4'>
+          Customize Image
+        </h2>
 
         <div className='flex overflow-x-auto gap-3 pb-2 pl-4'>
           {ratios.map(ratio => (
@@ -185,12 +222,18 @@ const RatioSizePanel: React.FC<RatioSizePanelProps> = ({ onSelectionChange }) =>
 
       {/* Sizes List */}
       <div className='space-y-6'>
-        {ratios.map(ratio => {
+        {ratios.map((ratio, index) => {
           const sizes = getAvailableSizes(ratio);
           if (!sizes.length) return null;
 
           return (
-            <div key={ratio._id} ref={el => { sectionRefs.current[ratio._id] = el; }}>
+            <div
+              key={ratio._id}
+              ref={el => {
+                sectionRefs.current[ratio._id] = el;
+              }}
+              style={{ scrollMarginTop: index === 0 ? '0px' : '80px' }}
+            >
               <h3 className='flex items-center gap-2 font-semibold text-lg mb-3 text-gray-800 ml-4'>
                 <AspectRatioIcon ratio={ratio.ratio} />
                 {ratio.ratio}
@@ -198,9 +241,13 @@ const RatioSizePanel: React.FC<RatioSizePanelProps> = ({ onSelectionChange }) =>
 
               <div className='grid gap-3'>
                 {sizes.map(size => {
-                  const discount = calculateDiscount(size.actual_price, size.sell_price);
+                  const discount = calculateDiscount(
+                    size.actual_price,
+                    size.sell_price
+                  );
                   const isSelected =
-                    selectedRatio === ratio.ratio && selectedSize?._id === size._id;
+                    selectedRatio === ratio.ratio &&
+                    selectedSize?._id === size._id;
 
                   return (
                     <button
@@ -215,13 +262,16 @@ const RatioSizePanel: React.FC<RatioSizePanelProps> = ({ onSelectionChange }) =>
                       <div className='flex justify-between items-start'>
                         <div>
                           <div className='font-semibold text-gray-800'>
-                            {size.width}" × {size.height}"
+                            {size.width}&quot; × {size.height}&quot;
                           </div>
-                          <div className='text-sm text-gray-500'>{size.Slug}</div>
+                          <div className='text-sm text-gray-500'>
+                            {size.Slug}
+                          </div>
                           {discount > 0 && (
                             <div className='text-green-600 text-sm mt-1 font-medium'>
                               Save {discount}% ($
-                              {(size.actual_price - size.sell_price).toFixed(2)})
+                              {(size.actual_price - size.sell_price).toFixed(2)}
+                              )
                             </div>
                           )}
                         </div>
