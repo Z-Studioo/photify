@@ -272,7 +272,7 @@ const Dashboard: React.FC = () => {
               >
                 {wallImages.map((_, index) => (
                   <motion.button
-                    key={index}
+                    key={_}
                     onClick={() => {
                       setSlideDirection(
                         index > currentWallIndex ? 'right' : 'left'

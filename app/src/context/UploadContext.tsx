@@ -76,7 +76,11 @@ export const UploadProvider = ({ children }: { children: ReactNode }) => {
       if (storedMeta) {
         try {
           const meta: Metadata = JSON.parse(storedMeta);
-          if (meta.quality && Array.isArray(meta.quality) && meta.quality.length > 0) {
+          if (
+            meta.quality &&
+            Array.isArray(meta.quality) &&
+            meta.quality.length > 0
+          ) {
             return meta.quality;
           }
         } catch {
@@ -107,7 +111,11 @@ export const UploadProvider = ({ children }: { children: ReactNode }) => {
   };
 
   // Persist file (only when image changes)
-  const persistFile = async (f: File | null, p: string | null, origP: string | null) => {
+  const persistFile = async (
+    f: File | null,
+    p: string | null,
+    origP: string | null
+  ) => {
     if (!f && !p) {
       localStorage.removeItem('photify_uploaded_image');
       return;
@@ -173,16 +181,6 @@ export const UploadProvider = ({ children }: { children: ReactNode }) => {
     persistMetadata({ selectedRatio, selectedSize, shape, quality });
   }, [selectedRatio, selectedSize, shape, quality]);
 
-  const setFileWithPersistence = async (f: File | null, p: string | null) => {
-    setFile(f);
-    setPreview(p);
-    // When setting a new file, also set it as original (unless we already have an original)
-    if (p && !originalPreview) {
-      setOriginalPreview(p);
-    }
-    await persistFile(f, p, originalPreview || p);
-  };
-
   const applyPendingChanges = () => {
     if (pendingFile && pendingPreview) {
       setFile(pendingFile);
@@ -225,6 +223,7 @@ export const UploadProvider = ({ children }: { children: ReactNode }) => {
   );
 };
 
+// eslint-disable-next-line react-refresh/only-export-components
 export const useUpload = () => {
   const ctx = useContext(UploadContext);
   if (!ctx) throw new Error('useUpload must be used within UploadProvider');

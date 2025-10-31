@@ -14,7 +14,7 @@ const OptimizationControl: React.FC = () => {
     setPendingFile,
     quality,
     setQuality,
-    pendingPreview
+    pendingPreview,
   } = useUpload();
   const [isProcessing, setIsProcessing] = useState(false);
 
@@ -22,23 +22,20 @@ const OptimizationControl: React.FC = () => {
     setSelectedView('optimization');
   }, [setSelectedView]);
 
-  // Reset pending preview when component mounts
   useEffect(() => {
-    // Use original preview as the base, or fall back to current preview
     const basePreview = originalPreview || preview;
     if (basePreview && !pendingPreview) {
       setPendingPreview(basePreview);
     }
   }, [originalPreview, preview, pendingPreview, setPendingPreview]);
 
-  // Core canvas enhancement logic
   const enhanceImageWithCanvas = async (
     src: string,
     qualityValue: number
   ): Promise<string> => {
     return new Promise((resolve, reject) => {
       const img = new Image();
-      img.crossOrigin = 'anonymous'; // allow local or remote image
+      img.crossOrigin = 'anonymous';
       img.onload = () => {
         const canvas = document.createElement('canvas');
         const ctx = canvas.getContext('2d');
@@ -51,11 +48,8 @@ const OptimizationControl: React.FC = () => {
         canvas.width = img.width;
         canvas.height = img.height;
 
-        // Base enhancement strength based on quality (normalize to 0–1)
         const q = qualityValue / 100;
 
-        // Apply subtle adjustments
-        // Slight contrast, brightness, and sharpness simulation
         ctx.filter = `
           brightness(${1 + q * 0.1})
           contrast(${1 + q * 0.2})
@@ -65,9 +59,8 @@ const OptimizationControl: React.FC = () => {
 
         ctx.drawImage(img, 0, 0, img.width, img.height);
 
-        // Optional sharpening simulation by re-drawing with partial transparency
         if (q > 0.7) {
-          ctx.globalAlpha = (q - 0.7) * 1.5; // stronger at higher quality
+          ctx.globalAlpha = (q - 0.7) * 1.5;
           ctx.drawImage(canvas, -1, 0);
           ctx.drawImage(canvas, 1, 0);
           ctx.globalAlpha = 1.0;
@@ -81,7 +74,6 @@ const OptimizationControl: React.FC = () => {
     });
   };
 
-  // Debounced enhancement trigger
   useEffect(() => {
     // Use original preview as the base for optimization
     const basePreview = originalPreview || preview;
@@ -92,18 +84,26 @@ const OptimizationControl: React.FC = () => {
         setIsProcessing(true);
 
         const enhanced = await enhanceImageWithCanvas(basePreview, quality[0]);
-        
+
         setPendingPreview(enhanced);
         setPendingFile(file);
       } catch (error) {
-        console.error('Canvas enhancement failed:', error);
+        // eslint-disable-next-line no-console
+        console.error('Image enhancement failed:', error);
       } finally {
         setIsProcessing(false);
       }
     }, 800);
 
     return () => clearTimeout(handler);
-  }, [quality, originalPreview, preview, setPendingPreview, file, setPendingFile]);
+  }, [
+    quality,
+    originalPreview,
+    preview,
+    setPendingPreview,
+    file,
+    setPendingFile,
+  ]);
 
   return (
     <div>
