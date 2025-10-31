@@ -65,7 +65,23 @@ export const UploadProvider = ({ children }: { children: ReactNode }) => {
   const [pendingPreview, setPendingPreview] = useState<string | null>(null);
   const [selectedRatio, setSelectedRatio] = useState<string | null>(null);
   const [selectedSize, setSelectedSize] = useState<SizeData | null>(null);
-  const [quality, setQuality] = useState<number[]>([70]);
+  // CHANGED: Initialize quality from localStorage
+  const [quality, setQuality] = useState<number[]>(() => {
+    if (typeof window !== 'undefined') {
+      const storedMeta = localStorage.getItem('photify_metadata');
+      if (storedMeta) {
+        try {
+          const meta: Metadata = JSON.parse(storedMeta);
+          if (meta.quality && Array.isArray(meta.quality) && meta.quality.length > 0) {
+            return meta.quality;
+          }
+        } catch {
+          // Fall through to default
+        }
+      }
+    }
+    return [70]; // Default fallback
+  });
 
   // Helpers
   const fileToBase64 = (file: File): Promise<string> =>
@@ -107,7 +123,7 @@ export const UploadProvider = ({ children }: { children: ReactNode }) => {
     localStorage.setItem('photify_uploaded_image', JSON.stringify(imageData));
   };
 
-  // Persist metadata (ratio, size, shape)
+  // Persist metadata (ratio, size, shape, quality)
   const persistMetadata = (meta: Metadata) => {
     localStorage.setItem('photify_metadata', JSON.stringify(meta));
   };
@@ -131,7 +147,7 @@ export const UploadProvider = ({ children }: { children: ReactNode }) => {
       }
     }
 
-    // Metadata restore
+    // Metadata restore (quality is now handled in useState initialization above)
     const storedMeta = localStorage.getItem('photify_metadata');
     if (storedMeta) {
       try {
@@ -139,6 +155,7 @@ export const UploadProvider = ({ children }: { children: ReactNode }) => {
         if (meta.selectedRatio) setSelectedRatio(meta.selectedRatio);
         if (meta.selectedSize) setSelectedSize(meta.selectedSize);
         if (meta.shape) setShape(meta.shape);
+        // REMOVED: Quality restoration from here since it's now in useState initialization
       } catch {
         localStorage.removeItem('photify_metadata');
       }

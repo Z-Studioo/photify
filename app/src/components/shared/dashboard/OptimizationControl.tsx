@@ -13,12 +13,21 @@ const OptimizationControl: React.FC = () => {
     setPendingFile,
     quality,
     setQuality,
+    pendingPreview
   } = useUpload();
   const [isProcessing, setIsProcessing] = useState(false);
 
   useEffect(() => {
     setSelectedView('optimization');
   }, [setSelectedView]);
+
+  // ADD THIS useEffect: Reset pending preview when component mounts
+  useEffect(() => {
+    // Reset to original preview when entering optimization view
+    if (preview && !pendingPreview) {
+      setPendingPreview(preview);
+    }
+  }, [preview, pendingPreview, setPendingPreview]);
 
   // Core canvas enhancement logic
   const enhanceImageWithCanvas = async (

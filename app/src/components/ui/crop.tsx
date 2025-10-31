@@ -90,7 +90,7 @@ export const getCroppedPngImage = async (
     canvas.height
   );
 
-  let croppedImageUrl = canvas.toDataURL('image/png');
+  const croppedImageUrl = canvas.toDataURL('image/png');
 
   // Check size and scale down slightly if too large
   const response = await fetch(croppedImageUrl);

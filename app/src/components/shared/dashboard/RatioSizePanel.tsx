@@ -1,9 +1,10 @@
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useRef } from 'react';
 import { Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { useUpload, type SizeData } from '@/context/UploadContext';
+import { useUpload } from '@/context/UploadContext';
 import { useView } from '@/context/ViewContext';
 import { AspectRatioIcon } from '../common/icons';
+import { useQuery } from '@tanstack/react-query';
 
 interface RatioData {
   _id: string;
@@ -26,96 +27,82 @@ interface RatioSizePanelProps {
   onSelectionChange?: (ratio: string, size: InchData | null) => void;
 }
 
-const RatioSizePanel: React.FC<RatioSizePanelProps> = ({
-  onSelectionChange,
-}) => {
-  const { selectedRatio, setSelectedRatio, selectedSize, setSelectedSize } =
-    useUpload();
+const fetchRatios = async (): Promise<RatioData[]> => {
+  const res = await fetch('https://photify.co/version-923ig/api/1.1/obj/ratios');
+  if (!res.ok) throw new Error('Failed to fetch ratios');
+  const data = await res.json();
+  return data.response?.results || [];
+};
+
+const fetchInches = async (): Promise<InchData[]> => {
+  const res = await fetch('https://photify.co/version-923ig/api/1.1/obj/inches');
+  if (!res.ok) throw new Error('Failed to fetch inches');
+  const data = await res.json();
+  return data.response?.results || [];
+};
+
+const RatioSizePanel: React.FC<RatioSizePanelProps> = ({ onSelectionChange }) => {
+  const { selectedRatio, setSelectedRatio, selectedSize, setSelectedSize } = useUpload();
   const { setSelectedView } = useView();
 
-  const [ratios, setRatios] = useState<RatioData[]>([]);
-  const [inches, setInches] = useState<InchData[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const sectionRefs = useRef<Record<string, HTMLDivElement | null>>({});
 
-  // Fetch ratios and sizes
+  // ✅ Fetch ratios and inches
+  const {
+    data: ratios = [],
+    isLoading: ratiosLoading,
+    isError: ratiosError,
+    error: ratioErrObj,
+  } = useQuery({
+    queryKey: ['ratios'],
+    queryFn: fetchRatios,
+    staleTime: 5 * 60 * 1000,
+  });
+
+  const {
+    data: inches = [],
+    isLoading: inchesLoading,
+    isError: inchesError,
+    error: inchErrObj,
+  } = useQuery({
+    queryKey: ['inches'],
+    queryFn: fetchInches,
+    staleTime: 5 * 60 * 1000,
+  });
+
+  const loading = ratiosLoading || inchesLoading;
+  const error = ratiosError || inchesError;
+
+  // ✅ Setup default selection once data is ready
   useEffect(() => {
-    const fetchData = async () => {
-      try {
-        setLoading(true);
+    if (!ratios.length || !inches.length) return;
 
-        const [ratiosResponse, inchesResponse] = await Promise.all([
-          fetch('https://photify.co/version-923ig/api/1.1/obj/ratios'),
-          fetch('https://photify.co/version-923ig/api/1.1/obj/inches'),
-        ]);
+    let defaultRatio = selectedRatio
+      ? ratios.find(r => r.ratio === selectedRatio) || null
+      : null;
 
-        if (!ratiosResponse.ok || !inchesResponse.ok)
-          throw new Error('Failed to fetch ratio or size data.');
+    let defaultSize = selectedSize || null;
 
-        const ratiosData = await ratiosResponse.json();
-        const inchesData = await inchesResponse.json();
-
-        const fetchedRatios: RatioData[] = ratiosData.response?.results || [];
-        const fetchedInches: InchData[] = inchesData.response?.results || [];
-
-        setRatios(fetchedRatios);
-        setInches(fetchedInches);
-
-        let defaultRatio: RatioData | null = null;
-        let defaultSize: InchData | null = null;
-
-        // Use existing selectedRatio and selectedSize if available
-        if (selectedRatio && selectedSize) {
-          defaultRatio =
-            fetchedRatios.find(r => r.ratio === selectedRatio) || null;
-          defaultSize = selectedSize;
-        }
-
-        // Fallback to 1:1 smallest size if no current selection
-        if (!defaultRatio || !defaultSize) {
-          defaultRatio =
-            fetchedRatios.find(r => r.ratio === '1:1') ||
-            fetchedRatios[0] ||
-            null;
-
-          if (defaultRatio) {
-            const availableSizes: InchData[] = fetchedInches
-              .filter(inch => defaultRatio!.Inches.includes(inch._id))
-              .sort((a, b) => a.width * a.height - b.width * b.height);
-
-            defaultSize = availableSizes[0] || null;
-          }
-        }
-
-        // Set the context
-        if (defaultRatio && defaultSize) {
-          setSelectedRatio(defaultRatio.ratio);
-          setSelectedSize({
-            _id: defaultSize._id,
-            width: defaultSize.width,
-            height: defaultSize.height,
-            w: defaultSize.w,
-            h: defaultSize.h,
-            Slug: defaultSize.Slug,
-            sell_price: defaultSize.sell_price,
-            actual_price: defaultSize.actual_price,
-          });
-          onSelectionChange?.(defaultRatio.ratio, defaultSize);
-        }
-      } catch (err) {
-        setError(err instanceof Error ? err.message : 'Error loading data');
-      } finally {
-        setLoading(false);
+    if (!defaultRatio || !defaultSize) {
+      defaultRatio = ratios.find(r => r.ratio === '1:1') || ratios[0] || null;
+      if (defaultRatio) {
+        const availableSizes = inches
+          .filter(inch => defaultRatio!.Inches.includes(inch._id))
+          .sort((a, b) => a.width * a.height - b.width * b.height);
+        defaultSize = availableSizes[0] || null;
       }
-    };
+    }
 
-    fetchData();
-  }, []);
+    if (defaultRatio && defaultSize) {
+      setSelectedRatio(defaultRatio.ratio);
+      setSelectedSize(defaultSize);
+      onSelectionChange?.(defaultRatio.ratio, defaultSize);
+    }
+  }, [ratios, inches]);
 
   const calculateDiscount = (actual: number, sell: number) =>
     Math.round(((actual - sell) / actual) * 100);
 
-  // Get available sizes for ratio
   const getAvailableSizes = (ratioData: RatioData): InchData[] => {
     if (!ratioData?.Inches) return [];
     return inches
@@ -127,42 +114,25 @@ const RatioSizePanel: React.FC<RatioSizePanelProps> = ({
     const available = getAvailableSizes(ratioData);
     if (available.length > 0) {
       const smallest = available[0];
-
       const isDifferentRatio = selectedRatio !== ratioData.ratio;
 
       setSelectedRatio(ratioData.ratio);
       setSelectedSize(smallest);
       onSelectionChange?.(ratioData.ratio, smallest);
 
-      // Only trigger crop if the ratio actually changed
-      if (isDifferentRatio) {
-        setSelectedView('crop');
-      }
+      const ref = sectionRefs.current[ratioData._id];
+      if (ref) ref.scrollIntoView({ behavior: 'smooth', block: 'center' });
+
+      if (isDifferentRatio) setSelectedView('crop');
     }
   };
 
   const handleSizeChange = (ratio: string, size: InchData) => {
     const isDifferentRatio = selectedRatio !== ratio;
-
     setSelectedRatio(ratio);
-    const sizeData: SizeData = {
-      _id: size._id,
-      width: size.width,
-      height: size.height,
-      w: size.w,
-      h: size.h,
-      Slug: size.Slug,
-      sell_price: size.sell_price,
-      actual_price: size.actual_price,
-    };
-    setSelectedSize(sizeData);
+    setSelectedSize(size);
     onSelectionChange?.(ratio, size);
-
-    // Only trigger crop if ratio or size of another ratio is selected
-    if (isDifferentRatio) {
-      // Different ratio → go to crop
-      setSelectedView('crop');
-    }
+    if (isDifferentRatio) setSelectedView('crop');
   };
 
   if (loading)
@@ -176,47 +146,51 @@ const RatioSizePanel: React.FC<RatioSizePanelProps> = ({
   if (error)
     return (
       <div className='p-4 text-center text-red-600'>
-        <p>Error loading data: {error}</p>
-        <Button
-          variant='outline'
-          className='mt-2'
-          onClick={() => window.location.reload()}
-        >
+        <p>
+          Error loading data:{' '}
+          {ratioErrObj instanceof Error
+            ? ratioErrObj.message
+            : inchErrObj instanceof Error
+            ? inchErrObj.message
+            : 'Unknown error'}
+        </p>
+        <Button variant='outline' className='mt-2' onClick={() => window.location.reload()}>
           Retry
         </Button>
       </div>
     );
-  return (
-    <div className='py-6 space-y-6'>
-      <h2 className='text-xl font-semibold text-gray-800 mb-2'>
-        Customize Image
-      </h2>
 
-      {/* Horizontal scroll of ratios */}
-      <div className='flex overflow-x-auto gap-3 pb-2'>
-        {ratios.map(ratio => (
-          <button
-            key={ratio._id}
-            onClick={() => handleRatioClick(ratio)}
-            className={`px-4 py-2 rounded-full whitespace-nowrap border-2 transition-all ${
-              selectedRatio === ratio.ratio
-                ? 'border-primary bg-primary text-white'
-                : 'border-gray-300 text-gray-700 hover:bg-gray-100'
-            }`}
-          >
-            {ratio.ratio}
-          </button>
-        ))}
+  return (
+    <div className='space-y-6'>
+      {/* Sticky Header + Ratios */}
+      <div className='sticky top-0 bg-gray-50 z-10 pt-1 pb-2'>
+        <h2 className='text-xl font-semibold text-gray-800 mb-2 pl-4'>Customize Image</h2>
+
+        <div className='flex overflow-x-auto gap-3 pb-2 pl-4'>
+          {ratios.map(ratio => (
+            <button
+              key={ratio._id}
+              onClick={() => handleRatioClick(ratio)}
+              className={`px-4 rounded-full whitespace-nowrap border-2 transition-all ${
+                selectedRatio === ratio.ratio
+                  ? 'border-primary bg-primary text-white'
+                  : 'border-gray-300 text-gray-700 hover:bg-gray-100'
+              }`}
+            >
+              {ratio.ratio}
+            </button>
+          ))}
+        </div>
       </div>
 
-      {/* Show all sizes for all ratios */}
+      {/* Sizes List */}
       <div className='space-y-6'>
         {ratios.map(ratio => {
           const sizes = getAvailableSizes(ratio);
-          if (sizes.length === 0) return null;
+          if (!sizes.length) return null;
 
           return (
-            <div key={ratio._id}>
+            <div key={ratio._id} ref={el => { sectionRefs.current[ratio._id] = el; }}>
               <h3 className='flex items-center gap-2 font-semibold text-lg mb-3 text-gray-800 ml-4'>
                 <AspectRatioIcon ratio={ratio.ratio} />
                 {ratio.ratio}
@@ -224,13 +198,9 @@ const RatioSizePanel: React.FC<RatioSizePanelProps> = ({
 
               <div className='grid gap-3'>
                 {sizes.map(size => {
-                  const discount = calculateDiscount(
-                    size.actual_price,
-                    size.sell_price
-                  );
+                  const discount = calculateDiscount(size.actual_price, size.sell_price);
                   const isSelected =
-                    selectedRatio === ratio.ratio &&
-                    selectedSize?._id === size._id;
+                    selectedRatio === ratio.ratio && selectedSize?._id === size._id;
 
                   return (
                     <button
@@ -247,14 +217,11 @@ const RatioSizePanel: React.FC<RatioSizePanelProps> = ({
                           <div className='font-semibold text-gray-800'>
                             {size.width}" × {size.height}"
                           </div>
-                          <div className='text-sm text-gray-500'>
-                            {size.Slug}
-                          </div>
+                          <div className='text-sm text-gray-500'>{size.Slug}</div>
                           {discount > 0 && (
                             <div className='text-green-600 text-sm mt-1 font-medium'>
                               Save {discount}% ($
-                              {(size.actual_price - size.sell_price).toFixed(2)}
-                              )
+                              {(size.actual_price - size.sell_price).toFixed(2)})
                             </div>
                           )}
                         </div>

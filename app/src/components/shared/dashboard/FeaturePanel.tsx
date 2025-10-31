@@ -55,7 +55,7 @@ const FeaturePanel = () => {
       </div>
 
       {/* Scrollable content */}
-      <div className='flex-1 overflow-auto p-4'>{renderFeatureContent()}</div>
+      <div className='flex-1 overflow-auto px-4'>{renderFeatureContent()}</div>
     </div>
   );
 };
