@@ -25,6 +25,7 @@ interface StoredImageData {
   fileSize: number;
   base64Data: string;
   preview: string;
+  originalPreview: string; // NEW: Store original unoptimized preview
   version: number;
 }
 
@@ -40,6 +41,8 @@ interface UploadContextType {
   setFile: (f: File | null) => void;
   preview: string | null;
   setPreview: (p: string | null) => void;
+  originalPreview: string | null; // NEW: Original unoptimized preview
+  setOriginalPreview: (p: string | null) => void;
   shape: CanvasShape;
   setShape: (s: CanvasShape) => void;
   pendingFile: File | null;
@@ -60,6 +63,7 @@ const UploadContext = createContext<UploadContextType | undefined>(undefined);
 export const UploadProvider = ({ children }: { children: ReactNode }) => {
   const [file, setFile] = useState<File | null>(null);
   const [preview, setPreview] = useState<string | null>(null);
+  const [originalPreview, setOriginalPreview] = useState<string | null>(null); // NEW: Store original
   const [shape, setShape] = useState<CanvasShape>('rectangle');
   const [pendingFile, setPendingFile] = useState<File | null>(null);
   const [pendingPreview, setPendingPreview] = useState<string | null>(null);
@@ -72,7 +76,11 @@ export const UploadProvider = ({ children }: { children: ReactNode }) => {
       if (storedMeta) {
         try {
           const meta: Metadata = JSON.parse(storedMeta);
-          if (meta.quality && Array.isArray(meta.quality) && meta.quality.length > 0) {
+          if (
+            meta.quality &&
+            Array.isArray(meta.quality) &&
+            meta.quality.length > 0
+          ) {
             return meta.quality;
           }
         } catch {
@@ -103,7 +111,11 @@ export const UploadProvider = ({ children }: { children: ReactNode }) => {
   };
 
   // Persist file (only when image changes)
-  const persistFile = async (f: File | null, p: string | null) => {
+  const persistFile = async (
+    f: File | null,
+    p: string | null,
+    origP: string | null
+  ) => {
     if (!f && !p) {
       localStorage.removeItem('photify_uploaded_image');
       return;
@@ -118,6 +130,7 @@ export const UploadProvider = ({ children }: { children: ReactNode }) => {
       fileSize: f?.size || 0,
       base64Data,
       preview: base64Data,
+      originalPreview: origP || base64Data, // Store original
       version: 1,
     };
     localStorage.setItem('photify_uploaded_image', JSON.stringify(imageData));
@@ -142,6 +155,7 @@ export const UploadProvider = ({ children }: { children: ReactNode }) => {
         );
         setFile(restoredFile);
         setPreview(data.preview);
+        setOriginalPreview(data.originalPreview || data.preview); // Restore original or fallback
       } catch {
         localStorage.removeItem('photify_uploaded_image');
       }
@@ -167,15 +181,14 @@ export const UploadProvider = ({ children }: { children: ReactNode }) => {
     persistMetadata({ selectedRatio, selectedSize, shape, quality });
   }, [selectedRatio, selectedSize, shape, quality]);
 
-  const setFileWithPersistence = async (f: File | null, p: string | null) => {
-    setFile(f);
-    setPreview(p);
-    await persistFile(f, p);
-  };
-
   const applyPendingChanges = () => {
     if (pendingFile && pendingPreview) {
-      setFileWithPersistence(pendingFile, pendingPreview);
+      setFile(pendingFile);
+      setPreview(pendingPreview);
+      // Don't update originalPreview - keep the original!
+      // Use originalPreview if available, otherwise use pendingPreview as fallback
+      const origToStore = originalPreview || pendingPreview;
+      persistFile(pendingFile, pendingPreview, origToStore);
       setPendingFile(null);
       setPendingPreview(null);
     }
@@ -188,6 +201,8 @@ export const UploadProvider = ({ children }: { children: ReactNode }) => {
         setFile,
         preview,
         setPreview,
+        originalPreview,
+        setOriginalPreview,
         shape,
         setShape,
         pendingFile,
@@ -208,6 +223,7 @@ export const UploadProvider = ({ children }: { children: ReactNode }) => {
   );
 };
 
+// eslint-disable-next-line react-refresh/only-export-components
 export const useUpload = () => {
   const ctx = useContext(UploadContext);
   if (!ctx) throw new Error('useUpload must be used within UploadProvider');

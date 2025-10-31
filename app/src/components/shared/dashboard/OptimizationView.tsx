@@ -7,11 +7,14 @@ interface OptimizationViewProps {
 }
 
 const OptimizationView: React.FC<OptimizationViewProps> = ({ isVisible }) => {
-  const { preview, pendingPreview } = useUpload();
+  const { preview, originalPreview, pendingPreview } = useUpload();
 
   if (!isVisible) return null;
 
-  if (!preview) {
+  // Use original preview as the "before" image
+  const beforeImage = originalPreview || preview;
+
+  if (!beforeImage) {
     return (
       <div className='flex flex-col items-center justify-center w-full h-full bg-white text-gray-400 text-sm'>
         No image preview available
@@ -27,8 +30,8 @@ const OptimizationView: React.FC<OptimizationViewProps> = ({ isVisible }) => {
 
       <div className='w-full max-w-xs overflow-hidden shadow border border-gray-200 flex items-center justify-center'>
         <ReactCompareImage
-          leftImage={preview}
-          rightImage={pendingPreview ?? preview}
+          leftImage={beforeImage}
+          rightImage={pendingPreview ?? beforeImage}
           sliderLineWidth={3}
           handleSize={28}
           leftImageLabel='Before'

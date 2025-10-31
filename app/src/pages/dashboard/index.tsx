@@ -83,6 +83,7 @@ const Dashboard: React.FC = () => {
     shape,
     setFile,
     setPreview,
+    setOriginalPreview,
     applyPendingChanges,
     selectedRatio,
     selectedSize,
@@ -107,33 +108,6 @@ const Dashboard: React.FC = () => {
       prev === wallImages.length - 1 ? 0 : prev + 1
     );
   };
-
-  // Create dynamic features with updated subtitles
-
-  //change
-  // const features = featuresBase.map(feature => {
-  //   if (feature.name === 'ROUND FORMATS AND SHAPES') {
-  //     return {
-  //       ...feature,
-  //       subtitle: shape.charAt(0).toUpperCase() + shape.slice(1),
-  //     };
-  //   }
-  //   if (feature.name === 'IMAGE SIZE AND CROP PHOTO') {
-  //     return {
-  //       ...feature,
-  //       subtitle: selectedSize
-  //         ? `${selectedSize.width}" × ${selectedSize.height}" (${selectedRatio})`
-  //         : '24 by 16 (External: 24 by 16)',
-  //     };
-  //   }
-  //   if (feature.name === 'SIDE APPEARANCE') {
-  //     return {
-  //       ...feature,
-  //       subtitle: edgeType === 'wrapped' ? 'Wrapped edges' : 'Mirrored edges',
-  //     };
-  //   }
-  //   return feature;
-  // });
 
   const features = featuresBase.map(feature => {
     if (feature.name === 'ROUND FORMATS AND SHAPES') {
@@ -177,8 +151,10 @@ const Dashboard: React.FC = () => {
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const f = e.target.files?.[0];
     if (f) {
+      const newPreview = URL.createObjectURL(f);
       setFile(f);
-      setPreview(URL.createObjectURL(f));
+      setPreview(newPreview);
+      setOriginalPreview(newPreview); // Set as original when uploading new image
     }
   };
 
@@ -296,7 +272,7 @@ const Dashboard: React.FC = () => {
               >
                 {wallImages.map((_, index) => (
                   <motion.button
-                    key={index}
+                    key={_}
                     onClick={() => {
                       setSlideDirection(
                         index > currentWallIndex ? 'right' : 'left'
