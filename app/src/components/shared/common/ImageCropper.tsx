@@ -75,7 +75,7 @@ export default function ImageCropper({ isVisible = true }: ImageCropperProps) {
         </ImageCrop>
       </div>
 
-      <p className='text-sm text-muted-foreground'>
+      <p className='text-sm mb-2 text-muted-foreground'>
         Drag the corners to crop the image
       </p>
     </div>
