@@ -176,7 +176,8 @@ const Dashboard: React.FC = () => {
   return (
     <div className='h-screen flex flex-col overflow-hidden'>
       <Navbar />
-      <div className='flex-1 w-full flex flex-col md:flex-row gap-0 overflow-hidden'>
+      {/* <div className='flex-1 w-full flex flex-col md:flex-row gap-0 overflow-hidden'> */}
+        <div className='flex-1 w-full flex flex-col md:flex-row-reverse gap-0 overflow-hidden'>
         <ImageCropper isVisible={selectedView === 'crop'} />
         <OptimizationView isVisible={selectedView === 'optimization'} />
         {/* Left: Image Section */}
