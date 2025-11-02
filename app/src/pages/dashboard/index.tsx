@@ -8,6 +8,8 @@ import {
   MinusCircle,
   ChevronLeft,
   ImagePlus,
+  RefreshCw,
+  Package,
 } from 'lucide-react';
 import { motion, AnimatePresence, type Variants } from 'motion/react';
 import { Button } from '@/components/ui/button';
@@ -27,6 +29,7 @@ import { useUpload } from '@/context/UploadContext';
 import { useView } from '@/context/ViewContext';
 import ImageCropper from '@/components/shared/common/ImageCropper';
 import { useEdge } from '@/context/EdgeContext';
+import { useGlobalReset } from '@/hooks/useGlobalReset';
 
 interface MenuFeature {
   id: number;
@@ -46,6 +49,7 @@ const Dashboard: React.FC = () => {
   const [customWalls, setCustomWalls] = useState<string[]>([]);
   const wallImageInputRef = useRef<HTMLInputElement>(null);
   const { selectedFeature, setSelectedFeature } = useFeature();
+  const { resetAll } = useGlobalReset();
 
   // Animation variants
   const listItemVariants: Variants = {
@@ -403,26 +407,33 @@ const Dashboard: React.FC = () => {
                   paddingBottom: 0,
                 }}
                 transition={{ duration: 0.25, ease: [0.22, 1, 0.36, 1] }}
-                className='flex flex-col sm:flex-row items-start sm:items-center justify-between p-4 sm:p-6 overflow-visible min-h-[80px] md:min-h-[auto] w-full'
+                className='w-full p-4 sm:p-6'
               >
-                <div className='flex-1 min-w-0'>
-                  <motion.h2
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    transition={{ delay: 0.1, duration: 0.3 }}
-                    className='text-base md:text-lg font-bold leading-tight truncate'
+                {/* Title */}
+                <h2 className='text-base md:text-lg font-bold leading-tight truncate'>
+                  Photo Print Under Acrylic Glass
+                </h2>
+
+                {/* Minimal Action Buttons */}
+                <div className='mt-2 flex items-center gap-2 text-sm'>
+                  <Button
+                    size='sm'
+                    className='flex items-center gap-1 p-1 text-primary border-primary'
+                    variant={"outline"}
                   >
-                    Photo Print Under Acrylic Glass
-                  </motion.h2>
-                  <motion.p
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    transition={{ delay: 0.2, duration: 0.3 }}
-                    className='text-sm cursor-pointer mt-1'
-                    style={{ color: 'var(--primary)' }}
-                  >
+                    <Package className='w-4 h-4' />
                     Change Product
-                  </motion.p>
+                  </Button>
+
+                  <Button
+                    size='sm'
+                    variant='outline'
+                    className='border-gray-300 text-gray-700 hover:bg-gray-100 flex items-center gap-1 p-1'
+                    onClick={resetAll}
+                  >
+                    <RefreshCw className='w-4 h-4' />
+                    Reset All
+                  </Button>
                 </div>
               </motion.div>
             )}
@@ -671,22 +682,6 @@ const Dashboard: React.FC = () => {
                         onClick={handleAddToCart}
                       >
                         CONFIRM
-                      </Button>
-                    </motion.div>
-
-                    <motion.div
-                      className='flex-1'
-                      whileHover={{ scale: 1.02 }}
-                      whileTap={{ scale: 0.98 }}
-                    >
-                      <Button
-                        variant='outline'
-                        className='w-full h-full flex items-center justify-center px-3 py-3 text-xs md:text-sm rounded-none transition-all duration-200 border-2'
-                        onClick={() => {
-                          /* handle reset */
-                        }}
-                      >
-                        RESET
                       </Button>
                     </motion.div>
                   </motion.div>

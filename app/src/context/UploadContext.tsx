@@ -1,7 +1,12 @@
 import { createContext, useContext, useState, useEffect } from 'react';
 import type { ReactNode } from 'react';
 
-export type CanvasShape = 'rectangle' | 'round' | 'hexagon' | 'octagon' | 'dodecagon';
+export type CanvasShape =
+  | 'rectangle'
+  | 'round'
+  | 'hexagon'
+  | 'octagon'
+  | 'dodecagon';
 
 export interface SizeData {
   _id: string;
@@ -45,6 +50,7 @@ interface UploadContextType {
   selectedSize: SizeData | null;
   setSelectedSize: (s: SizeData | null) => void;
   applyPendingChanges: () => void;
+  reset: () => void;
 }
 
 const UploadContext = createContext<UploadContextType | undefined>(undefined);
@@ -67,9 +73,13 @@ export const UploadProvider = ({ children }: { children: ReactNode }) => {
       reader.onerror = reject;
     });
 
-  const base64ToFile = (base64Data: string, name: string, type: string): File => {
+  const base64ToFile = (
+    base64Data: string,
+    name: string,
+    type: string
+  ): File => {
     const byteChars = atob(base64Data.split(',')[1]);
-    const byteArray = Uint8Array.from([...byteChars].map((c) => c.charCodeAt(0)));
+    const byteArray = Uint8Array.from([...byteChars].map(c => c.charCodeAt(0)));
     return new File([byteArray], name, { type });
   };
 
@@ -106,7 +116,11 @@ export const UploadProvider = ({ children }: { children: ReactNode }) => {
     if (storedImage) {
       try {
         const data: StoredImageData = JSON.parse(storedImage);
-        const restoredFile = base64ToFile(data.base64Data, data.fileName, data.fileType);
+        const restoredFile = base64ToFile(
+          data.base64Data,
+          data.fileName,
+          data.fileType
+        );
         setFile(restoredFile);
         setPreview(data.preview);
       } catch {
@@ -146,7 +160,29 @@ export const UploadProvider = ({ children }: { children: ReactNode }) => {
       setPendingPreview(null);
     }
   };
+  const reset = async () => {
+    // Clear pending changes
+    setPendingFile(null);
+    setPendingPreview(null);
 
+    // Reset metadata
+    setSelectedRatio("1:1");
+    setSelectedSize(null);
+    setShape('rectangle');
+
+    // Reset preview: regenerate from current file if exists
+    if (file) {
+      const base64 = await fileToBase64(file);
+      setPreview(base64);
+      await persistFile(file, base64);
+    } else {
+      setPreview(null);
+      localStorage.removeItem('photify_uploaded_image');
+    }
+
+    // Clear metadata from localStorage
+    localStorage.removeItem('photify_metadata');
+  };
   return (
     <UploadContext.Provider
       value={{
@@ -165,6 +201,7 @@ export const UploadProvider = ({ children }: { children: ReactNode }) => {
         selectedSize,
         setSelectedSize,
         applyPendingChanges,
+        reset,
       }}
     >
       {children}
