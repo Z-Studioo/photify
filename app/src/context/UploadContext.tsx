@@ -53,6 +53,10 @@ interface UploadContextType {
   setSelectedRatio: (r: string | null) => void;
   selectedSize: SizeData | null;
   setSelectedSize: (s: SizeData | null) => void;
+  defaultRatio: string | null;
+  setDefaultRatio: (r: string | null) => void;
+  defaultSize: SizeData | null;
+  setDefaultSize: (s: SizeData | null) => void;
   quality: number[];
   setQuality: (q: number[]) => void;
   applyPendingChanges: () => void;
@@ -70,6 +74,9 @@ export const UploadProvider = ({ children }: { children: ReactNode }) => {
   const [pendingPreview, setPendingPreview] = useState<string | null>(null);
   const [selectedRatio, setSelectedRatio] = useState<string | null>(null);
   const [selectedSize, setSelectedSize] = useState<SizeData | null>(null);
+  const [defaultRatio, setDefaultRatio] = useState<string | null>(null);
+  const [defaultSize, setDefaultSize] = useState<SizeData | null>(null);
+
   // CHANGED: Initialize quality from localStorage
   const [quality, setQuality] = useState<number[]>(() => {
     if (typeof window !== 'undefined') {
@@ -194,29 +201,35 @@ export const UploadProvider = ({ children }: { children: ReactNode }) => {
       setPendingPreview(null);
     }
   };
+
   const reset = async () => {
     // Clear pending changes
     setPendingFile(null);
     setPendingPreview(null);
 
     // Reset metadata
-    setSelectedRatio("1:1");
-    setSelectedSize(null);
+    setSelectedRatio(defaultRatio);
+    setSelectedSize(defaultSize);
     setShape('rectangle');
+    setQuality([70]); // Reset quality to default
 
-    // Reset preview: regenerate from current file if exists
+    // Reset preview and persist correctly
     if (file) {
       const base64 = await fileToBase64(file);
       setPreview(base64);
-      await persistFile(file, base64);
+
+      // Keep the originalPreview intact — if missing, fallback to base64
+      const origToStore = originalPreview || base64;
+
+      // Persist file
+      await persistFile(file, base64, origToStore);
     } else {
       setPreview(null);
+      setOriginalPreview(null);
       localStorage.removeItem('photify_uploaded_image');
     }
-
-    // Clear metadata from localStorage
-    localStorage.removeItem('photify_metadata');
   };
+
   return (
     <UploadContext.Provider
       value={{
@@ -240,6 +253,10 @@ export const UploadProvider = ({ children }: { children: ReactNode }) => {
         reset,
         quality,
         setQuality,
+        defaultRatio,
+        setDefaultRatio,
+        defaultSize,
+        setDefaultSize,
       }}
     >
       {children}
