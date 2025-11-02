@@ -645,7 +645,7 @@ const Dashboard: React.FC = () => {
                                       stiffness: 500,
                                       damping: 15,
                                     }}
-                                    className='inline-flex items-center px-1 py-0.5 rounded-full text-[9px] font-medium bg-gradient-to-r from-amber-100 to-orange-100 text-amber-700 border border-amber-200 shadow-sm'
+                                    className='inline-flex items-center text-center px-1 py-0.5 rounded-full text-[9px] font-medium bg-gradient-to-r from-amber-100 to-orange-100 text-amber-700 border border-amber-200 shadow-sm'
                                   >
                                     Coming Soon
                                   </motion.span>
