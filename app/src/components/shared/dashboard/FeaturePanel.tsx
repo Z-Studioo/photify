@@ -5,6 +5,7 @@ import ShapeSelector from '@/components/shared/dashboard/ShapeSelector';
 import RatioSizePanel from '@/components/shared/dashboard/RatioSizePanel';
 import EdgeSelector from './EdgeSelector';
 import { useView } from '@/context/ViewContext';
+import OptimizationControl from './OptimizationControl';
 
 const FeaturePanel = () => {
   const { selectedFeature, setSelectedFeature } = useFeature();
@@ -15,35 +16,19 @@ const FeaturePanel = () => {
   const renderFeatureContent = () => {
     switch (selectedFeature.name) {
       case 'SELECT PHOTO':
-        return (
-          <div data-tour='feature-select-photo'>
-            <SelectPhoto />
-          </div>
-        );
+        return <SelectPhoto />;
       case 'IMAGE SIZE AND CROP PHOTO':
-        return (
-          <div data-tour='feature-ratio-size'>
-            <RatioSizePanel />
-          </div>
-        );
-      case 'ROUND FORMATS AND SHAPES':
-        return (
-          <div data-tour='feature-shape-selector'>
-            <ShapeSelector />
-          </div>
-        );
+        return <RatioSizePanel />;
       case 'SIDE APPEARANCE':
-        return (
-          <div data-tour='feature-edge-selector'>
-            <EdgeSelector />
-          </div>
-        );
+        return <ShapeSelector />;
+      case 'IMAGE OPTIMIZATION':
+        return <OptimizationControl />;
+      case 'ROUND FORMATS AND SHAPES':
+        return <EdgeSelector />;
+
       default:
         return (
-          <div
-            data-tour='feature-coming-soon'
-            className='text-gray-500 text-center py-4'
-          >
+          <div className='text-gray-500 text-center py-4'>
             Feature configuration coming soon
           </div>
         );
@@ -51,7 +36,8 @@ const FeaturePanel = () => {
   };
 
   const handleGoBack = () => {
-    if (selectedView === 'crop') setSelectedView('room');
+    if (selectedView === 'crop' || selectedView === 'optimization')
+      setSelectedView('room');
     setSelectedFeature(null);
   };
 
@@ -78,7 +64,7 @@ const FeaturePanel = () => {
       </div>
 
       {/* Scrollable content */}
-      <div className='flex-1 overflow-auto p-4'>{renderFeatureContent()}</div>
+      <div className='flex-1 overflow-auto px-4'>{renderFeatureContent()}</div>
     </div>
   );
 };

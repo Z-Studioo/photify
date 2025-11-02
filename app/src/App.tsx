@@ -10,8 +10,13 @@ import CropPage from '@/pages/crop';
 import { NextStepProvider, NextStepReact } from 'nextstepjs';
 import { dashboardSteps } from './utils/steps';
 
+import { QueryClient,QueryClientProvider } from '@tanstack/react-query'
+
+const queryClient = new QueryClient()
+
 const App: React.FC = () => {
   return (
+    <QueryClientProvider client={queryClient}>
     <BrowserRouter>
       <UploadProvider>
         <NextStepProvider>
@@ -57,6 +62,7 @@ const App: React.FC = () => {
         </NextStepProvider>
       </UploadProvider>
     </BrowserRouter>
+    </QueryClientProvider>
   );
 };
 

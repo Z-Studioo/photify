@@ -8,13 +8,21 @@ import { Crop, Image, Info, Scan, ShoppingBag } from 'lucide-react';
 import { motion, AnimatePresence, type Variants } from 'motion/react';
 
 const Page = () => {
-  const { file: _file, setFile, preview, setPreview } = useUpload();
+  const {
+    file: _file,
+    setFile,
+    preview,
+    setPreview,
+    setOriginalPreview,
+  } = useUpload();
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const f = e.target.files?.[0];
     if (f) {
+      const newPreview = URL.createObjectURL(f);
       setFile(f);
-      setPreview(URL.createObjectURL(f));
+      setPreview(newPreview);
+      setOriginalPreview(newPreview); // Set as original when uploading new image
     }
   };
 
@@ -171,6 +179,7 @@ const Page = () => {
                       onClick={() => {
                         setFile(null);
                         setPreview(null);
+                        setOriginalPreview(null); // Clear original too
                       }}
                     >
                       Change photo

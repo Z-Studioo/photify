@@ -48,8 +48,8 @@ export const dashboardSteps: Tour[] = [
         side: 'bottom-right',
         showControls: true,
         showSkip: true,
-        pointerPadding: 0,
-        pointerRadius: 0,
+        pointerPadding: 2,
+        pointerRadius: 4,
       },
       {
         icon: <></>,
@@ -59,8 +59,8 @@ export const dashboardSteps: Tour[] = [
         side: 'bottom-right',
         showControls: true,
         showSkip: true,
-        pointerPadding: 0,
-        pointerRadius: 0,
+        pointerPadding: 2,
+        pointerRadius: 4,
       },
       {
         icon: <></>,
@@ -109,7 +109,7 @@ export const dashboardSteps: Tour[] = [
         content: (
           <>{'Choose your canvas size and crop your photo to fit perfectly.'}</>
         ),
-        selector: '[data-tour="feature-size-crop"]',
+        selector: '[data-tour="feature-image-size-and-crop-photo"]',
         side: 'left',
         showControls: true,
         showSkip: true,
@@ -118,22 +118,11 @@ export const dashboardSteps: Tour[] = [
       },
       {
         icon: <></>,
-        title: 'Shape Selection',
-        content: <>{'Pick between rectangle, square, circle, and more.'}</>,
-        selector: '[data-tour="feature-shapes"]',
-        side: 'left',
-        showControls: true,
-        showSkip: true,
-        pointerPadding: 4,
-        pointerRadius: 6,
-      },
-      {
-        icon: <></>,
-        title: 'Edge Style',
+        title: 'Side Appearance',
         content: (
-          <>{'Choose wrapped or mirrored edges for that clean finish.'}</>
+          <>{'Pick between wrapped or mirrored edge for your canvas.'}</>
         ),
-        selector: '[data-tour="feature-edges"]',
+        selector: '[data-tour="feature-side-appearance"]',
         side: 'left',
         showControls: true,
         showSkip: true,
@@ -142,10 +131,20 @@ export const dashboardSteps: Tour[] = [
       },
       {
         icon: <></>,
-        title: 'Quantity & Checkout',
-        content: (
-          <>{'Adjust how many you want and review before confirming.'}</>
-        ),
+        title: 'Image Optimization',
+        content: <>{'Enhance the quality of your image.'}</>,
+        selector: '[data-tour="feature-image-optimization"]',
+        side: 'left',
+        showControls: true,
+        showSkip: true,
+        pointerPadding: 4,
+        pointerRadius: 6,
+      },
+
+      {
+        icon: <></>,
+        title: 'Quantity Section',
+        content: <>{'Adjust the total number of canvases.'}</>,
         selector: '[data-tour="quantity-section"]',
         side: 'top',
         showControls: true,
@@ -153,22 +152,14 @@ export const dashboardSteps: Tour[] = [
         pointerPadding: 4,
         pointerRadius: 6,
       },
-      // {
-      //   icon: <>◀️</>,
-      //   title: 'Back to Features',
-      //   content: <>{'Go back here if you want to tweak something.'}</>,
-      //   selector: '[data-tour="feature-back-btn"]',
-      //   side: 'right',
-      //   showControls: true,
-      //   showSkip: true,
-      //   pointerPadding: 4,
-      //   pointerRadius: 6,
-      // },
+
       {
         icon: <></>,
         title: 'Apply Changes',
-        content: <>{'Click on Comfirm Changes to apply updates instantly.'}</>,
-        selector: '[data-tour="apply-changes-btn"]',
+        content: (
+          <>{'Use this button to apply all your changes and features.'}</>
+        ),
+        selector: '[data-tour="confirm-changes"]',
         side: 'top',
         showControls: true,
         showSkip: true,
@@ -176,7 +167,6 @@ export const dashboardSteps: Tour[] = [
         pointerRadius: 6,
       },
 
-      // 🎉 Done
       {
         icon: <>🎉</>,
         title: "You're All Set!",
