@@ -8,6 +8,8 @@ import {
   MinusCircle,
   ChevronLeft,
   ImagePlus,
+  RefreshCw,
+  Package,
 } from 'lucide-react';
 import { motion, AnimatePresence, type Variants } from 'motion/react';
 import { Button } from '@/components/ui/button';
@@ -27,6 +29,7 @@ import { useUpload } from '@/context/UploadContext';
 import { useView } from '@/context/ViewContext';
 import ImageCropper from '@/components/shared/common/ImageCropper';
 import { useEdge } from '@/context/EdgeContext';
+import { useGlobalReset } from '@/hooks/useGlobalReset';
 import OptimizationView from '@/components/shared/dashboard/OptimizationView';
 
 interface MenuFeature {
@@ -47,6 +50,7 @@ const Dashboard: React.FC = () => {
   const [customWalls, setCustomWalls] = useState<string[]>([]);
   const wallImageInputRef = useRef<HTMLInputElement>(null);
   const { selectedFeature, setSelectedFeature } = useFeature();
+  const { resetAll } = useGlobalReset();
 
   // Animation variants
   const listItemVariants: Variants = {
@@ -146,7 +150,7 @@ const Dashboard: React.FC = () => {
     setSelectedFeature(selectedFeature?.id === item.id ? null : item);
   };
 
-  const handleAddToCart = () => { };
+  const handleAddToCart = () => {};
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const f = e.target.files?.[0];
@@ -174,29 +178,38 @@ const Dashboard: React.FC = () => {
   };
 
   // Fix: Use type assertion to handle the view types properly
-  const isEditingView = selectedView === ('crop' as any) || selectedView === ('optimization' as any);
+  const isEditingView =
+    selectedView === ('crop' as any) ||
+    selectedView === ('optimization' as any);
 
   return (
     <div className='h-screen flex flex-col overflow-hidden'>
       <Navbar />
       <div className='flex-1 w-full flex flex-col md:flex-row-reverse gap-0 overflow-hidden'>
         {/* Main content area */}
-        <div className={`
+        <div
+          className={`
           ${isEditingView ? 'w-full h-full' : 'md:w-3/4 w-full'} 
           relative 
           ${isEditingView ? 'h-full' : 'h-64 md:h-full'} 
           overflow-hidden
-        `}>
-          {selectedView === ('crop' as any) && <ImageCropper isVisible={true} />}
-          {selectedView === ('optimization' as any) && <OptimizationView isVisible={true} />}
+        `}
+        >
+          {selectedView === ('crop' as any) && (
+            <ImageCropper isVisible={true} />
+          )}
+          {selectedView === ('optimization' as any) && (
+            <OptimizationView isVisible={true} />
+          )}
           {!isEditingView && (
             <>
               {/* Room View with 3D Frame */}
               <div
-                className={`absolute inset-0 transition-all duration-500 ${selectedView === 'room'
+                className={`absolute inset-0 transition-all duration-500 ${
+                  selectedView === 'room'
                     ? 'opacity-100 scale-100'
                     : 'opacity-0 scale-95 pointer-events-none'
-                  }`}
+                }`}
               >
                 {/* Sliding Background Container */}
                 <div className='relative w-full h-full overflow-hidden'>
@@ -286,10 +299,11 @@ const Dashboard: React.FC = () => {
                         );
                         setCurrentWallIndex(index);
                       }}
-                      className={`w-2 h-2 rounded-full transition-all duration-300 ${index === currentWallIndex
+                      className={`w-2 h-2 rounded-full transition-all duration-300 ${
+                        index === currentWallIndex
                           ? 'bg-white shadow-lg'
                           : 'bg-white/50 hover:bg-white/75'
-                        }`}
+                      }`}
                       whileHover={{ scale: 1.2 }}
                       whileTap={{ scale: 0.9 }}
                       animate={{
@@ -303,10 +317,11 @@ const Dashboard: React.FC = () => {
 
               {/* 3D View */}
               <div
-                className={`absolute inset-0 transition-all duration-700 ease-out ${selectedView === '3d'
+                className={`absolute inset-0 transition-all duration-700 ease-out ${
+                  selectedView === '3d'
                     ? 'opacity-100 scale-100'
                     : 'opacity-0 scale-110 pointer-events-none'
-                  }`}
+                }`}
               >
                 <ThreeDCanvas isVisible={selectedView === '3d'} />
               </div>
@@ -319,10 +334,11 @@ const Dashboard: React.FC = () => {
                 {/* Add Image Button or Placeholder */}
                 <motion.button
                   onClick={handleAddImageClick}
-                  className={`flex flex-col items-center justify-center px-2 py-2 md:px-2 md:py-2 bg-[var(--primary)] border border-gray-300 text-white hover:transition-all cursor-pointer shadow-sm ${selectedView !== 'room'
+                  className={`flex flex-col items-center justify-center px-2 py-2 md:px-2 md:py-2 bg-[var(--primary)] border border-gray-300 text-white hover:transition-all cursor-pointer shadow-sm ${
+                    selectedView !== 'room'
                       ? 'invisible pointer-events-none'
                       : 'pointer-events-auto'
-                    }`}
+                  }`}
                   type='button'
                   whileHover={{ scale: 1.02 }}
                   whileTap={{ scale: 0.98 }}
@@ -347,10 +363,11 @@ const Dashboard: React.FC = () => {
                   <div className='flex border border-gray-300 divide-x divide-gray-300'>
                     <motion.button
                       onClick={() => setSelectedView('room')}
-                      className={`flex items-center justify-center px-2 py-2 md:px-5 md:py-3 text-xs md:text-sm font-medium rounded-none cursor-pointer transition-all ${selectedView === 'room'
+                      className={`flex items-center justify-center px-2 py-2 md:px-5 md:py-3 text-xs md:text-sm font-medium rounded-none cursor-pointer transition-all ${
+                        selectedView === 'room'
                           ? 'bg-primary text-white'
                           : 'bg-white text-gray-700 hover:bg-gray-100'
-                        }`}
+                      }`}
                       type='button'
                       whileHover={{ scale: 1.02 }}
                       whileTap={{ scale: 0.98 }}
@@ -371,10 +388,11 @@ const Dashboard: React.FC = () => {
                     </motion.button>
                     <motion.button
                       onClick={() => setSelectedView('3d')}
-                      className={`flex items-center justify-center px-2 py-2 md:px-5 md:py-3 text-xs md:text-sm font-medium rounded-none cursor-pointer transition-all ${selectedView === '3d'
+                      className={`flex items-center justify-center px-2 py-2 md:px-5 md:py-3 text-xs md:text-sm font-medium rounded-none cursor-pointer transition-all ${
+                        selectedView === '3d'
                           ? 'bg-primary text-white'
                           : 'bg-white text-gray-700 hover:bg-gray-100'
-                        }`}
+                      }`}
                       type='button'
                       whileHover={{ scale: 1.02 }}
                       whileTap={{ scale: 0.98 }}
@@ -429,15 +447,31 @@ const Dashboard: React.FC = () => {
                     >
                       Photo Print Under Acrylic Glass
                     </motion.h2>
-                    <motion.p
+                    <motion.div
                       initial={{ opacity: 0 }}
                       animate={{ opacity: 1 }}
                       transition={{ delay: 0.2, duration: 0.3 }}
-                      className='text-sm cursor-pointer mt-1'
-                      style={{ color: 'var(--primary)' }}
+                      className='mt-2 flex items-center gap-2 text-sm'
                     >
-                      Change Product
-                    </motion.p>
+                      <Button
+                        size='sm'
+                        className='flex items-center gap-1 p-1 text-primary border-primary'
+                        variant='outline'
+                      >
+                        <Package className='w-4 h-4' />
+                        Change Product
+                      </Button>
+
+                      <Button
+                        size='sm'
+                        variant='outline'
+                        className='border-gray-300 text-gray-700 hover:bg-gray-100 flex items-center gap-1 p-1'
+                        onClick={resetAll}
+                      >
+                        <RefreshCw className='w-4 h-4' />
+                        Reset All
+                      </Button>
+                    </motion.div>
                   </div>
                 </motion.div>
               )}
@@ -483,13 +517,15 @@ const Dashboard: React.FC = () => {
                         variants={listItemVariants}
                       >
                         <motion.div
-                          className={`flex items-center justify-between p-4 md:p-6 relative overflow-hidden group ${selectedFeature?.id === item.id
+                          className={`flex items-center justify-between p-4 md:p-6 relative overflow-hidden group ${
+                            selectedFeature?.id === item.id
                               ? 'bg-blue-50 border-l-4 border-primary'
                               : ''
-                            } ${item.disabled
+                          } ${
+                            item.disabled
                               ? 'cursor-not-allowed bg-gray-50/50'
                               : 'cursor-pointer'
-                            }`}
+                          }`}
                           onClick={() =>
                             !item.disabled && handleFeatureClick(item)
                           }
@@ -555,11 +591,11 @@ const Dashboard: React.FC = () => {
                               whileHover={
                                 !item.disabled
                                   ? {
-                                    rotate: 5,
-                                    scale: 1.1,
-                                    filter:
-                                      'drop-shadow(0 2px 8px rgba(var(--primary-rgb, 59, 130, 246), 0.3))',
-                                  }
+                                      rotate: 5,
+                                      scale: 1.1,
+                                      filter:
+                                        'drop-shadow(0 2px 8px rgba(var(--primary-rgb, 59, 130, 246), 0.3))',
+                                    }
                                   : {}
                               }
                               transition={{
@@ -569,29 +605,31 @@ const Dashboard: React.FC = () => {
                               }}
                             >
                               <item.icon
-                                className={`h-5 w-5 flex-shrink-0 transition-all duration-300 ${item.disabled
+                                className={`h-5 w-5 flex-shrink-0 transition-all duration-300 ${
+                                  item.disabled
                                     ? 'text-gray-300'
                                     : selectedFeature?.id === item.id
                                       ? 'text-primary'
                                       : 'text-gray-500 group-hover:text-primary'
-                                  }`}
+                                }`}
                               />
                             </motion.div>
                             <div className='min-w-0 flex-1'>
                               <div className='flex items-center gap-2'>
                                 <motion.p
-                                  className={`font-semibold text-sm leading-tight transition-all duration-300 ${item.disabled
+                                  className={`font-semibold text-sm leading-tight transition-all duration-300 ${
+                                    item.disabled
                                       ? 'text-gray-400'
                                       : selectedFeature?.id === item.id
                                         ? 'text-primary'
                                         : 'text-gray-900 group-hover:text-primary'
-                                    }`}
+                                  }`}
                                   whileHover={
                                     !item.disabled
                                       ? {
-                                        textShadow:
-                                          '0 0 8px rgba(var(--primary-rgb, 59, 130, 246), 0.3)',
-                                      }
+                                          textShadow:
+                                            '0 0 8px rgba(var(--primary-rgb, 59, 130, 246), 0.3)',
+                                        }
                                       : {}
                                   }
                                 >
@@ -614,10 +652,11 @@ const Dashboard: React.FC = () => {
                                 )}
                               </div>
                               <motion.p
-                                className={`text-xs leading-tight transition-colors duration-300 ${item.disabled
+                                className={`text-xs leading-tight transition-colors duration-300 ${
+                                  item.disabled
                                     ? 'text-gray-300'
                                     : 'text-gray-500 group-hover:text-gray-600'
-                                  }`}
+                                }`}
                               >
                                 {item.subtitle}
                               </motion.p>
@@ -695,7 +734,11 @@ const Dashboard: React.FC = () => {
               className='flex-shrink-0 p-4'
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.3, duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
+              transition={{
+                delay: 0.3,
+                duration: 0.4,
+                ease: [0.22, 1, 0.36, 1],
+              }}
             >
               <AnimatePresence mode='wait'>
                 {!selectedFeature ? (
@@ -815,14 +858,17 @@ const Dashboard: React.FC = () => {
                             transition={{ delay: 0.2, duration: 0.3 }}
                           >
                             <span className='line-through text-gray-500'>
-                              ${(selectedSize.actual_price * quantity).toFixed(2)}
+                              $
+                              {(selectedSize.actual_price * quantity).toFixed(
+                                2
+                              )}
                             </span>
                             <span className='ml-2 text-green-600 font-medium'>
                               {Math.round(
                                 ((selectedSize.actual_price -
                                   selectedSize.sell_price) /
                                   selectedSize.actual_price) *
-                                100
+                                  100
                               )}
                               % OFF
                             </span>
@@ -891,7 +937,7 @@ const Dashboard: React.FC = () => {
                           ((selectedSize.actual_price -
                             selectedSize.sell_price) /
                             selectedSize.actual_price) *
-                          100
+                            100
                         )}
                         % OFF
                       </span>

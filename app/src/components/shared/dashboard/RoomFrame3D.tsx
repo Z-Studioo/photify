@@ -231,7 +231,6 @@ const RoomFrame3D = ({
 
 const RoomFrame3DCanvas = ({ onInteraction }: RoomFrame3DProps) => {
   const { preview, shape, selectedSize, selectedRatio } = useUpload();
-
   return (
     <div className='absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-80 h-60 cursor-pointer'>
       
