@@ -149,7 +149,7 @@ const CropPanel: React.FC<CropPanelProps> = ({ onSelectionChange }) => {
         </Button>
       </div>
     );
-  console.log(selectedRatio, selectedSize);
+
   return (
     <div className='py-6 space-y-6'>
       <h2 className='text-xl font-semibold text-gray-800 mb-2'>

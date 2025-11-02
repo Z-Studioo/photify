@@ -26,7 +26,7 @@ const SelectPhoto: React.FC<SelectPhotoProps> = ({ onPhotoSelected }) => {
   const [selectedCanvas, setSelectedCanvas] = useState<string>('landscape');
   const [uploadedImages, setUploadedImages] = useState<UploadedImage[]>([]);
   const [selectedImageId, setSelectedImageId] = useState<string | null>(null);
-  const { setPendingFile, setPendingPreview } = useUpload();
+  const { setPendingFile, setPendingPreview, applyPendingChanges } = useUpload();
 
   // Local storage key for uploaded images
   const STORAGE_KEY = 'photify_uploaded_images';
@@ -62,8 +62,8 @@ const SelectPhoto: React.FC<SelectPhotoProps> = ({ onPhotoSelected }) => {
           if (img.base64) {
             // Restore File object from base64
             const restoredFile = base64ToFile(
-              img.base64, 
-              img.name, 
+              img.base64,
+              img.name,
               img.file?.type || 'image/jpeg'
             );
             return {
@@ -108,10 +108,10 @@ const SelectPhoto: React.FC<SelectPhotoProps> = ({ onPhotoSelected }) => {
     if (e.target.files && e.target.files[0]) {
       const file = e.target.files[0];
       const imageId = Date.now().toString();
-      
+
       try {
         const base64Data = await fileToBase64(file);
-        
+
         const newImage: UploadedImage = {
           id: imageId,
           file,
@@ -126,6 +126,9 @@ const SelectPhoto: React.FC<SelectPhotoProps> = ({ onPhotoSelected }) => {
         // Store as pending photo - don't update main context yet
         setPendingFile(file);
         setPendingPreview(base64Data);
+
+        // ✅ apply immediately so dashboard updates
+        applyPendingChanges();
 
         onPhotoSelected?.(file);
       } catch (error) {
@@ -169,7 +172,7 @@ const SelectPhoto: React.FC<SelectPhotoProps> = ({ onPhotoSelected }) => {
       for (const file of files) {
         const imageId =
           Date.now().toString() + Math.random().toString(36).substr(2, 9);
-        
+
         try {
           const base64Data = await fileToBase64(file);
           const newImage: UploadedImage = {
@@ -338,11 +341,10 @@ const SelectPhoto: React.FC<SelectPhotoProps> = ({ onPhotoSelected }) => {
               <div
                 key={option.id}
                 onClick={() => setSelectedCanvas(option.id)}
-                className={`flex-1 min-w-[100px] cursor-pointer border rounded-none p-4 flex flex-col items-center justify-center text-center transition ${
-                  selectedCanvas === option.id
+                className={`flex-1 min-w-[100px] cursor-pointer border rounded-none p-4 flex flex-col items-center justify-center text-center transition ${selectedCanvas === option.id
                     ? 'border-blue-500 bg-blue-50'
                     : 'border-gray-300 hover:border-gray-500'
-                }`}
+                  }`}
               >
                 <span>{option.icon}</span>
                 <span className='mt-1 text-sm'>{option.label}</span>

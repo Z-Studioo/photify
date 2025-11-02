@@ -8,8 +8,13 @@ import UploadImage from './pages';
 import { BrowserRouter, Route, Routes } from 'react-router';
 import CropPage from '@/pages/crop';
 
+import { QueryClient,QueryClientProvider } from '@tanstack/react-query'
+
+const queryClient = new QueryClient()
+
 const App: React.FC = () => {
   return (
+    <QueryClientProvider client={queryClient}>
     <BrowserRouter>
       <UploadProvider>
         <Routes>
@@ -37,6 +42,7 @@ const App: React.FC = () => {
         </Routes>
       </UploadProvider>
     </BrowserRouter>
+    </QueryClientProvider>
   );
 };
 
