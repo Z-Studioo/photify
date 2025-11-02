@@ -129,7 +129,23 @@ const CropPanel: React.FC<CropPanelProps> = ({ onSelectionChange }) => {
       setSelectedView('crop');
 
       const ref = sectionRefs.current[ratioData._id];
-      if (ref) ref.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      if (ref) {
+        const isFirstRatio = ratios[0]?._id === ratioData._id;
+
+        if (isFirstRatio) {
+          // For first ratio, scroll container to top
+          const container = ref.closest('.overflow-auto');
+          if (container) {
+            container.scrollTo({ top: 0, behavior: 'smooth' });
+          }
+        } else {
+          // For other ratios, use scrollIntoView
+          ref.scrollIntoView({
+            behavior: 'smooth',
+            block: 'start',
+          });
+        }
+      }
     }
   };
 
@@ -208,7 +224,7 @@ const CropPanel: React.FC<CropPanelProps> = ({ onSelectionChange }) => {
 
       {/* Show all sizes for all ratios */}
       <div className='space-y-6'>
-        {ratios.map(ratio => {
+        {ratios.map((ratio, index) => {
           const sizes = getAvailableSizes(ratio);
           if (sizes.length === 0) return null;
 
@@ -218,6 +234,7 @@ const CropPanel: React.FC<CropPanelProps> = ({ onSelectionChange }) => {
               ref={el => {
                 sectionRefs.current[ratio._id] = el;
               }}
+              style={{ scrollMarginTop: index === 0 ? '0px' : '80px' }}
             >
               <h3 className='flex items-center gap-2 font-semibold text-lg mb-3 text-gray-800 ml-4'>
                 <AspectRatioIcon ratio={ratio.ratio} />
