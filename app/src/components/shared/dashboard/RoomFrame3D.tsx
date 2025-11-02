@@ -44,70 +44,69 @@ const RoomFrame3D = ({
   );
 
   useEffect(() => {
-  if (!imageUrl) {
-    setTexture(null);
-    return;
-  }
-
-  const isBase64 = imageUrl.startsWith('data:');
-  const uniqueUrl = isBase64 ? imageUrl : `${imageUrl}?v=${Date.now()}`;
-
-  const loader = new THREE.TextureLoader();
-
-  // Dispose old texture
-  if (texture) texture.dispose();
-
-  loader.load(
-    uniqueUrl,
-    loadedTexture => {
-      loadedTexture.needsUpdate = true;
-      loadedTexture.flipY = true;
-
-      if (edgeType === 'mirrored') {
-        loadedTexture.wrapS = THREE.MirroredRepeatWrapping;
-        loadedTexture.wrapT = THREE.MirroredRepeatWrapping;
-      } else {
-        loadedTexture.wrapS = THREE.ClampToEdgeWrapping;
-        loadedTexture.wrapT = THREE.ClampToEdgeWrapping;
-      }
-
-      loadedTexture.minFilter = THREE.LinearFilter;
-      loadedTexture.magFilter = THREE.LinearFilter;
-      loadedTexture.generateMipmaps = false;
-
-      if ('colorSpace' in loadedTexture) {
-        (loadedTexture as any).colorSpace = THREE.SRGBColorSpace;
-      } else {
-        (loadedTexture as any).encoding = THREE.SRGBColorSpace;
-      }
-
-      // Center image based on aspect ratio
-      const img = loadedTexture.image;
-      if (img && img.width && img.height) {
-        const frameAspect = 1.8 / 1.35;
-        const imageAspect = img.width / img.height;
-
-        if (imageAspect > frameAspect) {
-          const scale = frameAspect / imageAspect;
-          loadedTexture.repeat.set(scale, 1);
-          loadedTexture.offset.set((1 - scale) / 2, 0);
-        } else {
-          const scale = imageAspect / frameAspect;
-          loadedTexture.repeat.set(1, scale);
-          loadedTexture.offset.set(0, (1 - scale) / 2);
-        }
-      }
-
-      setTexture(loadedTexture);
-    },
-    undefined,
-    err => {
-      console.error('❌ Texture load failed:', err);
+    if (!imageUrl) {
       setTexture(null);
+      return;
     }
-  );
-}, [imageUrl, edgeType]);
 
+    const isBase64 = imageUrl.startsWith('data:');
+    const uniqueUrl = isBase64 ? imageUrl : `${imageUrl}?v=${Date.now()}`;
+
+    const loader = new THREE.TextureLoader();
+
+    // Dispose old texture
+    if (texture) texture.dispose();
+
+    loader.load(
+      uniqueUrl,
+      loadedTexture => {
+        loadedTexture.needsUpdate = true;
+        loadedTexture.flipY = true;
+
+        if (edgeType === 'mirrored') {
+          loadedTexture.wrapS = THREE.MirroredRepeatWrapping;
+          loadedTexture.wrapT = THREE.MirroredRepeatWrapping;
+        } else {
+          loadedTexture.wrapS = THREE.ClampToEdgeWrapping;
+          loadedTexture.wrapT = THREE.ClampToEdgeWrapping;
+        }
+
+        loadedTexture.minFilter = THREE.LinearFilter;
+        loadedTexture.magFilter = THREE.LinearFilter;
+        loadedTexture.generateMipmaps = false;
+
+        if ('colorSpace' in loadedTexture) {
+          (loadedTexture as any).colorSpace = THREE.SRGBColorSpace;
+        } else {
+          (loadedTexture as any).encoding = THREE.SRGBColorSpace;
+        }
+
+        // Center image based on aspect ratio
+        const img = loadedTexture.image;
+        if (img && img.width && img.height) {
+          const frameAspect = 1.8 / 1.35;
+          const imageAspect = img.width / img.height;
+
+          if (imageAspect > frameAspect) {
+            const scale = frameAspect / imageAspect;
+            loadedTexture.repeat.set(scale, 1);
+            loadedTexture.offset.set((1 - scale) / 2, 0);
+          } else {
+            const scale = imageAspect / frameAspect;
+            loadedTexture.repeat.set(1, scale);
+            loadedTexture.offset.set(0, (1 - scale) / 2);
+          }
+        }
+
+        setTexture(loadedTexture);
+      },
+      undefined,
+      err => {
+        console.error('❌ Texture load failed:', err);
+        setTexture(null);
+      }
+    );
+  }, [imageUrl, edgeType]);
 
   // --- Image geometry (photo plane / shape) ---
   const geometry = useMemo(() => {
@@ -233,7 +232,6 @@ const RoomFrame3DCanvas = ({ onInteraction }: RoomFrame3DProps) => {
   const { preview, shape, selectedSize, selectedRatio } = useUpload();
   return (
     <div className='absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-80 h-60 cursor-pointer'>
-      
       <Canvas
         shadows
         camera={{ position: [0, 0, 4], fov: 50 }}

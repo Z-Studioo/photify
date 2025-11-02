@@ -264,7 +264,7 @@ const CropPanel: React.FC<CropPanelProps> = ({ onSelectionChange }) => {
                       <div className='flex justify-between items-start'>
                         <div>
                           <div className='font-semibold text-gray-800'>
-                            {size.width}" × {size.height}"
+                            {size.width}&quot; × {size.height}&quot;
                           </div>
                           <div className='text-sm text-gray-500'>
                             {size.Slug}
