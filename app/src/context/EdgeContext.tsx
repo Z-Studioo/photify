@@ -6,15 +6,18 @@ export type EdgeType = 'wrapped' | 'mirrored';
 interface EdgeContextType {
   edgeType: EdgeType;
   setEdgeType: (type: EdgeType) => void;
+  reset: () => void;
 }
 
 const EdgeContext = createContext<EdgeContextType | undefined>(undefined);
 
 export const EdgeProvider = ({ children }: { children: ReactNode }) => {
   const [edgeType, setEdgeType] = useState<EdgeType>('wrapped');
-
+  const reset = () => {
+    setEdgeType('wrapped');
+  };
   return (
-    <EdgeContext.Provider value={{ edgeType, setEdgeType }}>
+    <EdgeContext.Provider value={{ edgeType, setEdgeType, reset }}>
       {children}
     </EdgeContext.Provider>
   );
