@@ -746,7 +746,7 @@ const Dashboard: React.FC = () => {
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, y: -20 }}
                     transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
-                    className='flex items-center justify-between gap-3 fixed bottom-0 left-0 md:w-1/4 p-4 bg-white border-t z-50'
+                    className='flex items-center justify-between gap-3 fixed bottom-0 left-0 md:w-1/4 w-full p-4 bg-white border-t z-50'
                   >
                     <motion.div
                       className='flex items-center justify-center space-x-2'
