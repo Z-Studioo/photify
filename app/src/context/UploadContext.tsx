@@ -1,3 +1,5 @@
+import { fetchInches, fetchRatios } from '@/utils/ratio-sizes';
+import { useQuery } from '@tanstack/react-query';
 import { createContext, useContext, useState, useEffect } from 'react';
 import type { ReactNode } from 'react';
 
@@ -53,14 +55,10 @@ interface UploadContextType {
   setSelectedRatio: (r: string | null) => void;
   selectedSize: SizeData | null;
   setSelectedSize: (s: SizeData | null) => void;
-  defaultRatio: string | null;
-  setDefaultRatio: (r: string | null) => void;
-  defaultSize: SizeData | null;
-  setDefaultSize: (s: SizeData | null) => void;
   quality: number[];
   setQuality: (q: number[]) => void;
   applyPendingChanges: () => void;
-  reset: () => void;
+  reset: () => Promise<void>;
 }
 
 const UploadContext = createContext<UploadContextType | undefined>(undefined);
@@ -74,8 +72,18 @@ export const UploadProvider = ({ children }: { children: ReactNode }) => {
   const [pendingPreview, setPendingPreview] = useState<string | null>(null);
   const [selectedRatio, setSelectedRatio] = useState<string | null>(null);
   const [selectedSize, setSelectedSize] = useState<SizeData | null>(null);
-  const [defaultRatio, setDefaultRatio] = useState<string | null>(null);
-  const [defaultSize, setDefaultSize] = useState<SizeData | null>(null);
+
+  const { refetch: refetchRatios } = useQuery({
+    queryKey: ['ratios'],
+    queryFn: fetchRatios,
+    enabled: false, // prevents auto-fetch
+  });
+
+  const { refetch: refetchInches } = useQuery({
+    queryKey: ['inches'],
+    queryFn: fetchInches,
+    enabled: false, // prevents auto-fetch
+  });
 
   // CHANGED: Initialize quality from localStorage
   const [quality, setQuality] = useState<number[]>(() => {
@@ -203,31 +211,50 @@ export const UploadProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const reset = async () => {
-    // Clear pending changes
-    setPendingFile(null);
-    setPendingPreview(null);
+      console.log('🔄 Resetting and fetching latest ratios/sizes...');
 
-    // Reset metadata
-    setSelectedRatio(defaultRatio);
-    setSelectedSize(defaultSize);
-    setShape('rectangle');
-    setQuality([70]); // Reset quality to default
+      // Refetch both in parallel
+      const [ratiosRes, inchesRes] = await Promise.all([
+        refetchRatios(),
+        refetchInches(),
+      ]);
 
-    // Reset preview and persist correctly
-    if (file) {
-      const base64 = await fileToBase64(file);
-      setPreview(base64);
+      const ratios = ratiosRes.data || [];
+      const inches = inchesRes.data || [];
 
-      // Keep the originalPreview intact — if missing, fallback to base64
-      const origToStore = originalPreview || base64;
+      // Compute default ratio and smallest size
+      if (ratios.length && inches.length) {
+        let defaultRatio = ratios.find(r => r.ratio === '1:1') || ratios[0];
 
-      // Persist file
-      await persistFile(file, base64, origToStore);
-    } else {
-      setPreview(null);
-      setOriginalPreview(null);
-      localStorage.removeItem('photify_uploaded_image');
-    }
+        const available = inches
+          .filter(inch => defaultRatio.Inches.includes(inch._id))
+          .sort((a, b) => a.width * a.height - b.width * b.height);
+
+        const smallest = available[0] || null;
+
+        if (defaultRatio && smallest) {
+          setSelectedRatio(defaultRatio.ratio);
+          setSelectedSize(smallest);
+        }
+      }
+
+      // Reset metadata
+      setPendingFile(null);
+      setPendingPreview(null);
+      setShape('rectangle');
+      setQuality([70]);
+
+      // Reset preview
+      if (file) {
+        const base64 = await fileToBase64(file);
+        setPreview(base64);
+        const origToStore = originalPreview || base64;
+        await persistFile(file, base64, origToStore);
+      } else {
+        setPreview(null);
+        setOriginalPreview(null);
+        localStorage.removeItem('photify_uploaded_image');
+      }
   };
 
   return (
@@ -253,10 +280,6 @@ export const UploadProvider = ({ children }: { children: ReactNode }) => {
         reset,
         quality,
         setQuality,
-        defaultRatio,
-        setDefaultRatio,
-        defaultSize,
-        setDefaultSize,
       }}
     >
       {children}

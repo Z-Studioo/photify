@@ -5,50 +5,16 @@ import { useUpload } from '@/context/UploadContext';
 import { useView } from '@/context/ViewContext';
 import { AspectRatioIcon } from '../common/icons';
 import { useQuery } from '@tanstack/react-query';
-
-interface RatioData {
-  _id: string;
-  ratio: string;
-  Inches: string[];
-}
-
-interface InchData {
-  _id: string;
-  width: number;
-  height: number;
-  w: number;
-  h: number;
-  Slug: string;
-  sell_price: number;
-  actual_price: number;
-}
+import { fetchInches, fetchRatios, type InchData, type RatioData } from '@/utils/ratio-sizes';
 
 interface RatioSizePanelProps {
   onSelectionChange?: (ratio: string, size: InchData | null) => void;
 }
 
-const fetchRatios = async (): Promise<RatioData[]> => {
-  const res = await fetch(
-    'https://photify.co/version-923ig/api/1.1/obj/ratios'
-  );
-  if (!res.ok) throw new Error('Failed to fetch ratios');
-  const data = await res.json();
-  return data.response?.results || [];
-};
-
-const fetchInches = async (): Promise<InchData[]> => {
-  const res = await fetch(
-    'https://photify.co/version-923ig/api/1.1/obj/inches'
-  );
-  if (!res.ok) throw new Error('Failed to fetch inches');
-  const data = await res.json();
-  return data.response?.results || [];
-};
-
 const RatioSizePanel: React.FC<RatioSizePanelProps> = ({
   onSelectionChange,
 }) => {
-  const { selectedRatio, setSelectedRatio, selectedSize, setSelectedSize, setDefaultRatio, setDefaultSize } =
+  const { selectedRatio, setSelectedRatio, selectedSize, setSelectedSize } =
     useUpload();
   const { setSelectedView } = useView();
 
@@ -104,8 +70,6 @@ const RatioSizePanel: React.FC<RatioSizePanelProps> = ({
       // update context for defaults as well
       setSelectedRatio(defaultRatio.ratio);
       setSelectedSize(defaultSize);
-      setDefaultRatio(defaultRatio.ratio);
-      setDefaultSize(defaultSize);
 
       onSelectionChange?.(defaultRatio.ratio, defaultSize);
     }
