@@ -1,5 +1,5 @@
 import type React from 'react';
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import {
   Box,
   Eye,
@@ -47,6 +47,23 @@ const Dashboard: React.FC = () => {
   const [customWalls, setCustomWalls] = useState<string[]>([]);
   const wallImageInputRef = useRef<HTMLInputElement>(null);
   const { selectedFeature, setSelectedFeature } = useFeature();
+
+  // Fix for mobile viewport height issues
+  useEffect(() => {
+    const setVH = () => {
+      const vh = window.innerHeight * 0.01;
+      document.documentElement.style.setProperty('--vh', `${vh}px`);
+    };
+    
+    setVH();
+    window.addEventListener('resize', setVH);
+    window.addEventListener('orientationchange', setVH);
+    
+    return () => {
+      window.removeEventListener('resize', setVH);
+      window.removeEventListener('orientationchange', setVH);
+    };
+  }, []);
 
   // Animation variants
   const listItemVariants: Variants = {
@@ -177,7 +194,7 @@ const Dashboard: React.FC = () => {
   const isEditingView = selectedView === ('crop' as any) || selectedView === ('optimization' as any);
 
   return (
-    <div className='h-screen flex flex-col overflow-hidden'>
+    <div className='h-[calc(var(--vh,1vh)*100)] flex flex-col overflow-hidden'>
       <Navbar />
       <div className='flex-1 w-full flex flex-col md:flex-row-reverse gap-0 overflow-hidden'>
         {/* Main content area */}
@@ -402,7 +419,7 @@ const Dashboard: React.FC = () => {
 
         {/* Right: Sidebar - Hidden during editing views on mobile, shown on desktop */}
         {(!isEditingView || window.innerWidth >= 768) && (
-          <div className='md:w-1/4 w-full flex flex-col border-l md:h-full flex-1 md:flex-none md:overflow-hidden overflow-y-auto'>
+          <div className='md:w-1/4 w-full flex flex-col border-l md:h-full flex-1 md:flex-none overflow-hidden'>
             {/* Top: Title + Thumbnail */}
             <AnimatePresence mode='wait'>
               {!selectedFeature && (
@@ -418,7 +435,7 @@ const Dashboard: React.FC = () => {
                     paddingBottom: 0,
                   }}
                   transition={{ duration: 0.25, ease: [0.22, 1, 0.36, 1] }}
-                  className='flex flex-col sm:flex-row items-start sm:items-center justify-between p-4 sm:p-6 overflow-visible min-h-[80px] md:min-h-[auto] w-full'
+                  className='flex flex-col sm:flex-row items-start sm:items-center justify-between p-4 sm:p-6 overflow-visible min-h-[80px] md:min-h-[auto] w-full flex-shrink-0'
                 >
                   <div className='flex-1 min-w-0'>
                     <motion.h2
@@ -444,7 +461,7 @@ const Dashboard: React.FC = () => {
             </AnimatePresence>
 
             <motion.div
-              className='border-b border-gray-300 w-full'
+              className='border-b border-gray-300 w-full flex-shrink-0'
               animate={{
                 opacity: selectedFeature ? 0 : 1,
                 height: selectedFeature ? 0 : 'auto',
@@ -452,247 +469,254 @@ const Dashboard: React.FC = () => {
               transition={{ duration: 0.25, ease: [0.22, 1, 0.36, 1] }}
             />
 
-            {/* Features list + Feature Panel */}
-            <motion.div
-              className='relative md:overflow-hidden flex-1'
-              layout
-              transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
-            >
+            {/* Scrollable Features Area */}
+            <div className='flex-1 min-h-0 overflow-hidden'>
+              {/* Features list + Feature Panel */}
               <motion.div
-                className='md:absolute md:inset-0'
-                animate={{ x: selectedFeature ? '-100%' : '0%' }}
+                className='relative md:overflow-hidden h-full'
+                layout
                 transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
               >
-                <ScrollArea className='md:h-full'>
-                  <motion.div
-                    className='space-y-0'
-                    initial='hidden'
-                    animate='visible'
-                    variants={{
-                      visible: {
-                        transition: {
-                          staggerChildren: 0.05,
-                        },
-                      },
-                    }}
-                  >
-                    {features.map((item, index) => (
+                <motion.div
+                  className='md:absolute md:inset-0 flex flex-col h-full'
+                  animate={{ x: selectedFeature ? '-100%' : '0%' }}
+                  transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
+                >
+                  {/* Scrollable features list */}
+                  <div className='flex-1 min-h-0 overflow-hidden'>
+                    <ScrollArea className='h-full'>
                       <motion.div
-                        key={item.id}
-                        custom={index}
-                        variants={listItemVariants}
+                        className='space-y-0'
+                        initial='hidden'
+                        animate='visible'
+                        variants={{
+                          visible: {
+                            transition: {
+                              staggerChildren: 0.05,
+                            },
+                          },
+                        }}
                       >
-                        <motion.div
-                          className={`flex items-center justify-between p-4 md:p-6 relative overflow-hidden group ${selectedFeature?.id === item.id
-                              ? 'bg-blue-50 border-l-4 border-primary'
-                              : ''
-                            } ${item.disabled
-                              ? 'cursor-not-allowed bg-gray-50/50'
-                              : 'cursor-pointer'
-                            }`}
-                          onClick={() =>
-                            !item.disabled && handleFeatureClick(item)
-                          }
-                          whileHover={!item.disabled ? { scale: 1.002 } : {}}
-                          whileTap={!item.disabled ? { scale: 0.998 } : {}}
-                          transition={{
-                            type: 'spring',
-                            stiffness: 400,
-                            damping: 25,
-                          }}
-                        >
-                          {/* Disabled overlay with subtle pattern */}
-                          {item.disabled && (
+                        {features.map((item, index) => (
+                          <motion.div
+                            key={item.id}
+                            custom={index}
+                            variants={listItemVariants}
+                          >
                             <motion.div
-                              className='absolute inset-0 bg-gradient-to-r from-gray-100/30 via-transparent to-gray-100/30 pointer-events-none'
-                              initial={{ x: '-100%' }}
-                              animate={{ x: '100%' }}
-                              transition={{
-                                duration: 3,
-                                repeat: Number.POSITIVE_INFINITY,
-                                ease: 'linear',
-                              }}
-                            />
-                          )}
-
-                          {/* Background effects for enabled items */}
-                          {!item.disabled && (
-                            <>
-                              <motion.div
-                                className='absolute inset-0 opacity-0 pointer-events-none'
-                                style={{
-                                  background:
-                                    'linear-gradient(90deg, rgba(var(--primary-rgb, 59, 130, 246), 0.08) 0%, rgba(var(--primary-rgb, 59, 130, 246), 0.03) 50%, transparent 100%)',
-                                }}
-                                whileHover={{ opacity: 1 }}
-                                transition={{
-                                  duration: 0.3,
-                                  ease: [0.22, 1, 0.36, 1],
-                                }}
-                              />
-                              <motion.div
-                                className='absolute left-0 top-0 bottom-0 w-1 bg-primary opacity-0 pointer-events-none'
-                                whileHover={{ opacity: 1 }}
-                                transition={{
-                                  duration: 0.3,
-                                  ease: [0.22, 1, 0.36, 1],
-                                }}
-                              />
-                              <motion.div
-                                className='absolute inset-0 opacity-0 pointer-events-none'
-                                style={{
-                                  background:
-                                    'radial-gradient(600px circle at 20% 50%, rgba(var(--primary-rgb, 59, 130, 246), 0.04), transparent 60%)',
-                                }}
-                                whileHover={{ opacity: 1 }}
-                                transition={{ duration: 0.4, ease: 'easeOut' }}
-                              />
-                            </>
-                          )}
-
-                          <div className='flex items-center space-x-2 flex-1 min-w-0 relative z-10'>
-                            <motion.div
-                              whileHover={
-                                !item.disabled
-                                  ? {
-                                    rotate: 5,
-                                    scale: 1.1,
-                                    filter:
-                                      'drop-shadow(0 2px 8px rgba(var(--primary-rgb, 59, 130, 246), 0.3))',
-                                  }
-                                  : {}
+                              className={`flex items-center justify-between p-4 md:p-6 relative overflow-hidden group ${selectedFeature?.id === item.id
+                                  ? 'bg-blue-50 border-l-4 border-primary'
+                                  : ''
+                                } ${item.disabled
+                                  ? 'cursor-not-allowed bg-gray-50/50'
+                                  : 'cursor-pointer'
+                                }`}
+                              onClick={() =>
+                                !item.disabled && handleFeatureClick(item)
                               }
+                              whileHover={!item.disabled ? { scale: 1.002 } : {}}
+                              whileTap={!item.disabled ? { scale: 0.998 } : {}}
                               transition={{
                                 type: 'spring',
                                 stiffness: 400,
-                                damping: 10,
+                                damping: 25,
                               }}
                             >
-                              <item.icon
-                                className={`h-5 w-5 flex-shrink-0 transition-all duration-300 ${item.disabled
-                                    ? 'text-gray-300'
-                                    : selectedFeature?.id === item.id
-                                      ? 'text-primary'
-                                      : 'text-gray-500 group-hover:text-primary'
-                                  }`}
-                              />
-                            </motion.div>
-                            <div className='min-w-0 flex-1'>
-                              <div className='flex items-center gap-2'>
-                                <motion.p
-                                  className={`font-semibold text-sm leading-tight transition-all duration-300 ${item.disabled
-                                      ? 'text-gray-400'
-                                      : selectedFeature?.id === item.id
-                                        ? 'text-primary'
-                                        : 'text-gray-900 group-hover:text-primary'
-                                    }`}
+                              {/* Disabled overlay with subtle pattern */}
+                              {item.disabled && (
+                                <motion.div
+                                  className='absolute inset-0 bg-gradient-to-r from-gray-100/30 via-transparent to-gray-100/30 pointer-events-none'
+                                  initial={{ x: '-100%' }}
+                                  animate={{ x: '100%' }}
+                                  transition={{
+                                    duration: 3,
+                                    repeat: Number.POSITIVE_INFINITY,
+                                    ease: 'linear',
+                                  }}
+                                />
+                              )}
+
+                              {/* Background effects for enabled items */}
+                              {!item.disabled && (
+                                <>
+                                  <motion.div
+                                    className='absolute inset-0 opacity-0 pointer-events-none'
+                                    style={{
+                                      background:
+                                        'linear-gradient(90deg, rgba(var(--primary-rgb, 59, 130, 246), 0.08) 0%, rgba(var(--primary-rgb, 59, 130, 246), 0.03) 50%, transparent 100%)',
+                                    }}
+                                    whileHover={{ opacity: 1 }}
+                                    transition={{
+                                      duration: 0.3,
+                                      ease: [0.22, 1, 0.36, 1],
+                                    }}
+                                  />
+                                  <motion.div
+                                    className='absolute left-0 top-0 bottom-0 w-1 bg-primary opacity-0 pointer-events-none'
+                                    whileHover={{ opacity: 1 }}
+                                    transition={{
+                                      duration: 0.3,
+                                      ease: [0.22, 1, 0.36, 1],
+                                    }}
+                                  />
+                                  <motion.div
+                                    className='absolute inset-0 opacity-0 pointer-events-none'
+                                    style={{
+                                      background:
+                                        'radial-gradient(600px circle at 20% 50%, rgba(var(--primary-rgb, 59, 130, 246), 0.04), transparent 60%)',
+                                    }}
+                                    whileHover={{ opacity: 1 }}
+                                    transition={{ duration: 0.4, ease: 'easeOut' }}
+                                  />
+                                </>
+                              )}
+
+                              <div className='flex items-center space-x-2 flex-1 min-w-0 relative z-10'>
+                                <motion.div
                                   whileHover={
                                     !item.disabled
                                       ? {
-                                        textShadow:
-                                          '0 0 8px rgba(var(--primary-rgb, 59, 130, 246), 0.3)',
+                                        rotate: 5,
+                                        scale: 1.1,
+                                        filter:
+                                          'drop-shadow(0 2px 8px rgba(var(--primary-rgb, 59, 130, 246), 0.3))',
                                       }
                                       : {}
                                   }
+                                  transition={{
+                                    type: 'spring',
+                                    stiffness: 400,
+                                    damping: 10,
+                                  }}
                                 >
-                                  {item.name}
-                                </motion.p>
-                                {item.disabled && (
-                                  <motion.span
-                                    initial={{ scale: 0, opacity: 0 }}
-                                    animate={{ scale: 1, opacity: 1 }}
-                                    transition={{
-                                      delay: index * 0.05 + 0.3,
-                                      type: 'spring',
-                                      stiffness: 500,
-                                      damping: 15,
-                                    }}
-                                    className='inline-flex items-center px-1 py-0.5 rounded-full text-[9px] font-medium bg-gradient-to-r from-amber-100 to-orange-100 text-amber-700 border border-amber-200 shadow-sm'
+                                  <item.icon
+                                    className={`h-5 w-5 flex-shrink-0 transition-all duration-300 ${item.disabled
+                                        ? 'text-gray-300'
+                                        : selectedFeature?.id === item.id
+                                          ? 'text-primary'
+                                          : 'text-gray-500 group-hover:text-primary'
+                                      }`}
+                                  />
+                                </motion.div>
+                                <div className='min-w-0 flex-1'>
+                                  <div className='flex items-center gap-2'>
+                                    <motion.p
+                                      className={`font-semibold text-sm leading-tight transition-all duration-300 ${item.disabled
+                                          ? 'text-gray-400'
+                                          : selectedFeature?.id === item.id
+                                            ? 'text-primary'
+                                            : 'text-gray-900 group-hover:text-primary'
+                                        }`}
+                                      whileHover={
+                                        !item.disabled
+                                          ? {
+                                            textShadow:
+                                              '0 0 8px rgba(var(--primary-rgb, 59, 130, 246), 0.3)',
+                                          }
+                                          : {}
+                                      }
+                                    >
+                                      {item.name}
+                                    </motion.p>
+                                    {item.disabled && (
+                                      <motion.span
+                                        initial={{ scale: 0, opacity: 0 }}
+                                        animate={{ scale: 1, opacity: 1 }}
+                                        transition={{
+                                          delay: index * 0.05 + 0.3,
+                                          type: 'spring',
+                                          stiffness: 500,
+                                          damping: 15,
+                                        }}
+                                        className='inline-flex items-center px-1 py-0.5 rounded-full text-[9px] font-medium bg-gradient-to-r from-amber-100 to-orange-100 text-amber-700 border border-amber-200 shadow-sm'
+                                      >
+                                        Coming Soon
+                                      </motion.span>
+                                    )}
+                                  </div>
+                                  <motion.p
+                                    className={`text-xs leading-tight transition-colors duration-300 ${item.disabled
+                                        ? 'text-gray-300'
+                                        : 'text-gray-500 group-hover:text-gray-600'
+                                      }`}
                                   >
-                                    Coming Soon
-                                  </motion.span>
-                                )}
+                                    {item.subtitle}
+                                  </motion.p>
+                                </div>
                               </div>
-                              <motion.p
-                                className={`text-xs leading-tight transition-colors duration-300 ${item.disabled
-                                    ? 'text-gray-300'
-                                    : 'text-gray-500 group-hover:text-gray-600'
-                                  }`}
-                              >
-                                {item.subtitle}
-                              </motion.p>
-                            </div>
-                          </div>
 
-                          {/* Chevron icon or lock icon */}
-                          {!item.disabled ? (
-                            <motion.div
-                              className='relative z-10'
-                              whileHover={{
-                                x: 4,
-                                scale: 1.1,
-                                filter:
-                                  'drop-shadow(0 2px 6px rgba(var(--primary-rgb, 59, 130, 246), 0.25))',
-                              }}
-                              transition={{
-                                type: 'spring',
-                                stiffness: 400,
-                                damping: 10,
-                              }}
-                            >
-                              <ChevronRight className='h-4 w-4 text-gray-400 flex-shrink-0 cursor-pointer transition-all duration-300 group-hover:text-primary' />
+                              {/* Chevron icon or lock icon */}
+                              {!item.disabled ? (
+                                <motion.div
+                                  className='relative z-10'
+                                  whileHover={{
+                                    x: 4,
+                                    scale: 1.1,
+                                    filter:
+                                      'drop-shadow(0 2px 6px rgba(var(--primary-rgb, 59, 130, 246), 0.25))',
+                                  }}
+                                  transition={{
+                                    type: 'spring',
+                                    stiffness: 400,
+                                    damping: 10,
+                                  }}
+                                >
+                                  <ChevronRight className='h-4 w-4 text-gray-400 flex-shrink-0 cursor-pointer transition-all duration-300 group-hover:text-primary' />
+                                </motion.div>
+                              ) : (
+                                <motion.div
+                                  className='relative z-10'
+                                  initial={{ rotate: 0 }}
+                                  animate={{ rotate: [0, -10, 10, -10, 0] }}
+                                  transition={{
+                                    duration: 0.5,
+                                    delay: index * 0.05 + 0.5,
+                                  }}
+                                >
+                                  <svg
+                                    className='h-4 w-4 text-gray-300'
+                                    fill='none'
+                                    stroke='currentColor'
+                                    viewBox='0 0 24 24'
+                                  >
+                                    <path
+                                      strokeLinecap='round'
+                                      strokeLinejoin='round'
+                                      strokeWidth={2}
+                                      d='M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z'
+                                    />
+                                  </svg>
+                                </motion.div>
+                              )}
                             </motion.div>
-                          ) : (
-                            <motion.div
-                              className='relative z-10'
-                              initial={{ rotate: 0 }}
-                              animate={{ rotate: [0, -10, 10, -10, 0] }}
-                              transition={{
-                                duration: 0.5,
-                                delay: index * 0.05 + 0.5,
-                              }}
-                            >
-                              <svg
-                                className='h-4 w-4 text-gray-300'
-                                fill='none'
-                                stroke='currentColor'
-                                viewBox='0 0 24 24'
-                              >
-                                <path
-                                  strokeLinecap='round'
-                                  strokeLinejoin='round'
-                                  strokeWidth={2}
-                                  d='M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z'
-                                />
-                              </svg>
-                            </motion.div>
-                          )}
-                        </motion.div>
-                        {index !== features.length - 1 && (
-                          <motion.div
-                            className='border-b border-gray-200 w-full'
-                            initial={{ scaleX: 0 }}
-                            animate={{ scaleX: 1 }}
-                            transition={{
-                              delay: index * 0.05 + 0.2,
-                              duration: 0.3,
-                            }}
-                          />
-                        )}
+                            {index !== features.length - 1 && (
+                              <motion.div
+                                className='border-b border-gray-200 w-full'
+                                initial={{ scaleX: 0 }}
+                                animate={{ scaleX: 1 }}
+                                transition={{
+                                  delay: index * 0.05 + 0.2,
+                                  duration: 0.3,
+                                }}
+                              />
+                            )}
+                          </motion.div>
+                        ))}
                       </motion.div>
-                    ))}
-                  </motion.div>
-                </ScrollArea>
+                    </ScrollArea>
+                  </div>
+                </motion.div>
+
+                {/* Feature panel component */}
+                <FeaturePanel />
               </motion.div>
+            </div>
 
-              {/* Feature panel component */}
-              <FeaturePanel />
-            </motion.div>
+            <div className='border-b border-gray-300 w-full flex-shrink-0' />
 
-            <div className='border-b border-gray-300 w-full' />
-
+            {/* Fixed bottom section for mobile */}
             <motion.div
-              className='flex-shrink-0 p-4'
+              className='flex-shrink-0 p-4 bg-white border-t border-gray-200 md:border-t-0 md:bg-transparent'
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.3, duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
@@ -862,6 +886,10 @@ const Dashboard: React.FC = () => {
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: 20 }}
             className='fixed bottom-0 left-0 right-0 bg-white border-t p-4 z-50'
+            style={{ 
+              bottom: 'env(safe-area-inset-bottom, 0px)',
+              paddingBottom: 'calc(1rem + env(safe-area-inset-bottom, 0px))'
+            }}
           >
             <div className='flex justify-between items-center'>
               <motion.div
