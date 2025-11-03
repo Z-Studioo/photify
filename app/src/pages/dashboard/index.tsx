@@ -728,8 +728,6 @@ const Dashboard: React.FC = () => {
               <FeaturePanel />
             </motion.div>
 
-            <div className='border-b border-gray-300 w-full' />
-
             <motion.div
               className='flex-shrink-0 p-4'
               initial={{ opacity: 0, y: 20 }}
@@ -748,7 +746,7 @@ const Dashboard: React.FC = () => {
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, y: -20 }}
                     transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
-                    className='flex items-center justify-between gap-3'
+                    className='flex items-center justify-between gap-3 fixed bottom-0 left-0 md:w-1/4 p-4 bg-white border-t z-50'
                   >
                     <motion.div
                       className='flex items-center justify-center space-x-2'
@@ -799,7 +797,7 @@ const Dashboard: React.FC = () => {
                           variant='outline'
                           size='icon'
                           onClick={handleIncrement}
-                          className='h-12 w-12 rounded-none transition-all duration-200'
+                          className='h-12 w-fit rounded-none transition-all duration-200'
                         >
                           <PlusCircle className='h-6 w-6' />
                         </Button>
@@ -829,8 +827,9 @@ const Dashboard: React.FC = () => {
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, y: -20 }}
                     transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
-                    className='flex items-center justify-between gap-3 flex-shrink-0'
+                    className='fixed bottom-0 left-0 md:w-1/4 w-full flex items-center justify-between gap-3 bg-white border-t p-4 z-50'
                   >
+                    {/* --- Price Section --- */}
                     <motion.div
                       className='flex flex-col'
                       initial={{ opacity: 0, x: -20 }}
@@ -849,6 +848,7 @@ const Dashboard: React.FC = () => {
                       >
                         ${(pricePerItem * quantity).toFixed(2)}
                       </motion.span>
+
                       {selectedSize &&
                         selectedSize.actual_price > selectedSize.sell_price && (
                           <motion.div
@@ -875,6 +875,8 @@ const Dashboard: React.FC = () => {
                           </motion.div>
                         )}
                     </motion.div>
+
+                    {/* --- Apply Button --- */}
                     <motion.div
                       initial={{ opacity: 0, x: 20 }}
                       animate={{ opacity: 1, x: 0 }}
