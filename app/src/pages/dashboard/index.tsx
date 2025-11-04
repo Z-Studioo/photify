@@ -31,6 +31,7 @@ import ImageCropper from '@/components/shared/common/ImageCropper';
 import { useEdge } from '@/context/EdgeContext';
 import { useGlobalReset } from '@/hooks/useGlobalReset';
 import OptimizationView from '@/components/shared/dashboard/OptimizationView';
+import { useMutation } from '@tanstack/react-query';
 
 interface MenuFeature {
   id: number;
@@ -181,6 +182,12 @@ const Dashboard: React.FC = () => {
   const isEditingView =
     selectedView === ('crop' as any) ||
     selectedView === ('optimization' as any);
+
+  const { mutateAsync, isPending } = useMutation({
+    mutationFn: resetAll,
+    onError: err => console.error('Reset failed:', err),
+    onSuccess: () => console.log('Reset complete'),
+  });
 
   return (
     <div className='h-screen flex flex-col overflow-hidden'>
@@ -466,10 +473,11 @@ const Dashboard: React.FC = () => {
                         size='sm'
                         variant='outline'
                         className='border-gray-300 text-gray-700 hover:bg-gray-100 flex items-center gap-1 p-1'
-                        onClick={resetAll}
+                        onClick={() => mutateAsync()}
+                        disabled={isPending}
                       >
                         <RefreshCw className='w-4 h-4' />
-                        Reset All
+                        {isPending ? 'Resetting...' : 'Reset All'}
                       </Button>
                     </motion.div>
                   </div>
