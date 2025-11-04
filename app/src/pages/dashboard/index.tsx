@@ -984,6 +984,8 @@ import {
   MinusCircle,
   ChevronLeft,
   ImagePlus,
+  RefreshCw,
+  Package,
 } from 'lucide-react';
 import { motion, AnimatePresence, type Variants } from 'motion/react';
 import { Button } from '@/components/ui/button';
@@ -1003,7 +1005,9 @@ import { useUpload } from '@/context/UploadContext';
 import { useView } from '@/context/ViewContext';
 import ImageCropper from '@/components/shared/common/ImageCropper';
 import { useEdge } from '@/context/EdgeContext';
+import { useGlobalReset } from '@/hooks/useGlobalReset';
 import OptimizationView from '@/components/shared/dashboard/OptimizationView';
+import { useMutation } from '@tanstack/react-query';
 
 interface MenuFeature {
   id: number;
@@ -1023,6 +1027,7 @@ const Dashboard: React.FC = () => {
   const [customWalls, setCustomWalls] = useState<string[]>([]);
   const wallImageInputRef = useRef<HTMLInputElement>(null);
   const { selectedFeature, setSelectedFeature } = useFeature();
+  const { resetAll } = useGlobalReset();
 
   // Fix for mobile viewport height issues
   useEffect(() => {
@@ -1139,7 +1144,7 @@ const Dashboard: React.FC = () => {
     setSelectedFeature(selectedFeature?.id === item.id ? null : item);
   };
 
-  const handleAddToCart = () => { };
+  const handleAddToCart = () => {};
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const f = e.target.files?.[0];
@@ -1167,21 +1172,35 @@ const Dashboard: React.FC = () => {
   };
 
   // Fix: Use type assertion to handle the view types properly
-  const isEditingView = selectedView === ('crop' as any) || selectedView === ('optimization' as any);
+  const isEditingView =
+    selectedView === ('crop' as any) ||
+    selectedView === ('optimization' as any);
+
+  const { mutateAsync, isPending } = useMutation({
+    mutationFn: resetAll,
+    onError: err => console.error('Reset failed:', err),
+    onSuccess: () => console.log('Reset complete'),
+  });
 
   return (
     <div className='h-[calc(var(--vh,1vh)*100)] flex flex-col overflow-hidden'>
       <Navbar />
       <div className='flex-1 w-full flex flex-col md:flex-row-reverse gap-0 overflow-hidden'>
         {/* Main content area */}
-        <div className={`
+        <div
+          className={`
           ${isEditingView ? 'w-full h-full' : 'md:w-3/4 w-full'} 
           relative 
           ${isEditingView ? 'h-full' : 'h-64 md:h-full'} 
           overflow-hidden
-        `}>
-          {selectedView === ('crop' as any) && <ImageCropper isVisible={true} />}
-          {selectedView === ('optimization' as any) && <OptimizationView isVisible={true} />}
+        `}
+        >
+          {selectedView === ('crop' as any) && (
+            <ImageCropper isVisible={true} />
+          )}
+          {selectedView === ('optimization' as any) && (
+            <OptimizationView isVisible={true} />
+          )}
           {!isEditingView && (
             <>
               {/* Room View with 3D Frame */}
@@ -1446,15 +1465,32 @@ const Dashboard: React.FC = () => {
                     >
                       Photo Print Under Acrylic Glass
                     </motion.h2>
-                    <motion.p
+                    <motion.div
                       initial={{ opacity: 0 }}
                       animate={{ opacity: 1 }}
                       transition={{ delay: 0.2, duration: 0.3 }}
-                      className='text-sm cursor-pointer mt-1'
-                      style={{ color: 'var(--primary)' }}
+                      className='mt-2 flex items-center gap-2 text-sm'
                     >
-                      Change Product
-                    </motion.p>
+                      <Button
+                        size='sm'
+                        className='flex items-center gap-1 p-1 text-primary border-primary'
+                        variant='outline'
+                      >
+                        <Package className='w-4 h-4' />
+                        Change Product
+                      </Button>
+
+                      <Button
+                        size='sm'
+                        variant='outline'
+                        className='border-gray-300 text-gray-700 hover:bg-gray-100 flex items-center gap-1 p-1'
+                        onClick={() => mutateAsync()}
+                        disabled={isPending}
+                      >
+                        <RefreshCw className='w-4 h-4' />
+                        {isPending ? 'Resetting...' : 'Reset All'}
+                      </Button>
+                    </motion.div>
                   </div>
                 </motion.div>
               )}
@@ -1719,7 +1755,11 @@ const Dashboard: React.FC = () => {
               className='flex-shrink-0 p-4 bg-white border-t border-gray-200 md:border-t-0 md:bg-transparent'
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.3, duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
+              transition={{
+                delay: 0.3,
+                duration: 0.4,
+                ease: [0.22, 1, 0.36, 1],
+              }}
             >
               <AnimatePresence mode='wait'>
                 {!selectedFeature ? (
@@ -1839,14 +1879,17 @@ const Dashboard: React.FC = () => {
                             transition={{ delay: 0.2, duration: 0.3 }}
                           >
                             <span className='line-through text-gray-500'>
-                              ${(selectedSize.actual_price * quantity).toFixed(2)}
+                              $
+                              {(selectedSize.actual_price * quantity).toFixed(
+                                2
+                              )}
                             </span>
                             <span className='ml-2 text-green-600 font-medium'>
                               {Math.round(
                                 ((selectedSize.actual_price -
                                   selectedSize.sell_price) /
                                   selectedSize.actual_price) *
-                                100
+                                  100
                               )}
                               % OFF
                             </span>
@@ -1919,7 +1962,7 @@ const Dashboard: React.FC = () => {
                           ((selectedSize.actual_price -
                             selectedSize.sell_price) /
                             selectedSize.actual_price) *
-                          100
+                            100
                         )}
                         % OFF
                       </span>

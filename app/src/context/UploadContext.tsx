@@ -1,3 +1,5 @@
+import { fetchInches, fetchRatios } from '@/utils/ratio-sizes';
+import { useQuery } from '@tanstack/react-query';
 import { createContext, useContext, useState, useEffect } from 'react';
 import type { ReactNode } from 'react';
 
@@ -56,6 +58,7 @@ interface UploadContextType {
   quality: number[];
   setQuality: (q: number[]) => void;
   applyPendingChanges: () => void;
+  reset: () => Promise<void>;
 }
 
 const UploadContext = createContext<UploadContextType | undefined>(undefined);
@@ -69,6 +72,19 @@ export const UploadProvider = ({ children }: { children: ReactNode }) => {
   const [pendingPreview, setPendingPreview] = useState<string | null>(null);
   const [selectedRatio, setSelectedRatio] = useState<string | null>(null);
   const [selectedSize, setSelectedSize] = useState<SizeData | null>(null);
+
+  const { refetch: refetchRatios } = useQuery({
+    queryKey: ['ratios'],
+    queryFn: fetchRatios,
+    enabled: false, // prevents auto-fetch
+  });
+
+  const { refetch: refetchInches } = useQuery({
+    queryKey: ['inches'],
+    queryFn: fetchInches,
+    enabled: false, // prevents auto-fetch
+  });
+
   // CHANGED: Initialize quality from localStorage
   const [quality, setQuality] = useState<number[]>(() => {
     if (typeof window !== 'undefined') {
@@ -121,7 +137,7 @@ export const UploadProvider = ({ children }: { children: ReactNode }) => {
       return;
     }
 
-    const base64Data = p || (f ? await fileToBase64(f) : null);
+    const base64Data = f ? await fileToBase64(f) : null;
     if (!base64Data) return;
 
     const imageData: StoredImageData = {
@@ -129,7 +145,7 @@ export const UploadProvider = ({ children }: { children: ReactNode }) => {
       fileType: f?.type || '',
       fileSize: f?.size || 0,
       base64Data,
-      preview: base64Data,
+      preview: p || base64Data,
       originalPreview: origP || base64Data, // Store original
       version: 1,
     };
@@ -194,6 +210,53 @@ export const UploadProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
+  const reset = async () => {
+    console.log('🔄 Resetting and fetching latest ratios/sizes...');
+
+    // Refetch both in parallel
+    const [ratiosRes, inchesRes] = await Promise.all([
+      refetchRatios(),
+      refetchInches(),
+    ]);
+
+    const ratios = ratiosRes.data || [];
+    const inches = inchesRes.data || [];
+
+    // Compute default ratio and smallest size
+    if (ratios.length && inches.length) {
+      let defaultRatio = ratios.find(r => r.ratio === '1:1') || ratios[0];
+
+      const available = inches
+        .filter(inch => defaultRatio.Inches.includes(inch._id))
+        .sort((a, b) => a.width * a.height - b.width * b.height);
+
+      const smallest = available[0] || null;
+
+      if (defaultRatio && smallest) {
+        setSelectedRatio(defaultRatio.ratio);
+        setSelectedSize(smallest);
+      }
+    }
+
+    // Reset metadata
+    setPendingFile(null);
+    setPendingPreview(null);
+    setShape('rectangle');
+    setQuality([70]);
+
+    // Reset preview
+    if (file) {
+      const base64 = await fileToBase64(file);
+      setPreview(base64);
+      const origToStore = originalPreview || base64;
+      await persistFile(file, base64, origToStore);
+    } else {
+      setPreview(null);
+      setOriginalPreview(null);
+      localStorage.removeItem('photify_uploaded_image');
+    }
+  };
+
   return (
     <UploadContext.Provider
       value={{
@@ -214,6 +277,7 @@ export const UploadProvider = ({ children }: { children: ReactNode }) => {
         selectedSize,
         setSelectedSize,
         applyPendingChanges,
+        reset,
         quality,
         setQuality,
       }}

@@ -521,13 +521,8 @@ const RoomFrame3D = ({
 const RoomFrame3DCanvas = ({ onInteraction }: RoomFrame3DProps) => {
   const { preview, shape, selectedSize, selectedRatio } = useUpload();
 
-  // Also adjust the container size for mobile
-  const isMobile = typeof window !== 'undefined' && window.innerWidth < 768;
-  const containerWidth = isMobile ? 'w-[200px]' : 'w-80';
-  const containerHeight = isMobile ? 'h-[150px]' : 'h-60';
-
   return (
-    <div className={`absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 ${containerWidth} ${containerHeight} cursor-pointer`}>
+    <div className='absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-80 h-60 cursor-pointer'>
       
       <Canvas
         shadows

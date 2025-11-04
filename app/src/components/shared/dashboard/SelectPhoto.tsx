@@ -26,7 +26,8 @@ const SelectPhoto: React.FC<SelectPhotoProps> = ({ onPhotoSelected }) => {
   const [selectedCanvas, setSelectedCanvas] = useState<string>('landscape');
   const [uploadedImages, setUploadedImages] = useState<UploadedImage[]>([]);
   const [selectedImageId, setSelectedImageId] = useState<string | null>(null);
-  const { setPendingFile, setPendingPreview, applyPendingChanges } = useUpload();
+  const { setPendingFile, setPendingPreview, applyPendingChanges } =
+    useUpload();
 
   // Local storage key for uploaded images
   const STORAGE_KEY = 'photify_uploaded_images';
@@ -42,7 +43,11 @@ const SelectPhoto: React.FC<SelectPhotoProps> = ({ onPhotoSelected }) => {
   };
 
   // Helper function to convert base64 to File
-  const base64ToFile = (base64Data: string, fileName: string, fileType: string): File => {
+  const base64ToFile = (
+    base64Data: string,
+    fileName: string,
+    fileType: string
+  ): File => {
     const byteCharacters = atob(base64Data.split(',')[1]);
     const byteNumbers = new Array(byteCharacters.length);
     for (let i = 0; i < byteCharacters.length; i++) {
@@ -71,7 +76,7 @@ const SelectPhoto: React.FC<SelectPhotoProps> = ({ onPhotoSelected }) => {
               name: img.name,
               file: restoredFile,
               url: img.base64, // Use base64 as URL for persistence
-              base64: img.base64
+              base64: img.base64,
             };
           }
           return img;
@@ -97,8 +102,8 @@ const SelectPhoto: React.FC<SelectPhotoProps> = ({ onPhotoSelected }) => {
         file: {
           name: img.file.name,
           type: img.file.type,
-          size: img.file.size
-        }
+          size: img.file.size,
+        },
       }));
       localStorage.setItem(STORAGE_KEY, JSON.stringify(serializableImages));
     }
@@ -163,7 +168,9 @@ const SelectPhoto: React.FC<SelectPhotoProps> = ({ onPhotoSelected }) => {
   //   triggerFileUpload()
   // }
 
-  const handleMultipleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleMultipleFileChange = async (
+    e: React.ChangeEvent<HTMLInputElement>
+  ) => {
     if (e.target.files) {
       const files = Array.from(e.target.files);
       const newImages: UploadedImage[] = [];
@@ -341,10 +348,11 @@ const SelectPhoto: React.FC<SelectPhotoProps> = ({ onPhotoSelected }) => {
               <div
                 key={option.id}
                 onClick={() => setSelectedCanvas(option.id)}
-                className={`flex-1 min-w-[100px] cursor-pointer border rounded-none p-4 flex flex-col items-center justify-center text-center transition ${selectedCanvas === option.id
+                className={`flex-1 min-w-[100px] cursor-pointer border rounded-none p-4 flex flex-col items-center justify-center text-center transition ${
+                  selectedCanvas === option.id
                     ? 'border-blue-500 bg-blue-50'
                     : 'border-gray-300 hover:border-gray-500'
-                  }`}
+                }`}
               >
                 <span>{option.icon}</span>
                 <span className='mt-1 text-sm'>{option.label}</span>
