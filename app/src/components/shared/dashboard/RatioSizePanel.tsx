@@ -48,7 +48,7 @@ const fetchInches = async (): Promise<InchData[]> => {
 const RatioSizePanel: React.FC<RatioSizePanelProps> = ({
   onSelectionChange,
 }) => {
-  const { selectedRatio, setSelectedRatio, selectedSize, setSelectedSize } =
+  const { selectedRatio, setSelectedRatio, selectedSize, setSelectedSize, setDefaultRatio, setDefaultSize } =
     useUpload();
   const { setSelectedView } = useView();
 
@@ -101,8 +101,12 @@ const RatioSizePanel: React.FC<RatioSizePanelProps> = ({
     }
 
     if (defaultRatio && defaultSize) {
+      // update context for defaults as well
       setSelectedRatio(defaultRatio.ratio);
       setSelectedSize(defaultSize);
+      setDefaultRatio(defaultRatio.ratio);
+      setDefaultSize(defaultSize);
+
       onSelectionChange?.(defaultRatio.ratio, defaultSize);
     }
   }, [

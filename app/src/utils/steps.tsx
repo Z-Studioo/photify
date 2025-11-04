@@ -40,6 +40,24 @@ export const dashboardSteps: Tour[] = [
       },
 
       // 🎯 Main buttons
+
+      {
+        icon: <></>,
+        title: 'Add Custom Background',
+        content: (
+          <>
+            {
+              'Upload your own wall photo to preview your print in your real space.'
+            }
+          </>
+        ),
+        selector: '[data-tour="add-image-btn"]',
+        side: 'bottom-left',
+        showControls: true,
+        showSkip: true,
+        pointerPadding: 2,
+        pointerRadius: 4,
+      },
       {
         icon: <></>,
         title: 'Room View',
@@ -62,23 +80,6 @@ export const dashboardSteps: Tour[] = [
         pointerPadding: 2,
         pointerRadius: 4,
       },
-      {
-        icon: <></>,
-        title: 'Add Custom Background',
-        content: (
-          <>
-            {
-              'Upload your own wall photo to preview your print in your real space.'
-            }
-          </>
-        ),
-        selector: '[data-tour="add-image-btn"]',
-        side: 'bottom-left',
-        showControls: true,
-        showSkip: true,
-        pointerPadding: 2,
-        pointerRadius: 4,
-      },
 
       // ⚙️ Feature panel
       {
@@ -86,7 +87,7 @@ export const dashboardSteps: Tour[] = [
         title: 'Features Panel',
         content: <>{'Adjust sizes, shapes, and edge styles from here.'}</>,
         selector: '[data-tour="features-list"]',
-        side: 'left',
+        side: 'right',
         showControls: true,
         showSkip: true,
         pointerPadding: 4,
@@ -97,7 +98,7 @@ export const dashboardSteps: Tour[] = [
         title: 'Select Photo',
         content: <>{'Click here to upload your images.'}</>,
         selector: '[data-tour="feature-select-photo"]',
-        side: 'left',
+        side: 'right',
         showControls: true,
         showSkip: true,
         pointerPadding: 4,
@@ -110,7 +111,7 @@ export const dashboardSteps: Tour[] = [
           <>{'Choose your canvas size and crop your photo to fit perfectly.'}</>
         ),
         selector: '[data-tour="feature-image-size-and-crop-photo"]',
-        side: 'left',
+        side: 'right',
         showControls: true,
         showSkip: true,
         pointerPadding: 4,
@@ -123,7 +124,7 @@ export const dashboardSteps: Tour[] = [
           <>{'Pick between wrapped or mirrored edge for your canvas.'}</>
         ),
         selector: '[data-tour="feature-side-appearance"]',
-        side: 'left',
+        side: 'right',
         showControls: true,
         showSkip: true,
         pointerPadding: 4,
@@ -134,7 +135,7 @@ export const dashboardSteps: Tour[] = [
         title: 'Image Optimization',
         content: <>{'Enhance the quality of your image.'}</>,
         selector: '[data-tour="feature-image-optimization"]',
-        side: 'left',
+        side: 'right',
         showControls: true,
         showSkip: true,
         pointerPadding: 4,
@@ -146,7 +147,7 @@ export const dashboardSteps: Tour[] = [
         title: 'Quantity Section',
         content: <>{'Adjust the total number of canvases.'}</>,
         selector: '[data-tour="quantity-section"]',
-        side: 'top',
+        side: 'top-left',
         showControls: true,
         showSkip: true,
         pointerPadding: 4,
