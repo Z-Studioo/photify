@@ -6,8 +6,8 @@ export const useGlobalReset = () => {
   const { reset: resetUpload } = useUpload();
   const { reset: resetEdge } = useEdge();
   const { reset: resetView } = useView();
-  const resetAll = () => {
-    resetUpload();
+  const resetAll = async () => {
+    await resetUpload();
     resetEdge();
     resetView();
   };

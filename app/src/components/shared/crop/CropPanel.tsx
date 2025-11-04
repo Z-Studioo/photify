@@ -5,45 +5,12 @@ import { useUpload, type SizeData } from '@/context/UploadContext';
 import { useView } from '@/context/ViewContext';
 import { AspectRatioIcon } from '../common/icons';
 import { useQuery } from '@tanstack/react-query';
+import { fetchInches, fetchRatios, type InchData, type RatioData } from '@/utils/ratio-sizes';
 
-interface RatioData {
-  _id: string;
-  ratio: string;
-  Inches: string[];
-}
-
-interface InchData {
-  _id: string;
-  width: number;
-  height: number;
-  w: number;
-  h: number;
-  Slug: string;
-  sell_price: number;
-  actual_price: number;
-}
 
 interface CropPanelProps {
   onSelectionChange?: (ratio: string, size: InchData | null) => void;
 }
-// Fetchers
-const fetchRatios = async (): Promise<RatioData[]> => {
-  const res = await fetch(
-    'https://photify.co/version-923ig/api/1.1/obj/ratios'
-  );
-  if (!res.ok) throw new Error('Failed to fetch ratios');
-  const data = await res.json();
-  return data.response?.results || [];
-};
-
-const fetchInches = async (): Promise<InchData[]> => {
-  const res = await fetch(
-    'https://photify.co/version-923ig/api/1.1/obj/inches'
-  );
-  if (!res.ok) throw new Error('Failed to fetch inches');
-  const data = await res.json();
-  return data.response?.results || [];
-};
 
 const CropPanel: React.FC<CropPanelProps> = ({ onSelectionChange }) => {
   const {
@@ -51,8 +18,6 @@ const CropPanel: React.FC<CropPanelProps> = ({ onSelectionChange }) => {
     setSelectedRatio,
     selectedSize,
     setSelectedSize,
-    setDefaultRatio,
-    setDefaultSize,
   } = useUpload();
   const { setSelectedView } = useView();
   const sectionRefs = useRef<Record<string, HTMLDivElement | null>>({});
@@ -100,8 +65,6 @@ const CropPanel: React.FC<CropPanelProps> = ({ onSelectionChange }) => {
       if (smallest) {
         setSelectedRatio(defaultRatio.ratio);
         setSelectedSize(smallest);
-        setDefaultRatio(defaultRatio.ratio);
-        setDefaultSize(smallest);
         onSelectionChange?.(defaultRatio.ratio, smallest);
       }
     }
