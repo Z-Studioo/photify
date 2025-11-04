@@ -88,7 +88,6 @@ const Dashboard: React.FC = () => {
     shape,
     setFile,
     setPreview,
-    setOriginalPreview,
     applyPendingChanges,
     selectedRatio,
     selectedSize,
@@ -159,7 +158,6 @@ const Dashboard: React.FC = () => {
       const newPreview = URL.createObjectURL(f);
       setFile(f);
       setPreview(newPreview);
-      setOriginalPreview(newPreview); // Set as original when uploading new image
     }
   };
 
