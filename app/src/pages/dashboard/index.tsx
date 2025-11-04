@@ -1335,13 +1335,9 @@ const Dashboard: React.FC = () => {
                 <div className="
                   w-full h-full 
                   flex items-center justify-center
-                  p-4 md:p-0
+                   md:p-0
                 ">
-                  <div className="
-                    w-full h-full
-                    md:max-w-none md:max-h-none md:relative md:inset-0
-                    max-w-[280px] max-h-[210px] relative overflow-hidden rounded-lg
-                  ">
+<div className="w-full h-full">
                     <ThreeDCanvas isVisible={selectedView === '3d'} />
                   </div>
                 </div>
