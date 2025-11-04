@@ -137,7 +137,7 @@ export const UploadProvider = ({ children }: { children: ReactNode }) => {
       return;
     }
 
-    const base64Data = p || (f ? await fileToBase64(f) : null);
+    const base64Data = f ? await fileToBase64(f) : null;
     if (!base64Data) return;
 
     const imageData: StoredImageData = {
@@ -145,7 +145,7 @@ export const UploadProvider = ({ children }: { children: ReactNode }) => {
       fileType: f?.type || '',
       fileSize: f?.size || 0,
       base64Data,
-      preview: base64Data,
+      preview: p || base64Data,
       originalPreview: origP || base64Data, // Store original
       version: 1,
     };
@@ -211,50 +211,50 @@ export const UploadProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const reset = async () => {
-      console.log('🔄 Resetting and fetching latest ratios/sizes...');
+    console.log('🔄 Resetting and fetching latest ratios/sizes...');
 
-      // Refetch both in parallel
-      const [ratiosRes, inchesRes] = await Promise.all([
-        refetchRatios(),
-        refetchInches(),
-      ]);
+    // Refetch both in parallel
+    const [ratiosRes, inchesRes] = await Promise.all([
+      refetchRatios(),
+      refetchInches(),
+    ]);
 
-      const ratios = ratiosRes.data || [];
-      const inches = inchesRes.data || [];
+    const ratios = ratiosRes.data || [];
+    const inches = inchesRes.data || [];
 
-      // Compute default ratio and smallest size
-      if (ratios.length && inches.length) {
-        let defaultRatio = ratios.find(r => r.ratio === '1:1') || ratios[0];
+    // Compute default ratio and smallest size
+    if (ratios.length && inches.length) {
+      let defaultRatio = ratios.find(r => r.ratio === '1:1') || ratios[0];
 
-        const available = inches
-          .filter(inch => defaultRatio.Inches.includes(inch._id))
-          .sort((a, b) => a.width * a.height - b.width * b.height);
+      const available = inches
+        .filter(inch => defaultRatio.Inches.includes(inch._id))
+        .sort((a, b) => a.width * a.height - b.width * b.height);
 
-        const smallest = available[0] || null;
+      const smallest = available[0] || null;
 
-        if (defaultRatio && smallest) {
-          setSelectedRatio(defaultRatio.ratio);
-          setSelectedSize(smallest);
-        }
+      if (defaultRatio && smallest) {
+        setSelectedRatio(defaultRatio.ratio);
+        setSelectedSize(smallest);
       }
+    }
 
-      // Reset metadata
-      setPendingFile(null);
-      setPendingPreview(null);
-      setShape('rectangle');
-      setQuality([70]);
+    // Reset metadata
+    setPendingFile(null);
+    setPendingPreview(null);
+    setShape('rectangle');
+    setQuality([70]);
 
-      // Reset preview
-      if (file) {
-        const base64 = await fileToBase64(file);
-        setPreview(base64);
-        const origToStore = originalPreview || base64;
-        await persistFile(file, base64, origToStore);
-      } else {
-        setPreview(null);
-        setOriginalPreview(null);
-        localStorage.removeItem('photify_uploaded_image');
-      }
+    // Reset preview
+    if (file) {
+      const base64 = await fileToBase64(file);
+      setPreview(base64);
+      const origToStore = originalPreview || base64;
+      await persistFile(file, base64, origToStore);
+    } else {
+      setPreview(null);
+      setOriginalPreview(null);
+      localStorage.removeItem('photify_uploaded_image');
+    }
   };
 
   return (
