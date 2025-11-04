@@ -959,6 +959,8 @@ const Dashboard: React.FC = () => {
                     applyPendingChanges();
                     setSelectedView('room' as any);
                     setSelectedFeature(null);
+                    if (selectedFeature?.name === 'SIDE APPEARANCE')
+                      setSelectedView('room');
                   }}
                 >
                   Apply Changes

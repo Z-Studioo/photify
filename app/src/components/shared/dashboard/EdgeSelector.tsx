@@ -2,6 +2,8 @@ import { motion } from 'motion/react';
 import { Check, Layers, Copy } from 'lucide-react';
 import { useEdge } from '@/context/EdgeContext';
 import type { EdgeType } from '@/context/EdgeContext';
+import { useView } from '@/context/ViewContext';
+import { useEffect } from 'react';
 
 interface EdgeOption {
   type: EdgeType;
@@ -27,11 +29,20 @@ const edgeOptions: EdgeOption[] = [
 
 const EdgeSelector = () => {
   const { edgeType, setEdgeType } = useEdge();
+  const { setSelectedView } = useView();
 
+  useEffect(() => {
+    setSelectedView('3d');
+  }, [setSelectedView]);
+
+  const handleSetEdgeType = (type: EdgeType) => {
+    setEdgeType(type);
+    setSelectedView('3d');
+  };
   return (
-    <div className="space-y-4">
-      <div className="grid grid-cols-1 gap-3">
-        {edgeOptions.map((option) => (
+    <div className='space-y-4'>
+      <div className='grid grid-cols-1 gap-3'>
+        {edgeOptions.map(option => (
           <motion.div
             key={option.type}
             className={`relative p-4 border-2 rounded-lg cursor-pointer transition-all duration-200 ${
@@ -39,7 +50,7 @@ const EdgeSelector = () => {
                 ? 'border-primary bg-primary/5'
                 : 'border-gray-200 hover:border-gray-300'
             }`}
-            onClick={() => setEdgeType(option.type)}
+            onClick={() => handleSetEdgeType(option.type)}
             whileHover={{ scale: 1.02 }}
             whileTap={{ scale: 0.98 }}
             initial={{ opacity: 0, y: 20 }}
@@ -67,11 +78,11 @@ const EdgeSelector = () => {
                 }}
                 transition={{ duration: 0.2 }}
               >
-                <Check className="w-4 h-4 text-white" />
+                <Check className='w-4 h-4 text-white' />
               </motion.div>
             </motion.div>
 
-            <div className="flex items-start space-x-3">
+            <div className='flex items-start space-x-3'>
               <motion.div
                 className={`p-2 rounded-lg transition-colors duration-200 ${
                   edgeType === option.type
@@ -84,22 +95,23 @@ const EdgeSelector = () => {
                 }}
                 transition={{ type: 'spring', stiffness: 300, damping: 20 }}
               >
-                <option.icon className="w-5 h-5" />
+                <option.icon className='w-5 h-5' />
               </motion.div>
-              
-              <div className="flex-1">
+
+              <div className='flex-1'>
                 <motion.h3
                   className={`font-semibold text-sm transition-colors duration-200 ${
                     edgeType === option.type ? 'text-primary' : 'text-gray-900'
                   }`}
                   initial={false}
                   animate={{
-                    color: edgeType === option.type ? 'var(--primary)' : '#111827',
+                    color:
+                      edgeType === option.type ? 'var(--primary)' : '#111827',
                   }}
                 >
                   {option.label}
                 </motion.h3>
-                <p className="text-xs text-gray-500 mt-1">
+                <p className='text-xs text-gray-500 mt-1'>
                   {option.description}
                 </p>
               </div>
@@ -110,17 +122,16 @@ const EdgeSelector = () => {
 
       {/* Preview section */}
       <motion.div
-        className="mt-6 p-4 bg-gray-50 rounded-lg"
+        className='mt-6 p-4 bg-gray-50 rounded-lg'
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.2, duration: 0.3 }}
       >
-        <h4 className="text-sm font-semibold text-gray-700 mb-2">Preview</h4>
-        <div className="text-xs text-gray-600">
-          {edgeType === 'wrapped' 
+        <h4 className='text-sm font-semibold text-gray-700 mb-2'>Preview</h4>
+        <div className='text-xs text-gray-600'>
+          {edgeType === 'wrapped'
             ? 'Your image will extend around the frame edges, creating a gallery-wrapped effect with no visible borders.'
-            : 'The edges of your image will be mirrored to create a seamless continuation, eliminating any white borders.'
-          }
+            : 'The edges of your image will be mirrored to create a seamless continuation, eliminating any white borders.'}
         </div>
       </motion.div>
     </div>

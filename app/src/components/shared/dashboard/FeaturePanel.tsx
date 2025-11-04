@@ -27,15 +27,18 @@ const FeaturePanel = () => {
         return <OptimizationControl />;
       default:
         return (
-          <div className='text-gray-500'>
-            Feature configuration coming soon
-          </div>
+          <div className='text-gray-500'>Feature configuration coming soon</div>
         );
     }
   };
 
   const handleGoBack = () => {
-    if (selectedView === 'crop' || selectedView === 'optimization') setSelectedView('room');
+    if (
+      selectedView === 'crop' ||
+      selectedView === 'optimization' ||
+      selectedFeature.name === 'SIDE APPEARANCE'
+    )
+      setSelectedView('room');
     setSelectedFeature(null);
   };
 
