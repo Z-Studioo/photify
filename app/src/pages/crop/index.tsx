@@ -44,7 +44,7 @@ export default function CropPage() {
       {/* Bottom/Right - Ratio / Size Panel (50% on mobile, fixed width on desktop) */}
       <div className='h-1/2 md:h-full w-full md:w-[380px] bg-white flex flex-col border-t md:border-t-0 md:border-l'>
         {/* Scrollable content */}
-        <div className='flex-1 overflow-y-auto p-4 md:p-6 pb-20 md:pb-4'>
+        <div className='flex-1 overflow-y-auto pb-20 md:pb-4'>
           <CropPanel />
         </div>
 

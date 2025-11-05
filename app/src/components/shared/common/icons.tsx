@@ -16,7 +16,7 @@ export function AspectRatioIcon({ ratio, size = 20 }: AspectRatioIconProps) {
       style={{ width: size, height: size }}
     >
       <div
-        className='border-[3px] rounded-xs border-gray-700'
+        className='border-[3px] rounded-xs border-current'
         style={{
           width,
           height,
