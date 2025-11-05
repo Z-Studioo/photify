@@ -7,8 +7,7 @@ interface ImageCropperProps {
 }
 
 export default function ImageCropper({ isVisible = true }: ImageCropperProps) {
-  const { file, selectedRatio, setPendingFile, setPendingPreview } =
-    useUpload();
+  const { file, selectedRatio, setPendingFile, setPendingPreview } = useUpload();
   const [imageSize, setImageSize] = useState<{
     width: number;
     height: number;
@@ -38,28 +37,14 @@ export default function ImageCropper({ isVisible = true }: ImageCropperProps) {
   // Only now check if rendering is needed
   if (!file || !isVisible || !imageSize) return null;
 
-  // Compute bounded display size
-  const maxWidth = 800;
-  const maxHeight = 600;
-  const imageAspect = imageSize.width / imageSize.height;
-
-  let displayWidth = maxWidth;
-  let displayHeight = displayWidth / imageAspect;
-
-  if (displayHeight > maxHeight) {
-    displayHeight = maxHeight;
-    displayWidth = displayHeight * imageAspect;
-  }
-
   return (
-    <div className='flex flex-col items-center justify-center w-full h-full px-2 md:px-0 overflow-hidden gap-4'>
-      <div
-        className='relative bg-app-muted border border-primary flex items-center justify-center overflow-hidden'
-        style={{
-          width: `${displayWidth}px`,
-          height: `${displayHeight}px`,
-        }}
-      >
+    <div className='flex flex-col items-center justify-center w-full h-full px-2 md:px-4 overflow-hidden'>
+      {/* Container that maintains aspect ratio and prevents overflow */}
+
+    <div className='flex flex-col items-center justify-center w-full h-full px-2 md:px-4 overflow-hidden'>
+  {imageSize && (
+    <div className='relative flex items-center justify-center w-full h-full'>
+      <div className='relative max-w-full max-h-full flex items-center justify-center'>
         <ImageCrop
           key={aspect}
           file={file}
@@ -69,13 +54,26 @@ export default function ImageCropper({ isVisible = true }: ImageCropperProps) {
             setPendingFile(file);
             setPendingPreview(croppedImage);
           }}
-          className='w-full h-full flex items-center justify-center'
+          className='flex items-center justify-center'
         >
-          <ImageCropContent className='max-w-full max-h-full object-contain rounded-xl' />
+          <ImageCropContent
+            className='rounded-xl'
+            style={{
+              maxWidth: '100%',
+              maxHeight: '100%',
+              objectFit: 'contain', // scales to fit container without squishing
+              width: 'auto',
+              height: 'auto',
+            }}
+          />
         </ImageCrop>
       </div>
+    </div>
+  )}
+</div>
 
-      <p className='text-sm mb-2 text-muted-foreground'>
+
+      <p className='text-xs md:text-sm mt-2 text-muted-foreground text-center'>
         Drag the corners to crop the image
       </p>
     </div>
