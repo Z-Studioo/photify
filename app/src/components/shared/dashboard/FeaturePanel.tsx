@@ -20,7 +20,7 @@ const FeaturePanel = () => {
       case 'IMAGE SIZE AND CROP PHOTO':
         return <RatioSizePanel />;
       case 'SIDE APPEARANCE':
-        return <ShapeSelector />;
+        return <EdgeSelector />;
       case 'IMAGE OPTIMIZATION':
         return <OptimizationControl />;
       case 'ROUND FORMATS AND SHAPES':
@@ -28,17 +28,17 @@ const FeaturePanel = () => {
 
       default:
         return (
-          <div className='text-gray-500 text-center py-4'>
-            
-            Feature configuration coming soon
-          
-          </div>
+          <div className='text-gray-500'>Feature configuration coming soon</div>
         );
     }
   };
 
   const handleGoBack = () => {
-    if (selectedView === 'crop' || selectedView === 'optimization')
+    if (
+      selectedView === 'crop' ||
+      selectedView === 'optimization' ||
+      selectedFeature.name === 'SIDE APPEARANCE'
+    )
       setSelectedView('room');
     setSelectedFeature(null);
   };

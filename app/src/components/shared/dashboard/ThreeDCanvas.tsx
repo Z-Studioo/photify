@@ -11,6 +11,7 @@ import type { OrbitControls as OrbitControlsImpl } from 'three-stdlib';
 
 interface ThreeDCanvasProps {
   isVisible: boolean;
+  focusOnEdge?: boolean; // NEW: Flag to focus camera on edge
 }
 
 // 3D Frame component with true gallery-wrapped edges
@@ -26,120 +27,70 @@ const Frame3D = ({
   const [texture, setTexture] = useState<THREE.Texture | null>(null);
   const { selectedSize } = useUpload();
 
-
-  //change
-
-
-  // useEffect(() => {
-  //   if (imageUrl) {
-  //     const loader = new THREE.TextureLoader();
-  //     loader.load(imageUrl, loadedTexture => {
-  //       if (edgeType === 'mirrored') {
-  //         loadedTexture.wrapS = THREE.MirroredRepeatWrapping;
-  //         loadedTexture.wrapT = THREE.MirroredRepeatWrapping;
-  //       } else {
-  //         // Wrapped edges clamp to edge - extends the edge pixels
-  //         loadedTexture.wrapS = THREE.ClampToEdgeWrapping;
-  //         loadedTexture.wrapT = THREE.ClampToEdgeWrapping;
-  //       }
-  //       loadedTexture.minFilter = THREE.LinearFilter;
-  //       loadedTexture.magFilter = THREE.LinearFilter;
-  //       loadedTexture.generateMipmaps = false;
-  //       if ('colorSpace' in loadedTexture) {
-  //         (loadedTexture as any).colorSpace = THREE.SRGBColorSpace;
-  //       } else {
-  //         (loadedTexture as any).encoding = THREE.SRGBColorSpace;
-  //       }
-
-  //       // Center the texture based on aspect ratio (cover behavior)
-  //       const img = loadedTexture.image;
-  //       if (img && img.width && img.height) {
-  //         const frameAspect = 1.8 / 1.35; // width / height
-  //         const imageAspect = img.width / img.height;
-
-  //         if (imageAspect > frameAspect) {
-  //           // Image is wider - fit to height, crop width
-  //           const scale = frameAspect / imageAspect;
-  //           loadedTexture.repeat.set(scale, 1);
-  //           loadedTexture.offset.set((1 - scale) / 2, 0);
-  //         } else {
-  //           // Image is taller - fit to width, crop height
-  //           const scale = imageAspect / frameAspect;
-  //           loadedTexture.repeat.set(1, scale);
-  //           loadedTexture.offset.set(0, (1 - scale) / 2);
-  //         }
-  //       }
-
-  //       setTexture(loadedTexture);
-  //     });
-  //   }
-  // }, [imageUrl, edgeType]);
-
   useEffect(() => {
-  if (!imageUrl) {
-    setTexture(null);
-    return;
-  }
-
-  const isBase64 = imageUrl.startsWith('data:');
-  const uniqueUrl = isBase64 ? imageUrl : `${imageUrl}?v=${Date.now()}`;
-
-  const loader = new THREE.TextureLoader();
-
-  // Dispose old texture
-  if (texture) texture.dispose();
-
-  loader.load(
-    uniqueUrl,
-    loadedTexture => {
-      loadedTexture.needsUpdate = true;
-      loadedTexture.flipY = true;
-
-      if (edgeType === 'mirrored') {
-        loadedTexture.wrapS = THREE.MirroredRepeatWrapping;
-        loadedTexture.wrapT = THREE.MirroredRepeatWrapping;
-      } else {
-        loadedTexture.wrapS = THREE.ClampToEdgeWrapping;
-        loadedTexture.wrapT = THREE.ClampToEdgeWrapping;
-      }
-
-      loadedTexture.minFilter = THREE.LinearFilter;
-      loadedTexture.magFilter = THREE.LinearFilter;
-      loadedTexture.generateMipmaps = false;
-
-      if ('colorSpace' in loadedTexture) {
-        (loadedTexture as any).colorSpace = THREE.SRGBColorSpace;
-      } else {
-        (loadedTexture as any).encoding = THREE.SRGBColorSpace;
-      }
-
-      // Center image based on aspect ratio
-      const img = loadedTexture.image;
-      if (img && img.width && img.height) {
-        const frameAspect = 1.8 / 1.35;
-        const imageAspect = img.width / img.height;
-
-        if (imageAspect > frameAspect) {
-          const scale = frameAspect / imageAspect;
-          loadedTexture.repeat.set(scale, 1);
-          loadedTexture.offset.set((1 - scale) / 2, 0);
-        } else {
-          const scale = imageAspect / frameAspect;
-          loadedTexture.repeat.set(1, scale);
-          loadedTexture.offset.set(0, (1 - scale) / 2);
-        }
-      }
-
-      setTexture(loadedTexture);
-    },
-    undefined,
-    err => {
-      console.error('❌ Texture load failed:', err);
+    if (!imageUrl) {
       setTexture(null);
+      return;
     }
-  );
-}, [imageUrl, edgeType]);
 
+    const isBase64 = imageUrl.startsWith('data:');
+    const uniqueUrl = isBase64 ? imageUrl : `${imageUrl}?v=${Date.now()}`;
+
+    const loader = new THREE.TextureLoader();
+
+    // Dispose old texture
+    if (texture) texture.dispose();
+
+    loader.load(
+      uniqueUrl,
+      loadedTexture => {
+        loadedTexture.needsUpdate = true;
+        loadedTexture.flipY = true;
+
+        if (edgeType === 'mirrored') {
+          loadedTexture.wrapS = THREE.MirroredRepeatWrapping;
+          loadedTexture.wrapT = THREE.MirroredRepeatWrapping;
+        } else {
+          loadedTexture.wrapS = THREE.ClampToEdgeWrapping;
+          loadedTexture.wrapT = THREE.ClampToEdgeWrapping;
+        }
+
+        loadedTexture.minFilter = THREE.LinearFilter;
+        loadedTexture.magFilter = THREE.LinearFilter;
+        loadedTexture.generateMipmaps = false;
+
+        if ('colorSpace' in loadedTexture) {
+          (loadedTexture as any).colorSpace = THREE.SRGBColorSpace;
+        } else {
+          (loadedTexture as any).encoding = THREE.SRGBColorSpace;
+        }
+
+        // Center image based on aspect ratio
+        const img = loadedTexture.image;
+        if (img && img.width && img.height) {
+          const frameAspect = 1.8 / 1.35;
+          const imageAspect = img.width / img.height;
+
+          if (imageAspect > frameAspect) {
+            const scale = frameAspect / imageAspect;
+            loadedTexture.repeat.set(scale, 1);
+            loadedTexture.offset.set((1 - scale) / 2, 0);
+          } else {
+            const scale = imageAspect / frameAspect;
+            loadedTexture.repeat.set(1, scale);
+            loadedTexture.offset.set(0, (1 - scale) / 2);
+          }
+        }
+
+        setTexture(loadedTexture);
+      },
+      undefined,
+      err => {
+        console.error('❌ Texture load failed:', err);
+        setTexture(null);
+      }
+    );
+  }, [imageUrl, edgeType]);
 
   const frameDepth = 0.06;
   const BASE_SIZE = 15;
@@ -341,7 +292,10 @@ const CameraControls = ({
   );
 };
 
-const ThreeDCanvas = ({ isVisible }: ThreeDCanvasProps) => {
+const ThreeDCanvas = ({
+  isVisible,
+  focusOnEdge = false,
+}: ThreeDCanvasProps) => {
   const { preview, shape } = useUpload();
   const { edgeType } = useEdge();
   const controlsRef = useRef<OrbitControlsImpl | null>(null);
@@ -432,12 +386,53 @@ const ThreeDCanvas = ({ isVisible }: ThreeDCanvasProps) => {
     }
   };
 
+  // NEW: Function to focus camera on the edge
+  const focusCameraOnEdge = () => {
+    if (controlsRef.current) {
+      const controls = controlsRef.current;
+      const camera = controls.object as THREE.PerspectiveCamera;
+
+      const duration = 1000;
+      const startTime = Date.now();
+      const startPosition = camera.position.clone();
+      const startTarget = controls.target.clone();
+
+      // Position camera closer to view the right edge at an angle (zoomed in)
+      const targetPosition = new THREE.Vector3(1.8, 0.25, 1.2); // Closer side view with slight elevation
+      const targetTarget = new THREE.Vector3(0, 0, 0); // Keep target at center for flexible rotation
+
+      const animate = () => {
+        const elapsed = Date.now() - startTime;
+        const progress = Math.min(elapsed / duration, 1);
+        const easeProgress = 1 - Math.pow(1 - progress, 4); // Ease out quart
+
+        camera.position.lerpVectors(
+          startPosition,
+          targetPosition,
+          easeProgress
+        );
+        controls.target.lerpVectors(startTarget, targetTarget, easeProgress);
+        controls.update();
+
+        if (progress < 1) requestAnimationFrame(animate);
+      };
+      animate();
+    }
+  };
+
   useEffect(() => {
     if (isVisible && preview) {
-      const t = setTimeout(() => handleCenter(), 220);
-      return () => clearTimeout(t);
+      if (focusOnEdge) {
+        // Focus on edge when flag is set
+        const t = setTimeout(() => focusCameraOnEdge(), 220);
+        return () => clearTimeout(t);
+      } else {
+        // Default center view
+        const t = setTimeout(() => handleCenter(), 220);
+        return () => clearTimeout(t);
+      }
     }
-  }, [isVisible, preview]);
+  }, [isVisible, preview, focusOnEdge]);
 
   if (!isVisible) return null;
 

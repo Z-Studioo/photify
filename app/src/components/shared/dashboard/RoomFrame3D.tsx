@@ -29,20 +29,33 @@ const RoomFrame3D = ({
   const frameRef = useRef<THREE.Group>(null);
   const [texture, setTexture] = useState<THREE.Texture | null>(null);
   const [isHovered, setIsHovered] = useState(false);
+  const [isDragging, setIsDragging] = useState(false);
   const { edgeType } = useEdge();
 
+  // Mobile scaling factor - reduce size on mobile devices
+  const isMobile = typeof window !== 'undefined' && window.innerWidth < 768;
+  const MOBILE_SCALE_FACTOR = 0.6; // Reduce to 60% of original size on mobile
+
   const BASE_SIZE = 12;
-  const HOVER_FACTOR = 1.1;
+  const HOVER_FACTOR = 1.05; // Reduced from 1.1 to 1.05 for subtle effect
 
   const scaleX = useMemo(
-    () => selectedSize.width / BASE_SIZE,
-    [selectedSize.width]
+    () => {
+      const baseScale = selectedSize.width / BASE_SIZE;
+      return isMobile ? baseScale * MOBILE_SCALE_FACTOR : baseScale;
+    },
+    [selectedSize.width, isMobile]
   );
+  
   const scaleY = useMemo(
-    () => selectedSize.height / BASE_SIZE,
-    [selectedSize.height]
+    () => {
+      const baseScale = selectedSize.height / BASE_SIZE;
+      return isMobile ? baseScale * MOBILE_SCALE_FACTOR : baseScale;
+    },
+    [selectedSize.height, isMobile]
   );
 
+  // Rest of the component remains the same...
   useEffect(() => {
     if (!imageUrl) {
       setTexture(null);
@@ -176,7 +189,23 @@ const RoomFrame3D = ({
       receiveShadow
       onPointerEnter={() => setIsHovered(true)}
       onPointerLeave={() => setIsHovered(false)}
-      onClick={onInteraction}
+      onPointerDown={() => setIsDragging(true)}
+      onPointerUp={() => {
+        if (isDragging) {
+          onInteraction();
+        }
+        setIsDragging(false);
+      }}
+      onPointerMove={(e) => {
+        if (e.buttons > 0) {
+          // User is clicking and dragging - switch to 3D
+          onInteraction();
+        }
+      }}
+      onClick={() => {
+        // Also trigger on simple click
+        onInteraction();
+      }}
     >
       {/* Frame */}
       {frameGeometry}
@@ -230,8 +259,10 @@ const RoomFrame3D = ({
 
 const RoomFrame3DCanvas = ({ onInteraction }: RoomFrame3DProps) => {
   const { preview, shape, selectedSize, selectedRatio } = useUpload();
+
   return (
     <div className='absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-80 h-60 cursor-pointer'>
+      
       <Canvas
         shadows
         camera={{ position: [0, 0, 4], fov: 50 }}
