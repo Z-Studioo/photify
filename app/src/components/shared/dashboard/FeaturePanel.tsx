@@ -27,7 +27,9 @@ const FeaturePanel = () => {
 
       default:
         return (
-          <div className='text-gray-500'>Feature configuration coming soon</div>
+          <div className='text-gray-500 text-center'>
+            Feature configuration coming soon
+          </div>
         );
     }
   };
@@ -57,9 +59,7 @@ const FeaturePanel = () => {
           data-tour='feature-back-btn'
         />
         <h3
-         
           className={`absolute left-1/2 transform -translate-x-1/2 text-lg font-bold text-center whitespace-nowrap px-2`}
-        
           data-tour='feature-title'
         >
           {selectedFeature.name}
