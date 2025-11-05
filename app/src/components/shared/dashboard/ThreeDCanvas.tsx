@@ -11,6 +11,7 @@ import type { OrbitControls as OrbitControlsImpl } from 'three-stdlib';
 
 interface ThreeDCanvasProps {
   isVisible: boolean;
+  focusOnEdge?: boolean; // NEW: Flag to focus camera on edge
 }
 
 // 3D Frame component with true gallery-wrapped edges
@@ -292,7 +293,7 @@ const CameraControls = ({
   );
 };
 
-const ThreeDCanvas = ({ isVisible }: ThreeDCanvasProps) => {
+const ThreeDCanvas = ({ isVisible, focusOnEdge = false }: ThreeDCanvasProps) => {
   const { preview, shape } = useUpload();
   const { edgeType } = useEdge();
   const controlsRef = useRef<OrbitControlsImpl | null>(null);
@@ -383,12 +384,53 @@ const ThreeDCanvas = ({ isVisible }: ThreeDCanvasProps) => {
     }
   };
 
+  // NEW: Function to focus camera on the edge
+  const focusCameraOnEdge = () => {
+    if (controlsRef.current) {
+      const controls = controlsRef.current;
+      const camera = controls.object as THREE.PerspectiveCamera;
+
+      const duration = 1000;
+      const startTime = Date.now();
+      const startPosition = camera.position.clone();
+      const startTarget = controls.target.clone();
+
+      // Position camera to view the right edge at an angle
+      const targetPosition = new THREE.Vector3(2.5, 0.3, 1.5); // Side view with slight elevation
+      const targetTarget = new THREE.Vector3(0.9, 0, 0); // Look at the right edge
+
+      const animate = () => {
+        const elapsed = Date.now() - startTime;
+        const progress = Math.min(elapsed / duration, 1);
+        const easeProgress = 1 - Math.pow(1 - progress, 4); // Ease out quart
+
+        camera.position.lerpVectors(
+          startPosition,
+          targetPosition,
+          easeProgress
+        );
+        controls.target.lerpVectors(startTarget, targetTarget, easeProgress);
+        controls.update();
+
+        if (progress < 1) requestAnimationFrame(animate);
+      };
+      animate();
+    }
+  };
+
   useEffect(() => {
     if (isVisible && preview) {
-      const t = setTimeout(() => handleCenter(), 220);
-      return () => clearTimeout(t);
+      if (focusOnEdge) {
+        // Focus on edge when flag is set
+        const t = setTimeout(() => focusCameraOnEdge(), 220);
+        return () => clearTimeout(t);
+      } else {
+        // Default center view
+        const t = setTimeout(() => handleCenter(), 220);
+        return () => clearTimeout(t);
+      }
     }
-  }, [isVisible, preview]);
+  }, [isVisible, preview, focusOnEdge]);
 
   if (!isVisible) return null;
 

@@ -359,8 +359,11 @@ const Dashboard: React.FC = () => {
                   flex items-center justify-center
                    md:p-0
                 ">
-<div className="w-full h-full">
-                    <ThreeDCanvas isVisible={selectedView === '3d'} />
+                  <div className="w-full h-full">
+                    <ThreeDCanvas 
+                      isVisible={selectedView === '3d'} 
+                      focusOnEdge={selectedFeature?.name === 'SIDE APPEARANCE'}
+                    />
                   </div>
                 </div>
               </div>
