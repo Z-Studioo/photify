@@ -1,7 +1,7 @@
 import { fetchInches, fetchRatios } from '@/utils/ratio-sizes';
 import { useQuery } from '@tanstack/react-query';
-import { createContext, useContext, useState, useEffect } from 'react';
-import type { ReactNode } from 'react';
+import React, { createContext, useContext, useState, useEffect } from 'react';
+import { get, set, del } from 'idb-keyval';
 
 export type CanvasShape =
   | 'rectangle'
@@ -27,7 +27,7 @@ interface StoredImageData {
   fileSize: number;
   base64Data: string;
   preview: string;
-  originalPreview: string; // NEW: Store original unoptimized preview
+  originalPreview: string;
   version: number;
 }
 
@@ -43,8 +43,7 @@ interface UploadContextType {
   setFile: (f: File | null) => void;
   preview: string | null;
   setPreview: (p: string | null) => void;
-  originalPreview: string | null; // NEW: Original unoptimized preview
-  setOriginalPreview: (p: string | null) => void;
+  originalPreview: string | null;
   shape: CanvasShape;
   setShape: (s: CanvasShape) => void;
   pendingFile: File | null;
@@ -62,52 +61,46 @@ interface UploadContextType {
 }
 
 const UploadContext = createContext<UploadContextType | undefined>(undefined);
+const CURRENT_VERSION = 1;
 
-export const UploadProvider = ({ children }: { children: ReactNode }) => {
+export const UploadProvider = ({ children }: { children: React.ReactNode }) => {
   const [file, setFile] = useState<File | null>(null);
   const [preview, setPreview] = useState<string | null>(null);
-  const [originalPreview, setOriginalPreview] = useState<string | null>(null); // NEW: Store original
+  const [originalPreview, setOriginalPreview] = useState<string | null>(null);
   const [shape, setShape] = useState<CanvasShape>('rectangle');
   const [pendingFile, setPendingFile] = useState<File | null>(null);
   const [pendingPreview, setPendingPreview] = useState<string | null>(null);
   const [selectedRatio, setSelectedRatio] = useState<string | null>(null);
   const [selectedSize, setSelectedSize] = useState<SizeData | null>(null);
+  const [quality, setQuality] = useState<number[]>(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        const storedMeta = localStorage.getItem('photify_metadata');
+        if (storedMeta) {
+          const meta: Metadata = JSON.parse(storedMeta);
+          if (Array.isArray(meta.quality) && meta.quality.length > 0) {
+            return meta.quality;
+          }
+        }
+      } catch {}
+    }
+    return [70];
+  });
 
+  // === React Query hooks ===
   const { refetch: refetchRatios } = useQuery({
     queryKey: ['ratios'],
     queryFn: fetchRatios,
-    enabled: false, // prevents auto-fetch
+    enabled: false,
   });
 
   const { refetch: refetchInches } = useQuery({
     queryKey: ['inches'],
     queryFn: fetchInches,
-    enabled: false, // prevents auto-fetch
+    enabled: false,
   });
 
-  // CHANGED: Initialize quality from localStorage
-  const [quality, setQuality] = useState<number[]>(() => {
-    if (typeof window !== 'undefined') {
-      const storedMeta = localStorage.getItem('photify_metadata');
-      if (storedMeta) {
-        try {
-          const meta: Metadata = JSON.parse(storedMeta);
-          if (
-            meta.quality &&
-            Array.isArray(meta.quality) &&
-            meta.quality.length > 0
-          ) {
-            return meta.quality;
-          }
-        } catch {
-          // Fall through to default
-        }
-      }
-    }
-    return [70]; // Default fallback
-  });
-
-  // Helpers
+  // === Helpers ===
   const fileToBase64 = (file: File): Promise<string> =>
     new Promise((resolve, reject) => {
       const reader = new FileReader();
@@ -126,14 +119,14 @@ export const UploadProvider = ({ children }: { children: ReactNode }) => {
     return new File([byteArray], name, { type });
   };
 
-  // Persist file (only when image changes)
+  // === Persist File using IndexedDB ===
   const persistFile = async (
     f: File | null,
     p: string | null,
     origP: string | null
   ) => {
     if (!f && !p) {
-      localStorage.removeItem('photify_uploaded_image');
+      await del('photify_uploaded_image');
       return;
     }
 
@@ -146,90 +139,118 @@ export const UploadProvider = ({ children }: { children: ReactNode }) => {
       fileSize: f?.size || 0,
       base64Data,
       preview: p || base64Data,
-      originalPreview: origP || base64Data, // Store original
-      version: 1,
+      originalPreview: origP || base64Data,
+      version: CURRENT_VERSION,
     };
-    localStorage.setItem('photify_uploaded_image', JSON.stringify(imageData));
-  };
 
-  // Persist metadata (ratio, size, shape, quality)
-  const persistMetadata = (meta: Metadata) => {
-    localStorage.setItem('photify_metadata', JSON.stringify(meta));
-  };
-
-  // Restore from localStorage
-  useEffect(() => {
-    // Image restore
-    const storedImage = localStorage.getItem('photify_uploaded_image');
-    if (storedImage) {
-      try {
-        const data: StoredImageData = JSON.parse(storedImage);
-        const restoredFile = base64ToFile(
-          data.base64Data,
-          data.fileName,
-          data.fileType
-        );
-        setFile(restoredFile);
-        setPreview(data.preview);
-        setOriginalPreview(data.originalPreview || data.preview); // Restore original or fallback
-      } catch {
-        localStorage.removeItem('photify_uploaded_image');
-      }
+    try {
+      await set('photify_uploaded_image', imageData);
+    } catch (err) {
+      console.error('Failed to store image in IndexedDB', err);
     }
+  };
 
-    // Metadata restore (quality is now handled in useState initialization above)
-    const storedMeta = localStorage.getItem('photify_metadata');
-    if (storedMeta) {
+  const persistMetadata = (meta: Metadata) => {
+    try {
+      localStorage.setItem('photify_metadata', JSON.stringify(meta));
+    } catch (err) {
+      console.error('Failed to persist metadata', err);
+    }
+  };
+
+  // === Restore from IndexedDB + localStorage ===
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+
+    const restore = async () => {
       try {
-        const meta: Metadata = JSON.parse(storedMeta);
-        if (meta.selectedRatio) setSelectedRatio(meta.selectedRatio);
-        if (meta.selectedSize) setSelectedSize(meta.selectedSize);
-        if (meta.shape) setShape(meta.shape);
-        // REMOVED: Quality restoration from here since it's now in useState initialization
+        const data = (await get('photify_uploaded_image')) as
+          | StoredImageData
+          | undefined;
+        if (data) {
+          const restoredFile = base64ToFile(
+            data.base64Data,
+            data.fileName,
+            data.fileType
+          );
+          setFile(restoredFile);
+          setPreview(data.preview);
+          setOriginalPreview(data.originalPreview || data.preview);
+        }
+      } catch (err) {
+        console.error('Failed to restore from IndexedDB', err);
+        await del('photify_uploaded_image');
+      }
+
+      // restore metadata
+      try {
+        const storedMeta = localStorage.getItem('photify_metadata');
+        if (storedMeta) {
+          const meta: Metadata = JSON.parse(storedMeta);
+          console.log("meta is  ", meta)
+          if (meta.selectedRatio) setSelectedRatio(meta.selectedRatio);
+          if (meta.selectedSize) setSelectedSize(meta.selectedSize);
+          if (meta.shape) setShape(meta.shape);
+        }
       } catch {
         localStorage.removeItem('photify_metadata');
       }
-    }
+    };
+
+    restore();
   }, []);
 
-  // Auto-persist when metadata changes
+  // === Auto-persist file on change ===
   useEffect(() => {
+    if (!file) return;
+    (async () => {
+      try {
+        const base64Data = await fileToBase64(file);
+        setOriginalPreview(base64Data);
+        setPreview(base64Data);
+        await persistFile(file, base64Data, base64Data);
+      } catch (err) {
+        console.error('Error persisting file', err);
+      }
+    })();
+  }, [file]);
+
+  // === Auto-persist metadata ===
+  useEffect(() => {
+    if(!selectedRatio || !selectedSize || !shape || !quality.length) return;
     persistMetadata({ selectedRatio, selectedSize, shape, quality });
   }, [selectedRatio, selectedSize, shape, quality]);
 
-  const applyPendingChanges = () => {
+  // === Apply pending changes ===
+  const applyPendingChanges = async () => {
     if (pendingFile && pendingPreview) {
       setFile(pendingFile);
       setPreview(pendingPreview);
-      // Don't update originalPreview - keep the original!
-      // Use originalPreview if available, otherwise use pendingPreview as fallback
       const origToStore = originalPreview || pendingPreview;
-      persistFile(pendingFile, pendingPreview, origToStore);
+      await persistFile(pendingFile, pendingPreview, origToStore);
       setPendingFile(null);
       setPendingPreview(null);
     }
   };
 
+  // === Reset ===
   const reset = async () => {
     console.log('🔄 Resetting and fetching latest ratios/sizes...');
-
-    // Refetch both in parallel
     const [ratiosRes, inchesRes] = await Promise.all([
       refetchRatios(),
       refetchInches(),
     ]);
-
     const ratios = ratiosRes.data || [];
     const inches = inchesRes.data || [];
 
-    // Compute default ratio and smallest size
     if (ratios.length && inches.length) {
-      let defaultRatio = ratios.find(r => r.ratio === '1:1') || ratios[0];
-
+      const defaultRatio =
+        ratios.find((r: any) => r.ratio === '1:1') || ratios[0];
       const available = inches
-        .filter(inch => defaultRatio.Inches.includes(inch._id))
-        .sort((a, b) => a.width * a.height - b.width * b.height);
-
+        .filter((inch: any) => defaultRatio.Inches.includes(inch._id))
+        .sort(
+          (a: SizeData, b: SizeData) => a.width * a.height - b.width * b.height
+        );
       const smallest = available[0] || null;
 
       if (defaultRatio && smallest) {
@@ -238,22 +259,18 @@ export const UploadProvider = ({ children }: { children: ReactNode }) => {
       }
     }
 
-    // Reset metadata
     setPendingFile(null);
     setPendingPreview(null);
     setShape('rectangle');
     setQuality([70]);
 
-    // Reset preview
     if (file) {
       const base64 = await fileToBase64(file);
       setPreview(base64);
-      const origToStore = originalPreview || base64;
-      await persistFile(file, base64, origToStore);
     } else {
       setPreview(null);
       setOriginalPreview(null);
-      localStorage.removeItem('photify_uploaded_image');
+      await del('photify_uploaded_image');
     }
   };
 
@@ -265,7 +282,6 @@ export const UploadProvider = ({ children }: { children: ReactNode }) => {
         preview,
         setPreview,
         originalPreview,
-        setOriginalPreview,
         shape,
         setShape,
         pendingFile,
@@ -287,7 +303,6 @@ export const UploadProvider = ({ children }: { children: ReactNode }) => {
   );
 };
 
-// eslint-disable-next-line react-refresh/only-export-components
 export const useUpload = () => {
   const ctx = useContext(UploadContext);
   if (!ctx) throw new Error('useUpload must be used within UploadProvider');
