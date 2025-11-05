@@ -502,7 +502,7 @@ const Dashboard: React.FC = () => {
 
         {/* Right: Sidebar - Hidden during editing views on mobile, shown on desktop */}
         {(!isEditingView || window.innerWidth >= 768) && (
-          <div className='md:w-1/4 w-full flex flex-col border-l md:h-full flex-1 md:flex-none overflow-hidden'>
+          <div className='md:w-1/4 w-full flex flex-col border-l md:h-full h-full overflow-hidden'>
             {/* Top: Title + Thumbnail */}
             <AnimatePresence mode='wait'>
               {!selectedFeature && (
@@ -847,7 +847,7 @@ const Dashboard: React.FC = () => {
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, y: -20 }}
                     transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
-                    className='flex items-center justify-between gap-3 fixed bottom-0 left-0 md:w-1/4 w-full p-4 bg-white border-t z-50'
+                    className='flex items-center justify-between gap-3 w-full'
                   >
                     <motion.div
                       data-tour='quantity-section'
@@ -934,7 +934,7 @@ const Dashboard: React.FC = () => {
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, y: -20 }}
                     transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
-                    className='fixed bottom-0 left-0 md:w-1/4 w-full flex items-center justify-between gap-3 bg-white border-t p-4 z-50'
+                    className='flex items-center justify-between gap-3 w-full'
                   >
                     {/* --- Price Section --- */}
                     <motion.div
