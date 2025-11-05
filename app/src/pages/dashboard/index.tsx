@@ -227,10 +227,11 @@ const Dashboard: React.FC = () => {
             <>
               {/* Room View with 3D Frame */}
               <div
-                className={`absolute inset-0 transition-all duration-500 ${selectedView === 'room'
-                  ? 'opacity-100 scale-100'
-                  : 'opacity-0 scale-95 pointer-events-none'
-                  }`}
+                className={`absolute inset-0 transition-all duration-500 ${
+                  selectedView === 'room'
+                    ? 'opacity-100 scale-100'
+                    : 'opacity-0 scale-95 pointer-events-none'
+                }`}
               >
                 {/* Sliding Background Container - Full size for room context */}
                 <div className='relative w-full h-full overflow-hidden'>
@@ -254,12 +255,14 @@ const Dashboard: React.FC = () => {
                     />
                   </AnimatePresence>
                 </div>
-                
+
                 {/* Room Frame positioned properly within the room */}
-                <div className="
+                <div
+                  className='
                   absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2
                   w-[280px] h-[210px] md:w-80 md:h-60
-                ">
+                '
+                >
                   <RoomFrame3D onInteraction={() => setSelectedView('3d')} />
                 </div>
 
@@ -315,7 +318,6 @@ const Dashboard: React.FC = () => {
                   </motion.div>
                 </motion.button>
 
-
                 {/* Wall Indicator Dots */}
                 <motion.div
                   className='absolute bottom-3 left-1/2 -translate-x-1/2 flex space-x-1 sm:space-x-1.5 z-10'
@@ -327,13 +329,16 @@ const Dashboard: React.FC = () => {
                     <motion.button
                       key={_}
                       onClick={() => {
-                        setSlideDirection(index > currentWallIndex ? 'right' : 'left');
+                        setSlideDirection(
+                          index > currentWallIndex ? 'right' : 'left'
+                        );
                         setCurrentWallIndex(index);
                       }}
-                      className={`w-1 h-1 sm:w-1.5 sm:h-1.5 rounded-full transition-all duration-300 ${index === currentWallIndex
+                      className={`w-1 h-1 sm:w-1.5 sm:h-1.5 rounded-full transition-all duration-300 ${
+                        index === currentWallIndex
                           ? 'bg-white shadow-md'
                           : 'bg-white/50 hover:bg-white/75'
-                        }`}
+                      }`}
                       whileHover={{ scale: 1.3 }}
                       whileTap={{ scale: 0.9 }}
                       animate={{
@@ -343,24 +348,29 @@ const Dashboard: React.FC = () => {
                     />
                   ))}
                 </motion.div>
-
               </div>
 
               {/* 3D View */}
               <div
-                className={`absolute inset-0 transition-all duration-700 ease-out ${selectedView === '3d'
-                  ? 'opacity-100 scale-100'
-                  : 'opacity-0 scale-110 pointer-events-none'
-                  }`}
+                className={`absolute inset-0 transition-all duration-700 ease-out ${
+                  selectedView === '3d'
+                    ? 'opacity-100 scale-100'
+                    : 'opacity-0 scale-110 pointer-events-none'
+                }`}
               >
                 {/* Responsive container for 3D view only */}
-                <div className="
+                <div
+                  className='
                   w-full h-full 
                   flex items-center justify-center
                    md:p-0
-                ">
-<div className="w-full h-full">
-                    <ThreeDCanvas isVisible={selectedView === '3d'} />
+                '
+                >
+                  <div className='w-full h-full'>
+                    <ThreeDCanvas
+                      isVisible={selectedView === '3d'}
+                      focusOnEdge={selectedFeature?.name === 'SIDE APPEARANCE'}
+                    />
                   </div>
                 </div>
               </div>
@@ -373,10 +383,11 @@ const Dashboard: React.FC = () => {
                 {/* Add Image Button or Placeholder */}
                 <motion.button
                   onClick={handleAddImageClick}
-                  className={`flex flex-col items-center justify-center px-2 py-2 md:px-2 md:py-2 bg-[var(--primary)] border border-gray-300 text-white hover:transition-all cursor-pointer shadow-sm ${selectedView !== 'room'
-                    ? 'invisible pointer-events-none'
-                    : 'pointer-events-auto'
-                    }`}
+                  className={`flex flex-col items-center justify-center px-2 py-2 md:px-2 md:py-2 bg-[var(--primary)] border border-gray-300 text-white hover:transition-all cursor-pointer shadow-sm ${
+                    selectedView !== 'room'
+                      ? 'invisible pointer-events-none'
+                      : 'pointer-events-auto'
+                  }`}
                   type='button'
                   whileHover={{ scale: 1.02 }}
                   whileTap={{ scale: 0.98 }}
@@ -400,11 +411,15 @@ const Dashboard: React.FC = () => {
                 >
                   <div className='flex border border-gray-300 divide-x divide-gray-300'>
                     <motion.button
-                      onClick={() => setSelectedView('room')}
-                      className={`flex items-center justify-center px-2 py-2 md:px-5 md:py-3 text-xs md:text-sm font-medium rounded-none cursor-pointer transition-all ${selectedView === 'room'
-                        ? 'bg-primary text-white'
-                        : 'bg-white text-gray-700 hover:bg-gray-100'
-                        }`}
+                      onClick={() => {
+                        setSelectedView('room');
+                        setSelectedFeature(null); // Close any open feature panel
+                      }}
+                      className={`flex items-center justify-center px-2 py-2 md:px-5 md:py-3 text-xs md:text-sm font-medium rounded-none cursor-pointer transition-all ${
+                        selectedView === 'room'
+                          ? 'bg-primary text-white'
+                          : 'bg-white text-gray-700 hover:bg-gray-100'
+                      }`}
                       type='button'
                       whileHover={{ scale: 1.02 }}
                       whileTap={{ scale: 0.98 }}
@@ -424,11 +439,15 @@ const Dashboard: React.FC = () => {
                       <span className='hidden md:inline ml-1'>Room View</span>
                     </motion.button>
                     <motion.button
-                      onClick={() => setSelectedView('3d')}
-                      className={`flex items-center justify-center px-2 py-2 md:px-5 md:py-3 text-xs md:text-sm font-medium rounded-none cursor-pointer transition-all ${selectedView === '3d'
-                        ? 'bg-primary text-white'
-                        : 'bg-white text-gray-700 hover:bg-gray-100'
-                        }`}
+                      onClick={() => {
+                        setSelectedView('3d');
+                        setSelectedFeature(null); // Close any open feature panel
+                      }}
+                      className={`flex items-center justify-center px-2 py-2 md:px-5 md:py-3 text-xs md:text-sm font-medium rounded-none cursor-pointer transition-all ${
+                        selectedView === '3d'
+                          ? 'bg-primary text-white'
+                          : 'bg-white text-gray-700 hover:bg-gray-100'
+                      }`}
                       type='button'
                       whileHover={{ scale: 1.02 }}
                       whileTap={{ scale: 0.98 }}
@@ -558,17 +577,21 @@ const Dashboard: React.FC = () => {
                             variants={listItemVariants}
                           >
                             <motion.div
-                              className={`flex items-center justify-between p-4 md:p-6 relative overflow-hidden group ${selectedFeature?.id === item.id
-                                ? 'bg-blue-50 border-l-4 border-primary'
-                                : ''
-                                } ${item.disabled
+                              className={`flex items-center justify-between p-4 md:p-6 relative overflow-hidden group ${
+                                selectedFeature?.id === item.id
+                                  ? 'bg-blue-50 border-l-4 border-primary'
+                                  : ''
+                              } ${
+                                item.disabled
                                   ? 'cursor-not-allowed bg-gray-50/50'
                                   : 'cursor-pointer'
-                                }`}
+                              }`}
                               onClick={() =>
                                 !item.disabled && handleFeatureClick(item)
                               }
-                              whileHover={!item.disabled ? { scale: 1.002 } : {}}
+                              whileHover={
+                                !item.disabled ? { scale: 1.002 } : {}
+                              }
                               whileTap={!item.disabled ? { scale: 0.998 } : {}}
                               transition={{
                                 type: 'spring',
@@ -620,7 +643,10 @@ const Dashboard: React.FC = () => {
                                         'radial-gradient(600px circle at 20% 50%, rgba(var(--primary-rgb, 59, 130, 246), 0.04), transparent 60%)',
                                     }}
                                     whileHover={{ opacity: 1 }}
-                                    transition={{ duration: 0.4, ease: 'easeOut' }}
+                                    transition={{
+                                      duration: 0.4,
+                                      ease: 'easeOut',
+                                    }}
                                   />
                                 </>
                               )}
@@ -630,11 +656,11 @@ const Dashboard: React.FC = () => {
                                   whileHover={
                                     !item.disabled
                                       ? {
-                                        rotate: 5,
-                                        scale: 1.1,
-                                        filter:
-                                          'drop-shadow(0 2px 8px rgba(var(--primary-rgb, 59, 130, 246), 0.3))',
-                                      }
+                                          rotate: 5,
+                                          scale: 1.1,
+                                          filter:
+                                            'drop-shadow(0 2px 8px rgba(var(--primary-rgb, 59, 130, 246), 0.3))',
+                                        }
                                       : {}
                                   }
                                   transition={{
@@ -644,29 +670,31 @@ const Dashboard: React.FC = () => {
                                   }}
                                 >
                                   <item.icon
-                                    className={`h-5 w-5 flex-shrink-0 transition-all duration-300 ${item.disabled
-                                      ? 'text-gray-300'
-                                      : selectedFeature?.id === item.id
-                                        ? 'text-primary'
-                                        : 'text-gray-500 group-hover:text-primary'
-                                      }`}
+                                    className={`h-5 w-5 flex-shrink-0 transition-all duration-300 ${
+                                      item.disabled
+                                        ? 'text-gray-300'
+                                        : selectedFeature?.id === item.id
+                                          ? 'text-primary'
+                                          : 'text-gray-500 group-hover:text-primary'
+                                    }`}
                                   />
                                 </motion.div>
                                 <div className='min-w-0 flex-1'>
                                   <div className='flex items-center gap-2'>
                                     <motion.p
-                                      className={`font-semibold text-sm leading-tight transition-all duration-300 ${item.disabled
-                                        ? 'text-gray-400'
-                                        : selectedFeature?.id === item.id
-                                          ? 'text-primary'
-                                          : 'text-gray-900 group-hover:text-primary'
-                                        }`}
+                                      className={`font-semibold text-sm leading-tight transition-all duration-300 ${
+                                        item.disabled
+                                          ? 'text-gray-400'
+                                          : selectedFeature?.id === item.id
+                                            ? 'text-primary'
+                                            : 'text-gray-900 group-hover:text-primary'
+                                      }`}
                                       whileHover={
                                         !item.disabled
                                           ? {
-                                            textShadow:
-                                              '0 0 8px rgba(var(--primary-rgb, 59, 130, 246), 0.3)',
-                                          }
+                                              textShadow:
+                                                '0 0 8px rgba(var(--primary-rgb, 59, 130, 246), 0.3)',
+                                            }
                                           : {}
                                       }
                                     >
@@ -689,10 +717,11 @@ const Dashboard: React.FC = () => {
                                     )}
                                   </div>
                                   <motion.p
-                                    className={`text-xs leading-tight transition-colors duration-300 ${item.disabled
-                                      ? 'text-gray-300'
-                                      : 'text-gray-500 group-hover:text-gray-600'
-                                      }`}
+                                    className={`text-xs leading-tight transition-colors duration-300 ${
+                                      item.disabled
+                                        ? 'text-gray-300'
+                                        : 'text-gray-500 group-hover:text-gray-600'
+                                    }`}
                                   >
                                     {item.subtitle}
                                   </motion.p>
@@ -787,7 +816,7 @@ const Dashboard: React.FC = () => {
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, y: -20 }}
                     transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
-                    className='flex items-center justify-between gap-3'
+                    className='flex items-center justify-between gap-3 fixed bottom-0 left-0 md:w-1/4 w-full p-4 bg-white border-t z-50'
                   >
                     <motion.div
                       className='flex items-center justify-center space-x-2'
@@ -838,7 +867,7 @@ const Dashboard: React.FC = () => {
                           variant='outline'
                           size='icon'
                           onClick={handleIncrement}
-                          className='h-12 w-12 rounded-none transition-all duration-200'
+                          className='h-12 w-fit rounded-none transition-all duration-200'
                         >
                           <PlusCircle className='h-6 w-6' />
                         </Button>
@@ -868,8 +897,9 @@ const Dashboard: React.FC = () => {
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, y: -20 }}
                     transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
-                    className='flex items-center justify-between gap-3 flex-shrink-0'
+                    className='fixed bottom-0 left-0 md:w-1/4 w-full flex items-center justify-between gap-3 bg-white border-t p-4 z-50'
                   >
+                    {/* --- Price Section --- */}
                     <motion.div
                       className='flex flex-col'
                       initial={{ opacity: 0, x: -20 }}
@@ -888,6 +918,7 @@ const Dashboard: React.FC = () => {
                       >
                         ${(pricePerItem * quantity).toFixed(2)}
                       </motion.span>
+
                       {selectedSize &&
                         selectedSize.actual_price > selectedSize.sell_price && (
                           <motion.div
@@ -914,6 +945,8 @@ const Dashboard: React.FC = () => {
                           </motion.div>
                         )}
                     </motion.div>
+
+                    {/* --- Apply Button --- */}
                     <motion.div
                       initial={{ opacity: 0, x: 20 }}
                       animate={{ opacity: 1, x: 0 }}
@@ -949,7 +982,7 @@ const Dashboard: React.FC = () => {
             className='fixed bottom-0 left-0 right-0 bg-white border-t p-4 z-50'
             style={{
               bottom: 'env(safe-area-inset-bottom, 0px)',
-              paddingBottom: 'calc(1rem + env(safe-area-inset-bottom, 0px))'
+              paddingBottom: 'calc(1rem + env(safe-area-inset-bottom, 0px))',
             }}
           >
             <div className='flex justify-between items-center'>
@@ -1000,6 +1033,8 @@ const Dashboard: React.FC = () => {
                     applyPendingChanges();
                     setSelectedView('room' as any);
                     setSelectedFeature(null);
+                    if (selectedFeature?.name === 'SIDE APPEARANCE')
+                      setSelectedView('room');
                   }}
                 >
                   Apply Changes

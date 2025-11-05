@@ -164,7 +164,7 @@ const RatioSizePanel: React.FC<RatioSizePanelProps> = ({
     );
 
   return (
-    <div className='space-y-6'>
+    <div className='space-y-6 pb-20'>
       {/* Sticky Header + Ratios */}
       <div className='sticky top-0 bg-gray-50 z-10 pt-1 pb-2'>
         <h2 className='text-xl font-semibold text-gray-800 mb-2 pl-4'>
@@ -262,23 +262,6 @@ const RatioSizePanel: React.FC<RatioSizePanelProps> = ({
           );
         })}
       </div>
-
-      {/* Price Summary */}
-      {selectedRatio && selectedSize && (
-        <div className='border-t pt-4'>
-          <div className='bg-gray-50 p-4 rounded-lg space-y-1 text-sm'>
-            <h4 className='font-semibold text-gray-800 mb-2'>Canvas Price</h4>
-            <div>
-              <span className='text-primary font-bold text-lg'>
-                ${selectedSize.sell_price.toFixed(2)}
-              </span>{' '}
-              <span className='line-through text-gray-400'>
-                ${selectedSize.actual_price.toFixed(2)}
-              </span>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 };
