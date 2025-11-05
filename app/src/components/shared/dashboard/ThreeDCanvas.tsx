@@ -28,70 +28,69 @@ const Frame3D = ({
   const { selectedSize } = useUpload();
 
   useEffect(() => {
-  if (!imageUrl) {
-    setTexture(null);
-    return;
-  }
-
-  const isBase64 = imageUrl.startsWith('data:');
-  const uniqueUrl = isBase64 ? imageUrl : `${imageUrl}?v=${Date.now()}`;
-
-  const loader = new THREE.TextureLoader();
-
-  // Dispose old texture
-  if (texture) texture.dispose();
-
-  loader.load(
-    uniqueUrl,
-    loadedTexture => {
-      loadedTexture.needsUpdate = true;
-      loadedTexture.flipY = true;
-
-      if (edgeType === 'mirrored') {
-        loadedTexture.wrapS = THREE.MirroredRepeatWrapping;
-        loadedTexture.wrapT = THREE.MirroredRepeatWrapping;
-      } else {
-        loadedTexture.wrapS = THREE.ClampToEdgeWrapping;
-        loadedTexture.wrapT = THREE.ClampToEdgeWrapping;
-      }
-
-      loadedTexture.minFilter = THREE.LinearFilter;
-      loadedTexture.magFilter = THREE.LinearFilter;
-      loadedTexture.generateMipmaps = false;
-
-      if ('colorSpace' in loadedTexture) {
-        (loadedTexture as any).colorSpace = THREE.SRGBColorSpace;
-      } else {
-        (loadedTexture as any).encoding = THREE.SRGBColorSpace;
-      }
-
-      // Center image based on aspect ratio
-      const img = loadedTexture.image;
-      if (img && img.width && img.height) {
-        const frameAspect = 1.8 / 1.35;
-        const imageAspect = img.width / img.height;
-
-        if (imageAspect > frameAspect) {
-          const scale = frameAspect / imageAspect;
-          loadedTexture.repeat.set(scale, 1);
-          loadedTexture.offset.set((1 - scale) / 2, 0);
-        } else {
-          const scale = imageAspect / frameAspect;
-          loadedTexture.repeat.set(1, scale);
-          loadedTexture.offset.set(0, (1 - scale) / 2);
-        }
-      }
-
-      setTexture(loadedTexture);
-    },
-    undefined,
-    err => {
-      console.error('❌ Texture load failed:', err);
+    if (!imageUrl) {
       setTexture(null);
+      return;
     }
-  );
-}, [imageUrl, edgeType]);
 
+    const isBase64 = imageUrl.startsWith('data:');
+    const uniqueUrl = isBase64 ? imageUrl : `${imageUrl}?v=${Date.now()}`;
+
+    const loader = new THREE.TextureLoader();
+
+    // Dispose old texture
+    if (texture) texture.dispose();
+
+    loader.load(
+      uniqueUrl,
+      loadedTexture => {
+        loadedTexture.needsUpdate = true;
+        loadedTexture.flipY = true;
+
+        if (edgeType === 'mirrored') {
+          loadedTexture.wrapS = THREE.MirroredRepeatWrapping;
+          loadedTexture.wrapT = THREE.MirroredRepeatWrapping;
+        } else {
+          loadedTexture.wrapS = THREE.ClampToEdgeWrapping;
+          loadedTexture.wrapT = THREE.ClampToEdgeWrapping;
+        }
+
+        loadedTexture.minFilter = THREE.LinearFilter;
+        loadedTexture.magFilter = THREE.LinearFilter;
+        loadedTexture.generateMipmaps = false;
+
+        if ('colorSpace' in loadedTexture) {
+          (loadedTexture as any).colorSpace = THREE.SRGBColorSpace;
+        } else {
+          (loadedTexture as any).encoding = THREE.SRGBColorSpace;
+        }
+
+        // Center image based on aspect ratio
+        const img = loadedTexture.image;
+        if (img && img.width && img.height) {
+          const frameAspect = 1.8 / 1.35;
+          const imageAspect = img.width / img.height;
+
+          if (imageAspect > frameAspect) {
+            const scale = frameAspect / imageAspect;
+            loadedTexture.repeat.set(scale, 1);
+            loadedTexture.offset.set((1 - scale) / 2, 0);
+          } else {
+            const scale = imageAspect / frameAspect;
+            loadedTexture.repeat.set(1, scale);
+            loadedTexture.offset.set(0, (1 - scale) / 2);
+          }
+        }
+
+        setTexture(loadedTexture);
+      },
+      undefined,
+      err => {
+        console.error('❌ Texture load failed:', err);
+        setTexture(null);
+      }
+    );
+  }, [imageUrl, edgeType]);
 
   const frameDepth = 0.06;
   const BASE_SIZE = 15;
@@ -293,7 +292,10 @@ const CameraControls = ({
   );
 };
 
-const ThreeDCanvas = ({ isVisible, focusOnEdge = false }: ThreeDCanvasProps) => {
+const ThreeDCanvas = ({
+  isVisible,
+  focusOnEdge = false,
+}: ThreeDCanvasProps) => {
   const { preview, shape } = useUpload();
   const { edgeType } = useEdge();
   const controlsRef = useRef<OrbitControlsImpl | null>(null);
@@ -395,9 +397,9 @@ const ThreeDCanvas = ({ isVisible, focusOnEdge = false }: ThreeDCanvasProps) => 
       const startPosition = camera.position.clone();
       const startTarget = controls.target.clone();
 
-      // Position camera to view the right edge at an angle
-      const targetPosition = new THREE.Vector3(2.5, 0.3, 1.5); // Side view with slight elevation
-      const targetTarget = new THREE.Vector3(0.9, 0, 0); // Look at the right edge
+      // Position camera closer to view the right edge at an angle (zoomed in)
+      const targetPosition = new THREE.Vector3(1.8, 0.25, 1.2); // Closer side view with slight elevation
+      const targetTarget = new THREE.Vector3(0, 0, 0); // Keep target at center for flexible rotation
 
       const animate = () => {
         const elapsed = Date.now() - startTime;

@@ -32,12 +32,14 @@ const EdgeSelector = () => {
   const { setSelectedView } = useView();
 
   useEffect(() => {
+    // Only set 3D view on initial mount, not on every render
     setSelectedView('3d');
-  }, [setSelectedView]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // Empty dependency array - only runs once on mount
 
   const handleSetEdgeType = (type: EdgeType) => {
     setEdgeType(type);
-    setSelectedView('3d');
+    // Don't force 3D view when changing edge type - let user stay in current view
   };
   return (
     <div className='space-y-4'>
