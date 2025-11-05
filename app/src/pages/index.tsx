@@ -8,7 +8,7 @@ import { Crop, Image, Info, Scan, ShoppingBag } from 'lucide-react';
 import { motion, AnimatePresence, type Variants } from 'motion/react';
 
 const Page = () => {
-  const { file: _file, setFile, preview, setPreview, setOriginalPreview } = useUpload();
+  const { file: _file, setFile, preview, setPreview } = useUpload();
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const f = e.target.files?.[0];
@@ -16,7 +16,6 @@ const Page = () => {
       const newPreview = URL.createObjectURL(f);
       setFile(f);
       setPreview(newPreview);
-      setOriginalPreview(newPreview); // Set as original when uploading new image
     }
   };
 
@@ -173,7 +172,6 @@ const Page = () => {
                       onClick={() => {
                         setFile(null);
                         setPreview(null);
-                        setOriginalPreview(null); // Clear original too
                       }}
                     >
                       Change photo
@@ -210,8 +208,8 @@ const Page = () => {
           </span>
 
           <div className='flex w-full justify-center items-center px-4'>
-            <div className='relative flex flex-col md:flex-row items-center justify-between w-full gap-6 md:gap-0'>
-              <div className='absolute hidden md:flex w-full h-16 top-0 items-center z-0'>
+            <div className='relative flex flex-row items-center justify-between w-full gap-4 md:gap-0'>
+              <div className='absolute flex w-full h-16 top-0 items-center z-0'>
                 <motion.hr
                   className='w-full border-t border-[#E0E3E7] border-dashed z-0'
                   initial={{ scaleX: 0, originX: 0 }}

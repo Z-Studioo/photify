@@ -5,50 +5,16 @@ import { useUpload } from '@/context/UploadContext';
 import { useView } from '@/context/ViewContext';
 import { AspectRatioIcon } from '../common/icons';
 import { useQuery } from '@tanstack/react-query';
-
-interface RatioData {
-  _id: string;
-  ratio: string;
-  Inches: string[];
-}
-
-interface InchData {
-  _id: string;
-  width: number;
-  height: number;
-  w: number;
-  h: number;
-  Slug: string;
-  sell_price: number;
-  actual_price: number;
-}
+import { fetchInches, fetchRatios, type InchData, type RatioData } from '@/utils/ratio-sizes';
 
 interface RatioSizePanelProps {
   onSelectionChange?: (ratio: string, size: InchData | null) => void;
 }
 
-const fetchRatios = async (): Promise<RatioData[]> => {
-  const res = await fetch(
-    'https://photify.co/version-923ig/api/1.1/obj/ratios'
-  );
-  if (!res.ok) throw new Error('Failed to fetch ratios');
-  const data = await res.json();
-  return data.response?.results || [];
-};
-
-const fetchInches = async (): Promise<InchData[]> => {
-  const res = await fetch(
-    'https://photify.co/version-923ig/api/1.1/obj/inches'
-  );
-  if (!res.ok) throw new Error('Failed to fetch inches');
-  const data = await res.json();
-  return data.response?.results || [];
-};
-
 const RatioSizePanel: React.FC<RatioSizePanelProps> = ({
   onSelectionChange,
 }) => {
-  const { selectedRatio, setSelectedRatio, selectedSize, setSelectedSize, setDefaultRatio, setDefaultSize } =
+  const { selectedRatio, setSelectedRatio, selectedSize, setSelectedSize } =
     useUpload();
   const { setSelectedView } = useView();
 
@@ -104,8 +70,6 @@ const RatioSizePanel: React.FC<RatioSizePanelProps> = ({
       // update context for defaults as well
       setSelectedRatio(defaultRatio.ratio);
       setSelectedSize(defaultSize);
-      setDefaultRatio(defaultRatio.ratio);
-      setDefaultSize(defaultSize);
 
       onSelectionChange?.(defaultRatio.ratio, defaultSize);
     }
@@ -200,7 +164,7 @@ const RatioSizePanel: React.FC<RatioSizePanelProps> = ({
     );
 
   return (
-    <div className='space-y-6'>
+    <div className='space-y-6 pb-20'>
       {/* Sticky Header + Ratios */}
       <div className='sticky top-0 bg-gray-50 z-10 pt-1 pb-2'>
         <h2 className='text-xl font-semibold text-gray-800 mb-2 pl-4'>
@@ -298,23 +262,6 @@ const RatioSizePanel: React.FC<RatioSizePanelProps> = ({
           );
         })}
       </div>
-
-      {/* Price Summary */}
-      {selectedRatio && selectedSize && (
-        <div className='border-t pt-4'>
-          <div className='bg-gray-50 p-4 rounded-lg space-y-1 text-sm'>
-            <h4 className='font-semibold text-gray-800 mb-2'>Canvas Price</h4>
-            <div>
-              <span className='text-primary font-bold text-lg'>
-                ${selectedSize.sell_price.toFixed(2)}
-              </span>{' '}
-              <span className='line-through text-gray-400'>
-                ${selectedSize.actual_price.toFixed(2)}
-              </span>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 };

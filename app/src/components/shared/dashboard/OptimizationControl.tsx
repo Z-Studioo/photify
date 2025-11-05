@@ -82,9 +82,7 @@ const OptimizationControl: React.FC = () => {
     const handler = setTimeout(async () => {
       try {
         setIsProcessing(true);
-
         const enhanced = await enhanceImageWithCanvas(basePreview, quality[0]);
-
         setPendingPreview(enhanced);
         setPendingFile(file);
       } catch (error) {
