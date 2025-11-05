@@ -13,7 +13,6 @@ const OptimizationView: React.FC<OptimizationViewProps> = ({ isVisible }) => {
 
   // Use original preview as the "before" image
   const beforeImage = originalPreview || preview;
-
   if (!beforeImage) {
     return (
       <div className='flex flex-col items-center justify-center w-full h-full bg-white text-gray-400 text-sm'>
