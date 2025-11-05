@@ -29,6 +29,7 @@ const RoomFrame3D = ({
   const frameRef = useRef<THREE.Group>(null);
   const [texture, setTexture] = useState<THREE.Texture | null>(null);
   const [isHovered, setIsHovered] = useState(false);
+  const [isDragging, setIsDragging] = useState(false);
   const { edgeType } = useEdge();
 
   // Mobile scaling factor - reduce size on mobile devices
@@ -36,7 +37,7 @@ const RoomFrame3D = ({
   const MOBILE_SCALE_FACTOR = 0.6; // Reduce to 60% of original size on mobile
 
   const BASE_SIZE = 12;
-  const HOVER_FACTOR = 1.1;
+  const HOVER_FACTOR = 1.05; // Reduced from 1.1 to 1.05 for subtle effect
 
   const scaleX = useMemo(
     () => {
@@ -188,7 +189,23 @@ const RoomFrame3D = ({
       receiveShadow
       onPointerEnter={() => setIsHovered(true)}
       onPointerLeave={() => setIsHovered(false)}
-      onClick={onInteraction}
+      onPointerDown={() => setIsDragging(true)}
+      onPointerUp={() => {
+        if (isDragging) {
+          onInteraction();
+        }
+        setIsDragging(false);
+      }}
+      onPointerMove={(e) => {
+        if (e.buttons > 0) {
+          // User is clicking and dragging - switch to 3D
+          onInteraction();
+        }
+      }}
+      onClick={() => {
+        // Also trigger on simple click
+        onInteraction();
+      }}
     >
       {/* Frame */}
       {frameGeometry}
