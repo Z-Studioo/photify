@@ -867,7 +867,7 @@ const Dashboard: React.FC = () => {
                           variant='outline'
                           size='icon'
                           onClick={handleIncrement}
-                          className='h-12 w-fit rounded-none transition-all duration-200'
+                          className='h-12 w-12 rounded-none transition-all duration-200'
                         >
                           <PlusCircle className='h-6 w-6' />
                         </Button>
