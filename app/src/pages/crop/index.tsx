@@ -16,11 +16,11 @@ export default function CropPage() {
       const vh = window.innerHeight * 0.01;
       document.documentElement.style.setProperty('--vh', `${vh}px`);
     };
-    
+
     setVH();
     window.addEventListener('resize', setVH);
     window.addEventListener('orientationchange', setVH);
-    
+
     return () => {
       window.removeEventListener('resize', setVH);
       window.removeEventListener('orientationchange', setVH);
@@ -29,7 +29,7 @@ export default function CropPage() {
 
   const handleApply = () => {
     applyPendingChanges();
-    navigate('/dashboard');
+    navigate('/dashboard', { replace: true });
   };
 
   return (
@@ -49,11 +49,11 @@ export default function CropPage() {
         </div>
 
         {/* Fixed Apply Button (always visible at bottom) */}
-        <div 
+        <div
           className='w-full bg-white border-t p-4 absolute bottom-0 left-0 md:static md:border-t md:p-4 md:block'
-          style={{ 
+          style={{
             bottom: 'env(safe-area-inset-bottom, 0px)',
-            paddingBottom: 'calc(1rem + env(safe-area-inset-bottom, 0px))'
+            paddingBottom: 'calc(1rem + env(safe-area-inset-bottom, 0px))',
           }}
         >
           <div className='max-w-[380px] mx-auto md:mx-0'>
