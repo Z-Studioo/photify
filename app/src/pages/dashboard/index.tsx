@@ -587,7 +587,7 @@ const Dashboard: React.FC = () => {
                     <ScrollArea className='h-full'>
                       <motion.div
                         data-tour='features-list'
-                    className='space-y-0'
+                        className='space-y-0'
                         initial='hidden'
                         animate='visible'
                         variants={{
@@ -606,9 +606,9 @@ const Dashboard: React.FC = () => {
                           >
                             <motion.div
                               data-tour={`feature-${item.name
-                            .toLowerCase()
-                            .replace(/\s+/g, '-')}`}
-                          className={`flex items-center justify-between p-4 md:p-6 relative overflow-hidden group ${
+                                .toLowerCase()
+                                .replace(/\s+/g, '-')}`}
+                              className={`flex items-center justify-between p-4 md:p-6 relative overflow-hidden group ${
                                 selectedFeature?.id === item.id
                                   ? 'bg-blue-50 border-l-4 border-primary'
                                   : ''

@@ -1,7 +1,6 @@
 import { ChevronLeft } from 'lucide-react';
 import { useFeature } from '@/context/dashboard/FeatureContext';
 import SelectPhoto from '@/components/shared/dashboard/SelectPhoto';
-import ShapeSelector from '@/components/shared/dashboard/ShapeSelector';
 import RatioSizePanel from '@/components/shared/dashboard/RatioSizePanel';
 import EdgeSelector from './EdgeSelector';
 import { useView } from '@/context/ViewContext';
