@@ -29,6 +29,7 @@ import { useUpload } from '@/context/UploadContext';
 import { useView } from '@/context/ViewContext';
 import ImageCropper from '@/components/shared/common/ImageCropper';
 import { useEdge } from '@/context/EdgeContext';
+import { useNextStep } from 'nextstepjs';
 import { useGlobalReset } from '@/hooks/useGlobalReset';
 import OptimizationView from '@/components/shared/dashboard/OptimizationView';
 import { useMutation } from '@tanstack/react-query';
@@ -51,6 +52,20 @@ const Dashboard: React.FC = () => {
   const [customWalls, setCustomWalls] = useState<string[]>([]);
   const wallImageInputRef = useRef<HTMLInputElement>(null);
   const { selectedFeature, setSelectedFeature } = useFeature();
+
+  const { startNextStep } = useNextStep();
+
+  const TOUR_COMPLETED_KEY = 'dashboard-tour-completed';
+
+  useEffect(() => {
+    const hasCompletedTour = localStorage.getItem(TOUR_COMPLETED_KEY);
+
+    if (!hasCompletedTour) {
+      startNextStep('dashboard-tour');
+      localStorage.setItem(TOUR_COMPLETED_KEY, 'true');
+    }
+  }, [startNextStep]);
+
   const { resetAll } = useGlobalReset();
 
   // Fix for mobile viewport height issues
@@ -183,7 +198,6 @@ const Dashboard: React.FC = () => {
     if (f) {
       const imageUrl = URL.createObjectURL(f);
       setCustomWalls(prev => [...prev, imageUrl]);
-      // Set to the newly added wall
       setCurrentWallIndex(wallImages.length);
       setSlideDirection('right');
     }
@@ -217,10 +231,8 @@ const Dashboard: React.FC = () => {
           overflow-hidden
         `}
         >
-          {selectedView === ('crop' as any) && (
-            <ImageCropper isVisible={true} />
-          )}
-          {selectedView === ('optimization' as any) && (
+          {selectedView === 'crop' && <ImageCropper isVisible={true} />}
+          {selectedView === 'optimization' && (
             <OptimizationView isVisible={true} />
           )}
           {!isEditingView && (
@@ -377,13 +389,14 @@ const Dashboard: React.FC = () => {
 
               {/* Top overlay buttons */}
               <div
-                className='absolute top-0 left-0 right-0 flex justify-between items-start md:top-4 md:px-4'
+                className='fixed flex justify-between items-start md:w-9/12 top-16 md:top-18 md:px-4 pointer-events-none z-20'
                 style={{ pointerEvents: 'none' }}
               >
-                {/* Add Image Button or Placeholder */}
+                {/* Add Image Button */}
                 <motion.button
+                  data-tour='add-image-btn'
                   onClick={handleAddImageClick}
-                  className={`flex flex-col items-center justify-center px-2 py-2 md:px-2 md:py-2 bg-[var(--primary)] border border-gray-300 text-white hover:transition-all cursor-pointer shadow-sm ${
+                  className={`flex flex-col items-center justify-center px-2 py-2 md:px-2 md:py-2 bg-[var(--primary)] border border-gray-300 text-white hover:transition-all cursor-pointer shadow-sm pointer-events-auto flex-shrink-0 ${
                     selectedView !== 'room'
                       ? 'invisible pointer-events-none'
                       : 'pointer-events-auto'
@@ -392,15 +405,15 @@ const Dashboard: React.FC = () => {
                   whileHover={{ scale: 1.02 }}
                   whileTap={{ scale: 0.98 }}
                 >
-                  <ImagePlus className='h-4 w-4 md:h-5 md:w-5 mb-1' />
-                  <span className='text-sm font-medium hidden sm:block'>
+                  <ImagePlus className='h-4 w-4 md:h-5 md:w-5 m-0 md:mb-1' />
+                  <span className='text-sm font-medium hidden md:inline'>
                     Add Image
                   </span>
                 </motion.button>
 
                 {/* Room + 3D View buttons */}
                 <motion.div
-                  className='flex gap-2 pointer-events-auto'
+                  className='fixed flex gap-2 pointer-events-auto right-0 md:right-2'
                   initial={{ opacity: 0, scale: 0.9 }}
                   animate={{ opacity: 1, scale: 1 }}
                   transition={{
@@ -411,11 +424,12 @@ const Dashboard: React.FC = () => {
                 >
                   <div className='flex border border-gray-300 divide-x divide-gray-300'>
                     <motion.button
+                      data-tour='room-view-btn'
                       onClick={() => {
                         setSelectedView('room');
                         setSelectedFeature(null); // Close any open feature panel
                       }}
-                      className={`flex items-center justify-center px-2 py-2 md:px-5 md:py-3 text-xs md:text-sm font-medium rounded-none cursor-pointer transition-all ${
+                      className={`flex items-center justify-center px-2 py-2 md:px-5 md:py-3 text-xs md:text-sm font-medium rounded-none cursor-pointer transition-all flex-shrink-0 whitespace-nowrap ${
                         selectedView === 'room'
                           ? 'bg-primary text-white'
                           : 'bg-white text-gray-700 hover:bg-gray-100'
@@ -433,17 +447,24 @@ const Dashboard: React.FC = () => {
                           rotate: { duration: 0.3, ease: [0.22, 1, 0.36, 1] },
                           scale: { duration: 0.2 },
                         }}
+                        style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          flexShrink: 0,
+                        }}
                       >
                         <Eye className='h-4 w-4 md:h-5 md:w-5' />
                       </motion.div>
                       <span className='hidden md:inline ml-1'>Room View</span>
                     </motion.button>
                     <motion.button
+                      data-tour='3d-view-btn'
                       onClick={() => {
                         setSelectedView('3d');
                         setSelectedFeature(null); // Close any open feature panel
                       }}
-                      className={`flex items-center justify-center px-2 py-2 md:px-5 md:py-3 text-xs md:text-sm font-medium rounded-none cursor-pointer transition-all ${
+                      className={`flex items-center justify-center px-2 py-2 md:px-5 md:py-3 text-xs md:text-sm font-medium rounded-none cursor-pointer transition-all flex-shrink-0 whitespace-nowrap ${
                         selectedView === '3d'
                           ? 'bg-primary text-white'
                           : 'bg-white text-gray-700 hover:bg-gray-100'
@@ -460,6 +481,12 @@ const Dashboard: React.FC = () => {
                         transition={{
                           rotateY: { duration: 0.3, ease: [0.22, 1, 0.36, 1] },
                           scale: { duration: 0.2 },
+                        }}
+                        style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          flexShrink: 0,
                         }}
                       >
                         <Box className='h-4 w-4 md:h-5 md:w-5' />
@@ -559,6 +586,7 @@ const Dashboard: React.FC = () => {
                   <div className='flex-1 min-h-0 overflow-hidden'>
                     <ScrollArea className='h-full'>
                       <motion.div
+                        data-tour='features-list'
                         className='space-y-0'
                         initial='hidden'
                         animate='visible'
@@ -577,6 +605,9 @@ const Dashboard: React.FC = () => {
                             variants={listItemVariants}
                           >
                             <motion.div
+                              data-tour={`feature-${item.name
+                                .toLowerCase()
+                                .replace(/\s+/g, '-')}`}
                               className={`flex items-center justify-between p-4 md:p-6 relative overflow-hidden group ${
                                 selectedFeature?.id === item.id
                                   ? 'bg-blue-50 border-l-4 border-primary'
@@ -819,7 +850,8 @@ const Dashboard: React.FC = () => {
                     className='flex items-center justify-between gap-3 fixed bottom-0 left-0 md:w-1/4 w-full p-4 bg-white border-t z-50'
                   >
                     <motion.div
-                      className='flex items-center justify-center space-x-2'
+                      data-tour='quantity-section'
+                      className='flex items-center justify-center space-x-2 flex-shrink-0'
                       initial={{ scale: 0.9, opacity: 0 }}
                       animate={{ scale: 1, opacity: 1 }}
                       transition={{
@@ -834,12 +866,13 @@ const Dashboard: React.FC = () => {
                         initial='idle'
                         whileHover='hover'
                         whileTap='tap'
+                        style={{ width: 'fit-content' }}
                       >
                         <Button
                           variant='outline'
                           size='icon'
                           onClick={handleDecrement}
-                          className='h-12 w-12 rounded-none transition-all duration-200'
+                          className='h-12 w-12 rounded-none transition-all duration-200 flex-shrink-0'
                         >
                           <MinusCircle className='h-6 w-6' />
                         </Button>
@@ -852,8 +885,9 @@ const Dashboard: React.FC = () => {
                           type: 'spring',
                           stiffness: 400,
                         }}
+                        style={{ flex: '0 0 auto' }}
                       >
-                        <Badge className='px-4 py-2 text-base rounded-none'>
+                        <Badge className='px-4 py-2 text-base rounded-none whitespace-nowrap'>
                           {quantity}
                         </Badge>
                       </motion.div>
@@ -862,12 +896,13 @@ const Dashboard: React.FC = () => {
                         initial='idle'
                         whileHover='hover'
                         whileTap='tap'
+                        style={{ width: 'fit-content' }}
                       >
                         <Button
                           variant='outline'
                           size='icon'
                           onClick={handleIncrement}
-                          className='h-12 w-12 rounded-none transition-all duration-200'
+                          className='h-12 w-12 rounded-none transition-all duration-200 flex-shrink-0'
                         >
                           <PlusCircle className='h-6 w-6' />
                         </Button>
@@ -875,15 +910,17 @@ const Dashboard: React.FC = () => {
                     </motion.div>
 
                     <motion.div
+                      data-tour='confirm-changes'
                       initial={{ opacity: 0, x: 20 }}
                       animate={{ opacity: 1, x: 0 }}
                       transition={{ delay: 0.2, duration: 0.3 }}
                       whileHover={{ scale: 1.02 }}
                       whileTap={{ scale: 0.98 }}
+                      style={{ flex: 1, minWidth: 0 }}
                     >
                       <Button
                         variant='default'
-                        className='flex items-center justify-center px-4 py-3 text-sm rounded-none transition-all duration-200 min-w-[140px] max-w-[180px] w-full'
+                        className='w-full flex items-center justify-center px-8 py-4 text-base rounded-none transition-all duration-200'
                         onClick={handleAddToCart}
                       >
                         CONFIRM CHANGES
@@ -901,13 +938,13 @@ const Dashboard: React.FC = () => {
                   >
                     {/* --- Price Section --- */}
                     <motion.div
-                      className='flex flex-col'
+                      className='flex flex-col flex-shrink-0'
                       initial={{ opacity: 0, x: -20 }}
                       animate={{ opacity: 1, x: 0 }}
                       transition={{ delay: 0.1, duration: 0.3 }}
                     >
                       <motion.span
-                        className='text-xl font-semibold'
+                        className='text-xl font-semibold whitespace-nowrap'
                         initial={{ scale: 0.9 }}
                         animate={{ scale: 1 }}
                         transition={{
@@ -922,7 +959,7 @@ const Dashboard: React.FC = () => {
                       {selectedSize &&
                         selectedSize.actual_price > selectedSize.sell_price && (
                           <motion.div
-                            className='text-sm'
+                            className='text-sm whitespace-nowrap'
                             initial={{ opacity: 0 }}
                             animate={{ opacity: 1 }}
                             transition={{ delay: 0.2, duration: 0.3 }}
@@ -948,18 +985,25 @@ const Dashboard: React.FC = () => {
 
                     {/* --- Apply Button --- */}
                     <motion.div
+                      data-tour='apply-changes'
                       initial={{ opacity: 0, x: 20 }}
                       animate={{ opacity: 1, x: 0 }}
                       transition={{ delay: 0.1, duration: 0.3 }}
                       whileHover={{ scale: 1.02 }}
                       whileTap={{ scale: 0.98 }}
+                      style={{ flex: 1, minWidth: 0 }}
                     >
                       <Button
                         variant='default'
-                        className='px-6 py-2 rounded-none whitespace-nowrap transition-all duration-200'
+                        className='w-full px-6 py-2 rounded-none whitespace-nowrap transition-all duration-200'
                         onClick={() => {
                           applyPendingChanges();
-                          setSelectedView('room' as any);
+
+                          if (
+                            selectedView === 'crop' ||
+                            selectedView === 'optimization'
+                          )
+                            setSelectedView('room');
                           setSelectedFeature(null);
                         }}
                       >
