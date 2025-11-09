@@ -49,18 +49,15 @@ const FeaturePanel = () => {
       className={`absolute inset-0 transition-transform duration-300 ease-in-out ${
         selectedFeature ? 'translate-x-0' : '-translate-x-full'
       } bg-gray-50 flex flex-col h-full`}
-      data-tour='feature-panel'
     >
       {/* Header */}
       <div className='relative flex items-center p-4 flex-shrink-0'>
         <ChevronLeft
           className='h-4 w-4 text-gray-600 cursor-pointer'
           onClick={handleGoBack}
-          data-tour='feature-back-btn'
         />
         <h3
           className={`absolute left-1/2 transform -translate-x-1/2 text-lg font-bold text-center whitespace-nowrap px-2`}
-          data-tour='feature-title'
         >
           {selectedFeature.name}
         </h3>

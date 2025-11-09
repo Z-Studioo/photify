@@ -29,7 +29,6 @@ import { useUpload } from '@/context/UploadContext';
 import { useView } from '@/context/ViewContext';
 import ImageCropper from '@/components/shared/common/ImageCropper';
 import { useEdge } from '@/context/EdgeContext';
-import { useNextStep } from 'nextstepjs';
 import { useGlobalReset } from '@/hooks/useGlobalReset';
 import OptimizationView from '@/components/shared/dashboard/OptimizationView';
 import { useMutation } from '@tanstack/react-query';
@@ -52,19 +51,6 @@ const Dashboard: React.FC = () => {
   const [customWalls, setCustomWalls] = useState<string[]>([]);
   const wallImageInputRef = useRef<HTMLInputElement>(null);
   const { selectedFeature, setSelectedFeature } = useFeature();
-
-  const { startNextStep } = useNextStep();
-
-  const TOUR_COMPLETED_KEY = 'dashboard-tour-completed';
-
-  useEffect(() => {
-    const hasCompletedTour = localStorage.getItem(TOUR_COMPLETED_KEY);
-
-    if (!hasCompletedTour) {
-      startNextStep('dashboard-tour');
-      localStorage.setItem(TOUR_COMPLETED_KEY, 'true');
-    }
-  }, [startNextStep]);
 
   const { resetAll } = useGlobalReset();
 
@@ -394,7 +380,6 @@ const Dashboard: React.FC = () => {
               >
                 {/* Add Image Button */}
                 <motion.button
-                  data-tour='add-image-btn'
                   onClick={handleAddImageClick}
                   className={`flex flex-col items-center justify-center px-2 py-2 md:px-2 md:py-2 bg-[var(--primary)] border border-gray-300 text-white hover:transition-all cursor-pointer shadow-sm pointer-events-auto flex-shrink-0 ${
                     selectedView !== 'room'
@@ -424,7 +409,6 @@ const Dashboard: React.FC = () => {
                 >
                   <div className='flex border border-gray-300 divide-x divide-gray-300'>
                     <motion.button
-                      data-tour='room-view-btn'
                       onClick={() => {
                         setSelectedView('room');
                         setSelectedFeature(null); // Close any open feature panel
@@ -459,7 +443,6 @@ const Dashboard: React.FC = () => {
                       <span className='hidden md:inline ml-1'>Room View</span>
                     </motion.button>
                     <motion.button
-                      data-tour='3d-view-btn'
                       onClick={() => {
                         setSelectedView('3d');
                         setSelectedFeature(null); // Close any open feature panel
@@ -583,10 +566,10 @@ const Dashboard: React.FC = () => {
                   transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
                 >
                   {/* Scrollable features list */}
+                  {/* Scrollable features list */}
                   <div className='flex-1 min-h-0 overflow-hidden'>
                     <ScrollArea className='h-full'>
                       <motion.div
-                        data-tour='features-list'
                         className='space-y-0'
                         initial='hidden'
                         animate='visible'
@@ -605,9 +588,6 @@ const Dashboard: React.FC = () => {
                             variants={listItemVariants}
                           >
                             <motion.div
-                              data-tour={`feature-${item.name
-                                .toLowerCase()
-                                .replace(/\s+/g, '-')}`}
                               className={`flex items-center justify-between p-4 md:p-6 relative overflow-hidden group ${
                                 selectedFeature?.id === item.id
                                   ? 'bg-blue-50 border-l-4 border-primary'
@@ -850,7 +830,6 @@ const Dashboard: React.FC = () => {
                     className='flex items-center justify-between gap-3 w-full'
                   >
                     <motion.div
-                      data-tour='quantity-section'
                       className='flex items-center justify-center space-x-2 flex-shrink-0'
                       initial={{ scale: 0.9, opacity: 0 }}
                       animate={{ scale: 1, opacity: 1 }}
@@ -910,7 +889,6 @@ const Dashboard: React.FC = () => {
                     </motion.div>
 
                     <motion.div
-                      data-tour='confirm-changes'
                       initial={{ opacity: 0, x: 20 }}
                       animate={{ opacity: 1, x: 0 }}
                       transition={{ delay: 0.2, duration: 0.3 }}
@@ -985,7 +963,6 @@ const Dashboard: React.FC = () => {
 
                     {/* --- Apply Button --- */}
                     <motion.div
-                      data-tour='apply-changes'
                       initial={{ opacity: 0, x: 20 }}
                       animate={{ opacity: 1, x: 0 }}
                       transition={{ delay: 0.1, duration: 0.3 }}

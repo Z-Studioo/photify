@@ -8,18 +8,15 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { CircleQuestionMark } from 'lucide-react';
 import { useView } from '@/context/ViewContext';
-import { useNextStep } from 'nextstepjs';
 import { useFeature } from '@/context/dashboard/FeatureContext';
 
 const Navbar = () => {
-  const { startNextStep } = useNextStep();
   const { setSelectedFeature } = useFeature();
   const { setSelectedView } = useView();
 
   const handleStartTour = () => {
     setSelectedFeature(null);
     setSelectedView('room');
-    startNextStep('dashboard-tour');
   };
 
   return (
@@ -34,7 +31,6 @@ const Navbar = () => {
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <motion.div
-              data-tour='info-menu-label'
               whileHover={{ scale: 1.03 }}
               whileTap={{ scale: 0.98 }}
               className='absolute flex items-center text-sm md:text-base font-medium text-gray-700 cursor-pointer select-none right-2 md:right-8 lg:right-14'
