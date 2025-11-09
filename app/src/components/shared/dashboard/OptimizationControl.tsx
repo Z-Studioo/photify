@@ -13,14 +13,21 @@ const OptimizationControl: React.FC = () => {
     file,
     setPendingFile,
     quality,
-    setQuality,
+    pendingQuality,
+    setPendingQuality,
     pendingPreview,
   } = useUpload();
   const [isProcessing, setIsProcessing] = useState(false);
 
+  // Use pending quality for slider if it exists, otherwise use current
+  const displayQuality = pendingQuality || quality;
+
   useEffect(() => {
     setSelectedView('optimization');
-  }, [setSelectedView]);
+    // Always sync pending quality with actual quality when component mounts
+    setPendingQuality(quality);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   useEffect(() => {
     const basePreview = originalPreview || preview;
@@ -77,12 +84,12 @@ const OptimizationControl: React.FC = () => {
   useEffect(() => {
     // Use original preview as the base for optimization
     const basePreview = originalPreview || preview;
-    if (!basePreview) return;
+    if (!basePreview || !pendingQuality) return;
 
     const handler = setTimeout(async () => {
       try {
         setIsProcessing(true);
-        const enhanced = await enhanceImageWithCanvas(basePreview, quality[0]);
+        const enhanced = await enhanceImageWithCanvas(basePreview, pendingQuality[0]);
         setPendingPreview(enhanced);
         setPendingFile(file);
       } catch (error) {
@@ -95,7 +102,7 @@ const OptimizationControl: React.FC = () => {
 
     return () => clearTimeout(handler);
   }, [
-    quality,
+    pendingQuality,
     originalPreview,
     preview,
     setPendingPreview,
@@ -111,7 +118,7 @@ const OptimizationControl: React.FC = () => {
             Quality
           </Label>
           <span className='text-sm font-semibold text-primary'>
-            {quality[0]}%
+            {displayQuality[0]}%
           </span>
         </div>
 
@@ -120,8 +127,8 @@ const OptimizationControl: React.FC = () => {
           min={1}
           max={100}
           step={1}
-          value={quality}
-          onValueChange={setQuality}
+          value={displayQuality}
+          onValueChange={setPendingQuality}
           className='w-full'
           disabled={isProcessing}
         />

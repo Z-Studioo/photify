@@ -15,25 +15,34 @@ interface TourGuideProps {
   onSkip?: () => void;
 }
 
+const TOUR_STORAGE_KEY = 'dashboard-tour-completed';
+const TOUR_SHOW_DELAY = 1000;
+
 const TourGuide: React.FC<TourGuideProps> = ({ steps, onComplete, onSkip }) => {
   const [currentStep, setCurrentStep] = useState(0);
   const [isVisible, setIsVisible] = useState(false);
 
   useEffect(() => {
-    const tourCompleted = localStorage.getItem('dashboard-tour-completed');
+    const tourCompleted = localStorage.getItem(TOUR_STORAGE_KEY);
     if (!tourCompleted && steps.length > 0) {
       const timer = setTimeout(() => {
         setIsVisible(true);
-      }, 1000);
+      }, TOUR_SHOW_DELAY);
       return () => clearTimeout(timer);
     }
   }, [steps.length]);
+
+  const closeTour = () => {
+    setIsVisible(false);
+    localStorage.setItem(TOUR_STORAGE_KEY, 'true');
+  };
 
   const handleNext = () => {
     if (currentStep < steps.length - 1) {
       setCurrentStep(prev => prev + 1);
     } else {
-      handleComplete();
+      closeTour();
+      onComplete?.();
     }
   };
 
@@ -44,21 +53,16 @@ const TourGuide: React.FC<TourGuideProps> = ({ steps, onComplete, onSkip }) => {
   };
 
   const handleSkip = () => {
-    setIsVisible(false);
-    localStorage.setItem('dashboard-tour-completed', 'true');
+    closeTour();
     onSkip?.();
-  };
-
-  const handleComplete = () => {
-    setIsVisible(false);
-    localStorage.setItem('dashboard-tour-completed', 'true');
-    onComplete?.();
   };
 
   if (!isVisible || steps.length === 0) return null;
 
   const currentStepData = steps[currentStep];
   const progress = ((currentStep + 1) / steps.length) * 100;
+  const isLastStep = currentStep === steps.length - 1;
+  const isFirstStep = currentStep === 0;
 
   return (
     <AnimatePresence>
@@ -78,7 +82,6 @@ const TourGuide: React.FC<TourGuideProps> = ({ steps, onComplete, onSkip }) => {
           <div className='h-1 bg-gray-100 relative overflow-hidden'>
             <motion.div
               className='absolute inset-y-0 left-0 bg-primary'
-              initial={{ width: 0 }}
               animate={{ width: `${progress}%` }}
               transition={{ duration: 0.3 }}
             />
@@ -102,6 +105,7 @@ const TourGuide: React.FC<TourGuideProps> = ({ steps, onComplete, onSkip }) => {
                 onClick={handleSkip}
                 className='text-gray-400 hover:text-gray-600 transition-colors p-1 hover:bg-gray-100 rounded'
                 aria-label='Close tour'
+                type='button'
               >
                 <X className='h-5 w-5' />
               </button>
@@ -128,7 +132,7 @@ const TourGuide: React.FC<TourGuideProps> = ({ steps, onComplete, onSkip }) => {
                   variant='outline'
                   size='sm'
                   onClick={handlePrevious}
-                  disabled={currentStep === 0}
+                  disabled={isFirstStep}
                   className='disabled:opacity-50 disabled:cursor-not-allowed'
                 >
                   <ChevronLeft className='h-4 w-4 mr-1' />
@@ -140,7 +144,7 @@ const TourGuide: React.FC<TourGuideProps> = ({ steps, onComplete, onSkip }) => {
                   onClick={handleNext}
                   className='bg-primary hover:bg-primary/90'
                 >
-                  {currentStep === steps.length - 1 ? (
+                  {isLastStep ? (
                     'Finish'
                   ) : (
                     <>
@@ -155,20 +159,26 @@ const TourGuide: React.FC<TourGuideProps> = ({ steps, onComplete, onSkip }) => {
 
           {/* Step indicators */}
           <div className='flex items-center justify-center gap-1.5 px-6 pb-4'>
-            {steps.map((step, index) => (
-              <button
-                key={step.id}
-                onClick={() => setCurrentStep(index)}
-                className={`h-1.5 rounded-full transition-all ${
-                  index === currentStep
-                    ? 'w-8 bg-primary'
-                    : index < currentStep
-                      ? 'w-1.5 bg-primary/50'
-                      : 'w-1.5 bg-gray-300'
-                }`}
-                aria-label={`Go to step ${index + 1}`}
-              />
-            ))}
+            {steps.map((step, index) => {
+              const isActive = index === currentStep;
+              const isCompleted = index < currentStep;
+
+              return (
+                <button
+                  key={step.id}
+                  onClick={() => setCurrentStep(index)}
+                  className={`h-1.5 rounded-full transition-all ${
+                    isActive
+                      ? 'w-8 bg-primary'
+                      : isCompleted
+                        ? 'w-1.5 bg-primary/50'
+                        : 'w-1.5 bg-gray-300'
+                  }`}
+                  aria-label={`Go to step ${index + 1}`}
+                  type='button'
+                />
+              );
+            })}
           </div>
         </div>
       </motion.div>

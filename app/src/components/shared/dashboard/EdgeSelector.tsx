@@ -28,55 +28,66 @@ const edgeOptions: EdgeOption[] = [
 ];
 
 const EdgeSelector = () => {
-  const { edgeType, setEdgeType } = useEdge();
+  const { edgeType, setEdgeType, pendingEdgeType, setPendingEdgeType } =
+    useEdge();
   const { setSelectedView } = useView();
 
+  const displayEdgeType = pendingEdgeType || edgeType;
+
   useEffect(() => {
-    // Only set 3D view on initial mount, not on every render
     setSelectedView('3d');
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []); // Empty dependency array - only runs once on mount
+
+    setPendingEdgeType(edgeType);
+  }, []);
 
   const handleSetEdgeType = (type: EdgeType) => {
+    setPendingEdgeType(type);
+
     setEdgeType(type);
-    // Don't force 3D view when changing edge type - let user stay in current view
   };
+
   return (
     <div className='space-y-4'>
       <div className='grid grid-cols-1 gap-3'>
         {edgeOptions.map(option => (
           <motion.div
             key={option.type}
-            className={`relative p-4 border-2 rounded-lg cursor-pointer transition-all duration-200 ${
-              edgeType === option.type
+            className={`relative p-4 border-2 rounded-lg cursor-pointer ${
+              displayEdgeType === option.type
                 ? 'border-primary bg-primary/5'
                 : 'border-gray-200 hover:border-gray-300'
             }`}
             onClick={() => handleSetEdgeType(option.type)}
-            whileHover={{ scale: 1.02 }}
-            whileTap={{ scale: 0.98 }}
+            whileHover={{
+              scale: 1.02,
+              transition: { duration: 0.2, ease: [0.4, 0, 0.2, 1] },
+            }}
+            whileTap={{
+              scale: 0.98,
+              transition: { duration: 0.1 },
+            }}
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
           >
             {/* Selection indicator */}
             <motion.div
-              className={`absolute top-3 right-3 w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all duration-200 ${
-                edgeType === option.type
+              className={`absolute top-3 right-3 w-6 h-6 rounded-full border-2 flex items-center justify-center ${
+                displayEdgeType === option.type
                   ? 'border-primary bg-primary'
                   : 'border-gray-300'
               }`}
               initial={false}
               animate={{
-                scale: edgeType === option.type ? 1.1 : 1,
+                scale: displayEdgeType === option.type ? 1.1 : 1,
               }}
               transition={{ type: 'spring', stiffness: 300, damping: 20 }}
             >
               <motion.div
                 initial={{ scale: 0, opacity: 0 }}
                 animate={{
-                  scale: edgeType === option.type ? 1 : 0,
-                  opacity: edgeType === option.type ? 1 : 0,
+                  scale: displayEdgeType === option.type ? 1 : 0,
+                  opacity: displayEdgeType === option.type ? 1 : 0,
                 }}
                 transition={{ duration: 0.2 }}
               >
@@ -87,13 +98,14 @@ const EdgeSelector = () => {
             <div className='flex items-start space-x-3'>
               <motion.div
                 className={`p-2 rounded-lg transition-colors duration-200 ${
-                  edgeType === option.type
+                  displayEdgeType === option.type
                     ? 'bg-primary/10 text-primary'
                     : 'bg-gray-100 text-gray-600'
                 }`}
                 whileHover={{
                   scale: 1.05,
                   rotate: 2,
+                  transition: { duration: 0.2 },
                 }}
                 transition={{ type: 'spring', stiffness: 300, damping: 20 }}
               >
@@ -103,12 +115,16 @@ const EdgeSelector = () => {
               <div className='flex-1'>
                 <motion.h3
                   className={`font-semibold text-sm transition-colors duration-200 ${
-                    edgeType === option.type ? 'text-primary' : 'text-gray-900'
+                    displayEdgeType === option.type
+                      ? 'text-primary'
+                      : 'text-gray-900'
                   }`}
                   initial={false}
                   animate={{
                     color:
-                      edgeType === option.type ? 'var(--primary)' : '#111827',
+                      displayEdgeType === option.type
+                        ? 'var(--primary)'
+                        : '#111827',
                   }}
                 >
                   {option.label}
@@ -131,7 +147,7 @@ const EdgeSelector = () => {
       >
         <h4 className='text-sm font-semibold text-gray-700 mb-2'>Preview</h4>
         <div className='text-xs text-gray-600'>
-          {edgeType === 'wrapped'
+          {displayEdgeType === 'wrapped'
             ? 'Your image will extend around the frame edges, creating a gallery-wrapped effect with no visible borders.'
             : 'The edges of your image will be mirrored to create a seamless continuation, eliminating any white borders.'}
         </div>

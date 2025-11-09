@@ -1,39 +1,37 @@
 import type React from 'react';
 import { useState, useRef, useEffect } from 'react';
-import {
-  Box,
-  Eye,
-  ChevronRight,
-  PlusCircle,
-  MinusCircle,
-  ChevronLeft,
-  ImagePlus,
-  RefreshCw,
-  Package,
-} from 'lucide-react';
+import { ChevronRight, RefreshCw, Package } from 'lucide-react';
 import { motion, AnimatePresence, type Variants } from 'motion/react';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import Navbar from '@/components/shared/dashboard/Navbar';
+import { useMutation } from '@tanstack/react-query';
+
 import Wall from '@/assets/images/wall.jpg';
 import Wall1 from '@/assets/images/wall1.jpg';
 import Wall2 from '@/assets/images/wall2.jpg';
-import featuresBase from '@/constants/dashboard/index';
-import { useFeature } from '@/context/dashboard/FeatureContext';
-import FeaturePanel from '@/components/shared/dashboard/FeaturePanel';
 
-import ThreeDCanvas from '@/components/shared/dashboard/ThreeDCanvas';
-import RoomFrame3D from '@/components/shared/dashboard/RoomFrame3D';
+import featuresBase from '@/constants/dashboard/index';
+import { dashboardTourSteps } from '@/constants/dashboard/tourSteps';
+
+import { useFeature } from '@/context/dashboard/FeatureContext';
 import { useUpload } from '@/context/UploadContext';
 import { useView } from '@/context/ViewContext';
-import ImageCropper from '@/components/shared/common/ImageCropper';
 import { useEdge } from '@/context/EdgeContext';
+
 import { useGlobalReset } from '@/hooks/useGlobalReset';
-import OptimizationView from '@/components/shared/dashboard/OptimizationView';
-import { useMutation } from '@tanstack/react-query';
+import { useWallCarousel } from '@/hooks/useWallCarousel';
+
 import TourGuide from '@/components/shared/dashboard/TourGuide';
-import { dashboardTourSteps } from '@/constants/dashboard/tourSteps';
+import { Button } from '@/components/ui/button';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import Navbar from '@/components/shared/dashboard/Navbar';
+import FeaturePanel from '@/components/shared/dashboard/FeaturePanel';
+import ThreeDCanvas from '@/components/shared/dashboard/ThreeDCanvas';
+import RoomFrame3D from '@/components/shared/dashboard/RoomFrame3D';
+import ImageCropper from '@/components/shared/common/ImageCropper';
+import OptimizationView from '@/components/shared/dashboard/OptimizationView';
+import WallCarousel from '@/components/shared/dashboard/WallCarousel';
+import ViewControls from '@/components/shared/dashboard/ViewControls';
+import QuantityControl from '@/components/shared/dashboard/QuantityControl';
+import ApplyChangesControl from '@/components/shared/dashboard/ApplyChangesControl';
 
 interface MenuFeature {
   id: number;
@@ -46,15 +44,21 @@ interface MenuFeature {
 
 const Dashboard: React.FC = () => {
   const [quantity, setQuantity] = useState<number>(1);
-  const [currentWallIndex, setCurrentWallIndex] = useState<number>(0);
-  const [slideDirection, setSlideDirection] = useState<'left' | 'right'>(
-    'right'
-  );
-  const [customWalls, setCustomWalls] = useState<string[]>([]);
   const wallImageInputRef = useRef<HTMLInputElement>(null);
   const { selectedFeature, setSelectedFeature } = useFeature();
 
   const { resetAll } = useGlobalReset();
+
+  // Use wall carousel hook
+  const {
+    currentWallIndex,
+    slideDirection,
+    wallImages,
+    handlePreviousWall: handlePrevWall,
+    handleNextWall: handleNext,
+    handleSelectIndex,
+    addCustomWall,
+  } = useWallCarousel({ defaultWalls: [Wall, Wall1, Wall2] });
 
   // Fix for mobile viewport height issues
   useEffect(() => {
@@ -88,22 +92,6 @@ const Dashboard: React.FC = () => {
     exit: { opacity: 0, x: -20, transition: { duration: 0.2 } },
   };
 
-  const slideVariants: Variants = {
-    enter: (direction: 'left' | 'right') => ({
-      x: direction === 'right' ? '100%' : '-100%',
-    }),
-    center: { x: 0 },
-    exit: (direction: 'left' | 'right') => ({
-      x: direction === 'right' ? '-100%' : '100%',
-    }),
-  };
-
-  const buttonVariants = {
-    idle: { scale: 1 },
-    hover: { scale: 1.02 },
-    tap: { scale: 0.98 },
-  };
-
   const {
     shape,
     setFile,
@@ -114,24 +102,8 @@ const Dashboard: React.FC = () => {
     quality,
   } = useUpload();
   const { selectedView, setSelectedView } = useView();
-  const { edgeType } = useEdge();
+  const { edgeType, applyPendingEdgeType } = useEdge();
   const pricePerItem: number = selectedSize?.sell_price || 100;
-
-  const wallImages = [...[Wall, Wall1, Wall2], ...customWalls];
-
-  const handlePreviousWall = () => {
-    setSlideDirection('left');
-    setCurrentWallIndex(prev =>
-      prev === 0 ? wallImages.length - 1 : prev - 1
-    );
-  };
-
-  const handleNextWall = () => {
-    setSlideDirection('right');
-    setCurrentWallIndex(prev =>
-      prev === wallImages.length - 1 ? 0 : prev + 1
-    );
-  };
 
   const features = featuresBase.map(feature => {
     if (feature.name === 'ROUND FORMATS AND SHAPES') {
@@ -185,9 +157,7 @@ const Dashboard: React.FC = () => {
     const f = e.target.files?.[0];
     if (f) {
       const imageUrl = URL.createObjectURL(f);
-      setCustomWalls(prev => [...prev, imageUrl]);
-      setCurrentWallIndex(wallImages.length);
-      setSlideDirection('right');
+      addCustomWall(imageUrl);
     }
   };
 
@@ -197,13 +167,16 @@ const Dashboard: React.FC = () => {
 
   // Fix: Use type assertion to handle the view types properly
   const isEditingView =
-    selectedView === ('crop' as any) ||
-    selectedView === ('optimization' as any);
+    selectedView === 'crop' || selectedView === 'optimization';
 
   const { mutateAsync, isPending } = useMutation({
     mutationFn: resetAll,
-    onError: err => console.error('Reset failed:', err),
-    onSuccess: () => console.log('Reset complete'),
+    onError: () => {
+      // Reset failed - could add error handling here
+    },
+    onSuccess: () => {
+      // Reset complete
+    },
   });
 
   return (
@@ -233,28 +206,14 @@ const Dashboard: React.FC = () => {
                     : 'opacity-0 scale-95 pointer-events-none'
                 }`}
               >
-                {/* Sliding Background Container - Full size for room context */}
-                <div className='relative w-full h-full overflow-hidden'>
-                  <AnimatePresence mode='wait' custom={slideDirection}>
-                    <motion.img
-                      key={currentWallIndex}
-                      src={wallImages[currentWallIndex]}
-                      alt='Room'
-                      className='w-full h-full object-cover'
-                      custom={slideDirection}
-                      variants={slideVariants}
-                      initial='enter'
-                      animate='center'
-                      exit='exit'
-                      transition={{
-                        type: 'spring',
-                        stiffness: 300,
-                        damping: 30,
-                        duration: 0.6,
-                      }}
-                    />
-                  </AnimatePresence>
-                </div>
+                <WallCarousel
+                  images={wallImages}
+                  currentIndex={currentWallIndex}
+                  slideDirection={slideDirection}
+                  onPrevious={handlePrevWall}
+                  onNext={handleNext}
+                  onSelectIndex={handleSelectIndex}
+                />
 
                 {/* Room Frame positioned properly within the room */}
                 <div
@@ -265,89 +224,6 @@ const Dashboard: React.FC = () => {
                 >
                   <RoomFrame3D onInteraction={() => setSelectedView('3d')} />
                 </div>
-
-                {/* Left Arrow */}
-                <motion.button
-                  onClick={handlePreviousWall}
-                  className='cursor-pointer absolute left-4 top-1/2 -translate-y-1/2 
-             bg-white/80 hover:bg-white 
-             p-2 sm:p-3 rounded-full shadow-lg transition-all z-10'
-                  type='button'
-                  initial={{ opacity: 0, x: -20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: 0.6, duration: 0.3 }}
-                  whileHover={{
-                    scale: 1.05,
-                    backgroundColor: 'rgba(255, 255, 255, 1)',
-                    boxShadow:
-                      '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)',
-                  }}
-                  whileTap={{ scale: 0.95 }}
-                >
-                  <motion.div
-                    whileHover={{ x: -2 }}
-                    transition={{ type: 'spring', stiffness: 400, damping: 10 }}
-                  >
-                    <ChevronLeft className='h-4 w-4 sm:h-6 sm:w-6 text-gray-800' />
-                  </motion.div>
-                </motion.button>
-
-                {/* Right Arrow */}
-                <motion.button
-                  onClick={handleNextWall}
-                  className='cursor-pointer absolute right-4 top-1/2 -translate-y-1/2 
-             bg-white/80 hover:bg-white 
-             p-2 sm:p-3 rounded-full shadow-lg transition-all z-10'
-                  type='button'
-                  initial={{ opacity: 0, x: 20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: 0.6, duration: 0.3 }}
-                  whileHover={{
-                    scale: 1.05,
-                    backgroundColor: 'rgba(255, 255, 255, 1)',
-                    boxShadow:
-                      '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)',
-                  }}
-                  whileTap={{ scale: 0.95 }}
-                >
-                  <motion.div
-                    whileHover={{ x: 2 }}
-                    transition={{ type: 'spring', stiffness: 400, damping: 10 }}
-                  >
-                    <ChevronRight className='h-4 w-4 sm:h-6 sm:w-6 text-gray-800' />
-                  </motion.div>
-                </motion.button>
-
-                {/* Wall Indicator Dots */}
-                <motion.div
-                  className='absolute bottom-3 left-1/2 -translate-x-1/2 flex space-x-1 sm:space-x-1.5 z-10'
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.8, duration: 0.3 }}
-                >
-                  {wallImages.map((_, index) => (
-                    <motion.button
-                      key={_}
-                      onClick={() => {
-                        setSlideDirection(
-                          index > currentWallIndex ? 'right' : 'left'
-                        );
-                        setCurrentWallIndex(index);
-                      }}
-                      className={`w-1 h-1 sm:w-1.5 sm:h-1.5 rounded-full transition-all duration-300 ${
-                        index === currentWallIndex
-                          ? 'bg-white shadow-md'
-                          : 'bg-white/50 hover:bg-white/75'
-                      }`}
-                      whileHover={{ scale: 1.3 }}
-                      whileTap={{ scale: 0.9 }}
-                      animate={{
-                        scale: index === currentWallIndex ? 1.3 : 1,
-                        opacity: index === currentWallIndex ? 1 : 0.6,
-                      }}
-                    />
-                  ))}
-                </motion.div>
               </div>
 
               {/* 3D View */}
@@ -376,111 +252,14 @@ const Dashboard: React.FC = () => {
               </div>
 
               {/* Top overlay buttons */}
-              <div
-                className='fixed flex justify-between items-start md:w-9/12 top-16 md:top-18 md:px-4 pointer-events-none z-20'
-                style={{ pointerEvents: 'none' }}
-              >
-                {/* Add Image Button */}
-                <motion.button
-                  onClick={handleAddImageClick}
-                  className={`flex flex-col items-center justify-center px-2 py-2 md:px-2 md:py-2 bg-[var(--primary)] border border-gray-300 text-white hover:transition-all cursor-pointer shadow-sm pointer-events-auto flex-shrink-0 ${
-                    selectedView !== 'room'
-                      ? 'invisible pointer-events-none'
-                      : 'pointer-events-auto'
-                  }`}
-                  type='button'
-                  whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.98 }}
-                >
-                  <ImagePlus className='h-4 w-4 md:h-5 md:w-5 m-0 md:mb-1' />
-                  <span className='text-sm font-medium hidden md:inline'>
-                    Add Image
-                  </span>
-                </motion.button>
-
-                {/* Room + 3D View buttons */}
-                <motion.div
-                  className='fixed flex gap-2 pointer-events-auto right-0 md:right-2'
-                  initial={{ opacity: 0, scale: 0.9 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  transition={{
-                    delay: 0.5,
-                    duration: 0.3,
-                    ease: [0.22, 1, 0.36, 1],
-                  }}
-                >
-                  <div className='flex border border-gray-300 divide-x divide-gray-300'>
-                    <motion.button
-                      onClick={() => {
-                        setSelectedView('room');
-                        setSelectedFeature(null); // Close any open feature panel
-                      }}
-                      className={`flex items-center justify-center px-2 py-2 md:px-5 md:py-3 text-xs md:text-sm font-medium rounded-none cursor-pointer transition-all flex-shrink-0 whitespace-nowrap ${
-                        selectedView === 'room'
-                          ? 'bg-primary text-white'
-                          : 'bg-white text-gray-700 hover:bg-gray-100'
-                      }`}
-                      type='button'
-                      whileHover={{ scale: 1.02 }}
-                      whileTap={{ scale: 0.98 }}
-                    >
-                      <motion.div
-                        animate={{
-                          rotate: selectedView === 'room' ? 360 : 0,
-                          scale: selectedView === 'room' ? 1.1 : 1,
-                        }}
-                        transition={{
-                          rotate: { duration: 0.3, ease: [0.22, 1, 0.36, 1] },
-                          scale: { duration: 0.2 },
-                        }}
-                        style={{
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          flexShrink: 0,
-                        }}
-                      >
-                        <Eye className='h-4 w-4 md:h-5 md:w-5' />
-                      </motion.div>
-                      <span className='hidden md:inline ml-1'>Room View</span>
-                    </motion.button>
-                    <motion.button
-                      onClick={() => {
-                        setSelectedView('3d');
-                        setSelectedFeature(null); // Close any open feature panel
-                      }}
-                      className={`flex items-center justify-center px-2 py-2 md:px-5 md:py-3 text-xs md:text-sm font-medium rounded-none cursor-pointer transition-all flex-shrink-0 whitespace-nowrap ${
-                        selectedView === '3d'
-                          ? 'bg-primary text-white'
-                          : 'bg-white text-gray-700 hover:bg-gray-100'
-                      }`}
-                      type='button'
-                      whileHover={{ scale: 1.02 }}
-                      whileTap={{ scale: 0.98 }}
-                    >
-                      <motion.div
-                        animate={{
-                          rotateY: selectedView === '3d' ? 360 : 0,
-                          scale: selectedView === '3d' ? 1.1 : 1,
-                        }}
-                        transition={{
-                          rotateY: { duration: 0.3, ease: [0.22, 1, 0.36, 1] },
-                          scale: { duration: 0.2 },
-                        }}
-                        style={{
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          flexShrink: 0,
-                        }}
-                      >
-                        <Box className='h-4 w-4 md:h-5 md:w-5' />
-                      </motion.div>
-                      <span className='hidden md:inline ml-1'>3D View</span>
-                    </motion.button>
-                  </div>
-                </motion.div>
-              </div>
+              <ViewControls
+                selectedView={selectedView}
+                onViewChange={view => {
+                  setSelectedView(view);
+                  setSelectedFeature(null);
+                }}
+                onAddImage={handleAddImageClick}
+              />
             </>
           )}
         </div>
@@ -603,9 +382,24 @@ const Dashboard: React.FC = () => {
                                 !item.disabled && handleFeatureClick(item)
                               }
                               whileHover={
-                                !item.disabled ? { scale: 1.002 } : {}
+                                !item.disabled
+                                  ? {
+                                      scale: 1.005,
+                                      transition: {
+                                        duration: 0.2,
+                                        ease: [0.4, 0, 0.2, 1],
+                                      },
+                                    }
+                                  : {}
                               }
-                              whileTap={!item.disabled ? { scale: 0.998 } : {}}
+                              whileTap={
+                                !item.disabled
+                                  ? {
+                                      scale: 0.995,
+                                      transition: { duration: 0.1 },
+                                    }
+                                  : {}
+                              }
                               transition={{
                                 type: 'spring',
                                 stiffness: 400,
@@ -669,17 +463,21 @@ const Dashboard: React.FC = () => {
                                   whileHover={
                                     !item.disabled
                                       ? {
-                                          rotate: 5,
-                                          scale: 1.1,
+                                          rotate: 8,
+                                          scale: 1.15,
                                           filter:
-                                            'drop-shadow(0 2px 8px rgba(var(--primary-rgb, 59, 130, 246), 0.3))',
+                                            'drop-shadow(0 4px 12px rgba(var(--primary-rgb, 59, 130, 246), 0.4))',
+                                          transition: {
+                                            duration: 0.2,
+                                            ease: [0.4, 0, 0.2, 1],
+                                          },
                                         }
                                       : {}
                                   }
                                   transition={{
                                     type: 'spring',
-                                    stiffness: 400,
-                                    damping: 10,
+                                    stiffness: 300,
+                                    damping: 15,
                                   }}
                                 >
                                   <item.icon
@@ -746,15 +544,19 @@ const Dashboard: React.FC = () => {
                                 <motion.div
                                   className='relative z-10'
                                   whileHover={{
-                                    x: 4,
-                                    scale: 1.1,
+                                    x: 6,
+                                    scale: 1.2,
                                     filter:
-                                      'drop-shadow(0 2px 6px rgba(var(--primary-rgb, 59, 130, 246), 0.25))',
+                                      'drop-shadow(0 4px 10px rgba(var(--primary-rgb, 59, 130, 246), 0.3))',
+                                    transition: {
+                                      duration: 0.2,
+                                      ease: [0.4, 0, 0.2, 1],
+                                    },
                                   }}
                                   transition={{
                                     type: 'spring',
-                                    stiffness: 400,
-                                    damping: 10,
+                                    stiffness: 300,
+                                    damping: 15,
                                   }}
                                 >
                                   <ChevronRight className='h-4 w-4 text-gray-400 flex-shrink-0 cursor-pointer transition-all duration-300 group-hover:text-primary' />
@@ -823,173 +625,28 @@ const Dashboard: React.FC = () => {
             >
               <AnimatePresence mode='wait'>
                 {!selectedFeature ? (
-                  <motion.div
-                    key='default-actions'
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -20 }}
-                    transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
-                    className='flex items-center justify-between gap-3 w-full'
-                  >
-                    <motion.div
-                      className='flex items-center justify-center space-x-2 flex-shrink-0'
-                      initial={{ scale: 0.9, opacity: 0 }}
-                      animate={{ scale: 1, opacity: 1 }}
-                      transition={{
-                        delay: 0.1,
-                        duration: 0.3,
-                        type: 'spring',
-                        stiffness: 300,
-                      }}
-                    >
-                      <motion.div
-                        variants={buttonVariants}
-                        initial='idle'
-                        whileHover='hover'
-                        whileTap='tap'
-                        style={{ width: 'fit-content' }}
-                      >
-                        <Button
-                          variant='outline'
-                          size='icon'
-                          onClick={handleDecrement}
-                          className='h-12 w-12 rounded-none transition-all duration-200 flex-shrink-0'
-                        >
-                          <MinusCircle className='h-6 w-6' />
-                        </Button>
-                      </motion.div>
-                      <motion.div
-                        initial={{ scale: 0.8 }}
-                        animate={{ scale: 1 }}
-                        transition={{
-                          delay: 0.15,
-                          type: 'spring',
-                          stiffness: 400,
-                        }}
-                        style={{ flex: '0 0 auto' }}
-                      >
-                        <Badge className='px-4 py-2 text-base rounded-none whitespace-nowrap'>
-                          {quantity}
-                        </Badge>
-                      </motion.div>
-                      <motion.div
-                        variants={buttonVariants}
-                        initial='idle'
-                        whileHover='hover'
-                        whileTap='tap'
-                        style={{ width: 'fit-content' }}
-                      >
-                        <Button
-                          variant='outline'
-                          size='icon'
-                          onClick={handleIncrement}
-                          className='h-12 w-12 rounded-none transition-all duration-200 flex-shrink-0'
-                        >
-                          <PlusCircle className='h-6 w-6' />
-                        </Button>
-                      </motion.div>
-                    </motion.div>
-
-                    <motion.div
-                      initial={{ opacity: 0, x: 20 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      transition={{ delay: 0.2, duration: 0.3 }}
-                      whileHover={{ scale: 1.02 }}
-                      whileTap={{ scale: 0.98 }}
-                      style={{ flex: 1, minWidth: 0 }}
-                    >
-                      <Button
-                        variant='default'
-                        className='w-full flex items-center justify-center px-8 py-4 text-base rounded-none transition-all duration-200'
-                        onClick={handleAddToCart}
-                      >
-                        CONFIRM CHANGES
-                      </Button>
-                    </motion.div>
-                  </motion.div>
+                  <QuantityControl
+                    quantity={quantity}
+                    onIncrement={handleIncrement}
+                    onDecrement={handleDecrement}
+                    onConfirm={handleAddToCart}
+                  />
                 ) : (
-                  <motion.div
-                    key='feature-actions'
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -20 }}
-                    transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
-                    className='flex items-center justify-between gap-3 w-full'
-                  >
-                    {/* --- Price Section --- */}
-                    <motion.div
-                      className='flex flex-col flex-shrink-0'
-                      initial={{ opacity: 0, x: -20 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      transition={{ delay: 0.1, duration: 0.3 }}
-                    >
-                      <motion.span
-                        className='text-xl font-semibold whitespace-nowrap'
-                        initial={{ scale: 0.9 }}
-                        animate={{ scale: 1 }}
-                        transition={{
-                          delay: 0.15,
-                          type: 'spring',
-                          stiffness: 300,
-                        }}
-                      >
-                        ${(pricePerItem * quantity).toFixed(2)}
-                      </motion.span>
-
-                      {selectedSize &&
-                        selectedSize.actual_price > selectedSize.sell_price && (
-                          <motion.div
-                            className='text-sm whitespace-nowrap'
-                            initial={{ opacity: 0 }}
-                            animate={{ opacity: 1 }}
-                            transition={{ delay: 0.2, duration: 0.3 }}
-                          >
-                            <span className='line-through text-gray-500'>
-                              $
-                              {(selectedSize.actual_price * quantity).toFixed(
-                                2
-                              )}
-                            </span>
-                            <span className='ml-2 text-green-600 font-medium'>
-                              {Math.round(
-                                ((selectedSize.actual_price -
-                                  selectedSize.sell_price) /
-                                  selectedSize.actual_price) *
-                                  100
-                              )}
-                              % OFF
-                            </span>
-                          </motion.div>
-                        )}
-                    </motion.div>
-
-                    {/* --- Apply Button --- */}
-                    <motion.div
-                      initial={{ opacity: 0, x: 20 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      transition={{ delay: 0.1, duration: 0.3 }}
-                      whileHover={{ scale: 1.02 }}
-                      whileTap={{ scale: 0.98 }}
-                      style={{ flex: 1, minWidth: 0 }}
-                    >
-                      <Button
-                        variant='default'
-                        className='w-full px-6 py-2 rounded-none whitespace-nowrap transition-all duration-200'
-                        onClick={() => {
-                          applyPendingChanges();
-
-                          if (
-                            selectedView === 'crop' ||
-                            selectedView === 'optimization'
-                          )
-                            setSelectedView('room');
-                          setSelectedFeature(null);
-                        }}
-                      >
-                        Apply Changes
-                      </Button>
-                    </motion.div>
-                  </motion.div>
+                  <ApplyChangesControl
+                    pricePerItem={pricePerItem}
+                    quantity={quantity}
+                    selectedSize={selectedSize}
+                    onApply={() => {
+                      applyPendingChanges();
+                      applyPendingEdgeType();
+                      if (
+                        selectedView === 'crop' ||
+                        selectedView === 'optimization'
+                      )
+                        setSelectedView('room');
+                      setSelectedFeature(null);
+                    }}
+                  />
                 )}
               </AnimatePresence>
             </motion.div>
@@ -1054,7 +711,8 @@ const Dashboard: React.FC = () => {
                   className='px-6 py-2 rounded-none whitespace-nowrap transition-all duration-200'
                   onClick={() => {
                     applyPendingChanges();
-                    setSelectedView('room' as any);
+                    applyPendingEdgeType();
+                    setSelectedView('room');
                     setSelectedFeature(null);
                     if (selectedFeature?.name === 'SIDE APPEARANCE')
                       setSelectedView('room');
