@@ -7,19 +7,16 @@ import Dashboard from '@/pages/dashboard/index';
 import UploadImage from './pages';
 import { BrowserRouter, Route, Routes } from 'react-router';
 import CropPage from '@/pages/crop';
-import { NextStepProvider, NextStepReact } from 'nextstepjs';
-import { dashboardSteps } from './utils/steps';
 
-import { QueryClient,QueryClientProvider } from '@tanstack/react-query'
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 
-const queryClient = new QueryClient()
+const queryClient = new QueryClient();
 
 const App: React.FC = () => {
   return (
     <QueryClientProvider client={queryClient}>
-    <BrowserRouter>
-      <UploadProvider>
-        <NextStepProvider>
+      <BrowserRouter>
+        <UploadProvider>
           <Routes>
             <Route
               path='/dashboard'
@@ -27,23 +24,7 @@ const App: React.FC = () => {
                 <FeatureProvider>
                   <ViewProvider>
                     <EdgeProvider>
-                      <NextStepReact
-                        steps={dashboardSteps}
-                        cardTransition={{
-                          duration: 0.3,
-                          type: 'spring',
-                        }}
-                        onComplete={tourId => {
-                          // When welcome tour completes, automatically start main tour
-                          if (tourId === 'welcome') {
-                            setTimeout(() => {
-                              // NextStepJS will automatically move to next tour
-                            }, 100);
-                          }
-                        }}
-                      >
-                        <Dashboard />
-                      </NextStepReact>
+                      <Dashboard />
                     </EdgeProvider>
                   </ViewProvider>
                 </FeatureProvider>
@@ -59,9 +40,8 @@ const App: React.FC = () => {
               }
             />
           </Routes>
-        </NextStepProvider>
-      </UploadProvider>
-    </BrowserRouter>
+        </UploadProvider>
+      </BrowserRouter>
     </QueryClientProvider>
   );
 };
