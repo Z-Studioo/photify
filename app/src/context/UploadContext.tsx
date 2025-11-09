@@ -54,9 +54,18 @@ interface UploadContextType {
   setSelectedRatio: (r: string | null) => void;
   selectedSize: SizeData | null;
   setSelectedSize: (s: SizeData | null) => void;
+  committedRatio: string | null;
+  committedSize: SizeData | null;
+  pendingRatio: string | null;
+  setPendingRatio: (r: string | null) => void;
+  pendingSize: SizeData | null;
+  setPendingSize: (s: SizeData | null) => void;
   quality: number[];
   setQuality: (q: number[]) => void;
+  pendingQuality: number[] | null;
+  setPendingQuality: (q: number[]) => void;
   applyPendingChanges: () => void;
+  cancelPendingCropChanges: () => void;
   reset: () => Promise<void>;
 }
 
@@ -72,6 +81,10 @@ export const UploadProvider = ({ children }: { children: React.ReactNode }) => {
   const [pendingPreview, setPendingPreview] = useState<string | null>(null);
   const [selectedRatio, setSelectedRatio] = useState<string | null>(null);
   const [selectedSize, setSelectedSize] = useState<SizeData | null>(null);
+  const [committedRatio, setCommittedRatio] = useState<string | null>(null);
+  const [committedSize, setCommittedSize] = useState<SizeData | null>(null);
+  const [pendingRatio, setPendingRatio] = useState<string | null>(null);
+  const [pendingSize, setPendingSize] = useState<SizeData | null>(null);
   const [quality, setQuality] = useState<number[]>(() => {
     if (typeof window !== 'undefined') {
       try {
@@ -82,10 +95,13 @@ export const UploadProvider = ({ children }: { children: React.ReactNode }) => {
             return meta.quality;
           }
         }
-      } catch {}
+      } catch {
+        // Ignore errors
+      }
     }
     return [70];
   });
+  const [pendingQuality, setPendingQuality] = useState<number[] | null>(null);
 
   // === React Query hooks ===
   const { refetch: refetchRatios } = useQuery({
@@ -188,8 +204,14 @@ export const UploadProvider = ({ children }: { children: React.ReactNode }) => {
         if (storedMeta) {
           const meta: Metadata = JSON.parse(storedMeta);
           console.log("meta is  ", meta)
-          if (meta.selectedRatio) setSelectedRatio(meta.selectedRatio);
-          if (meta.selectedSize) setSelectedSize(meta.selectedSize);
+          if (meta.selectedRatio) {
+            setSelectedRatio(meta.selectedRatio);
+            setCommittedRatio(meta.selectedRatio);
+          }
+          if (meta.selectedSize) {
+            setSelectedSize(meta.selectedSize);
+            setCommittedSize(meta.selectedSize);
+          }
           if (meta.shape) setShape(meta.shape);
         }
       } catch {
@@ -223,6 +245,25 @@ export const UploadProvider = ({ children }: { children: React.ReactNode }) => {
 
   // === Apply pending changes ===
   const applyPendingChanges = async () => {
+    // Apply pending ratio and size if exists
+    if (pendingRatio) {
+      setSelectedRatio(pendingRatio);
+      setCommittedRatio(pendingRatio);
+      setPendingRatio(null);
+    }
+    if (pendingSize) {
+      setSelectedSize(pendingSize);
+      setCommittedSize(pendingSize);
+      setPendingSize(null);
+    }
+
+    // Apply pending quality if exists
+    if (pendingQuality) {
+      setQuality(pendingQuality);
+      setPendingQuality(null);
+    }
+
+    // Apply pending file and preview
     if (pendingFile && pendingPreview) {
       setFile(pendingFile);
       setPreview(pendingPreview);
@@ -231,6 +272,19 @@ export const UploadProvider = ({ children }: { children: React.ReactNode }) => {
       setPendingFile(null);
       setPendingPreview(null);
     }
+  };
+
+  // === Cancel pending crop changes ===
+  const cancelPendingCropChanges = () => {
+    // Revert to the last committed crop values
+    if (committedRatio !== null) {
+      setSelectedRatio(committedRatio);
+    }
+    if (committedSize !== null) {
+      setSelectedSize(committedSize);
+    }
+    setPendingRatio(null);
+    setPendingSize(null);
   };
 
   // === Reset ===
@@ -256,11 +310,15 @@ export const UploadProvider = ({ children }: { children: React.ReactNode }) => {
       if (defaultRatio && smallest) {
         setSelectedRatio(defaultRatio.ratio);
         setSelectedSize(smallest);
+        setCommittedRatio(defaultRatio.ratio);
+        setCommittedSize(smallest);
       }
     }
 
     setPendingFile(null);
     setPendingPreview(null);
+    setPendingRatio(null);
+    setPendingSize(null);
     setShape('rectangle');
     setQuality([70]);
 
@@ -292,10 +350,19 @@ export const UploadProvider = ({ children }: { children: React.ReactNode }) => {
         setSelectedRatio,
         selectedSize,
         setSelectedSize,
+        committedRatio,
+        committedSize,
+        pendingRatio,
+        setPendingRatio,
+        pendingSize,
+        setPendingSize,
         applyPendingChanges,
+        cancelPendingCropChanges,
         reset,
         quality,
         setQuality,
+        pendingQuality,
+        setPendingQuality,
       }}
     >
       {children}

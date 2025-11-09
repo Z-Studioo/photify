@@ -5,10 +5,18 @@ import RatioSizePanel from '@/components/shared/dashboard/RatioSizePanel';
 import EdgeSelector from './EdgeSelector';
 import { useView } from '@/context/ViewContext';
 import OptimizationControl from './OptimizationControl';
+import { useEdge } from '@/context/EdgeContext';
+import { useUpload } from '@/context/UploadContext';
 
 const FeaturePanel = () => {
   const { selectedFeature, setSelectedFeature } = useFeature();
   const { selectedView, setSelectedView } = useView();
+  const { cancelPendingEdgeType } = useEdge();
+  const { 
+    quality, 
+    setPendingQuality,
+    cancelPendingCropChanges
+  } = useUpload();
 
   if (!selectedFeature) return null;
 
@@ -35,10 +43,25 @@ const FeaturePanel = () => {
   };
 
   const handleGoBack = () => {
+    // Cancel pending changes when going back without applying
+    if (selectedFeature?.name === 'SIDE APPEARANCE') {
+      cancelPendingEdgeType();
+    }
+    
+    if (selectedFeature?.name === 'IMAGE OPTIMIZATION') {
+      // Reset pending quality to match actual quality
+      setPendingQuality(quality);
+    }
+
+    if (selectedFeature?.name === 'IMAGE SIZE AND CROP PHOTO') {
+      // Revert to committed crop values
+      cancelPendingCropChanges();
+    }
+
     if (
       selectedView === 'crop' ||
       selectedView === 'optimization' ||
-      selectedFeature.name === 'SIDE APPEARANCE'
+      selectedFeature?.name === 'SIDE APPEARANCE'
     )
       setSelectedView('room');
     setSelectedFeature(null);
