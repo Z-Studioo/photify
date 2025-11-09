@@ -32,6 +32,8 @@ import { useEdge } from '@/context/EdgeContext';
 import { useGlobalReset } from '@/hooks/useGlobalReset';
 import OptimizationView from '@/components/shared/dashboard/OptimizationView';
 import { useMutation } from '@tanstack/react-query';
+import TourGuide from '@/components/shared/dashboard/TourGuide';
+import { dashboardTourSteps } from '@/constants/dashboard/tourSteps';
 
 interface MenuFeature {
   id: number;
@@ -1080,6 +1082,9 @@ const Dashboard: React.FC = () => {
         className='hidden'
         onChange={handleWallImageUpload}
       />
+
+      {/* Tour Guide */}
+      <TourGuide steps={dashboardTourSteps} />
     </div>
   );
 };

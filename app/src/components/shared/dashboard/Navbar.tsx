@@ -17,6 +17,9 @@ const Navbar = () => {
   const handleStartTour = () => {
     setSelectedFeature(null);
     setSelectedView('room');
+    
+    localStorage.removeItem('dashboard-tour-completed');
+    window.location.reload();
   };
 
   return (
