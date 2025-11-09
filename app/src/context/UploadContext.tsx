@@ -10,6 +10,8 @@ export type CanvasShape =
   | 'octagon'
   | 'dodecagon';
 
+export type EdgeType = 'wrapped' | 'mirrored';
+
 export interface SizeData {
   _id: string;
   width: number;
@@ -36,6 +38,7 @@ interface Metadata {
   selectedSize?: SizeData | null;
   shape?: CanvasShape;
   quality?: number[] | null;
+  edgeType?: EdgeType;
 }
 
 interface UploadContextType {
@@ -64,6 +67,10 @@ interface UploadContextType {
   setQuality: (q: number[]) => void;
   pendingQuality: number[] | null;
   setPendingQuality: (q: number[]) => void;
+  edgeType: EdgeType;
+  setEdgeType: (type: EdgeType) => void;
+  pendingEdgeType: EdgeType | null;
+  setPendingEdgeType: (type: EdgeType) => void;
   applyPendingChanges: () => void;
   cancelPendingCropChanges: () => void;
   reset: () => Promise<void>;
@@ -102,6 +109,25 @@ export const UploadProvider = ({ children }: { children: React.ReactNode }) => {
     return [70];
   });
   const [pendingQuality, setPendingQuality] = useState<number[] | null>(null);
+  
+  // Edge type state
+  const [edgeType, setEdgeType] = useState<EdgeType>(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        const storedMeta = localStorage.getItem('photify_metadata');
+        if (storedMeta) {
+          const meta: Metadata = JSON.parse(storedMeta);
+          if (meta.edgeType === 'wrapped' || meta.edgeType === 'mirrored') {
+            return meta.edgeType;
+          }
+        }
+      } catch {
+        // Ignore errors
+      }
+    }
+    return 'wrapped';
+  });
+  const [pendingEdgeType, setPendingEdgeType] = useState<EdgeType | null>(null);
 
   // === React Query hooks ===
   const { refetch: refetchRatios } = useQuery({
@@ -213,6 +239,7 @@ export const UploadProvider = ({ children }: { children: React.ReactNode }) => {
             setCommittedSize(meta.selectedSize);
           }
           if (meta.shape) setShape(meta.shape);
+          if (meta.edgeType) setEdgeType(meta.edgeType);
         }
       } catch {
         localStorage.removeItem('photify_metadata');
@@ -240,8 +267,8 @@ export const UploadProvider = ({ children }: { children: React.ReactNode }) => {
   // === Auto-persist metadata ===
   useEffect(() => {
     if(!selectedRatio || !selectedSize || !shape || !quality.length) return;
-    persistMetadata({ selectedRatio, selectedSize, shape, quality });
-  }, [selectedRatio, selectedSize, shape, quality]);
+    persistMetadata({ selectedRatio, selectedSize, shape, quality, edgeType });
+  }, [selectedRatio, selectedSize, shape, quality, edgeType]);
 
   // === Apply pending changes ===
   const applyPendingChanges = async () => {
@@ -261,6 +288,12 @@ export const UploadProvider = ({ children }: { children: React.ReactNode }) => {
     if (pendingQuality) {
       setQuality(pendingQuality);
       setPendingQuality(null);
+    }
+
+    // Apply pending edge type if exists
+    if (pendingEdgeType) {
+      setEdgeType(pendingEdgeType);
+      setPendingEdgeType(null);
     }
 
     // Apply pending file and preview
@@ -319,8 +352,10 @@ export const UploadProvider = ({ children }: { children: React.ReactNode }) => {
     setPendingPreview(null);
     setPendingRatio(null);
     setPendingSize(null);
+    setPendingEdgeType(null);
     setShape('rectangle');
     setQuality([70]);
+    setEdgeType('wrapped');
 
     if (file) {
       const base64 = await fileToBase64(file);
@@ -363,6 +398,10 @@ export const UploadProvider = ({ children }: { children: React.ReactNode }) => {
         setQuality,
         pendingQuality,
         setPendingQuality,
+        edgeType,
+        setEdgeType,
+        pendingEdgeType,
+        setPendingEdgeType,
       }}
     >
       {children}

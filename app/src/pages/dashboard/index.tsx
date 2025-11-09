@@ -185,13 +185,14 @@ const Dashboard: React.FC = () => {
       <div className='flex-1 w-full flex flex-col md:flex-row-reverse gap-0 overflow-hidden'>
         {/* Main content area */}
         <div
-          className={`
-          ${isEditingView ? 'w-full h-full' : 'md:w-3/4 w-full'} 
-          relative 
-          ${isEditingView ? 'h-full' : 'h-64 md:h-full'} 
-          overflow-hidden
-        `}
-        >
+  className={`
+    relative 
+    overflow-hidden 
+    w-full 
+    ${isEditingView ? 'h-full' : 'h-64 md:h-full'} 
+   md:w-3/4
+  `}
+>
           {selectedView === 'crop' && <ImageCropper isVisible={true} />}
           {selectedView === 'optimization' && (
             <OptimizationView isVisible={true} />
@@ -637,15 +638,12 @@ const Dashboard: React.FC = () => {
                     quantity={quantity}
                     selectedSize={selectedSize}
                     onApply={() => {
-                      applyPendingChanges();
-                      applyPendingEdgeType();
-                      if (
-                        selectedView === 'crop' ||
-                        selectedView === 'optimization'
-                      )
-                        setSelectedView('room');
-                      setSelectedFeature(null);
-                    }}
+  applyPendingChanges();
+  applyPendingEdgeType(); // This applies the pending edge type
+  if (selectedView === 'crop' || selectedView === 'optimization')
+    setSelectedView('room');
+  setSelectedFeature(null);
+}}
                   />
                 )}
               </AnimatePresence>
