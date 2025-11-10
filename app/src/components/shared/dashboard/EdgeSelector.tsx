@@ -28,22 +28,21 @@ const edgeOptions: EdgeOption[] = [
 ];
 
 const EdgeSelector = () => {
-  const { edgeType, setEdgeType, pendingEdgeType, setPendingEdgeType } =
-    useEdge();
+  const { edgeType, setEdgeType, setPendingEdgeType, pendingEdgeType } = useEdge();
   const { setSelectedView } = useView();
 
+  // Use pendingEdgeType for display if available, otherwise use current edgeType
   const displayEdgeType = pendingEdgeType || edgeType;
 
   useEffect(() => {
     setSelectedView('3d');
-
-    setPendingEdgeType(edgeType);
   }, []);
 
   const handleSetEdgeType = (type: EdgeType) => {
     setPendingEdgeType(type);
-
+    // Also update actual edgeType for real-time preview
     setEdgeType(type);
+    // If user cancels, cancelPendingEdgeType() will revert this
   };
 
   return (

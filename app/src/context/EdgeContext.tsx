@@ -14,16 +14,18 @@ interface EdgeContextType {
 }
 
 const EdgeContext = createContext<EdgeContextType | undefined>(undefined);
-const EDGE_STORAGE_KEY = 'photify_edge_type';
 
 export const EdgeProvider = ({ children }: { children: ReactNode }) => {
-  // Initialize from localStorage
+  // Initialize from localStorage metadata
   const [edgeType, setEdgeType] = useState<EdgeType>(() => {
     if (typeof window !== 'undefined') {
       try {
-        const stored = localStorage.getItem(EDGE_STORAGE_KEY);
-        if (stored === 'wrapped' || stored === 'mirrored') {
-          return stored;
+        const storedMeta = localStorage.getItem('photify_metadata');
+        if (storedMeta) {
+          const meta = JSON.parse(storedMeta);
+          if (meta.edgeType === 'wrapped' || meta.edgeType === 'mirrored') {
+            return meta.edgeType;
+          }
         }
       } catch {
         // Ignore errors
@@ -35,17 +37,25 @@ export const EdgeProvider = ({ children }: { children: ReactNode }) => {
   const [pendingEdgeType, setPendingEdgeType] = useState<EdgeType | null>(null);
   const [committedEdgeType, setCommittedEdgeType] = useState<EdgeType>(edgeType);
 
-  // Persist to localStorage whenever edgeType changes
+  // Persist to localStorage metadata whenever edgeType changes
   useEffect(() => {
     if (typeof window !== 'undefined') {
       try {
-        localStorage.setItem(EDGE_STORAGE_KEY, edgeType);
+        const storedMeta = localStorage.getItem('photify_metadata');
+        const currentMeta = storedMeta ? JSON.parse(storedMeta) : {};
+        
+        const updatedMeta = {
+          ...currentMeta,
+          edgeType: edgeType
+        };
+        
+        localStorage.setItem('photify_metadata', JSON.stringify(updatedMeta));
       } catch {
         // Ignore errors
       }
     }
   }, [edgeType]);
-  
+
   const applyPendingEdgeType = () => {
     if (pendingEdgeType) {
       setEdgeType(pendingEdgeType);

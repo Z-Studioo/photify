@@ -18,7 +18,8 @@ const OptimizationView: React.FC<OptimizationViewProps> = ({ isVisible }) => {
     originalPreview,
     pendingPreview,
     quality,
-    setQuality,
+    pendingQuality,
+    setPendingQuality,
     setPendingPreview,
     file,
     setPendingFile,
@@ -26,6 +27,9 @@ const OptimizationView: React.FC<OptimizationViewProps> = ({ isVisible }) => {
   const { setSelectedView } = useView();
   const { setSelectedFeature } = useFeature();
   const [isProcessing, setIsProcessing] = useState(false);
+
+  // Use pending quality for slider if it exists, otherwise use current
+  const displayQuality = pendingQuality || quality;
 
   // Enhancement function
   const enhanceImageWithCanvas = async (
@@ -73,15 +77,15 @@ const OptimizationView: React.FC<OptimizationViewProps> = ({ isVisible }) => {
     });
   };
 
-  // Process optimization when quality changes
+  // Process optimization when pending quality changes
   useEffect(() => {
     const basePreview = originalPreview || preview;
-    if (!basePreview) return;
+    if (!basePreview || !pendingQuality) return;
 
     const handler = setTimeout(async () => {
       try {
         setIsProcessing(true);
-        const enhanced = await enhanceImageWithCanvas(basePreview, quality[0]);
+        const enhanced = await enhanceImageWithCanvas(basePreview, pendingQuality[0]);
         setPendingPreview(enhanced);
         setPendingFile(file);
       } catch (error) {
@@ -93,7 +97,7 @@ const OptimizationView: React.FC<OptimizationViewProps> = ({ isVisible }) => {
     }, 800);
 
     return () => clearTimeout(handler);
-  }, [quality, originalPreview, preview, setPendingPreview, file, setPendingFile]);
+  }, [pendingQuality, originalPreview, preview, setPendingPreview, file, setPendingFile]);
 
   const handleGoBack = () => {
     setSelectedView('room');
@@ -154,7 +158,7 @@ const OptimizationView: React.FC<OptimizationViewProps> = ({ isVisible }) => {
                 Quality
               </Label>
               <span className='text-sm font-semibold text-primary'>
-                {quality[0]}%
+                {displayQuality[0]}%
               </span>
             </div>
 
@@ -163,8 +167,8 @@ const OptimizationView: React.FC<OptimizationViewProps> = ({ isVisible }) => {
               min={1}
               max={100}
               step={1}
-              value={quality}
-              onValueChange={setQuality}
+              value={displayQuality}
+              onValueChange={setPendingQuality} // Use setPendingQuality instead of setQuality
               className='w-full'
               disabled={isProcessing}
             />
