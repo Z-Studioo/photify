@@ -28,7 +28,7 @@ const edgeOptions: EdgeOption[] = [
 ];
 
 const EdgeSelector = () => {
-  const { edgeType, setPendingEdgeType, pendingEdgeType } = useEdge();
+  const { edgeType, setEdgeType, setPendingEdgeType, pendingEdgeType } = useEdge();
   const { setSelectedView } = useView();
 
   // Use pendingEdgeType for display if available, otherwise use current edgeType
@@ -40,7 +40,9 @@ const EdgeSelector = () => {
 
   const handleSetEdgeType = (type: EdgeType) => {
     setPendingEdgeType(type);
-    // Don't apply immediately - wait for Apply Changes button
+    // Also update actual edgeType for real-time preview
+    setEdgeType(type);
+    // If user cancels, cancelPendingEdgeType() will revert this
   };
 
   return (
