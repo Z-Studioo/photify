@@ -39,6 +39,7 @@ interface Metadata {
   shape?: CanvasShape;
   quality?: number[] | null;
   edgeType?: EdgeType;
+  quantity?: number;
 }
 
 interface UploadContextType {
@@ -71,6 +72,10 @@ interface UploadContextType {
   setEdgeType: (type: EdgeType) => void;
   pendingEdgeType: EdgeType | null;
   setPendingEdgeType: (type: EdgeType) => void;
+  quantity: number;
+  setQuantity: (q: number) => void;
+  pendingQuantity: number | null;
+  setPendingQuantity: (q: number) => void;
   applyPendingChanges: () => void;
   cancelPendingCropChanges: () => void;
   reset: () => Promise<void>;
@@ -128,6 +133,25 @@ export const UploadProvider = ({ children }: { children: React.ReactNode }) => {
     return 'wrapped';
   });
   const [pendingEdgeType, setPendingEdgeType] = useState<EdgeType | null>(null);
+
+  // Quantity state
+  const [quantity, setQuantity] = useState<number>(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        const storedMeta = localStorage.getItem('photify_metadata');
+        if (storedMeta) {
+          const meta: Metadata = JSON.parse(storedMeta);
+          if (typeof meta.quantity === 'number' && meta.quantity > 0) {
+            return meta.quantity;
+          }
+        }
+      } catch {
+        // Ignore errors
+      }
+    }
+    return 1;
+  });
+  const [pendingQuantity, setPendingQuantity] = useState<number | null>(null);
 
   // === React Query hooks ===
   const { refetch: refetchRatios } = useQuery({
@@ -229,7 +253,7 @@ export const UploadProvider = ({ children }: { children: React.ReactNode }) => {
         const storedMeta = localStorage.getItem('photify_metadata');
         if (storedMeta) {
           const meta: Metadata = JSON.parse(storedMeta);
-          console.log("meta is  ", meta)
+          console.log("Restored metadata: ", meta);
           if (meta.selectedRatio) {
             setSelectedRatio(meta.selectedRatio);
             setCommittedRatio(meta.selectedRatio);
@@ -240,6 +264,9 @@ export const UploadProvider = ({ children }: { children: React.ReactNode }) => {
           }
           if (meta.shape) setShape(meta.shape);
           if (meta.edgeType) setEdgeType(meta.edgeType);
+          if (typeof meta.quantity === 'number' && meta.quantity > 0) {
+            setQuantity(meta.quantity);
+          }
         }
       } catch {
         localStorage.removeItem('photify_metadata');
@@ -267,8 +294,15 @@ export const UploadProvider = ({ children }: { children: React.ReactNode }) => {
   // === Auto-persist metadata ===
   useEffect(() => {
     if(!selectedRatio || !selectedSize || !shape || !quality.length) return;
-    persistMetadata({ selectedRatio, selectedSize, shape, quality, edgeType });
-  }, [selectedRatio, selectedSize, shape, quality, edgeType]);
+    persistMetadata({ 
+      selectedRatio, 
+      selectedSize, 
+      shape, 
+      quality, 
+      edgeType,
+      quantity 
+    });
+  }, [selectedRatio, selectedSize, shape, quality, edgeType, quantity]);
 
   // === Apply pending changes ===
   const applyPendingChanges = async () => {
@@ -294,6 +328,12 @@ export const UploadProvider = ({ children }: { children: React.ReactNode }) => {
     if (pendingEdgeType) {
       setEdgeType(pendingEdgeType);
       setPendingEdgeType(null);
+    }
+
+    // Apply pending quantity if exists
+    if (pendingQuantity !== null) {
+      setQuantity(pendingQuantity);
+      setPendingQuantity(null);
     }
 
     // Apply pending file and preview
@@ -353,9 +393,11 @@ export const UploadProvider = ({ children }: { children: React.ReactNode }) => {
     setPendingRatio(null);
     setPendingSize(null);
     setPendingEdgeType(null);
+    setPendingQuantity(null);
     setShape('rectangle');
     setQuality([70]);
     setEdgeType('wrapped');
+    setQuantity(1);
 
     if (file) {
       const base64 = await fileToBase64(file);
@@ -402,6 +444,10 @@ export const UploadProvider = ({ children }: { children: React.ReactNode }) => {
         setEdgeType,
         pendingEdgeType,
         setPendingEdgeType,
+        quantity,
+        setQuantity,
+        pendingQuantity,
+        setPendingQuantity,
       }}
     >
       {children}
