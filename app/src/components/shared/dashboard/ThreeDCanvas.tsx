@@ -1,13 +1,14 @@
 /* eslint-disable */
 // @ts-nocheck
 
-import { Canvas } from '@react-three/fiber';
+import { Canvas, useLoader } from '@react-three/fiber';
 import { OrbitControls, ContactShadows } from '@react-three/drei';
 import { Suspense, useRef, useState, useEffect, useMemo } from 'react';
 import * as THREE from 'three';
 import { useUpload, type CanvasShape } from '@/context/UploadContext';
 import { useEdge } from '@/context/EdgeContext';
 import type { OrbitControls as OrbitControlsImpl } from 'three-stdlib';
+import backpanel from '@/assets/images/backpanel.png';
 
 interface ThreeDCanvasProps {
   isVisible: boolean;
@@ -25,6 +26,19 @@ const Frame3D = ({
   edgeType: 'wrapped' | 'mirrored';
 }) => {
   const [texture, setTexture] = useState<THREE.Texture | null>(null);
+  const backTexture = useLoader(THREE.TextureLoader, backpanel as string);
+  useEffect(() => {
+    if (backTexture) {
+      if ('colorSpace' in backTexture) {
+        (backTexture as any).colorSpace = THREE.SRGBColorSpace;
+      } else {
+        (backTexture as any).encoding =
+          THREE.sRGBEncoding || THREE.sRGBColorSpace;
+      }
+      backTexture.needsUpdate = true;
+    }
+  }, [backTexture]);
+
   const { selectedSize } = useUpload();
 
   useEffect(() => {
@@ -195,7 +209,7 @@ const Frame3D = ({
     return (
       <group castShadow receiveShadow>
         <mesh position={[0, 0, -frameDepth / 2]} geometry={geometry}>
-          {/* Materials for each face */}
+          {/* front/sides materials (unchanged) */}
           <meshStandardMaterial
             attach='material-0'
             map={texture}
@@ -228,7 +242,12 @@ const Frame3D = ({
             emissiveIntensity={0.12}
           />
 
-          <meshStandardMaterial attach='material-5' color='#333333' />
+          <meshStandardMaterial
+            attach='material-5'
+            map={backTexture}
+            roughness={0.1}
+            metalness={0}
+          />
         </mesh>
       </group>
     );
