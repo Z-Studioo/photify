@@ -162,3 +162,4 @@ const QuantityControl: React.FC<QuantityControlProps> = ({
 };
 
 export default QuantityControl;
+

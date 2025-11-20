@@ -65,3 +65,13 @@ Thumbs.db
 *.njsproj
 *.sln
 *.sw?
+
+# Environment variables - ignore all environment files
+.env
+.env.*
+**/.env
+**/.env.*
+
+# But keep example files for reference
+!.env.example
+!**/.env.example
