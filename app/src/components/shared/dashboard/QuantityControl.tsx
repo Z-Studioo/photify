@@ -3,15 +3,23 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { PlusCircle, MinusCircle, Loader2 } from 'lucide-react';
 import { ConfirmationModal } from '@/components/shared/dashboard/ConfirmModal';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useToast } from '@/components/shared/common/toast';
 
 interface QuantityControlProps {
   quantity: number;
   onIncrement: () => void;
   onDecrement: () => void;
-  onConfirm: () => Promise<void> | void; // Make it accept async
+  onConfirm: () => Promise<void> | void;
   isConfirming?: boolean;
+}
+
+interface Metadata {
+  selectedSize?: {
+    sell_price: number;
+    actual_price: number;
+  };
+  quantity?: number;
 }
 
 const buttonVariants = {
@@ -29,7 +37,51 @@ const QuantityControl: React.FC<QuantityControlProps> = ({
 }) => {
   const [showConfirmation, setShowConfirmation] = useState(false);
   const [localConfirming, setLocalConfirming] = useState(false);
+  const [priceData, setPriceData] = useState<{ sellPrice: number; actualPrice: number }>({ 
+    sellPrice: 0, 
+    actualPrice: 0 
+  });
   const { addToast } = useToast();
+
+  // Get price data from localStorage
+  useEffect(() => {
+    const loadPriceData = () => {
+      try {
+        const metadataStr = localStorage.getItem('photify_metadata');
+        if (metadataStr) {
+          const metadata: Metadata = JSON.parse(metadataStr);
+          const sellPrice = metadata.selectedSize?.sell_price || 0;
+          const actualPrice = metadata.selectedSize?.actual_price || sellPrice;
+          setPriceData({ sellPrice, actualPrice });
+        }
+      } catch (error) {
+        console.error('Error loading price data from localStorage:', error);
+      }
+    };
+
+    loadPriceData();
+
+    // Listen for storage changes to update price in real-time
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key === 'photify_metadata') {
+        loadPriceData();
+      }
+    };
+
+    window.addEventListener('storage', handleStorageChange);
+    return () => window.removeEventListener('storage', handleStorageChange);
+  }, []);
+
+  // Also update when quantity changes
+  useEffect(() => {
+    const metadataStr = localStorage.getItem('photify_metadata');
+    if (metadataStr) {
+      const metadata: Metadata = JSON.parse(metadataStr);
+      const sellPrice = metadata.selectedSize?.sell_price || 0;
+      const actualPrice = metadata.selectedSize?.actual_price || sellPrice;
+      setPriceData({ sellPrice, actualPrice });
+    }
+  }, [quantity]);
 
   const handleConfirmClick = () => {
     setShowConfirmation(true);
@@ -49,6 +101,12 @@ const QuantityControl: React.FC<QuantityControlProps> = ({
   };
 
   const isProcessing = isConfirming || localConfirming;
+  const totalActualPrice = priceData.actualPrice * quantity;
+  const totalSellPrice = priceData.sellPrice * quantity;
+  const hasDiscount = priceData.actualPrice > priceData.sellPrice;
+  const discountPercentage = hasDiscount 
+    ? Math.round(((priceData.actualPrice - priceData.sellPrice) / priceData.actualPrice) * 100)
+    : 0;
 
   return (
     <>
@@ -58,10 +116,11 @@ const QuantityControl: React.FC<QuantityControlProps> = ({
         animate={{ opacity: 1, y: 0 }}
         exit={{ opacity: 0, y: -20 }}
         transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
-        className='flex items-center justify-between gap-3 w-full'
+        className='flex items-end justify-between gap-3 w-full'
       >
+        {/* Quantity Controls - Left Side */}
         <motion.div
-          className='flex items-center justify-center space-x-2 flex-shrink-0'
+          className='flex items-center space-x-1 flex-shrink-0'
           initial={{ scale: 0.9, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
           transition={{
@@ -76,18 +135,18 @@ const QuantityControl: React.FC<QuantityControlProps> = ({
             initial='idle'
             whileHover='hover'
             whileTap='tap'
-            style={{ width: 'fit-content' }}
           >
             <Button
               variant='outline'
               size='icon'
               onClick={onDecrement}
-              className='h-12 w-12 rounded-none transition-all duration-200 flex-shrink-0'
+              className='h-9 w-9 rounded-none transition-all duration-200'
               disabled={isProcessing}
             >
-              <MinusCircle className='h-6 w-6' />
+              <MinusCircle className='h-4 w-4' />
             </Button>
           </motion.div>
+          
           <motion.div
             initial={{ scale: 0.8 }}
             animate={{ scale: 1 }}
@@ -96,54 +155,96 @@ const QuantityControl: React.FC<QuantityControlProps> = ({
               type: 'spring',
               stiffness: 400,
             }}
-            style={{ flex: '0 0 auto' }}
           >
-            <Badge className='px-4 py-2 text-base rounded-none whitespace-nowrap'>
+            <Badge className='px-3 py-1.5 text-sm rounded-none min-w-[45px] justify-center'>
               {quantity}
             </Badge>
           </motion.div>
+          
           <motion.div
             variants={buttonVariants}
             initial='idle'
             whileHover='hover'
             whileTap='tap'
-            style={{ width: 'fit-content' }}
           >
             <Button
               variant='outline'
               size='icon'
               onClick={onIncrement}
-              className='h-12 w-12 rounded-none transition-all duration-200 flex-shrink-0'
+              className='h-9 w-9 rounded-none transition-all duration-200'
               disabled={isProcessing}
             >
-              <PlusCircle className='h-6 w-6' />
+              <PlusCircle className='h-4 w-4' />
             </Button>
           </motion.div>
         </motion.div>
 
+        {/* Price and Confirm Button - Right Side */}
         <motion.div
           initial={{ opacity: 0, x: 20 }}
           animate={{ opacity: 1, x: 0 }}
           transition={{ delay: 0.2, duration: 0.3 }}
-          whileHover={{ scale: isProcessing ? 1 : 1.02 }}
-          whileTap={{ scale: isProcessing ? 1 : 0.98 }}
-          style={{ flex: 1, minWidth: 0 }}
+          className='flex flex-col items-end gap-0 flex-1 min-w-0'
         >
-          <Button
-            variant='default'
-            className='w-full flex items-center justify-center px-8 py-4 text-base rounded-none transition-all duration-200 gap-2'
-            onClick={handleConfirmClick}
-            disabled={isProcessing}
+          {/* Price Display - Very compact stacked layout */}
+          <motion.div
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ delay: 0.3 }}
+            className='w-full text-right mb-0.5'
           >
-            {isProcessing ? (
-              <>
-                <Loader2 className='h-4 w-4 animate-spin' />
-                PLEASE WAIT
-              </>
+            {hasDiscount ? (
+              <div className='flex flex-col items-end -space-y-1'>
+                {/* Top Row: Discount Badge + Final Price */}
+                <div className='flex items-baseline justify-end gap-1'>
+                  <Badge 
+                    variant="secondary" 
+                    className='bg-green-100 text-green-700 text-xs font-medium px-1 py-0'
+                  >
+                    {discountPercentage}% OFF
+                  </Badge>
+                  <span className='text-base font-bold text-gray-900'>
+                    ${totalSellPrice.toFixed(2)}
+                  </span>
+                </div>
+                
+                {/* Bottom Row: Original Price (smaller) with strikethrough */}
+                <div>
+                  <span className='text-xs text-gray-500 line-through leading-tight'>
+                    ${totalActualPrice.toFixed(2)}
+                  </span>
+                </div>
+              </div>
             ) : (
-              'CONFIRM CHANGES'
+              /* No Discount - Show Only Current Price */
+              <span className='text-base font-bold text-gray-900'>
+                ${totalSellPrice.toFixed(2)}
+              </span>
             )}
-          </Button>
+          </motion.div>
+
+          {/* Confirm Button - Below the price */}
+          <motion.div
+            whileHover={{ scale: isProcessing ? 1 : 1.02 }}
+            whileTap={{ scale: isProcessing ? 1 : 0.98 }}
+            className='w-full'
+          >
+            <Button
+              variant='default'
+              className='w-full flex items-center justify-center px-4 py-2 text-sm rounded-none transition-all duration-200 gap-1 whitespace-nowrap'
+              onClick={handleConfirmClick}
+              disabled={isProcessing}
+            >
+              {isProcessing ? (
+                <>
+                  <Loader2 className='h-3 w-3 animate-spin' />
+                  PLEASE WAIT
+                </>
+              ) : (
+                'CONFIRM CHANGES'
+              )}
+            </Button>
+          </motion.div>
         </motion.div>
       </motion.div>
 
@@ -151,9 +252,9 @@ const QuantityControl: React.FC<QuantityControlProps> = ({
         open={showConfirmation}
         onOpenChange={setShowConfirmation}
         onConfirm={handleFinalConfirm}
-        title="Confirm Quantity Change"
-        description={`You are about to proceed the order for ${quantity} canvas`}
-        confirmText={localConfirming ? "Processing..." : "Yes, Confirm"}
+        title="Confirm Order"
+        description={`You are about to place an order for ${quantity} canvas${quantity > 1 ? 'es' : ''} for $${totalSellPrice.toFixed(2)}`}
+        confirmText={localConfirming ? "Processing..." : "Yes, Confirm Order"}
         cancelText="Cancel"
         disabled={localConfirming}
       />
@@ -162,4 +263,3 @@ const QuantityControl: React.FC<QuantityControlProps> = ({
 };
 
 export default QuantityControl;
-
