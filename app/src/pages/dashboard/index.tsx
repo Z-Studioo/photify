@@ -32,6 +32,7 @@ import WallCarousel from '@/components/shared/dashboard/WallCarousel';
 import ViewControls from '@/components/shared/dashboard/ViewControls';
 import QuantityControl from '@/components/shared/dashboard/QuantityControl';
 import ApplyChangesControl from '@/components/shared/dashboard/ApplyChangesControl';
+import { handleConfirmChanges } from '@/utils/uploadHandler'
 
 interface MenuFeature {
   id: number;
@@ -43,9 +44,29 @@ interface MenuFeature {
 }
 
 const Dashboard: React.FC = () => {
-  const [quantity, setQuantity] = useState<number>(1);
   const wallImageInputRef = useRef<HTMLInputElement>(null);
   const { selectedFeature, setSelectedFeature } = useFeature();
+
+  const [isConfirming, setIsConfirming] = useState(false);
+
+  const handleConfirmAndApply = async () => {
+    setIsConfirming(true);
+    try {
+      await handleConfirmChanges();
+      applyPendingChanges();
+      applyPendingEdgeType();
+
+      if (selectedView === 'crop' || selectedView === 'optimization') {
+        setSelectedView('room');
+      }
+      setSelectedFeature(null);
+    } catch (error) {
+      console.error("Failed to confirm changes:", error);
+      // Handle error (show toast, etc.)
+    } finally {
+      setIsConfirming(false);
+    }
+  };
 
   const { resetAll } = useGlobalReset();
 
@@ -93,6 +114,9 @@ const Dashboard: React.FC = () => {
   };
 
   const {
+    quantity,
+    setQuantity,
+    setPendingQuantity,
     shape,
     setFile,
     setPreview,
@@ -135,14 +159,21 @@ const Dashboard: React.FC = () => {
     return feature;
   });
 
-  const handleIncrement = () => setQuantity(q => q + 1);
-  const handleDecrement = () => setQuantity(q => Math.max(1, q - 1));
+  const handleIncrement = () => {
+    const newQuantity = quantity + 1;
+    setQuantity(newQuantity);
+    setPendingQuantity(newQuantity);
+  };
+
+  const handleDecrement = () => {
+    const newQuantity = Math.max(1, quantity - 1);
+    setQuantity(newQuantity);
+    setPendingQuantity(newQuantity);
+  };
 
   const handleFeatureClick = (item: MenuFeature) => {
     setSelectedFeature(selectedFeature?.id === item.id ? null : item);
   };
-
-  const handleAddToCart = () => {};
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const f = e.target.files?.[0];
@@ -185,14 +216,14 @@ const Dashboard: React.FC = () => {
       <div className='flex-1 w-full flex flex-col md:flex-row-reverse gap-0 overflow-hidden'>
         {/* Main content area */}
         <div
-  className={`
+          className={`
     relative 
     overflow-hidden 
     w-full 
     ${isEditingView ? 'h-full' : 'h-64 md:h-full'} 
    md:w-3/4
   `}
->
+        >
           {selectedView === 'crop' && <ImageCropper isVisible={true} />}
           {selectedView === 'optimization' && (
             <OptimizationView isVisible={true} />
@@ -201,11 +232,10 @@ const Dashboard: React.FC = () => {
             <>
               {/* Room View with 3D Frame */}
               <div
-                className={`absolute inset-0 transition-all duration-500 ${
-                  selectedView === 'room'
+                className={`absolute inset-0 transition-all duration-500 ${selectedView === 'room'
                     ? 'opacity-100 scale-100'
                     : 'opacity-0 scale-95 pointer-events-none'
-                }`}
+                  }`}
               >
                 <WallCarousel
                   images={wallImages}
@@ -229,11 +259,10 @@ const Dashboard: React.FC = () => {
 
               {/* 3D View */}
               <div
-                className={`absolute inset-0 transition-all duration-700 ease-out ${
-                  selectedView === '3d'
+                className={`absolute inset-0 transition-all duration-700 ease-out ${selectedView === '3d'
                     ? 'opacity-100 scale-100'
                     : 'opacity-0 scale-110 pointer-events-none'
-                }`}
+                  }`}
               >
                 {/* Responsive container for 3D view only */}
                 <div
@@ -370,35 +399,33 @@ const Dashboard: React.FC = () => {
                             variants={listItemVariants}
                           >
                             <motion.div
-                              className={`flex items-center justify-between p-4 md:p-6 relative overflow-hidden group ${
-                                selectedFeature?.id === item.id
+                              className={`flex items-center justify-between p-4 md:p-6 relative overflow-hidden group ${selectedFeature?.id === item.id
                                   ? 'bg-blue-50 border-l-4 border-primary'
                                   : ''
-                              } ${
-                                item.disabled
+                                } ${item.disabled
                                   ? 'cursor-not-allowed bg-gray-50/50'
                                   : 'cursor-pointer'
-                              }`}
+                                }`}
                               onClick={() =>
                                 !item.disabled && handleFeatureClick(item)
                               }
                               whileHover={
                                 !item.disabled
                                   ? {
-                                      scale: 1.005,
-                                      transition: {
-                                        duration: 0.2,
-                                        ease: [0.4, 0, 0.2, 1],
-                                      },
-                                    }
+                                    scale: 1.005,
+                                    transition: {
+                                      duration: 0.2,
+                                      ease: [0.4, 0, 0.2, 1],
+                                    },
+                                  }
                                   : {}
                               }
                               whileTap={
                                 !item.disabled
                                   ? {
-                                      scale: 0.995,
-                                      transition: { duration: 0.1 },
-                                    }
+                                    scale: 0.995,
+                                    transition: { duration: 0.1 },
+                                  }
                                   : {}
                               }
                               transition={{
@@ -464,15 +491,15 @@ const Dashboard: React.FC = () => {
                                   whileHover={
                                     !item.disabled
                                       ? {
-                                          rotate: 8,
-                                          scale: 1.15,
-                                          filter:
-                                            'drop-shadow(0 4px 12px rgba(var(--primary-rgb, 59, 130, 246), 0.4))',
-                                          transition: {
-                                            duration: 0.2,
-                                            ease: [0.4, 0, 0.2, 1],
-                                          },
-                                        }
+                                        rotate: 8,
+                                        scale: 1.15,
+                                        filter:
+                                          'drop-shadow(0 4px 12px rgba(var(--primary-rgb, 59, 130, 246), 0.4))',
+                                        transition: {
+                                          duration: 0.2,
+                                          ease: [0.4, 0, 0.2, 1],
+                                        },
+                                      }
                                       : {}
                                   }
                                   transition={{
@@ -482,31 +509,29 @@ const Dashboard: React.FC = () => {
                                   }}
                                 >
                                   <item.icon
-                                    className={`h-5 w-5 flex-shrink-0 transition-all duration-300 ${
-                                      item.disabled
+                                    className={`h-5 w-5 flex-shrink-0 transition-all duration-300 ${item.disabled
                                         ? 'text-gray-300'
                                         : selectedFeature?.id === item.id
                                           ? 'text-primary'
                                           : 'text-gray-500 group-hover:text-primary'
-                                    }`}
+                                      }`}
                                   />
                                 </motion.div>
                                 <div className='min-w-0 flex-1'>
                                   <div className='flex items-center gap-2'>
                                     <motion.p
-                                      className={`font-semibold text-sm leading-tight transition-all duration-300 ${
-                                        item.disabled
+                                      className={`font-semibold text-sm leading-tight transition-all duration-300 ${item.disabled
                                           ? 'text-gray-400'
                                           : selectedFeature?.id === item.id
                                             ? 'text-primary'
                                             : 'text-gray-900 group-hover:text-primary'
-                                      }`}
+                                        }`}
                                       whileHover={
                                         !item.disabled
                                           ? {
-                                              textShadow:
-                                                '0 0 8px rgba(var(--primary-rgb, 59, 130, 246), 0.3)',
-                                            }
+                                            textShadow:
+                                              '0 0 8px rgba(var(--primary-rgb, 59, 130, 246), 0.3)',
+                                          }
                                           : {}
                                       }
                                     >
@@ -529,11 +554,10 @@ const Dashboard: React.FC = () => {
                                     )}
                                   </div>
                                   <motion.p
-                                    className={`text-xs leading-tight transition-colors duration-300 ${
-                                      item.disabled
+                                    className={`text-xs leading-tight transition-colors duration-300 ${item.disabled
                                         ? 'text-gray-300'
                                         : 'text-gray-500 group-hover:text-gray-600'
-                                    }`}
+                                      }`}
                                   >
                                     {item.subtitle}
                                   </motion.p>
@@ -630,7 +654,8 @@ const Dashboard: React.FC = () => {
                     quantity={quantity}
                     onIncrement={handleIncrement}
                     onDecrement={handleDecrement}
-                    onConfirm={handleAddToCart}
+                    onConfirm={handleConfirmAndApply}
+                    isConfirming={isConfirming}
                   />
                 ) : (
                   <ApplyChangesControl
@@ -638,12 +663,12 @@ const Dashboard: React.FC = () => {
                     quantity={quantity}
                     selectedSize={selectedSize}
                     onApply={() => {
-  applyPendingChanges();
-  applyPendingEdgeType(); // This applies the pending edge type
-  if (selectedView === 'crop' || selectedView === 'optimization')
-    setSelectedView('room');
-  setSelectedFeature(null);
-}}
+                      applyPendingChanges();
+                      applyPendingEdgeType(); // This applies the pending edge type
+                      if (selectedView === 'crop' || selectedView === 'optimization')
+                        setSelectedView('room');
+                      setSelectedFeature(null);
+                    }}
                   />
                 )}
               </AnimatePresence>
@@ -691,7 +716,7 @@ const Dashboard: React.FC = () => {
                           ((selectedSize.actual_price -
                             selectedSize.sell_price) /
                             selectedSize.actual_price) *
-                            100
+                          100
                         )}
                         % OFF
                       </span>

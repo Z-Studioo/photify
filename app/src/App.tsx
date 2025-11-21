@@ -7,6 +7,7 @@ import Dashboard from '@/pages/dashboard/index';
 import UploadImage from './pages';
 import { BrowserRouter, Route, Routes } from 'react-router';
 import CropPage from '@/pages/crop';
+import { ToastProvider } from '@/components/shared/common/toast';
 
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 
@@ -15,33 +16,35 @@ const queryClient = new QueryClient();
 const App: React.FC = () => {
   return (
     <QueryClientProvider client={queryClient}>
-      <BrowserRouter>
-        <UploadProvider>
-          <Routes>
-            <Route
-              path='/dashboard'
-              element={
-                <FeatureProvider>
+      <ToastProvider> {/* Wrap everything with ToastProvider */}
+        <BrowserRouter>
+          <UploadProvider>
+            <Routes>
+              <Route
+                path='/dashboard'
+                element={
+                  <FeatureProvider>
+                    <ViewProvider>
+                      <EdgeProvider>
+                        <Dashboard />
+                      </EdgeProvider>
+                    </ViewProvider>
+                  </FeatureProvider>
+                }
+              />
+              <Route path='/' element={<UploadImage />} />
+              <Route
+                path='/crop'
+                element={
                   <ViewProvider>
-                    <EdgeProvider>
-                      <Dashboard />
-                    </EdgeProvider>
+                    <CropPage />
                   </ViewProvider>
-                </FeatureProvider>
-              }
-            />
-            <Route path='/' element={<UploadImage />} />
-            <Route
-              path='/crop'
-              element={
-                <ViewProvider>
-                  <CropPage />
-                </ViewProvider>
-              }
-            />
-          </Routes>
-        </UploadProvider>
-      </BrowserRouter>
+                }
+              />
+            </Routes>
+          </UploadProvider>
+        </BrowserRouter>
+      </ToastProvider>
     </QueryClientProvider>
   );
 };
