@@ -10,38 +10,41 @@ import CropPage from '@/pages/crop';
 import { ToastProvider } from '@/components/shared/common/toast';
 
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { PresetProvider } from './context/PresetContext';
 
 const queryClient = new QueryClient();
 
 const App: React.FC = () => {
   return (
     <QueryClientProvider client={queryClient}>
-      <ToastProvider> {/* Wrap everything with ToastProvider */}
+      <ToastProvider> 
         <BrowserRouter>
           <UploadProvider>
-            <Routes>
-              <Route
-                path='/dashboard'
-                element={
-                  <FeatureProvider>
+            <PresetProvider>
+              <Routes>
+                <Route
+                  path='/dashboard'
+                  element={
+                    <FeatureProvider>
+                      <ViewProvider>
+                        <EdgeProvider>
+                          <Dashboard />
+                        </EdgeProvider>
+                      </ViewProvider>
+                    </FeatureProvider>
+                  }
+                />
+                <Route path='/' element={<UploadImage />} />
+                <Route
+                  path='/crop'
+                  element={
                     <ViewProvider>
-                      <EdgeProvider>
-                        <Dashboard />
-                      </EdgeProvider>
+                      <CropPage />
                     </ViewProvider>
-                  </FeatureProvider>
-                }
-              />
-              <Route path='/' element={<UploadImage />} />
-              <Route
-                path='/crop'
-                element={
-                  <ViewProvider>
-                    <CropPage />
-                  </ViewProvider>
-                }
-              />
-            </Routes>
+                  }
+                />
+              </Routes>
+            </PresetProvider>
           </UploadProvider>
         </BrowserRouter>
       </ToastProvider>

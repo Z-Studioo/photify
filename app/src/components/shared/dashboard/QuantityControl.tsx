@@ -256,7 +256,7 @@ const QuantityControl: React.FC<QuantityControlProps> = ({
         description={`You are about to place an order for ${quantity} canvas${quantity > 1 ? 'es' : ''} for $${totalSellPrice.toFixed(2)}`}
         confirmText={localConfirming ? "Processing..." : "Yes, Confirm Order"}
         cancelText="Cancel"
-        disabled={localConfirming}
+        isLoading={localConfirming}
       />
     </>
   );
