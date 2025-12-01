@@ -439,19 +439,19 @@ const ThreeDCanvas = ({
     }
   };
 
-  useEffect(() => {
-    if (isVisible && preview) {
-      if (focusOnEdge) {
-        // Focus on edge when flag is set
-        const t = setTimeout(() => focusCameraOnEdge(), 220);
-        return () => clearTimeout(t);
-      } else {
-        // Default center view
-        const t = setTimeout(() => handleCenter(), 220);
-        return () => clearTimeout(t);
+useEffect(() => {
+  if (isVisible && preview && focusOnEdge) {
+    const focusWithRetry = (retryCount = 0) => {
+      if (controlsRef.current) {
+        focusCameraOnEdge();
+      } else if (retryCount < 8) {
+        setTimeout(() => focusWithRetry(retryCount + 1), 100);
       }
-    }
-  }, [isVisible, preview, focusOnEdge]);
+    };
+    
+    focusWithRetry();
+  }
+}, [isVisible, preview, focusOnEdge]);
 
   if (!isVisible) return null;
 
