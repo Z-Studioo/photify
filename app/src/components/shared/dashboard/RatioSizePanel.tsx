@@ -194,7 +194,6 @@ const RatioSizePanel: React.FC<RatioSizePanelProps> = ({
 
   return (
     <div className='space-y-6 pb-20'>
-      {/* Sticky Header + Ratios */}
       <div className='sticky top-0 bg-gray-50 z-10 pt-1 pb-2'>
         <h2 className='text-xl font-semibold text-gray-800 mb-2 pl-4'>
           Customize Image
@@ -217,7 +216,6 @@ const RatioSizePanel: React.FC<RatioSizePanelProps> = ({
         </div>
       </div>
 
-      {/* Sizes List */}
       <div className='space-y-6'>
         {ratios.map((ratio, index) => {
           const sizes = getAvailableSizes(ratio);

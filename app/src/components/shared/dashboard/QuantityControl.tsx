@@ -33,13 +33,16 @@ const QuantityControl: React.FC<QuantityControlProps> = ({
   onIncrement,
   onDecrement,
   onConfirm,
-  isConfirming = false
+  isConfirming = false,
 }) => {
   const [showConfirmation, setShowConfirmation] = useState(false);
   const [localConfirming, setLocalConfirming] = useState(false);
-  const [priceData, setPriceData] = useState<{ sellPrice: number; actualPrice: number }>({ 
-    sellPrice: 0, 
-    actualPrice: 0 
+  const [priceData, setPriceData] = useState<{
+    sellPrice: number;
+    actualPrice: number;
+  }>({
+    sellPrice: 0,
+    actualPrice: 0,
   });
   const { addToast } = useToast();
 
@@ -61,7 +64,6 @@ const QuantityControl: React.FC<QuantityControlProps> = ({
 
     loadPriceData();
 
-    // Listen for storage changes to update price in real-time
     const handleStorageChange = (e: StorageEvent) => {
       if (e.key === 'photify_metadata') {
         loadPriceData();
@@ -72,7 +74,6 @@ const QuantityControl: React.FC<QuantityControlProps> = ({
     return () => window.removeEventListener('storage', handleStorageChange);
   }, []);
 
-  // Also update when quantity changes
   useEffect(() => {
     const metadataStr = localStorage.getItem('photify_metadata');
     if (metadataStr) {
@@ -104,8 +105,12 @@ const QuantityControl: React.FC<QuantityControlProps> = ({
   const totalActualPrice = priceData.actualPrice * quantity;
   const totalSellPrice = priceData.sellPrice * quantity;
   const hasDiscount = priceData.actualPrice > priceData.sellPrice;
-  const discountPercentage = hasDiscount 
-    ? Math.round(((priceData.actualPrice - priceData.sellPrice) / priceData.actualPrice) * 100)
+  const discountPercentage = hasDiscount
+    ? Math.round(
+        ((priceData.actualPrice - priceData.sellPrice) /
+          priceData.actualPrice) *
+          100
+      )
     : 0;
 
   return (
@@ -118,7 +123,6 @@ const QuantityControl: React.FC<QuantityControlProps> = ({
         transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
         className='flex items-end justify-between gap-3 w-full'
       >
-        {/* Quantity Controls - Left Side */}
         <motion.div
           className='flex items-center space-x-1 flex-shrink-0'
           initial={{ scale: 0.9, opacity: 0 }}
@@ -146,7 +150,7 @@ const QuantityControl: React.FC<QuantityControlProps> = ({
               <MinusCircle className='h-4 w-4' />
             </Button>
           </motion.div>
-          
+
           <motion.div
             initial={{ scale: 0.8 }}
             animate={{ scale: 1 }}
@@ -160,7 +164,7 @@ const QuantityControl: React.FC<QuantityControlProps> = ({
               {quantity}
             </Badge>
           </motion.div>
-          
+
           <motion.div
             variants={buttonVariants}
             initial='idle'
@@ -179,14 +183,12 @@ const QuantityControl: React.FC<QuantityControlProps> = ({
           </motion.div>
         </motion.div>
 
-        {/* Price and Confirm Button - Right Side */}
         <motion.div
           initial={{ opacity: 0, x: 20 }}
           animate={{ opacity: 1, x: 0 }}
           transition={{ delay: 0.2, duration: 0.3 }}
           className='flex flex-col items-end gap-0 flex-1 min-w-0'
         >
-          {/* Price Display - Very compact stacked layout */}
           <motion.div
             initial={{ opacity: 0, scale: 0.9 }}
             animate={{ opacity: 1, scale: 1 }}
@@ -195,10 +197,9 @@ const QuantityControl: React.FC<QuantityControlProps> = ({
           >
             {hasDiscount ? (
               <div className='flex flex-col items-end -space-y-1'>
-                {/* Top Row: Discount Badge + Final Price */}
                 <div className='flex items-baseline justify-end gap-1'>
-                  <Badge 
-                    variant="secondary" 
+                  <Badge
+                    variant='secondary'
                     className='bg-green-100 text-green-700 text-xs font-medium px-1 py-0'
                   >
                     {discountPercentage}% OFF
@@ -207,8 +208,7 @@ const QuantityControl: React.FC<QuantityControlProps> = ({
                     ${totalSellPrice.toFixed(2)}
                   </span>
                 </div>
-                
-                {/* Bottom Row: Original Price (smaller) with strikethrough */}
+
                 <div>
                   <span className='text-xs text-gray-500 line-through leading-tight'>
                     ${totalActualPrice.toFixed(2)}
@@ -216,14 +216,12 @@ const QuantityControl: React.FC<QuantityControlProps> = ({
                 </div>
               </div>
             ) : (
-              /* No Discount - Show Only Current Price */
               <span className='text-base font-bold text-gray-900'>
                 ${totalSellPrice.toFixed(2)}
               </span>
             )}
           </motion.div>
 
-          {/* Confirm Button - Below the price */}
           <motion.div
             whileHover={{ scale: isProcessing ? 1 : 1.02 }}
             whileTap={{ scale: isProcessing ? 1 : 0.98 }}
@@ -252,10 +250,10 @@ const QuantityControl: React.FC<QuantityControlProps> = ({
         open={showConfirmation}
         onOpenChange={setShowConfirmation}
         onConfirm={handleFinalConfirm}
-        title="Confirm Order"
+        title='Confirm Order'
         description={`You are about to place an order for ${quantity} canvas${quantity > 1 ? 'es' : ''} for $${totalSellPrice.toFixed(2)}`}
-        confirmText={localConfirming ? "Processing..." : "Yes, Confirm Order"}
-        cancelText="Cancel"
+        confirmText={localConfirming ? 'Processing...' : 'Yes, Confirm Order'}
+        cancelText='Cancel'
         isLoading={localConfirming}
       />
     </>

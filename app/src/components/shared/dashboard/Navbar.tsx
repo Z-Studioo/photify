@@ -6,7 +6,13 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { CircleQuestionMark, Download, Upload, FileText, Loader2 } from 'lucide-react';
+import {
+  CircleQuestionMark,
+  Download,
+  Upload,
+  FileText,
+  Loader2,
+} from 'lucide-react';
 import { useView } from '@/context/ViewContext';
 import { useFeature } from '@/context/dashboard/FeatureContext';
 import { usePreset } from '@/context/PresetContext';
@@ -24,7 +30,7 @@ const Navbar = () => {
     isImporting,
     confirmImport,
     cancelImport,
-    handleReUpload // Add this
+    handleReUpload,
   } = usePreset();
 
   const handleStartTour = () => {
@@ -38,14 +44,11 @@ const Navbar = () => {
     <>
       <header className='w-full bg-background border-b shadow-sm'>
         <div className='container mx-auto px-0 py-3 flex items-center justify-between'>
-          {/* Left: Logo */}
           <div className='flex items-center space-x-2 cursor-pointer'>
             <img src={logo} alt='WHITEWALL Logo' className='h-10 w-auto' />
           </div>
 
-          {/* Right: Actions container */}
           <div className='flex items-center space-x-2'>
-            {/* Export/Import Dropdown */}
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <motion.div
@@ -86,17 +89,15 @@ const Navbar = () => {
               </DropdownMenuContent>
             </DropdownMenu>
 
-            {/* Import Confirmation Modal */}
             <ImportConfirmationModal
               open={importModalOpen}
               onOpenChange={cancelImport}
               onConfirm={confirmImport}
-              onReUpload={handleReUpload} // Add this prop
+              onReUpload={handleReUpload}
               importSummary={importSummary}
               isImporting={isImporting}
             />
 
-            {/* How to use editor Dropdown */}
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <motion.div
@@ -133,7 +134,6 @@ const Navbar = () => {
         </div>
       </header>
 
-      {/* Full-Page Loading Overlay - Just Pink Spinner */}
       <AnimatePresence>
         {isImporting && (
           <motion.div
@@ -141,9 +141,9 @@ const Navbar = () => {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.2 }}
-            className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[9999] flex items-center justify-center"
+            className='fixed inset-0 bg-black/60 backdrop-blur-sm z-[9999] flex items-center justify-center'
           >
-            <Loader2 className="h-16 w-16 animate-spin text-pink-500" />
+            <Loader2 className='h-16 w-16 animate-spin text-pink-500' />
           </motion.div>
         )}
       </AnimatePresence>

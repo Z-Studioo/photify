@@ -5,7 +5,6 @@ interface AspectRatioIconProps {
 
 export function AspectRatioIcon({ ratio, size = 20 }: AspectRatioIconProps) {
   const [w, h] = ratio.split(':').map(Number);
-
   const maxSide = Math.max(w, h);
   const width = (w / maxSide) * size;
   const height = (h / maxSide) * size;

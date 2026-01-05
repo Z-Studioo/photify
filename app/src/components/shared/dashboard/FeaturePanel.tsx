@@ -12,11 +12,7 @@ const FeaturePanel = () => {
   const { selectedFeature, setSelectedFeature } = useFeature();
   const { selectedView, setSelectedView } = useView();
   const { cancelPendingEdgeType } = useEdge();
-  const { 
-    quality, 
-    setPendingQuality,
-    cancelPendingCropChanges
-  } = useUpload();
+  const { quality, setPendingQuality, cancelPendingCropChanges } = useUpload();
 
   if (!selectedFeature) return null;
 
@@ -43,18 +39,15 @@ const FeaturePanel = () => {
   };
 
   const handleGoBack = () => {
-    // Cancel pending changes when going back without applying
     if (selectedFeature?.name === 'SIDE APPEARANCE') {
       cancelPendingEdgeType();
     }
-    
+
     if (selectedFeature?.name === 'IMAGE OPTIMIZATION') {
-      // Reset pending quality to match actual quality
       setPendingQuality(quality);
     }
 
     if (selectedFeature?.name === 'IMAGE SIZE AND CROP PHOTO') {
-      // Revert to committed crop values
       cancelPendingCropChanges();
     }
 
@@ -73,7 +66,6 @@ const FeaturePanel = () => {
         selectedFeature ? 'translate-x-0' : '-translate-x-full'
       } bg-gray-50 flex flex-col h-full`}
     >
-      {/* Header */}
       <div className='relative flex items-center p-4 flex-shrink-0'>
         <ChevronLeft
           className='h-4 w-4 text-gray-600 cursor-pointer'
@@ -86,7 +78,6 @@ const FeaturePanel = () => {
         </h3>
       </div>
 
-      {/* Scrollable content */}
       <div className='flex-1 overflow-auto px-4 pb-40'>
         {renderFeatureContent()}
       </div>

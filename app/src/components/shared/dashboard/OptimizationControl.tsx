@@ -19,14 +19,11 @@ const OptimizationControl: React.FC = () => {
   } = useUpload();
   const [isProcessing, setIsProcessing] = useState(false);
 
-  // Use pending quality for slider if it exists, otherwise use current
   const displayQuality = pendingQuality || quality;
 
   useEffect(() => {
     setSelectedView('optimization');
-    // Always sync pending quality with actual quality when component mounts
     setPendingQuality(quality);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {
@@ -82,18 +79,19 @@ const OptimizationControl: React.FC = () => {
   };
 
   useEffect(() => {
-    // Use original preview as the base for optimization
     const basePreview = originalPreview || preview;
     if (!basePreview || !pendingQuality) return;
 
     const handler = setTimeout(async () => {
       try {
         setIsProcessing(true);
-        const enhanced = await enhanceImageWithCanvas(basePreview, pendingQuality[0]);
+        const enhanced = await enhanceImageWithCanvas(
+          basePreview,
+          pendingQuality[0]
+        );
         setPendingPreview(enhanced);
         setPendingFile(file);
       } catch (error) {
-        // eslint-disable-next-line no-console
         console.error('Image enhancement failed:', error);
       } finally {
         setIsProcessing(false);

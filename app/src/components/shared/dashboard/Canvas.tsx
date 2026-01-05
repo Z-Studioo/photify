@@ -22,7 +22,6 @@ const Canvas: React.FC<PhotoFrameProps> = ({
     const canvas = canvasRef.current;
     if (!canvas) return;
 
-    // Responsive sizing
     const updateCanvasDims = () => {
       const parent = canvas.parentElement;
       if (!parent) return;
@@ -42,21 +41,17 @@ const Canvas: React.FC<PhotoFrameProps> = ({
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
-    // Clear canvas
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
     const centerX = canvas.width / 2;
     const centerY = canvas.height / 2;
-    const frameWidth = 12; // Frame thickness
+    const frameWidth = 12;
     const radius = Math.min(canvas.width, canvas.height) / 2 - frameWidth;
 
-    // Draw shadow first (behind everything)
     drawRealisticShadow(ctx, centerX, centerY, radius, shape);
 
-    // Create and draw the frame background
     drawFrameBackground(ctx, centerX, centerY, radius, frameWidth, shape);
 
-    // Create clipping path for image based on shape
     ctx.save();
 
     switch (shape) {
@@ -101,7 +96,6 @@ const Canvas: React.FC<PhotoFrameProps> = ({
     const img = new Image();
     img.src = src;
     img.onload = () => {
-      // Prepare target drawing area
       let targetX = 0;
       let targetY = 0;
       let targetW = 0;
@@ -119,51 +113,57 @@ const Canvas: React.FC<PhotoFrameProps> = ({
         targetY = Math.round(centerY - imageSize / 2);
       }
 
-      // Offscreen canvas to preprocess image (center-crop + brightness/contrast)
       const off = document.createElement('canvas');
       off.width = targetW;
       off.height = targetH;
       const offCtx = off.getContext('2d');
       if (!offCtx) return;
 
-      // Preserve aspect ratio - contain the image within the frame
       const imgAspect = img.width / img.height;
       const tgtAspect = targetW / targetH;
-      
+
       let drawW = targetW;
       let drawH = targetH;
       let drawX = 0;
       let drawY = 0;
-      
+
       if (imgAspect > tgtAspect) {
-        // Image is wider - fit to width, center vertically
         drawH = targetW / imgAspect;
         drawY = (targetH - drawH) / 2;
       } else if (imgAspect < tgtAspect) {
-        // Image is taller - fit to height, center horizontally
         drawW = targetH * imgAspect;
         drawX = (targetW - drawW) / 2;
       }
-      
+
       if (edgeType === 'mirrored') {
-        // For mirrored edges, create a seamless pattern by mirroring the image edges
-        
-        // First, draw the image at its natural aspect ratio, centered
-        offCtx.drawImage(img, 0, 0, img.width, img.height, drawX, drawY, drawW, drawH);
-        
-        // Fill remaining areas with mirrored edges
-        const mirrorSize = 50; // Size of the mirrored edge in pixels
-        
-        // Mirror left edge if there's space
+        offCtx.drawImage(
+          img,
+          0,
+          0,
+          img.width,
+          img.height,
+          drawX,
+          drawY,
+          drawW,
+          drawH
+        );
+        const mirrorSize = 50;
         if (drawX > 0) {
           const stripWidth = Math.min(drawX, mirrorSize);
           offCtx.save();
           offCtx.scale(-1, 1);
-          offCtx.drawImage(img, 0, 0, stripWidth * (img.width / drawW), img.height,
-                          -(drawX), drawY, stripWidth, drawH);
+          offCtx.drawImage(
+            img,
+            0,
+            0,
+            stripWidth * (img.width / drawW),
+            img.height,
+            -drawX,
+            drawY,
+            stripWidth,
+            drawH
+          );
           offCtx.restore();
-          
-          // Fill the gap between edge and mirrored strip
           if (drawX > stripWidth) {
             offCtx.fillStyle = offCtx.createPattern(
               (() => {
@@ -174,112 +174,140 @@ const Canvas: React.FC<PhotoFrameProps> = ({
                 patternCtx.fillStyle = '#e5e7eb';
                 patternCtx.fillRect(0, 0, 20, 20);
                 return patternCanvas;
-              })(), 'repeat'
+              })(),
+              'repeat'
             )!;
             offCtx.fillRect(0, drawY, drawX - stripWidth, drawH);
           }
         }
-        
-        // Mirror right edge if there's space
+
         if (drawX + drawW < targetW) {
           const rightSpace = targetW - (drawX + drawW);
           const stripWidth = Math.min(rightSpace, mirrorSize);
           offCtx.save();
           offCtx.scale(-1, 1);
-          offCtx.drawImage(img, img.width - stripWidth * (img.width / drawW), 0, 
-                          stripWidth * (img.width / drawW), img.height,
-                          -(drawX + drawW + stripWidth), drawY, stripWidth, drawH);
+          offCtx.drawImage(
+            img,
+            img.width - stripWidth * (img.width / drawW),
+            0,
+            stripWidth * (img.width / drawW),
+            img.height,
+            -(drawX + drawW + stripWidth),
+            drawY,
+            stripWidth,
+            drawH
+          );
           offCtx.restore();
-          
-          // Fill remaining gap
+
           if (rightSpace > stripWidth) {
             offCtx.fillStyle = '#e5e7eb';
-            offCtx.fillRect(drawX + drawW + stripWidth, drawY, rightSpace - stripWidth, drawH);
+            offCtx.fillRect(
+              drawX + drawW + stripWidth,
+              drawY,
+              rightSpace - stripWidth,
+              drawH
+            );
           }
         }
-        
-        // Mirror top edge if there's space
+
         if (drawY > 0) {
           const stripHeight = Math.min(drawY, mirrorSize);
           offCtx.save();
           offCtx.scale(1, -1);
-          offCtx.drawImage(img, 0, 0, img.width, stripHeight * (img.height / drawH),
-                          drawX, -(drawY), drawW, stripHeight);
+          offCtx.drawImage(
+            img,
+            0,
+            0,
+            img.width,
+            stripHeight * (img.height / drawH),
+            drawX,
+            -drawY,
+            drawW,
+            stripHeight
+          );
           offCtx.restore();
-          
-          // Fill remaining gap
+
           if (drawY > stripHeight) {
             offCtx.fillStyle = '#e5e7eb';
             offCtx.fillRect(drawX, 0, drawW, drawY - stripHeight);
           }
         }
-        
-        // Mirror bottom edge if there's space
+
         if (drawY + drawH < targetH) {
           const bottomSpace = targetH - (drawY + drawH);
           const stripHeight = Math.min(bottomSpace, mirrorSize);
           offCtx.save();
           offCtx.scale(1, -1);
-          offCtx.drawImage(img, 0, img.height - stripHeight * (img.height / drawH), 
-                          img.width, stripHeight * (img.height / drawH),
-                          drawX, -(drawY + drawH + stripHeight), drawW, stripHeight);
+          offCtx.drawImage(
+            img,
+            0,
+            img.height - stripHeight * (img.height / drawH),
+            img.width,
+            stripHeight * (img.height / drawH),
+            drawX,
+            -(drawY + drawH + stripHeight),
+            drawW,
+            stripHeight
+          );
           offCtx.restore();
-          
-          // Fill remaining gap
+
           if (bottomSpace > stripHeight) {
             offCtx.fillStyle = '#e5e7eb';
-            offCtx.fillRect(drawX, drawY + drawH + stripHeight, drawW, bottomSpace - stripHeight);
+            offCtx.fillRect(
+              drawX,
+              drawY + drawH + stripHeight,
+              drawW,
+              bottomSpace - stripHeight
+            );
           }
         }
       } else {
-        // Wrapped edges (original behavior)
-        // Fill background with a subtle color for areas not covered by image
         offCtx.fillStyle = '#f8f9fa';
         offCtx.fillRect(0, 0, targetW, targetH);
-
-        // Draw the entire image scaled to fit within the frame
-        offCtx.drawImage(img, 0, 0, img.width, img.height, drawX, drawY, drawW, drawH);
+        offCtx.drawImage(
+          img,
+          0,
+          0,
+          img.width,
+          img.height,
+          drawX,
+          drawY,
+          drawW,
+          drawH
+        );
       }
 
-      // Apply aggressive brightness/contrast adjustment to make image pop
       try {
         const id = offCtx.getImageData(0, 0, targetW, targetH);
         const data = id.data;
-        const brightness = 35; // additive - much higher
-        const contrast = 1.15; // multiplier - more dramatic
+        const brightness = 35;
+        const contrast = 1.15;
         const intercept = 128 * (1 - contrast);
         for (let i = 0; i < data.length; i += 4) {
           data[i] = Math.min(
             255,
             Math.max(0, data[i] * contrast + intercept + brightness)
-          ); // R
+          );
           data[i + 1] = Math.min(
             255,
             Math.max(0, data[i + 1] * contrast + intercept + brightness)
-          ); // G
+          );
           data[i + 2] = Math.min(
             255,
             Math.max(0, data[i + 2] * contrast + intercept + brightness)
-          ); // B
-          // alpha stays the same
+          );
         }
         offCtx.putImageData(id, 0, 0);
-      } catch (e) {
-        // If CORS blocks pixel access, fall back to direct draw
-        // (can't adjust), so do nothing
-      }
+      } catch (e) {}
 
-      // Draw processed image into main canvas
       ctx.drawImage(off, targetX, targetY, targetW, targetH);
 
       ctx.restore();
 
-      // Draw realistic frame edges and highlights
       drawFrameDetails(ctx, centerX, centerY, radius, frameWidth, shape);
     };
   }, [src, canvasDims, shape]);
 
-  // Helper function to draw polygons (accept nullable ctx for safety)
   const drawPolygon = (
     ctx: CanvasRenderingContext2D | null,
     centerX: number,
@@ -305,8 +333,6 @@ const Canvas: React.FC<PhotoFrameProps> = ({
       ctx.stroke();
     }
   };
-
-  // Draw realistic shadow effect
   const drawRealisticShadow = (
     ctx: CanvasRenderingContext2D,
     centerX: number,
@@ -316,7 +342,6 @@ const Canvas: React.FC<PhotoFrameProps> = ({
   ) => {
     ctx.save();
 
-    // Create shadow gradient - reduced to prevent darkening
     const shadowOffset = 4;
     const shadowBlur = 8;
 
@@ -353,7 +378,6 @@ const Canvas: React.FC<PhotoFrameProps> = ({
     ctx.restore();
   };
 
-  // Draw frame background with gradient
   const drawFrameBackground = (
     ctx: CanvasRenderingContext2D,
     centerX: number,
@@ -364,27 +388,23 @@ const Canvas: React.FC<PhotoFrameProps> = ({
   ) => {
     ctx.save();
 
-    // Create frame gradient (lighter colors to reduce darkening)
     const gradient = ctx.createLinearGradient(0, 0, frameWidth, frameWidth);
-    gradient.addColorStop(0, '#D2B48C'); // Tan
-    gradient.addColorStop(0.3, '#F5DEB3'); // Wheat
-    gradient.addColorStop(0.7, '#DEB887'); // Burlywood
-    gradient.addColorStop(1, '#BC9A6A'); // Light brown
+    gradient.addColorStop(0, '#D2B48C');
+    gradient.addColorStop(0.3, '#F5DEB3');
+    gradient.addColorStop(0.7, '#DEB887');
+    gradient.addColorStop(1, '#BC9A6A');
 
     ctx.fillStyle = gradient;
 
     switch (shape) {
       case 'rectangle':
-        // Draw outer frame
         ctx.fillRect(0, 0, ctx.canvas.width, ctx.canvas.height);
-        // Cut out inner area
         ctx.globalCompositeOperation = 'destination-out';
         const innerWidth = ctx.canvas.width - frameWidth * 2;
         const innerHeight = ctx.canvas.height - frameWidth * 2;
         ctx.fillRect(frameWidth, frameWidth, innerWidth, innerHeight);
         break;
       default:
-        // For circular and polygon shapes
         ctx.beginPath();
 
         if (shape === 'round') {
@@ -395,8 +415,6 @@ const Canvas: React.FC<PhotoFrameProps> = ({
         }
 
         ctx.fill();
-
-        // Cut out inner area
         ctx.globalCompositeOperation = 'destination-out';
         ctx.beginPath();
 
@@ -414,7 +432,6 @@ const Canvas: React.FC<PhotoFrameProps> = ({
     ctx.restore();
   };
 
-  // Draw frame details and highlights
   const drawFrameDetails = (
     ctx: CanvasRenderingContext2D,
     centerX: number,
@@ -425,7 +442,6 @@ const Canvas: React.FC<PhotoFrameProps> = ({
   ) => {
     ctx.save();
 
-    // Inner bevel highlight
     ctx.strokeStyle = 'rgba(255, 255, 255, 0.4)';
     ctx.lineWidth = 2;
 
@@ -456,7 +472,6 @@ const Canvas: React.FC<PhotoFrameProps> = ({
         break;
     }
 
-    // Outer edge shadow
     ctx.strokeStyle = 'rgba(0, 0, 0, 0.3)';
     ctx.lineWidth = 1;
 

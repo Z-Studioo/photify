@@ -9,7 +9,7 @@ interface UploadedImage {
   file: File;
   url: string;
   name: string;
-  base64?: string; // Add base64 for persistence
+  base64?: string;
 }
 
 interface SelectPhotoProps {
@@ -29,10 +29,8 @@ const SelectPhoto: React.FC<SelectPhotoProps> = ({ onPhotoSelected }) => {
   const { setPendingFile, setPendingPreview, applyPendingChanges } =
     useUpload();
 
-  // Local storage key for uploaded images
   const STORAGE_KEY = 'photify_uploaded_images';
 
-  // Helper function to convert File to base64
   const fileToBase64 = (file: File): Promise<string> => {
     return new Promise((resolve, reject) => {
       const reader = new FileReader();
@@ -42,7 +40,6 @@ const SelectPhoto: React.FC<SelectPhotoProps> = ({ onPhotoSelected }) => {
     });
   };
 
-  // Helper function to convert base64 to File
   const base64ToFile = (
     base64Data: string,
     fileName: string,
@@ -57,7 +54,6 @@ const SelectPhoto: React.FC<SelectPhotoProps> = ({ onPhotoSelected }) => {
     return new File([byteArray], fileName, { type: fileType });
   };
 
-  // Load images from localStorage on component mount
   useEffect(() => {
     const savedImages = localStorage.getItem(STORAGE_KEY);
     if (savedImages) {
@@ -65,7 +61,6 @@ const SelectPhoto: React.FC<SelectPhotoProps> = ({ onPhotoSelected }) => {
         const parsedImages = JSON.parse(savedImages);
         const restoredImages: UploadedImage[] = parsedImages.map((img: any) => {
           if (img.base64) {
-            // Restore File object from base64
             const restoredFile = base64ToFile(
               img.base64,
               img.name,
@@ -75,7 +70,7 @@ const SelectPhoto: React.FC<SelectPhotoProps> = ({ onPhotoSelected }) => {
               id: img.id,
               name: img.name,
               file: restoredFile,
-              url: img.base64, // Use base64 as URL for persistence
+              url: img.base64,
               base64: img.base64,
             };
           }
@@ -84,16 +79,13 @@ const SelectPhoto: React.FC<SelectPhotoProps> = ({ onPhotoSelected }) => {
         setUploadedImages(restoredImages);
       } catch (error) {
         console.error('Error loading images from localStorage:', error);
-        // Clear corrupted data
         localStorage.removeItem(STORAGE_KEY);
       }
     }
   }, []);
 
-  // Save images to localStorage whenever uploadedImages changes
   useEffect(() => {
     if (uploadedImages.length > 0) {
-      // Create serializable data (exclude File objects)
       const serializableImages = uploadedImages.map(img => ({
         id: img.id,
         name: img.name,
@@ -120,25 +112,21 @@ const SelectPhoto: React.FC<SelectPhotoProps> = ({ onPhotoSelected }) => {
         const newImage: UploadedImage = {
           id: imageId,
           file,
-          url: base64Data, // Use base64 as URL
+          url: base64Data,
           name: file.name,
           base64: base64Data,
         };
 
         setUploadedImages(prev => [...prev, newImage]);
         setSelectedImageId(imageId);
-
-        // Store as pending photo - don't update main context yet
         setPendingFile(file);
         setPendingPreview(base64Data);
 
-        // ✅ apply immediately so dashboard updates
         applyPendingChanges();
 
         onPhotoSelected?.(file);
       } catch (error) {
         console.error('Error converting file to base64:', error);
-        // Fallback to blob URL if base64 conversion fails
         const imageUrl = URL.createObjectURL(file);
         const newImage: UploadedImage = {
           id: imageId,
@@ -163,19 +151,12 @@ const SelectPhoto: React.FC<SelectPhotoProps> = ({ onPhotoSelected }) => {
     fileInput?.click();
   };
 
-  //Required later
-  // const handleUploadMore = () => {
-  //   triggerFileUpload()
-  // }
-
   const handleMultipleFileChange = async (
     e: React.ChangeEvent<HTMLInputElement>
   ) => {
     if (e.target.files) {
       const files = Array.from(e.target.files);
       const newImages: UploadedImage[] = [];
-
-      // Process files sequentially to avoid overwhelming the browser
       for (const file of files) {
         const imageId =
           Date.now().toString() + Math.random().toString(36).substr(2, 9);
@@ -192,7 +173,6 @@ const SelectPhoto: React.FC<SelectPhotoProps> = ({ onPhotoSelected }) => {
           newImages.push(newImage);
         } catch (error) {
           console.error('Error converting file to base64:', error);
-          // Fallback to blob URL
           const imageUrl = URL.createObjectURL(file);
           const newImage: UploadedImage = {
             id: imageId,
@@ -206,13 +186,10 @@ const SelectPhoto: React.FC<SelectPhotoProps> = ({ onPhotoSelected }) => {
 
       setUploadedImages(prev => [...prev, ...newImages]);
 
-      // Select the first newly uploaded image if none is selected
       if (!selectedImageId && newImages.length > 0) {
         setSelectedImageId(newImages[0].id);
         onPhotoSelected?.(newImages[0].file);
       }
-
-      // Clear the input value so the same file can be selected again
       e.target.value = '';
     }
   };
@@ -220,7 +197,6 @@ const SelectPhoto: React.FC<SelectPhotoProps> = ({ onPhotoSelected }) => {
   const handleImageSelect = (imageId: string) => {
     setSelectedImageId(imageId);
 
-    // Store as pending photo - don't update main context yet
     const selectedImage = uploadedImages.find(img => img.id === imageId);
     if (selectedImage) {
       setPendingFile(selectedImage.file);
@@ -234,26 +210,22 @@ const SelectPhoto: React.FC<SelectPhotoProps> = ({ onPhotoSelected }) => {
       img => img.id === selectedImageId
     );
     if (selectedImage) {
-      // Store as pending photo - don't update main context yet
       setPendingFile(selectedImage.file);
       setPendingPreview(selectedImage.url);
       onPhotoSelected?.(selectedImage.file);
     }
-    // Don't close the panel - stay in MyPhotos view
   };
 
   const handleDeleteImage = (imageId: string) => {
     const updatedImages = uploadedImages.filter(img => img.id !== imageId);
     setUploadedImages(updatedImages);
 
-    // Update localStorage
     if (updatedImages.length > 0) {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(updatedImages));
     } else {
       localStorage.removeItem(STORAGE_KEY);
     }
 
-    // If the deleted image was selected, clear selection
     if (selectedImageId === imageId) {
       setSelectedImageId(null);
       setPendingFile(null);
@@ -262,18 +234,14 @@ const SelectPhoto: React.FC<SelectPhotoProps> = ({ onPhotoSelected }) => {
   };
 
   const handleGoBackToUpload = () => {
-    // Clear all uploaded images to go back to SelectPhoto view
     setUploadedImages([]);
     setSelectedImageId(null);
-    // Clear localStorage as well
     localStorage.removeItem(STORAGE_KEY);
   };
 
-  // If user has uploaded at least one image, show MyPhotos component
   if (uploadedImages.length > 0) {
     return (
       <div className='relative overflow-auto p-4'>
-        {/* Hidden file input for MyPhotos upload more functionality */}
         <input
           type='file'
           id='my-photos-input'
@@ -301,12 +269,9 @@ const SelectPhoto: React.FC<SelectPhotoProps> = ({ onPhotoSelected }) => {
     );
   }
 
-  // If no images uploaded, show SelectPhoto component
   return (
     <div className='relative overflow-auto p-4'>
-      {/* Main Content */}
       <div className='flex flex-col space-y-6'>
-        {/* Dotted bordered section */}
         <div className='border-2 border-dashed border-gray-300 rounded-lg p-6 flex flex-col items-center space-y-4 bg-white'>
           <ImagePlus className='h-10 w-10 text-gray-400' />
           <p className='text-lg font-light text-gray-700'>
@@ -340,7 +305,6 @@ const SelectPhoto: React.FC<SelectPhotoProps> = ({ onPhotoSelected }) => {
           </p>
         </div>
 
-        {/* Canvas options */}
         <div className='flex flex-col space-y-3'>
           <h4 className='text-sm font-semibold text-center'>Use one of ours</h4>
           <div className='flex flex-wrap gap-4'>

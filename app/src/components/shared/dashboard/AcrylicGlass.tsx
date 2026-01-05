@@ -2,7 +2,6 @@ import { useState } from 'react';
 
 const AcrylicGlass = () => {
   const [glassThickness, setGlassThickness] = useState(0.08);
-
   const products = [
     {
       image:
@@ -33,7 +32,6 @@ const AcrylicGlass = () => {
 
   return (
     <div className='w-full h-auto px-4 py-6 overflow-x-hidden'>
-      {/* Desktop: 3 columns */}
       <div className='hidden lg:grid grid-cols-3 gap-6 max-w-4xl mx-auto'>
         {products.map((product, index) => (
           <div
@@ -60,7 +58,6 @@ const AcrylicGlass = () => {
         ))}
       </div>
 
-      {/* Tablet: 2 columns (now interactive like desktop) */}
       <div className='hidden md:grid lg:hidden grid-cols-2 gap-6 max-w-2xl mx-auto'>
         {products.map((product, index) => (
           <div
@@ -87,7 +84,6 @@ const AcrylicGlass = () => {
         ))}
       </div>
 
-      {/* Mobile: 1 column with horizontal layout */}
       <div className='md:hidden flex flex-col gap-4'>
         {products.map((product, index) => (
           <div

@@ -3,7 +3,7 @@ import type { TourStep } from '@/components/shared/dashboard/TourGuide';
 export const dashboardTourSteps: TourStep[] = [
   {
     id: 'welcome',
-    title: 'Welcome to Photo Editor! 🎨',
+    title: 'Welcome to Photo Editor!',
     description:
       'Let us show you around! This quick tour will help you understand how to customize your photo prints.',
   },
@@ -45,7 +45,7 @@ export const dashboardTourSteps: TourStep[] = [
   },
   {
     id: 'complete',
-    title: 'You\'re All Set! 🎉',
+    title: "You're All Set! 🎉",
     description:
       'You can restart this tour anytime by clicking the help icon in the navigation bar. Happy creating!',
   },

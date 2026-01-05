@@ -10,7 +10,7 @@ const shapes: {
   { id: 'round', name: 'Round', icon: Circle },
   { id: 'hexagon', name: 'Hexagon', icon: Hexagon },
   { id: 'octagon', name: 'Octagon', icon: Octagon },
-  { id: 'dodecagon', name: 'Dodecagon', icon: Octagon }, // Using Octagon icon as closest match
+  { id: 'dodecagon', name: 'Dodecagon', icon: Octagon },
 ];
 
 const ShapeSelector = () => {

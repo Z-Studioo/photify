@@ -50,7 +50,6 @@ const WallCarousel: React.FC<WallCarouselProps> = ({
         />
       </AnimatePresence>
 
-      {/* Left Arrow */}
       <motion.button
         onClick={onPrevious}
         className='cursor-pointer absolute left-4 top-1/2 -translate-y-1/2 
@@ -69,14 +68,16 @@ const WallCarousel: React.FC<WallCarouselProps> = ({
             ease: [0.33, 1, 0.68, 1],
           },
         }}
-        whileTap={{ 
+        whileTap={{
           scale: 0.95,
-          transition: { duration: 0.05, ease: 'easeOut' }
+          transition: { duration: 0.05, ease: 'easeOut' },
         }}
       >
-        <ChevronLeft className='h-4 w-4 sm:h-6 sm:w-6 text-gray-800 
+        <ChevronLeft
+          className='h-4 w-4 sm:h-6 sm:w-6 text-gray-800 
           transition-transform duration-150 ease-out
-          group-hover:-translate-x-0.5' />
+          group-hover:-translate-x-0.5'
+        />
       </motion.button>
 
       {/* Right Arrow */}
@@ -98,17 +99,18 @@ const WallCarousel: React.FC<WallCarouselProps> = ({
             ease: [0.33, 1, 0.68, 1],
           },
         }}
-        whileTap={{ 
+        whileTap={{
           scale: 0.95,
-          transition: { duration: 0.05, ease: 'easeOut' }
+          transition: { duration: 0.05, ease: 'easeOut' },
         }}
       >
-        <ChevronRight className='h-4 w-4 sm:h-6 sm:w-6 text-gray-800 
+        <ChevronRight
+          className='h-4 w-4 sm:h-6 sm:w-6 text-gray-800 
           transition-transform duration-150 ease-out
-          group-hover:translate-x-0.5' />
+          group-hover:translate-x-0.5'
+        />
       </motion.button>
 
-      {/* Wall Indicator Dots */}
       <motion.div
         className='absolute bottom-3 left-1/2 -translate-x-1/2 flex space-x-1 sm:space-x-1.5 z-10'
         initial={{ opacity: 0, y: 20 }}

@@ -2,12 +2,7 @@ import {
   ImageIcon,
   Crop,
   Zap,
-  // Monitor,
-  // Frame,
   Droplet,
-  // Layers,
-  // Box,
-  // Square,
   CornerUpLeft,
   Circle,
   Grid,
@@ -20,7 +15,7 @@ interface MenuFeature {
   subtitle: string;
   step: number;
   component: string | null;
-  disabled?: boolean; // Add disabled property
+  disabled?: boolean;
 }
 
 const features: MenuFeature[] = [
@@ -56,51 +51,6 @@ const features: MenuFeature[] = [
     step: 3,
     component: 'OptimizationControl',
   },
-  // {
-  //   id: 4,
-  //   name: 'WIDE WALL ULTRA HD',
-  //   icon: Monitor,
-  //   subtitle: 'Activated',
-  //   step: 4,
-  //   component: null,
-  //   disabled: true, // Disable this feature
-  // },
-  // {
-  //   id: 5,
-  //   name: 'FRAME PROFILE AND COLOR',
-  //   icon: Frame,
-  //   subtitle: 'Frame',
-  //   step: 5,
-  //   component: null,
-  //   disabled: true, // Disable this feature
-  // },
-  // {
-  //   id: 7,
-  //   name: 'PAPER',
-  //   icon: Layers,
-  //   subtitle: 'Fuji Crystal Archive Glossy',
-  //   step: 7,
-  //   component: null,
-  //   disabled: true, // Disable this feature
-  // },
-  // {
-  //   id: 8,
-  //   name: 'HANGING HARDWARE',
-  //   icon: Box,
-  //   subtitle: 'Aluminum Rails',
-  //   step: 8,
-  //   component: null,
-  //   disabled: true, // Disable this feature
-  // },
-  // {
-  //   id: 9,
-  //   name: 'MOTIF BORDER',
-  //   icon: Square,
-  //   subtitle: 'Without White Border',
-  //   step: 9,
-  //   component: null,
-  //   disabled: true, // Disable this feature
-  // },
   {
     id: 10,
     name: 'CORNERS',
@@ -108,7 +58,7 @@ const features: MenuFeature[] = [
     subtitle: 'Standard',
     step: 10,
     component: null,
-    disabled: true, // Disable this feature
+    disabled: true,
   },
   {
     id: 11,
@@ -117,7 +67,7 @@ const features: MenuFeature[] = [
     subtitle: 'Rectangle',
     step: 11,
     component: null,
-    disabled: true, // Disable this feature
+    disabled: true,
   },
   {
     id: 12,
@@ -126,7 +76,7 @@ const features: MenuFeature[] = [
     subtitle: 'One Piece',
     step: 12,
     component: null,
-    disabled: true, // Disable this feature
+    disabled: true,
   },
 ];
 

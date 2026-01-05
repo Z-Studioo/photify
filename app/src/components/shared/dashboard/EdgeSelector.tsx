@@ -28,10 +28,10 @@ const edgeOptions: EdgeOption[] = [
 ];
 
 const EdgeSelector = () => {
-  const { edgeType, setEdgeType, setPendingEdgeType, pendingEdgeType } = useEdge();
+  const { edgeType, setEdgeType, setPendingEdgeType, pendingEdgeType } =
+    useEdge();
   const { setSelectedView } = useView();
 
-  // Use pendingEdgeType for display if available, otherwise use current edgeType
   const displayEdgeType = pendingEdgeType || edgeType;
 
   useEffect(() => {
@@ -40,9 +40,7 @@ const EdgeSelector = () => {
 
   const handleSetEdgeType = (type: EdgeType) => {
     setPendingEdgeType(type);
-    // Also update actual edgeType for real-time preview
     setEdgeType(type);
-    // If user cancels, cancelPendingEdgeType() will revert this
   };
 
   return (
@@ -51,10 +49,11 @@ const EdgeSelector = () => {
         {edgeOptions.map(option => (
           <motion.div
             key={option.type}
-            className={`relative p-4 border-2 rounded-lg cursor-pointer ${displayEdgeType === option.type
+            className={`relative p-4 border-2 rounded-lg cursor-pointer ${
+              displayEdgeType === option.type
                 ? 'border-primary bg-primary/5'
                 : 'border-gray-200 hover:border-gray-300'
-              }`}
+            }`}
             onClick={() => handleSetEdgeType(option.type)}
             whileHover={{
               scale: 1.02,
@@ -70,10 +69,11 @@ const EdgeSelector = () => {
           >
             {/* Selection indicator */}
             <motion.div
-              className={`absolute top-3 right-3 w-6 h-6 rounded-full border-2 flex items-center justify-center ${displayEdgeType === option.type
+              className={`absolute top-3 right-3 w-6 h-6 rounded-full border-2 flex items-center justify-center ${
+                displayEdgeType === option.type
                   ? 'border-primary bg-primary'
                   : 'border-gray-300'
-                }`}
+              }`}
               initial={false}
               animate={{
                 scale: displayEdgeType === option.type ? 1.1 : 1,
@@ -94,10 +94,11 @@ const EdgeSelector = () => {
 
             <div className='flex items-start space-x-3'>
               <motion.div
-                className={`p-2 rounded-lg transition-colors duration-200 ${displayEdgeType === option.type
+                className={`p-2 rounded-lg transition-colors duration-200 ${
+                  displayEdgeType === option.type
                     ? 'bg-primary/10 text-primary'
                     : 'bg-gray-100 text-gray-600'
-                  }`}
+                }`}
                 whileHover={{
                   scale: 1.05,
                   rotate: 2,
@@ -110,10 +111,11 @@ const EdgeSelector = () => {
 
               <div className='flex-1'>
                 <motion.h3
-                  className={`font-semibold text-sm transition-colors duration-200 ${displayEdgeType === option.type
+                  className={`font-semibold text-sm transition-colors duration-200 ${
+                    displayEdgeType === option.type
                       ? 'text-primary'
                       : 'text-gray-900'
-                    }`}
+                  }`}
                   initial={false}
                   animate={{
                     color:
@@ -133,7 +135,6 @@ const EdgeSelector = () => {
         ))}
       </div>
 
-      {/* Preview section */}
       <motion.div
         className='mt-6 p-4 bg-gray-50 rounded-lg'
         initial={{ opacity: 0, y: 10 }}
