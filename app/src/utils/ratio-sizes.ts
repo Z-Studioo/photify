@@ -15,7 +15,6 @@ export interface InchData {
   actual_price: number;
 }
 
-
 export const fetchRatios = async (): Promise<RatioData[]> => {
   const res = await fetch(
     'https://photify.co/version-923ig/api/1.1/obj/ratios'

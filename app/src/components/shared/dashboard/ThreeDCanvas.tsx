@@ -1,6 +1,3 @@
-/* eslint-disable */
-// @ts-nocheck
-
 import { Canvas, useLoader } from '@react-three/fiber';
 import { OrbitControls, ContactShadows } from '@react-three/drei';
 import { Suspense, useRef, useState, useEffect, useMemo } from 'react';
@@ -12,10 +9,9 @@ import backpanel from '@/assets/images/backpanel.png';
 
 interface ThreeDCanvasProps {
   isVisible: boolean;
-  focusOnEdge?: boolean; // NEW: Flag to focus camera on edge
+  focusOnEdge?: boolean;
 }
 
-// 3D Frame component with true gallery-wrapped edges
 const Frame3D = ({
   imageUrl,
   shape,
@@ -27,13 +23,11 @@ const Frame3D = ({
 }) => {
   const [texture, setTexture] = useState<THREE.Texture | null>(null);
   const backTexture = useLoader(THREE.TextureLoader, backpanel as string);
+
   useEffect(() => {
     if (backTexture) {
       if ('colorSpace' in backTexture) {
-        (backTexture as any).colorSpace = THREE.SRGBColorSpace;
-      } else {
-        (backTexture as any).encoding =
-          THREE.sRGBEncoding || THREE.sRGBColorSpace;
+        (backTexture as THREE.Texture).colorSpace = THREE.SRGBColorSpace;
       }
       backTexture.needsUpdate = true;
     }
@@ -52,7 +46,6 @@ const Frame3D = ({
 
     const loader = new THREE.TextureLoader();
 
-    // Dispose old texture
     if (texture) texture.dispose();
 
     loader.load(
@@ -74,12 +67,9 @@ const Frame3D = ({
         loadedTexture.generateMipmaps = false;
 
         if ('colorSpace' in loadedTexture) {
-          (loadedTexture as any).colorSpace = THREE.SRGBColorSpace;
-        } else {
-          (loadedTexture as any).encoding = THREE.SRGBColorSpace;
+          (loadedTexture as THREE.Texture).colorSpace = THREE.SRGBColorSpace;
         }
 
-        // Center image based on aspect ratio
         const img = loadedTexture.image;
         if (img && img.width && img.height) {
           const frameAspect = 1.8 / 1.35;
@@ -109,7 +99,6 @@ const Frame3D = ({
   const frameDepth = 0.06;
   const BASE_SIZE = 15;
 
-  // Memoize the geometry so it's only created once
   const geometry = useMemo(() => {
     if (shape !== 'rectangle') return null;
 
@@ -122,83 +111,63 @@ const Frame3D = ({
       selectedSize?.height && !isNaN(selectedSize.height / BASE_SIZE)
         ? selectedSize.height / BASE_SIZE
         : 1.35;
+
     const box = new THREE.BoxGeometry(frameWidth, frameHeight, frameDepth);
     const uv = box.getAttribute('uv');
 
-    // Compute UV wrap amount based on actual frame proportions
     const wrapX = frameDepth / frameWidth;
     const wrapY = frameDepth / frameHeight;
-
-    // For better visibility, increase the wrap amount
-    const sideWrapX = wrapX * 3; // Make sides more visible
+    const sideWrapX = wrapX * 3;
     const sideWrapY = wrapY * 3;
 
     if (edgeType === 'mirrored') {
-      // MIRRORED EDGES - Uses negative/beyond-1 UVs with MirroredRepeatWrapping
-      // This creates a mirror/reflection effect on the sides
+      uv.setXY(0, 1 + sideWrapX, 1);
+      uv.setXY(1, 1, 1);
+      uv.setXY(2, 1 + sideWrapX, 0);
+      uv.setXY(3, 1, 0);
 
-      // Right Face (0–3) - extend beyond 1.0 to trigger mirroring
-      uv.setXY(0, 1 + sideWrapX, 1); // outer edge (will mirror back)
-      uv.setXY(1, 1, 1); // at the edge
-      uv.setXY(2, 1 + sideWrapX, 0); // outer edge (will mirror back)
-      uv.setXY(3, 1, 0); // at the edge
+      uv.setXY(4, 0, 1);
+      uv.setXY(5, 0 - sideWrapX, 1);
+      uv.setXY(6, 0, 0);
+      uv.setXY(7, 0 - sideWrapX, 0);
 
-      // Left Face (4–7) - extend below 0.0 to trigger mirroring
-      uv.setXY(4, 0, 1); // at the edge
-      uv.setXY(5, 0 - sideWrapX, 1); // outer edge (will mirror back)
-      uv.setXY(6, 0, 0); // at the edge
-      uv.setXY(7, 0 - sideWrapX, 0); // outer edge (will mirror back)
+      uv.setXY(8, 0, 1);
+      uv.setXY(9, 1, 1);
+      uv.setXY(10, 0, 1 + sideWrapY);
+      uv.setXY(11, 1, 1 + sideWrapY);
 
-      // Top Face (8–11) - extend beyond 1.0 to trigger mirroring
-      uv.setXY(8, 0, 1); // at the edge
-      uv.setXY(9, 1, 1); // at the edge
-      uv.setXY(10, 0, 1 + sideWrapY); // outer edge (will mirror back)
-      uv.setXY(11, 1, 1 + sideWrapY); // outer edge (will mirror back)
-
-      // Bottom Face (12–15) - extend below 0.0 to trigger mirroring
-      uv.setXY(12, 0, 0 - sideWrapY); // outer edge (will mirror back)
-      uv.setXY(13, 1, 0 - sideWrapY); // outer edge (will mirror back)
-      uv.setXY(14, 0, 0); // at the edge
-      uv.setXY(15, 1, 0); // at the edge
+      uv.setXY(12, 0, 0 - sideWrapY);
+      uv.setXY(13, 1, 0 - sideWrapY);
+      uv.setXY(14, 0, 0);
+      uv.setXY(15, 1, 0);
     } else {
-      // WRAPPED EDGES - Takes a very thin slice from the edge of the image
-      // Uses ClampToEdgeWrapping to smoothly extend the edge
+      const edgeSlice = 0.005;
 
-      // Use a much smaller wrap amount for smoother appearance
-      const edgeSlice = 0.005; // Very thin slice from edge (0.5% of image)
+      uv.setXY(0, 1, 1);
+      uv.setXY(1, 1 - edgeSlice, 1);
+      uv.setXY(2, 1, 0);
+      uv.setXY(3, 1 - edgeSlice, 0);
 
-      // Right Face (0–3) - thin slice from right edge
-      uv.setXY(0, 1, 1); // outer edge
-      uv.setXY(1, 1 - edgeSlice, 1); // inner edge (very close to edge)
-      uv.setXY(2, 1, 0); // outer edge
-      uv.setXY(3, 1 - edgeSlice, 0); // inner edge (very close to edge)
+      uv.setXY(4, edgeSlice, 1);
+      uv.setXY(5, 0, 1);
+      uv.setXY(6, edgeSlice, 0);
+      uv.setXY(7, 0, 0);
 
-      // Left Face (4–7) - thin slice from left edge
-      uv.setXY(4, edgeSlice, 1); // inner edge (very close to edge)
-      uv.setXY(5, 0, 1); // outer edge
-      uv.setXY(6, edgeSlice, 0); // inner edge (very close to edge)
-      uv.setXY(7, 0, 0); // outer edge
+      uv.setXY(8, 0, 1 - edgeSlice);
+      uv.setXY(9, 1, 1 - edgeSlice);
+      uv.setXY(10, 0, 1);
+      uv.setXY(11, 1, 1);
 
-      // Top Face (8–11) - thin slice from top edge
-      uv.setXY(8, 0, 1 - edgeSlice); // inner edge (very close to edge)
-      uv.setXY(9, 1, 1 - edgeSlice); // inner edge (very close to edge)
-      uv.setXY(10, 0, 1); // outer edge
-      uv.setXY(11, 1, 1); // outer edge
-
-      // Bottom Face (12–15) - thin slice from bottom edge
-      uv.setXY(12, 0, 0); // outer edge
-      uv.setXY(13, 1, 0); // outer edge
-      uv.setXY(14, 0, edgeSlice); // inner edge (very close to edge)
-      uv.setXY(15, 1, edgeSlice); // inner edge (very close to edge)
+      uv.setXY(12, 0, 0);
+      uv.setXY(13, 1, 0);
+      uv.setXY(14, 0, edgeSlice);
+      uv.setXY(15, 1, edgeSlice);
     }
 
-    // Front Face (16–19) - always the same
     uv.setXY(16, 0, 1);
     uv.setXY(17, 1, 1);
     uv.setXY(18, 0, 0);
     uv.setXY(19, 1, 0);
-
-    // Back Face (20–23) -> stays default solid color
 
     return box;
   }, [shape, edgeType, selectedSize?.width, selectedSize?.height]);
@@ -209,7 +178,6 @@ const Frame3D = ({
     return (
       <group castShadow receiveShadow>
         <mesh position={[0, 0, -frameDepth / 2]} geometry={geometry}>
-          {/* front/sides materials (unchanged) */}
           <meshStandardMaterial
             attach='material-0'
             map={texture}
@@ -241,7 +209,6 @@ const Frame3D = ({
             metalness={0.0}
             emissiveIntensity={0.12}
           />
-
           <meshStandardMaterial
             attach='material-5'
             map={backTexture}
@@ -252,7 +219,6 @@ const Frame3D = ({
       </group>
     );
   } else {
-    // Fallback for non-rectangular shapes
     const createGeometry = (): THREE.BufferGeometry => {
       switch (shape) {
         case 'round':
@@ -332,7 +298,6 @@ const ThreeDCanvas = ({
 
       const duration = 800;
       const startTime = Date.now();
-      const startPosition = camera.position.clone();
       const startTarget = controls.target.clone();
 
       const targetPosition = new THREE.Vector3(0, 0, optimalDistance);
@@ -344,7 +309,7 @@ const ThreeDCanvas = ({
         const easeProgress = 1 - Math.pow(1 - progress, 4);
 
         camera.position.lerpVectors(
-          startPosition,
+          camera.position,
           targetPosition,
           easeProgress
         );
@@ -364,7 +329,6 @@ const ThreeDCanvas = ({
 
       const duration = 500;
       const startTime = Date.now();
-      const startPosition = camera.position.clone();
       const currentDistance = controls.target.distanceTo(camera.position);
       const targetDistance = THREE.MathUtils.clamp(
         currentDistance * factor,
@@ -405,7 +369,6 @@ const ThreeDCanvas = ({
     }
   };
 
-  // NEW: Function to focus camera on the edge
   const focusCameraOnEdge = () => {
     if (controlsRef.current) {
       const controls = controlsRef.current;
@@ -413,20 +376,18 @@ const ThreeDCanvas = ({
 
       const duration = 1000;
       const startTime = Date.now();
-      const startPosition = camera.position.clone();
       const startTarget = controls.target.clone();
 
-      // Position camera closer to view the right edge at an angle (zoomed in)
-      const targetPosition = new THREE.Vector3(1.8, 0.25, 1.2); // Closer side view with slight elevation
-      const targetTarget = new THREE.Vector3(0, 0, 0); // Keep target at center for flexible rotation
+      const targetPosition = new THREE.Vector3(1.8, 0.25, 1.2);
+      const targetTarget = new THREE.Vector3(0, 0, 0);
 
       const animate = () => {
         const elapsed = Date.now() - startTime;
         const progress = Math.min(elapsed / duration, 1);
-        const easeProgress = 1 - Math.pow(1 - progress, 4); // Ease out quart
+        const easeProgress = 1 - Math.pow(1 - progress, 4);
 
         camera.position.lerpVectors(
-          startPosition,
+          camera.position,
           targetPosition,
           easeProgress
         );
@@ -439,19 +400,19 @@ const ThreeDCanvas = ({
     }
   };
 
-useEffect(() => {
-  if (isVisible && preview && focusOnEdge) {
-    const focusWithRetry = (retryCount = 0) => {
-      if (controlsRef.current) {
-        focusCameraOnEdge();
-      } else if (retryCount < 8) {
-        setTimeout(() => focusWithRetry(retryCount + 1), 100);
-      }
-    };
-    
-    focusWithRetry();
-  }
-}, [isVisible, preview, focusOnEdge]);
+  useEffect(() => {
+    if (isVisible && preview && focusOnEdge) {
+      const focusWithRetry = (retryCount = 0) => {
+        if (controlsRef.current) {
+          focusCameraOnEdge();
+        } else if (retryCount < 8) {
+          setTimeout(() => focusWithRetry(retryCount + 1), 100);
+        }
+      };
+
+      focusWithRetry();
+    }
+  }, [isVisible, preview, focusOnEdge]);
 
   if (!isVisible) return null;
 
@@ -493,17 +454,15 @@ useEffect(() => {
           <CameraControls controlsRef={controlsRef} />
         </Suspense>
       </Canvas>
-      {/* 3D Controls - Responsive */}
+
       <div
         className='absolute top-2 left-2 md:top-4 md:left-4 z-[9999]'
         style={{ pointerEvents: 'auto', isolation: 'isolate' }}
       >
-        {/* Desktop Layout - Horizontal */}
         <div
           className='hidden md:flex bg-white rounded-full px-2 py-1.5 shadow-lg border border-gray-200 items-center gap-2 hover:shadow-xl transition-shadow duration-300'
           style={{ pointerEvents: 'auto' }}
         >
-          {/* Play/Rotate Button */}
           <button
             onClick={handleAutoRotate}
             type='button'
@@ -522,10 +481,8 @@ useEffect(() => {
             </span>
           </button>
 
-          {/* Divider */}
           <div className='w-px h-5 bg-gray-200'></div>
 
-          {/* Center Button */}
           <button
             onClick={handleCenter}
             type='button'
@@ -551,10 +508,8 @@ useEffect(() => {
             </span>
           </button>
 
-          {/* Divider */}
           <div className='w-px h-5 bg-gray-200'></div>
 
-          {/* Zoom In Button */}
           <button
             onClick={() => handleZoom(0.7)}
             type='button'
@@ -580,10 +535,8 @@ useEffect(() => {
             </span>
           </button>
 
-          {/* Divider */}
           <div className='w-px h-5 bg-gray-200'></div>
 
-          {/* Zoom Out Button */}
           <button
             onClick={() => handleZoom(1.4)}
             type='button'
@@ -610,12 +563,10 @@ useEffect(() => {
           </button>
         </div>
 
-        {/* Mobile Layout - Vertical Stack */}
         <div
           className='md:hidden flex flex-col gap-2'
           style={{ pointerEvents: 'auto' }}
         >
-          {/* Play/Rotate Button */}
           <button
             onClick={handleAutoRotate}
             type='button'
@@ -631,7 +582,6 @@ useEffect(() => {
             </svg>
           </button>
 
-          {/* Center Button */}
           <button
             onClick={handleCenter}
             type='button'
@@ -654,7 +604,6 @@ useEffect(() => {
             </svg>
           </button>
 
-          {/* Zoom In Button */}
           <button
             onClick={() => handleZoom(0.7)}
             type='button'
@@ -677,7 +626,6 @@ useEffect(() => {
             </svg>
           </button>
 
-          {/* Zoom Out Button */}
           <button
             onClick={() => handleZoom(1.4)}
             type='button'

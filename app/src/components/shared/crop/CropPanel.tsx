@@ -49,7 +49,6 @@ const CropPanel: React.FC<CropPanelProps> = ({ onSelectionChange }) => {
   const loading = ratiosLoading || inchesLoading;
   const error = ratiosError || inchesError;
 
-  // ✅ Default selection logic once both datasets are ready
   useEffect(() => {
     if (!ratios.length || !inches.length) return;
 
@@ -70,14 +69,11 @@ const CropPanel: React.FC<CropPanelProps> = ({ onSelectionChange }) => {
         onSelectionChange?.(defaultRatio.ratio, smallest);
       }
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [ratios, inches]);
 
-  // Helpers
   const calculateDiscount = (actual: number, sell: number) =>
     Math.round(((actual - sell) / actual) * 100);
 
-  // Get available sizes for ratio
   const getAvailableSizes = (ratioData: RatioData): InchData[] => {
     if (!ratioData?.Inches) return [];
     return inches
@@ -99,13 +95,11 @@ const CropPanel: React.FC<CropPanelProps> = ({ onSelectionChange }) => {
         const isFirstRatio = ratios[0]?._id === ratioData._id;
 
         if (isFirstRatio) {
-          // For first ratio, scroll container to top
           const container = ref.closest('.overflow-auto');
           if (container) {
             container.scrollTo({ top: 0, behavior: 'smooth' });
           }
         } else {
-          // For other ratios, use scrollIntoView
           ref.scrollIntoView({
             behavior: 'smooth',
             block: 'start',
@@ -132,7 +126,6 @@ const CropPanel: React.FC<CropPanelProps> = ({ onSelectionChange }) => {
     setSelectedView('crop');
   };
 
-  // Loading UI
   if (loading)
     return (
       <div className='flex flex-col items-center justify-center py-12'>
@@ -141,7 +134,6 @@ const CropPanel: React.FC<CropPanelProps> = ({ onSelectionChange }) => {
       </div>
     );
 
-  // Error UI
   if (error)
     return (
       <div className='p-4 text-center text-red-600'>
@@ -165,7 +157,6 @@ const CropPanel: React.FC<CropPanelProps> = ({ onSelectionChange }) => {
 
   return (
     <>
-      {/* Modern Ratio Selector - Compact Tabs */}
       <div className='border-b border-gray-100 bg-white'>
         <div className='flex overflow-x-auto gap-1 px-2 py-3 scrollbar-hide'>
           {ratios.map(ratio => {
@@ -191,7 +182,6 @@ const CropPanel: React.FC<CropPanelProps> = ({ onSelectionChange }) => {
         </div>
       </div>
 
-      {/* Sizes Grid - Clean Cards */}
       <div className='p-4 md:p-5 space-y-3 bg-gray-50/50'>
         <div className='flex items-center justify-between px-1'>
           <h3 className='text-xs font-bold text-gray-500 uppercase tracking-wider'>
@@ -246,7 +236,6 @@ const CropPanel: React.FC<CropPanelProps> = ({ onSelectionChange }) => {
                       : 'bg-white border-2 border-gray-100 hover:border-primary/30 hover:shadow-md'
                   }`}
                 >
-                  {/* Selection Indicator */}
                   {isSelected && (
                     <motion.div
                       initial={{ scale: 0, rotate: -180 }}
@@ -275,7 +264,6 @@ const CropPanel: React.FC<CropPanelProps> = ({ onSelectionChange }) => {
                   )}
 
                   <div className='flex justify-between items-start gap-4 pr-8'>
-                    {/* Size Info */}
                     <div className='flex-1 min-w-0'>
                       <div
                         className={`font-bold text-base mb-1 ${isSelected ? 'text-primary' : 'text-gray-900'}`}
@@ -287,7 +275,6 @@ const CropPanel: React.FC<CropPanelProps> = ({ onSelectionChange }) => {
                       </div>
                     </div>
 
-                    {/* Price Info */}
                     <div className='text-right shrink-0'>
                       <div
                         className={`font-bold text-lg leading-tight ${isSelected ? 'text-primary' : 'text-gray-900'}`}
@@ -304,7 +291,6 @@ const CropPanel: React.FC<CropPanelProps> = ({ onSelectionChange }) => {
                     </div>
                   </div>
 
-                  {/* Discount Badge */}
                   {discount > 0 && (
                     <div className='mt-3 pt-3 border-t border-gray-100 flex items-center justify-between'>
                       <div className='inline-flex items-center gap-1.5 px-2 py-1 bg-green-50 border border-green-200 rounded-lg'>

@@ -40,7 +40,6 @@ const ApplyChangesControl: React.FC<ApplyChangesControlProps> = ({
       transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
       className='flex items-center justify-between gap-3 w-full'
     >
-      {/* Price Section */}
       <motion.div
         className='flex flex-col flex-shrink-0'
         initial={{ opacity: 0, x: -20 }}
@@ -77,7 +76,6 @@ const ApplyChangesControl: React.FC<ApplyChangesControlProps> = ({
         )}
       </motion.div>
 
-      {/* Apply Button */}
       <motion.div
         initial={{ opacity: 0, x: 20 }}
         animate={{ opacity: 1, x: 0 }}

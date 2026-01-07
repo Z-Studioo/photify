@@ -8,7 +8,6 @@ import UploadImage from './pages';
 import { BrowserRouter, Route, Routes } from 'react-router';
 import CropPage from '@/pages/crop';
 import { ToastProvider } from '@/components/shared/common/toast';
-
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { PresetProvider } from './context/PresetContext';
 
@@ -17,7 +16,7 @@ const queryClient = new QueryClient();
 const App: React.FC = () => {
   return (
     <QueryClientProvider client={queryClient}>
-      <ToastProvider> 
+      <ToastProvider>
         <BrowserRouter>
           <UploadProvider>
             <PresetProvider>

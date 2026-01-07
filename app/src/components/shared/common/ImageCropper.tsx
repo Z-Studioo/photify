@@ -7,8 +7,12 @@ interface ImageCropperProps {
 }
 
 export default function ImageCropper({ isVisible = true }: ImageCropperProps) {
-  const { file, selectedRatio, setPendingFile, setPendingPreview } = useUpload();
-  const [imageSize, setImageSize] = useState<{ width: number; height: number } | null>(null);
+  const { file, selectedRatio, setPendingFile, setPendingPreview } =
+    useUpload();
+  const [imageSize, setImageSize] = useState<{
+    width: number;
+    height: number;
+  } | null>(null);
 
   useEffect(() => {
     if (!file) return;
@@ -31,7 +35,6 @@ export default function ImageCropper({ isVisible = true }: ImageCropperProps) {
 
   if (!file || !isVisible || !imageSize) return null;
 
-  // Scale down if needed for UI but keep displayedHeight and displayedWidth in sync
   const maxWidth = 800;
   const maxHeight = 600;
   let displayedWidth = imageSize.width;
@@ -46,16 +49,16 @@ export default function ImageCropper({ isVisible = true }: ImageCropperProps) {
   }
 
   return (
-    <div className="flex flex-col items-center justify-center w-full h-full px-2 md:px-4 overflow-hidden">
-      <div className="flex flex-col items-center justify-center w-full px-2 md:px-4 overflow-hidden">
+    <div className='flex flex-col items-center justify-center w-full h-full px-2 md:px-4 overflow-hidden'>
+      <div className='flex flex-col items-center justify-center w-full px-2 md:px-4 overflow-hidden'>
         {imageSize && (
           <div
-            className="relative flex items-center justify-center w-full"
+            className='relative flex items-center justify-center w-full'
             style={{
               height: displayedHeight,
               maxHeight: displayedHeight,
               maxWidth: displayedWidth,
-              overflow: 'hidden', // clip overflow vertically
+              overflow: 'hidden',
             }}
           >
             <ImageCrop
@@ -63,14 +66,14 @@ export default function ImageCropper({ isVisible = true }: ImageCropperProps) {
               file={file}
               aspect={aspect}
               generateImageOnChange={true}
-              onChangeCustom={(croppedImage) => {
+              onChangeCustom={croppedImage => {
                 setPendingFile(file);
                 setPendingPreview(croppedImage);
               }}
-              className="flex items-center justify-center w-full h-full"
+              className='flex items-center justify-center w-full h-full'
             >
               <ImageCropContent
-                className="rounded-xl"
+                className='rounded-xl'
                 style={{
                   maxWidth: '100%',
                   maxHeight: '100%',
@@ -83,7 +86,7 @@ export default function ImageCropper({ isVisible = true }: ImageCropperProps) {
           </div>
         )}
       </div>
-      <p className="text-xs md:text-sm mt-2 text-muted-foreground text-center">
+      <p className='text-xs md:text-sm mt-2 text-muted-foreground text-center'>
         Drag the corners to crop the image
       </p>
     </div>

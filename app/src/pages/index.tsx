@@ -21,7 +21,6 @@ const Page = () => {
 
   const navigate = useNavigate();
 
-  // Unified animation variants
   const containerVariants: Variants = {
     hidden: { opacity: 0 },
     visible: {
@@ -69,7 +68,6 @@ const Page = () => {
         Upload your photo
       </motion.h1>
 
-      {/* Image section */}
       <motion.div variants={itemVariants} className='w-full max-w-[744px]'>
         <Card className='w-full mx-auto flex flex-col items-center border-none p-0 shadow-none'>
           <AnimatePresence mode='wait'>
@@ -197,7 +195,6 @@ const Page = () => {
         </Card>
       </motion.div>
 
-      {/* Steps */}
       <motion.div
         variants={itemVariants}
         className='w-full max-w-[744px] mt-16'
@@ -218,7 +215,6 @@ const Page = () => {
                 />
               </div>
 
-              {/* First Icon */}
               <motion.div
                 className='flex flex-col items-center gap-2 z-10'
                 custom={0}
@@ -239,7 +235,6 @@ const Page = () => {
                 <span className='text-xs font-medium text-center'>Adjust</span>
               </motion.div>
 
-              {/* Second Icon */}
               <motion.div
                 className='flex flex-col items-center gap-2 z-10'
                 custom={1}
@@ -262,7 +257,6 @@ const Page = () => {
                 </span>
               </motion.div>
 
-              {/* Third Icon */}
               <motion.div
                 className='flex flex-col items-center gap-2 z-10'
                 custom={2}
@@ -287,7 +281,6 @@ const Page = () => {
         </Card>
       </motion.div>
 
-      {/* Info Alert */}
       <motion.div
         variants={itemVariants}
         className='w-full max-w-[744px] mt-12'

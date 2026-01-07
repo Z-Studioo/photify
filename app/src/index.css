@@ -5,10 +5,8 @@
 @import "tw-animate-css";
 
 @custom-variant dark (&:is(.dark *));
-
-/* ========== Theme Variables ========== */
 :root {
-  --font-body: 'Poppins', sans-serif;          /* body font */
+  --font-body: 'Poppins', sans-serif;    
   --font-heading: 'Bricolage Grotesque', sans-serif;
   --radius: 0.65rem;
   --background: oklch(1 0 0);
@@ -130,7 +128,7 @@
     line-height: 1.45;
   }
 
-  /* Default heading styles (use --font-heading) */
+
   h1,
   .heading-1 {
     font-family: var(--font-heading);
@@ -171,7 +169,6 @@
     font-size: 1rem;
   }
 
-  /* Ensure adjacent paragraphs don't double-up spacing */
   :where(h1, h2, h3, h4) + p {
     margin-top: 0;
   }

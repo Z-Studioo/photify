@@ -10,7 +10,6 @@ export default function CropPage() {
   const navigate = useNavigate();
   const { pendingFile, pendingPreview, applyPendingChanges } = useUpload();
 
-  // Fix for mobile viewport height issues
   useEffect(() => {
     const setVH = () => {
       const vh = window.innerHeight * 0.01;
@@ -34,21 +33,17 @@ export default function CropPage() {
 
   return (
     <div className='flex flex-col md:flex-row h-[calc(var(--vh,1vh)*100-5px)] w-full bg-app-muted rounded-2xl overflow-hidden'>
-      {/* Top/Left - Cropper (50% on mobile, flex-1 on desktop) */}
       <div className='flex flex-col h-1/2 md:h-full md:flex-1 items-center justify-center p-4 md:p-8 bg-white/80 backdrop-blur-sm overflow-hidden'>
         <div className='w-full h-full flex items-center justify-center overflow-hidden'>
           <ImageCropper />
         </div>
       </div>
 
-      {/* Bottom/Right - Ratio / Size Panel (50% on mobile, fixed width on desktop) */}
       <div className='h-1/2 md:h-full w-full md:w-[380px] bg-white flex flex-col border-t md:border-t-0 md:border-l'>
-        {/* Scrollable content */}
         <div className='flex-1 overflow-y-auto pb-20 md:pb-4'>
           <CropPanel />
         </div>
 
-        {/* Fixed Apply Button (always visible at bottom) */}
         <div
           className='w-full bg-white border-t p-4 absolute bottom-0 left-0 md:static md:border-t md:p-4 md:block'
           style={{

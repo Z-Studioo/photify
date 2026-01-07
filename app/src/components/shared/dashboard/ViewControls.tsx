@@ -17,7 +17,6 @@ const ViewControls: React.FC<ViewControlsProps> = ({
       className='fixed flex justify-between items-start md:w-9/12 top-16 md:top-18 md:px-4 pointer-events-none z-20'
       style={{ pointerEvents: 'none' }}
     >
-      {/* Add Image Button */}
       <motion.button
         onClick={onAddImage}
         className={`flex flex-col items-center justify-center px-2 py-2 md:px-2 md:py-2 bg-[var(--primary)] border border-gray-300 text-white hover:transition-all cursor-pointer shadow-sm pointer-events-auto flex-shrink-0 ${
@@ -33,7 +32,6 @@ const ViewControls: React.FC<ViewControlsProps> = ({
         <span className='text-sm font-medium hidden md:inline'>Add Image</span>
       </motion.button>
 
-      {/* Room + 3D View buttons */}
       <motion.div
         className='fixed flex gap-2 pointer-events-auto right-0 md:right-2'
         initial={{ opacity: 0, scale: 0.9 }}

@@ -24,22 +24,17 @@ const MyPhotos: React.FC<ImageSelectionPanelProps> = ({
   onImageSelect,
   onUploadMore,
   onDeleteImage,
-  // onClose,
-  // onConfirm
 }) => {
   return (
     <div className='flex flex-col h-full'>
-      {/* Header */}
       <div className='flex items-center justify-between p-4 border-b'>
         <h3 className='text-lg font-semibold'>
           My Photos ({uploadedImages.length})
         </h3>
       </div>
 
-      {/* Content */}
       <div className='flex-1 overflow-auto p-4'>
         <div className='flex flex-wrap gap-3'>
-          {/* Upload More Button */}
           <div
             onClick={onUploadMore}
             className='flex-shrink-0 w-20 h-20 border-2 border-dashed border-gray-300 rounded-lg flex flex-col items-center justify-center space-y-1 hover:border-gray-400 cursor-pointer transition-colors'
@@ -50,7 +45,6 @@ const MyPhotos: React.FC<ImageSelectionPanelProps> = ({
             </span>
           </div>
 
-          {/* Uploaded Images Thumbnails */}
           {uploadedImages.map(image => (
             <div
               key={image.id}
@@ -67,7 +61,6 @@ const MyPhotos: React.FC<ImageSelectionPanelProps> = ({
                 onClick={() => onImageSelect(image.id)}
               />
 
-              {/* Delete Button */}
               <button
                 onClick={e => {
                   e.stopPropagation();
@@ -80,7 +73,6 @@ const MyPhotos: React.FC<ImageSelectionPanelProps> = ({
                 <X className='h-3 w-3' />
               </button>
 
-              {/* Selection Overlay */}
               <div
                 onClick={() => onImageSelect(image.id)}
                 className={`absolute inset-0 flex items-center justify-center transition-opacity ${

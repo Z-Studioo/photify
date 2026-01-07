@@ -13,7 +13,7 @@ interface RoomFrame3DProps {
   onInteraction: () => void;
 }
 
-// 3D Frame component optimized for room view
+// 3D Frame for room view
 const RoomFrame3D = ({
   imageUrl,
   shape,
@@ -32,30 +32,22 @@ const RoomFrame3D = ({
   const [isDragging, setIsDragging] = useState(false);
   const { edgeType } = useEdge();
 
-  // Mobile scaling factor - reduce size on mobile devices
   const isMobile = typeof window !== 'undefined' && window.innerWidth < 768;
-  const MOBILE_SCALE_FACTOR = 0.6; // Reduce to 60% of original size on mobile
+  const MOBILE_SCALE_FACTOR = 0.6;
 
   const BASE_SIZE = 12;
-  const HOVER_FACTOR = 1.05; // Reduced from 1.1 to 1.05 for subtle effect
+  const HOVER_FACTOR = 1.05;
 
-  const scaleX = useMemo(
-    () => {
-      const baseScale = selectedSize.width / BASE_SIZE;
-      return isMobile ? baseScale * MOBILE_SCALE_FACTOR : baseScale;
-    },
-    [selectedSize.width, isMobile]
-  );
-  
-  const scaleY = useMemo(
-    () => {
-      const baseScale = selectedSize.height / BASE_SIZE;
-      return isMobile ? baseScale * MOBILE_SCALE_FACTOR : baseScale;
-    },
-    [selectedSize.height, isMobile]
-  );
+  const scaleX = useMemo(() => {
+    const baseScale = selectedSize.width / BASE_SIZE;
+    return isMobile ? baseScale * MOBILE_SCALE_FACTOR : baseScale;
+  }, [selectedSize.width, isMobile]);
 
-  // Rest of the component remains the same...
+  const scaleY = useMemo(() => {
+    const baseScale = selectedSize.height / BASE_SIZE;
+    return isMobile ? baseScale * MOBILE_SCALE_FACTOR : baseScale;
+  }, [selectedSize.height, isMobile]);
+
   useEffect(() => {
     if (!imageUrl) {
       setTexture(null);
@@ -67,7 +59,6 @@ const RoomFrame3D = ({
 
     const loader = new THREE.TextureLoader();
 
-    // Dispose old texture
     if (texture) texture.dispose();
 
     loader.load(
@@ -93,8 +84,6 @@ const RoomFrame3D = ({
         } else {
           (loadedTexture as any).encoding = THREE.SRGBColorSpace;
         }
-
-        // Center image based on aspect ratio
         const img = loadedTexture.image;
         if (img && img.width && img.height) {
           const frameAspect = 1.8 / 1.35;
@@ -121,7 +110,6 @@ const RoomFrame3D = ({
     );
   }, [imageUrl, edgeType]);
 
-  // --- Image geometry (photo plane / shape) ---
   const geometry = useMemo(() => {
     let geo: THREE.BufferGeometry;
 
@@ -139,13 +127,11 @@ const RoomFrame3D = ({
         geo = new THREE.CircleGeometry(0.9, 12);
         break;
       default:
-        // rectangle
         geo = new THREE.PlaneGeometry(1.8, 1.35);
     }
     return geo;
   }, [shape]);
 
-  // --- Frame geometry (3D physical border) ---
   const frameGeometry = useMemo(() => {
     const frameDepth = 0.6;
 
@@ -196,21 +182,17 @@ const RoomFrame3D = ({
         }
         setIsDragging(false);
       }}
-      onPointerMove={(e) => {
+      onPointerMove={e => {
         if (e.buttons > 0) {
-          // User is clicking and dragging - switch to 3D
           onInteraction();
         }
       }}
       onClick={() => {
-        // Also trigger on simple click
         onInteraction();
       }}
     >
-      {/* Frame */}
       {frameGeometry}
 
-      {/* Acrylic glass effect */}
       <mesh position={[0, 0, 0.02]}>
         {shape === 'rectangle' ? (
           <planeGeometry args={[1.8, 1.35]} />
@@ -229,7 +211,6 @@ const RoomFrame3D = ({
         />
       </mesh>
 
-      {/* Photo/Image */}
       {texture && (
         <mesh
           scale={[
@@ -262,14 +243,12 @@ const RoomFrame3DCanvas = ({ onInteraction }: RoomFrame3DProps) => {
 
   return (
     <div className='absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-80 h-60 cursor-pointer'>
-      
       <Canvas
         shadows
         camera={{ position: [0, 0, 4], fov: 50 }}
         style={{ background: 'transparent' }}
       >
         <Suspense fallback={null}>
-          {/* Lighting optimized for room integration */}
           <ambientLight intensity={1} />
           <directionalLight
             position={[3, 4, 3]}
@@ -280,7 +259,6 @@ const RoomFrame3DCanvas = ({ onInteraction }: RoomFrame3DProps) => {
           />
           <pointLight position={[2, 2, 2]} intensity={0.4} />
 
-          {/* Frame with image */}
           {preview && selectedSize && (
             <RoomFrame3D
               imageUrl={preview}
@@ -291,7 +269,6 @@ const RoomFrame3DCanvas = ({ onInteraction }: RoomFrame3DProps) => {
             />
           )}
 
-          {/* Disable orbit controls to prevent interaction */}
           <OrbitControls enabled={false} />
         </Suspense>
       </Canvas>

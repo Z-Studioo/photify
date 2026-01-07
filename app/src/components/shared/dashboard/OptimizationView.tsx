@@ -28,10 +28,7 @@ const OptimizationView: React.FC<OptimizationViewProps> = ({ isVisible }) => {
   const { setSelectedFeature } = useFeature();
   const [isProcessing, setIsProcessing] = useState(false);
 
-  // Use pending quality for slider if it exists, otherwise use current
   const displayQuality = pendingQuality || quality;
-
-  // Enhancement function
   const enhanceImageWithCanvas = async (
     src: string,
     qualityValue: number
@@ -77,7 +74,6 @@ const OptimizationView: React.FC<OptimizationViewProps> = ({ isVisible }) => {
     });
   };
 
-  // Process optimization when pending quality changes
   useEffect(() => {
     const basePreview = originalPreview || preview;
     if (!basePreview || !pendingQuality) return;
@@ -85,11 +81,13 @@ const OptimizationView: React.FC<OptimizationViewProps> = ({ isVisible }) => {
     const handler = setTimeout(async () => {
       try {
         setIsProcessing(true);
-        const enhanced = await enhanceImageWithCanvas(basePreview, pendingQuality[0]);
+        const enhanced = await enhanceImageWithCanvas(
+          basePreview,
+          pendingQuality[0]
+        );
         setPendingPreview(enhanced);
         setPendingFile(file);
       } catch (error) {
-        // eslint-disable-next-line no-console
         console.error('Image enhancement failed:', error);
       } finally {
         setIsProcessing(false);
@@ -97,7 +95,14 @@ const OptimizationView: React.FC<OptimizationViewProps> = ({ isVisible }) => {
     }, 800);
 
     return () => clearTimeout(handler);
-  }, [pendingQuality, originalPreview, preview, setPendingPreview, file, setPendingFile]);
+  }, [
+    pendingQuality,
+    originalPreview,
+    preview,
+    setPendingPreview,
+    file,
+    setPendingFile,
+  ]);
 
   const handleGoBack = () => {
     setSelectedView('room');
@@ -106,7 +111,6 @@ const OptimizationView: React.FC<OptimizationViewProps> = ({ isVisible }) => {
 
   if (!isVisible) return null;
 
-  // Use original preview as the "before" image
   const beforeImage = originalPreview || preview;
   if (!beforeImage) {
     return (
@@ -118,7 +122,6 @@ const OptimizationView: React.FC<OptimizationViewProps> = ({ isVisible }) => {
 
   return (
     <div className='flex flex-col w-full h-full bg-white overflow-y-auto'>
-      {/* Header with Back Button */}
       <div className='relative flex items-center p-4 flex-shrink-0 border-b border-gray-200'>
         <ChevronLeft
           className='h-4 w-4 text-gray-600 cursor-pointer'
@@ -150,7 +153,6 @@ const OptimizationView: React.FC<OptimizationViewProps> = ({ isVisible }) => {
           Drag the slider to compare before and after optimization.
         </p>
 
-        {/* Mobile Optimization Controls */}
         <div className='w-full max-w-md px-2 md:hidden'>
           <div className='bg-gray-50 rounded-xl p-4 space-y-3 border border-gray-200'>
             <div className='flex items-center justify-between'>
@@ -168,7 +170,7 @@ const OptimizationView: React.FC<OptimizationViewProps> = ({ isVisible }) => {
               max={100}
               step={1}
               value={displayQuality}
-              onValueChange={setPendingQuality} // Use setPendingQuality instead of setQuality
+              onValueChange={setPendingQuality}
               className='w-full'
               disabled={isProcessing}
             />

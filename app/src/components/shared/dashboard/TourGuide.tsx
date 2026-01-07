@@ -78,7 +78,6 @@ const TourGuide: React.FC<TourGuideProps> = ({ steps, onComplete, onSkip }) => {
         className='fixed bottom-6 right-6 z-50 w-96 max-w-[calc(100vw-3rem)]'
       >
         <div className='bg-white rounded-lg shadow-2xl border border-gray-200 overflow-hidden'>
-          {/* Progress bar */}
           <div className='h-1 bg-gray-100 relative overflow-hidden'>
             <motion.div
               className='absolute inset-y-0 left-0 bg-primary'
@@ -87,9 +86,7 @@ const TourGuide: React.FC<TourGuideProps> = ({ steps, onComplete, onSkip }) => {
             />
           </div>
 
-          {/* Content */}
           <div className='p-6'>
-            {/* Header */}
             <div className='flex items-start justify-between mb-4'>
               <div className='flex-1'>
                 <div className='flex items-center gap-2 mb-1'>
@@ -111,12 +108,10 @@ const TourGuide: React.FC<TourGuideProps> = ({ steps, onComplete, onSkip }) => {
               </button>
             </div>
 
-            {/* Description */}
             <p className='text-gray-600 text-sm leading-relaxed mb-6'>
               {currentStepData.description}
             </p>
 
-            {/* Navigation */}
             <div className='flex items-center justify-between gap-3'>
               <Button
                 variant='outline'
@@ -157,7 +152,6 @@ const TourGuide: React.FC<TourGuideProps> = ({ steps, onComplete, onSkip }) => {
             </div>
           </div>
 
-          {/* Step indicators */}
           <div className='flex items-center justify-center gap-1.5 px-6 pb-4'>
             {steps.map((step, index) => {
               const isActive = index === currentStep;
