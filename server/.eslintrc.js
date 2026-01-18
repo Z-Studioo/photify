@@ -22,7 +22,7 @@ module.exports = {
     ],
 
     // General rules
-    'no-console': 'warn',
+    'no-console': 'off', // Allow console statements in server for logging
     'no-debugger': 'error',
     'prefer-const': 'error',
     'no-var': 'error',
