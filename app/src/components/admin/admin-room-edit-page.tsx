@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { useRouter } from 'next/navigation';
+import { useNavigate, useParams } from 'react-router-dom';
 import { AdminLayout } from './admin-layout';
 import { AdminRoomContentEditor } from './admin-room-content-editor';
 import { DeleteConfirmDialog } from '@/components/shared/delete-confirm-dialog';
@@ -34,11 +34,6 @@ import { ImageWithFallback } from '@/components/figma/image-with-fallback';
 import { createClient } from '@/lib/supabase/client';
 import { toast } from 'sonner';
 import { useProducts, useArt } from '@/lib/supabase/hooks';
-
-interface AdminRoomEditPageProps {
-  roomId: string;
-}
-
 interface Hotspot {
   id?: string;
   product_id?: string;
@@ -54,8 +49,9 @@ interface Hotspot {
   product_slug?: string;
 }
 
-export function AdminRoomEditPage({ roomId }: AdminRoomEditPageProps) {
-  const router = useRouter();
+export function AdminRoomEditPage() {
+  const navigate = useNavigate();
+  const { roomId } = useParams<{ roomId: string }>();
   const supabase = createClient();
   const isEditing = roomId !== 'new';
   const [loading, setLoading] = useState(isEditing);
@@ -374,7 +370,7 @@ export function AdminRoomEditPage({ roomId }: AdminRoomEditPageProps) {
 
         // Redirect to edit page for newly created room
         if (newRoom) {
-          router.push(`/admin/rooms/${newRoom.id}`);
+          navigate(`/admin/rooms/${newRoom.id}`);
           return;
         }
       }
@@ -395,7 +391,7 @@ export function AdminRoomEditPage({ roomId }: AdminRoomEditPageProps) {
       if (error) throw error;
 
       toast.success('Room deleted successfully');
-      router.push('/admin/rooms');
+      navigate('/admin/rooms');
     } catch (error) {
       toast.error('Failed to delete room');
       console.warn('Error deleting room:', error);
@@ -576,7 +572,7 @@ export function AdminRoomEditPage({ roomId }: AdminRoomEditPageProps) {
         <div className='mb-6'>
           <Button
             variant='ghost'
-            onClick={() => router.push('/admin/rooms')}
+            onClick={() => navigate('/admin/rooms')}
             className='mb-4 -ml-2'
           >
             <ArrowLeft className='w-4 h-4 mr-2' />
@@ -854,7 +850,7 @@ export function AdminRoomEditPage({ roomId }: AdminRoomEditPageProps) {
           {/* SEO & Content Tab */}
           {isEditing && (
             <TabsContent value='content'>
-              <AdminRoomContentEditor roomId={roomId} />
+              <AdminRoomContentEditor roomId={roomId as string} />
             </TabsContent>
           )}
 

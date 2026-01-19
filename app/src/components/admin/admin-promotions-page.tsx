@@ -1,5 +1,4 @@
 import { useState } from 'react';
-import { useRouter } from 'next/navigation';
 import { AdminLayout } from './admin-layout';
 import { DeleteConfirmDialog } from '@/components/shared/delete-confirm-dialog';
 import { Plus, Edit, Trash2, Copy, Tag, Loader2 } from 'lucide-react';
@@ -7,9 +6,10 @@ import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
 import { usePromotions } from '@/lib/supabase/hooks';
 import { createClient } from '@/lib/supabase/client';
+import { useNavigate } from 'react-router';
 
 export function AdminPromotionsPage() {
-  const router = useRouter();
+  const navigate = useNavigate();
   const { data: dbPromotions, loading, refetch } = usePromotions();
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [promotionToDelete, setPromotionToDelete] = useState<{
@@ -53,7 +53,7 @@ export function AdminPromotionsPage() {
   });
 
   const handleEdit = (promotionId: string) => {
-    router.push(`/admin/promotions/edit/${promotionId}`);
+    navigate(`/admin/promotions/edit/${promotionId}`);
   };
 
   const handleCopyCode = (code: string) => {
@@ -113,7 +113,7 @@ export function AdminPromotionsPage() {
             </p>
           </div>
           <Button
-            onClick={() => router.push('/admin/promotions/new')}
+            onClick={() => navigate('/admin/promotions/new')}
             className='bg-[#f63a9e] hover:bg-[#e02d8d] gap-2'
             style={{ height: '50px' }}
           >

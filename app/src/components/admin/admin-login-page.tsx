@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useNavigate } from 'react-router-dom';
 import { useAdmin } from '@/context/AdminContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -12,7 +12,7 @@ export function AdminLoginPage() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const { login } = useAdmin();
-  const router = useRouter();
+  const navigate = useNavigate();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -22,7 +22,7 @@ export function AdminLoginPage() {
     const result = await login(email, password);
 
     if (result.success) {
-      router.push('/admin/dashboard');
+      navigate('/admin/dashboard');
     } else {
       setError(result.error || 'Invalid email or password');
     }
@@ -124,7 +124,7 @@ export function AdminLoginPage() {
 
         <div className='text-center mt-6'>
           <button
-            onClick={() => router.push('/')}
+            onClick={() => navigate('/')}
             className='text-gray-600 hover:text-[#f63a9e] transition-colors text-sm'
           >
             ← Back to Store

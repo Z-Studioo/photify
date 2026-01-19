@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useNavigate } from 'react-router-dom';
 import { AdminLayout } from './admin-layout';
 import { Search, Filter, Download, Eye, Printer, Loader2 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
@@ -15,7 +15,7 @@ import { createClient } from '@/lib/supabase/client';
 import { toast } from 'sonner';
 
 export function AdminOrdersPage() {
-  const router = useRouter();
+  const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [dbOrders, setDbOrders] = useState<any[]>([]);
@@ -301,7 +301,7 @@ export function AdminOrdersPage() {
                       <div className='flex items-center gap-2'>
                         <button
                           onClick={() =>
-                            router.push(`/admin/orders/${order.id}`)
+                            navigate(`/admin/orders/${order.id}`)
                           }
                           className='p-2 hover:bg-gray-100 rounded-lg transition-colors'
                           title='View Details'

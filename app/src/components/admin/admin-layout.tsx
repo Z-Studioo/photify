@@ -1,5 +1,5 @@
 import { type ReactNode } from 'react';
-import { useRouter, usePathname } from 'next/navigation';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { useAdmin } from '@/context/AdminContext';
 import {
   LayoutDashboard,
@@ -20,13 +20,14 @@ interface AdminLayoutProps {
 }
 
 export function AdminLayout({ children }: AdminLayoutProps) {
-  const router = useRouter();
-  const pathname = usePathname();
+  const navigate = useNavigate();
+  const location = useLocation();
+  const pathname = location.pathname;
   const { logout } = useAdmin();
 
   const handleLogout = async () => {
     await logout();
-    router.push('/admin/login');
+    navigate('/admin/login');
   };
 
   const navItems = [
@@ -82,7 +83,7 @@ export function AdminLayout({ children }: AdminLayoutProps) {
               return (
                 <button
                   key={item.path}
-                  onClick={() => router.push(item.path)}
+                  onClick={() => navigate(item.path)}
                   className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${
                     isActive
                       ? 'bg-pink-50 text-[#f63a9e]'

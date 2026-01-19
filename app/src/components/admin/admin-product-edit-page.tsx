@@ -1,6 +1,5 @@
-import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
-import dynamic from 'next/dynamic';
+import { useState, useEffect, lazy, Suspense } from 'react';
+import { useNavigate, useParams } from 'react-router-dom';
 import { AdminLayout } from './admin-layout';
 import { AdminProductConfigEditor } from './admin-product-config-editor';
 import { AdminProductContentEditor } from './admin-product-content-editor';
@@ -29,24 +28,18 @@ import { Separator } from '@/components/ui/separator';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { toast } from 'sonner';
 
-// Dynamically import config editors to avoid SSR issues
-const SingleCanvasConfigEditor = dynamic(
-  () =>
-    import('@/components/product-configs/single-canvas/ConfigEditor').then(
-      m => m.SingleCanvasConfigEditor
-    ),
-  {
-    ssr: false,
-    loading: () => (
-      <div className='p-4'>
-        <Loader2 className='w-6 h-6 animate-spin' />
-      </div>
-    ),
-  }
+// Lazy load config editor to optimize bundle size
+const SingleCanvasConfigEditor = lazy(() =>
+  import('@/components/product-configs/single-canvas/config-editor').then(
+    m => ({
+      default: m.SingleCanvasConfigEditor,
+    })
+  )
 );
 
-export function AdminProductEditPage({ productId }: { productId: string }) {
-  const router = useRouter();
+export function AdminProductEditPage() {
+  const navigate = useNavigate();
+  const { productId } = useParams<{ productId: string }>();
   const [product, setProduct] = useState<any>(null);
   const [loading, setLoading] = useState(true);
 
@@ -63,7 +56,7 @@ export function AdminProductEditPage({ productId }: { productId: string }) {
         // Check if productId is a UUID or a slug
         const isUUID =
           /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
-            productId
+            productId as string
           );
         console.log('📋 Is UUID:', isUUID, 'Value:', productId);
 
@@ -256,7 +249,7 @@ export function AdminProductEditPage({ productId }: { productId: string }) {
             <p className='text-gray-600 mb-6'>
               The product you&apos;re looking for doesn&apos;t exist.
             </p>
-            <Button onClick={() => router.push('/admin/products')}>
+            <Button onClick={() => navigate('/admin/products')}>
               Back to Products
             </Button>
           </div>
@@ -277,7 +270,7 @@ export function AdminProductEditPage({ productId }: { productId: string }) {
         {/* Header */}
         <div className='mb-8'>
           <button
-            onClick={() => router.push('/admin/products')}
+            onClick={() => navigate('/admin/products')}
             className='flex items-center gap-2 text-gray-600 hover:text-[#f63a9e] mb-6 transition-colors'
           >
             <ArrowLeft className='w-4 h-4' />
@@ -432,10 +425,18 @@ export function AdminProductEditPage({ productId }: { productId: string }) {
                           <strong>{productConfig.product.name}</strong>
                         </p>
                       </div>
-                      <ConfigEditorComponent
-                        currentConfig={product.config}
-                        onSave={handleConfigSave}
-                      />
+                      <Suspense
+                        fallback={
+                          <div className='p-4 flex items-center justify-center'>
+                            <Loader2 className='w-6 h-6 animate-spin text-[#f63a9e]' />
+                          </div>
+                        }
+                      >
+                        <ConfigEditorComponent
+                          currentConfig={product.config}
+                          onSave={handleConfigSave}
+                        />
+                      </Suspense>
                     </>
                   ) : null;
                 })()

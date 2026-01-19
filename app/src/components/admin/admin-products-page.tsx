@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useNavigate } from 'react-router-dom';
 import { AdminLayout } from './admin-layout';
 import { Search, Edit, Eye } from 'lucide-react';
 import { Input } from '@/components/ui/input';
@@ -13,7 +13,7 @@ const productTypeLabels: Record<string, string> = {
 };
 
 export function AdminProductsPage() {
-  const router = useRouter();
+  const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState('');
 
   // Fetch products from database
@@ -69,7 +69,7 @@ export function AdminProductsPage() {
           </div>
           {/* Add Product button disabled */}
           {/* <Button 
-            onClick={() => router.push('/admin/products/new')}
+            onClick={() => navigate('/admin/products/new')}
             className="bg-[#f63a9e] hover:bg-[#e02d8d] gap-2" 
             style={{ height: '50px' }}
           >
@@ -189,7 +189,7 @@ export function AdminProductsPage() {
                         <div className='flex items-center justify-end gap-2'>
                           <button
                             onClick={() =>
-                              router.push(`/admin/products/edit/${product.id}`)
+                              navigate(`/admin/products/edit/${product.id}`)
                             }
                             className='p-2 text-gray-600 hover:text-[#f63a9e] hover:bg-pink-50 rounded-lg transition-colors'
                             title='View Product'
@@ -198,7 +198,7 @@ export function AdminProductsPage() {
                           </button>
                           <button
                             onClick={() =>
-                              router.push(`/admin/products/edit/${product.id}`)
+                              navigate(`/admin/products/edit/${product.id}`)
                             }
                             className='p-2 text-gray-600 hover:text-[#f63a9e] hover:bg-pink-50 rounded-lg transition-colors'
                             title='Edit Configuration'

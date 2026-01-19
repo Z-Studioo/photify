@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { useRouter } from 'next/navigation';
+import { useNavigate, useParams } from 'react-router-dom';
 import { AdminLayout } from './admin-layout';
 import {
   ArrowLeft,
@@ -53,12 +53,9 @@ interface Product {
   description?: string;
 }
 
-export function AdminCategoryDetailPage({
-  categoryId,
-}: {
-  categoryId: string;
-}) {
-  const router = useRouter();
+export function AdminCategoryDetailPage() {
+  const navigate = useNavigate();
+  const { categoryId } = useParams<{ categoryId: string }>();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [category, setCategory] = useState<Category | null>(null);
   const [products, setProducts] = useState<Product[]>([]);
@@ -314,7 +311,7 @@ export function AdminCategoryDetailPage({
         <div className='text-center py-12'>
           <p className='text-gray-600'>Category not found</p>
           <Button
-            onClick={() => router.push('/admin/categories')}
+            onClick={() => navigate('/admin/categories')}
             className='mt-4'
           >
             Back to Categories
@@ -331,7 +328,7 @@ export function AdminCategoryDetailPage({
         <div className='mb-8'>
           <Button
             variant='ghost'
-            onClick={() => router.push('/admin/categories')}
+            onClick={() => navigate('/admin/categories')}
             className='mb-4'
           >
             <ArrowLeft className='w-4 h-4 mr-2' />

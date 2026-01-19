@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useNavigate } from 'react-router-dom';
 import { AdminLayout } from './admin-layout';
 import { Search, Plus, Edit, Trash2, Filter, Loader2 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
@@ -18,7 +18,7 @@ import {
 // Removed hardcoded data - will fetch from Supabase
 
 export function AdminArtCollectionPage() {
-  const router = useRouter();
+  const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('all');
   const [artProducts, setArtProducts] = useState<any[]>([]);
@@ -83,7 +83,7 @@ export function AdminArtCollectionPage() {
             </p>
           </div>
           <Button
-            onClick={() => router.push('/admin/art-collection/new')}
+            onClick={() => navigate('/admin/art-collection/new')}
             className='bg-[#f63a9e] hover:bg-[#e02d8d] gap-2'
             style={{ height: '50px' }}
           >
@@ -228,7 +228,7 @@ export function AdminArtCollectionPage() {
                           <div className='flex items-center justify-end gap-2'>
                             <button
                               onClick={() =>
-                                router.push(
+                                navigate(
                                   `/admin/art-collection/edit/${product.id}`
                                 )
                               }

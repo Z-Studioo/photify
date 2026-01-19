@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useRouter, useParams } from 'next/navigation';
+import { useNavigate, useParams } from 'react-router-dom';
 import { AdminLayout } from './admin-layout';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -27,15 +27,14 @@ import { usePromotion } from '@/lib/supabase/hooks';
 import { createClient } from '@/lib/supabase/client';
 
 export function AdminPromotionEditPage() {
-  const router = useRouter();
-  const { promotionId } = useParams();
+  const navigate = useNavigate();
+  const { promotionId } = useParams<{ promotionId: string }>();
   const isEditing = !!promotionId && promotionId !== 'new';
 
-  // Fetch existing promotion if editing
-  const { data: existingPromo, loading } =
-    isEditing && typeof promotionId === 'string'
-      ? usePromotion(promotionId)
-      : { data: null, loading: false };
+  // Fetch existing promotion if editing - always call hook unconditionally
+  const { data: existingPromo, loading } = usePromotion(
+    isEditing && typeof promotionId === 'string' ? promotionId : ''
+  );
 
   const [formData, setFormData] = useState({
     code: '',
@@ -131,7 +130,7 @@ export function AdminPromotionEditPage() {
         toast.success('Promotion created successfully');
       }
 
-      router.push('/admin/promotions');
+      navigate('/admin/promotions');
     } catch (error: any) {
       console.error('Error saving promotion:', error);
       toast.error(error.message || 'Failed to save promotion');
@@ -159,7 +158,7 @@ export function AdminPromotionEditPage() {
       if (error) throw error;
 
       toast.success('Promotion deleted successfully');
-      router.push('/admin/promotions');
+      navigate('/admin/promotions');
     } catch (error) {
       console.error('Error deleting promotion:', error);
       toast.error('Failed to delete promotion');
@@ -191,7 +190,7 @@ export function AdminPromotionEditPage() {
         <div className='mb-8'>
           <Button
             variant='ghost'
-            onClick={() => router.push('/admin/promotions')}
+            onClick={() => navigate('/admin/promotions')}
             className='mb-4 -ml-2'
           >
             <ArrowLeft className='w-4 h-4 mr-2' />

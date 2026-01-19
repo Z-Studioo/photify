@@ -1,4 +1,4 @@
-import { useRouter } from 'next/navigation';
+import { useNavigate } from 'react-router-dom';
 import { AdminLayout } from './admin-layout';
 import { DeleteConfirmDialog } from '@/components/shared/delete-confirm-dialog';
 import { Plus, Edit, Trash2, Eye, Loader2 } from 'lucide-react';
@@ -10,7 +10,7 @@ import { createClient } from '@/lib/supabase/client';
 import { useState, useEffect } from 'react';
 
 export function AdminRoomsPage() {
-  const router = useRouter();
+  const navigate = useNavigate();
   const { data: dbRooms, loading, refetch } = useRooms();
   const [hotspotCounts, setHotspotCounts] = useState<Record<string, number>>(
     {}
@@ -112,7 +112,7 @@ export function AdminRoomsPage() {
             </p>
           </div>
           <Button
-            onClick={() => router.push('/admin/rooms/new')}
+            onClick={() => navigate('/admin/rooms/new')}
             className='bg-[#f63a9e] hover:bg-[#e02d8d] gap-2'
             style={{ height: '50px' }}
           >
@@ -221,14 +221,14 @@ export function AdminRoomsPage() {
                     <td className='px-6 py-4'>
                       <div className='flex items-center justify-end gap-2'>
                         <button
-                          onClick={() => router.push(`/admin/rooms/${room.id}`)}
+                          onClick={() => navigate(`/admin/rooms/${room.id}`)}
                           className='p-2 text-gray-600 hover:text-[#f63a9e] hover:bg-pink-50 rounded-lg transition-colors'
                           title='Edit'
                         >
                           <Edit className='w-4 h-4' />
                         </button>
                         <button
-                          onClick={() => router.push(`/room/${room.id}`)}
+                          onClick={() => navigate(`/room/${room.id}`)}
                           className='p-2 text-gray-600 hover:text-[#f63a9e] hover:bg-pink-50 rounded-lg transition-colors'
                           title='View on Website'
                         >

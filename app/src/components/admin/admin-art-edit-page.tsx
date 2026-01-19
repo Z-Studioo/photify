@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useNavigate, useParams } from 'react-router-dom';
 import { AdminLayout } from './admin-layout';
 import { AdminArtSizeManager } from './admin-art-size-manager';
 import { AdminArtContentEditor } from './admin-art-content-editor';
@@ -74,14 +74,11 @@ interface ArtProduct {
   is_bestseller: boolean;
 }
 
-interface AdminArtEditPageProps {
-  productId: string;
-}
-
-export function AdminArtEditPage({ productId }: AdminArtEditPageProps) {
-  const router = useRouter();
+export function AdminArtEditPage() {
+  const navigate = useNavigate();
+  const { id: productId } = useParams<{ id: string }>();
   const supabase = createClient();
-  const isNewProduct = productId === 'new';
+  const isNewProduct = !productId || productId === 'new';
 
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -228,7 +225,7 @@ export function AdminArtEditPage({ productId }: AdminArtEditPageProps) {
 
         if (!isNewProduct) {
           // Only redirect if we're trying to edit an existing product
-          setTimeout(() => router.push('/admin/art-collection'), 2000);
+          setTimeout(() => navigate('/admin/art-collection'), 2000);
         }
       } finally {
         setLoading(false);
@@ -236,7 +233,7 @@ export function AdminArtEditPage({ productId }: AdminArtEditPageProps) {
     }
 
     fetchData();
-  }, [productId, isNewProduct, supabase, router]);
+  }, [productId, isNewProduct, supabase]);
 
   const handleSave = async () => {
     if (!product) return;
@@ -315,7 +312,7 @@ export function AdminArtEditPage({ productId }: AdminArtEditPageProps) {
 
         console.log('Art product created successfully:', data);
         toast.success('Art product created successfully');
-        router.push(`/admin/art-collection/edit/${data.id}`);
+        navigate(`/admin/art-collection/edit/${data.id}`);
       } else {
         // Update existing product
         console.log('Updating art product:', productId, 'with data:', {
@@ -393,7 +390,7 @@ export function AdminArtEditPage({ productId }: AdminArtEditPageProps) {
       if (error) throw error;
 
       toast.success('Art product deleted successfully');
-      router.push('/admin/art-collection');
+      navigate('/admin/art-collection');
     } catch (error) {
       toast.error('Failed to delete art product');
       console.warn(error);
@@ -453,7 +450,7 @@ export function AdminArtEditPage({ productId }: AdminArtEditPageProps) {
         <div className='mb-8'>
           <Button
             variant='ghost'
-            onClick={() => router.push('/admin/art-collection')}
+            onClick={() => navigate('/admin/art-collection')}
             className='mb-4 -ml-2'
           >
             <ArrowLeft className='w-4 h-4 mr-2' />

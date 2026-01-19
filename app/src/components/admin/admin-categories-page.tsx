@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useNavigate } from 'react-router-dom';
 import { AdminLayout } from './admin-layout';
 import { DeleteConfirmDialog } from '@/components/shared/delete-confirm-dialog';
 import {
@@ -186,7 +186,7 @@ function SortableRow({
 }
 
 export function AdminCategoriesPage() {
-  const router = useRouter();
+  const navigate = useNavigate();
   const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
   const [showAddModal, setShowAddModal] = useState(false);
@@ -395,7 +395,7 @@ export function AdminCategoriesPage() {
 
       // Redirect to the detail page
       if (data) {
-        router.push(`/admin/categories/${data.id}`);
+        navigate(`/admin/categories/${data.id}`);
       }
     } catch (error: any) {
       console.error('Error saving category:', error);
@@ -404,7 +404,7 @@ export function AdminCategoriesPage() {
   };
 
   const handleView = (category: Category) => {
-    router.push(`/admin/categories/${category.id}`);
+    navigate(`/admin/categories/${category.id}`);
   };
 
   const handleDelete = (category: Category) => {

@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useRouter, useParams } from 'next/navigation';
+import { useNavigate, useParams } from 'react-router-dom';
 import { AdminLayout } from './admin-layout';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
@@ -20,7 +20,7 @@ import { toast } from 'sonner';
 import { createClient } from '@/lib/supabase/client';
 
 export function AdminOrderDetailPage() {
-  const router = useRouter();
+  const navigate = useNavigate();
   const { orderId } = useParams();
   const [notes, setNotes] = useState('');
   const [order, setOrder] = useState<any>(null);
@@ -182,7 +182,7 @@ export function AdminOrderDetailPage() {
       <AdminLayout>
         <div className='max-w-7xl mx-auto text-center py-20'>
           <p className='text-gray-600 mb-4'>Order not found</p>
-          <Button onClick={() => router.push('/admin/orders')}>
+          <Button onClick={() => navigate('/admin/orders')}>
             Back to Orders
           </Button>
         </div>
@@ -211,7 +211,7 @@ export function AdminOrderDetailPage() {
         {/* Header */}
         <div className='mb-6'>
           <button
-            onClick={() => router.push('/admin/orders')}
+            onClick={() => navigate('/admin/orders')}
             className='flex items-center gap-2 text-gray-600 hover:text-[#f63a9e] mb-4'
           >
             <ArrowLeft className='w-4 h-4' />
