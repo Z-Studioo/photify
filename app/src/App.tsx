@@ -34,6 +34,8 @@ import AIPhotoEditorPage from '@/pages/ai-photo-editor';
 import AIPrintSizePage from '@/pages/ai-print-size';
 import AIRestorePage from '@/pages/ai-restore';
 import AIResultsPage from '@/pages/ai-results';
+import ArtPage from '@/pages/art/[id]';
+import ArtCollectionsPage from '@/pages/art-collections';
 
 const queryClient = new QueryClient();
 
@@ -73,6 +75,8 @@ const App: React.FC = () => {
                   <Route path='/room/:id' element={<RoomPage />} />
                   <Route path='/products' element={<ProductsPage />} />
                   <Route path='/product/:id' element={<ProductPage />} />
+                  <Route path='/art/:id' element={<ArtPage />} />
+                  <Route path='/art-collections' element={<ArtCollectionsPage />} />
                   <Route path='/customize/multi-canvas-wall' element={<MultiCanvasWallPage />} />
                   <Route path='/customize/poster-collage' element={<PosterCollagePage />} />
                   <Route path='/customize/single-canvas' element={<SingleCanvasPage />} />
