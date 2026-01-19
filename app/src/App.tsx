@@ -6,7 +6,7 @@ import { EdgeProvider } from '@/context/EdgeContext';
 import { CartProvider } from '@/context/CartContext';
 import Dashboard from '@/pages/dashboard/index';
 import UploadImage from './pages/upload';
-import HomePage from '@/pages/home';
+import HomePage from '@/pages';
 import { BrowserRouter, Route, Routes } from 'react-router';
 import CropPage from '@/pages/crop';
 import { ToastProvider } from '@/components/shared/common/toast';
