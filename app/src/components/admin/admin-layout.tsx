@@ -1,4 +1,4 @@
-import { type ReactNode } from 'react';
+import { type ReactNode, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAdmin } from '@/context/AdminContext';
 import {
@@ -13,6 +13,7 @@ import {
   Grid3x3,
   Home,
   Tag,
+  Loader2,
 } from 'lucide-react';
 
 interface AdminLayoutProps {
@@ -23,7 +24,14 @@ export function AdminLayout({ children }: AdminLayoutProps) {
   const navigate = useNavigate();
   const location = useLocation();
   const pathname = location.pathname;
-  const { logout } = useAdmin();
+  const { isAuthenticated, logout, loading } = useAdmin();
+
+  // Redirect to login if not authenticated
+  useEffect(() => {
+    if (!loading && !isAuthenticated) {
+      navigate('/admin/login', { replace: true });
+    }
+  }, [isAuthenticated, loading, navigate]);
 
   const handleLogout = async () => {
     await logout();
@@ -42,6 +50,23 @@ export function AdminLayout({ children }: AdminLayoutProps) {
     { icon: BarChart3, label: 'Analytics', path: '/admin/analytics' },
     { icon: Settings, label: 'Settings', path: '/admin/settings' },
   ];
+
+  // Show loading state while checking authentication
+  if (loading) {
+    return (
+      <div className='min-h-screen bg-gray-50 flex items-center justify-center'>
+        <div className='text-center'>
+          <Loader2 className='w-8 h-8 animate-spin text-[#f63a9e] mx-auto mb-3' />
+          <p className='text-gray-600'>Loading...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Don't render layout if not authenticated (will redirect)
+  if (!isAuthenticated) {
+    return null;
+  }
 
   return (
     <div className="min-h-screen bg-gray-50 font-['Mona_Sans',_sans-serif]">
