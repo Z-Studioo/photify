@@ -23,6 +23,9 @@ import PosterCollagePage from '@/pages/customize/poster-collage';
 import SingleCanvasPage from '@/pages/customize/single-canvas';
 import PhotoCollageCreatorPage from '@/pages/customize/photo-collage-creator';
 import Product3DViewPage from '@/pages/customize/product-3d-view';
+import CheckoutPage from '@/pages/checkout';
+import ConfirmationPage from '@/pages/confirmation';
+import CartPage from '@/pages/cart';
 
 const queryClient = new QueryClient();
 
@@ -67,6 +70,9 @@ const App: React.FC = () => {
                   <Route path='/customize/single-canvas' element={<SingleCanvasPage />} />
                   <Route path='/customize/photo-collage-creator' element={<PhotoCollageCreatorPage />} />
                   <Route path='/customize/product-3d-view' element={<Product3DViewPage />} />
+                  <Route path='/cart' element={<CartPage />} />
+                  <Route path='/checkout' element={<CheckoutPage />} />
+                  <Route path='/confirmation' element={<ConfirmationPage />} />
                   <Route path='*' element={<NotFoundPage />} />
                 </Routes>
               </PresetProvider>
