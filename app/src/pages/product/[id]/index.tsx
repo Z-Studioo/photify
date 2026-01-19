@@ -3,6 +3,7 @@ import { useParams } from 'react-router-dom';
 import { useState, useEffect } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import { useNavigate } from 'react-router-dom';
+import { LoadingSpinner } from '@/components/shared/loading-spinner';
 
 export default function ProductPage() {
   const { id: productId } = useParams<{ id: string }>();
@@ -38,7 +39,7 @@ export default function ProductPage() {
   }, [productId, navigate]);
 
   if (loading) {
-    return <div>Loading...</div>;
+    return <LoadingSpinner />;
   }
 
   if (!product) {

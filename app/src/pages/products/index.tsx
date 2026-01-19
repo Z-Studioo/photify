@@ -1,6 +1,7 @@
 import { ProductsPage } from '@/components/pages/products';
 import { useState, useEffect } from 'react';
 import { createClient } from '@/lib/supabase/client';
+import { LoadingSpinner } from '@/components/shared/loading-spinner';
 
 export default function Products() {
   const [products, setProducts] = useState<any[]>([]);
@@ -39,7 +40,7 @@ export default function Products() {
   }, []);
 
   if (loading) {
-    return <div>Loading...</div>;
+    return <LoadingSpinner />;
   }
 
   return <ProductsPage initialProducts={products} initialCategories={categories} />;
