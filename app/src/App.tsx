@@ -5,7 +5,7 @@ import { ViewProvider } from '@/context/ViewContext';
 import { EdgeProvider } from '@/context/EdgeContext';
 import { CartProvider } from '@/context/CartContext';
 import Dashboard from '@/pages/dashboard/index';
-import UploadImage from './pages';
+import UploadImage from './pages/upload';
 import HomePage from '@/pages/home';
 import { BrowserRouter, Route, Routes } from 'react-router';
 import CropPage from '@/pages/crop';
@@ -40,8 +40,8 @@ const App: React.FC = () => {
                       </FeatureProvider>
                     }
                   />
-                  <Route path='/' element={<UploadImage />} />
-                  <Route path='/home' element={<HomePage />} />
+                  <Route path='/' element={<HomePage />} />
+                  <Route path='/upload' element={<UploadImage />} />
                   <Route
                     path='/crop'
                     element={
