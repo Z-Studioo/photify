@@ -6,6 +6,7 @@ import { EdgeProvider } from '@/context/EdgeContext';
 import { CartProvider } from '@/context/CartContext';
 import Dashboard from '@/pages/dashboard/index';
 import UploadImage from './pages';
+import HomePage from '@/pages/home';
 import { BrowserRouter, Route, Routes } from 'react-router';
 import CropPage from '@/pages/crop';
 import { ToastProvider } from '@/components/shared/common/toast';
@@ -37,6 +38,7 @@ const App: React.FC = () => {
                     }
                   />
                   <Route path='/' element={<UploadImage />} />
+                  <Route path='/home' element={<HomePage />} />
                   <Route
                     path='/crop'
                     element={
