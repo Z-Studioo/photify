@@ -35,7 +35,7 @@ export async function uploadDataURLToStorage(
     const filePath = `${folder}/${finalFilename}`;
 
     // Upload to storage
-    const { data, error } = await supabase.storage
+    const { error } = await supabase.storage
       .from('photify')
       .upload(filePath, blob, {
         contentType: blob.type,
@@ -84,7 +84,7 @@ export async function uploadFileToStorage(
     const filePath = `${folder}/${finalFilename}`;
 
     // Upload to storage
-    const { data, error } = await supabase.storage
+    const { error } = await supabase.storage
       .from('photify')
       .upload(filePath, file, {
         contentType: file.type,
