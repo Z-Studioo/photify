@@ -58,7 +58,7 @@ function CameraAnimator({
     hasStarted.current = true;
   }, []); // Only run once on mount
 
-  useFrame((state, delta) => {
+  useFrame((_, delta) => {
     // Don't start animating until ready
     if (!hasStarted.current) return;
 
