@@ -13,6 +13,9 @@ import { ToastProvider } from '@/components/shared/common/toast';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { PresetProvider } from './context/PresetContext';
 import ContactPage from '@/pages/contact';
+import TrackOrderPage from '@/pages/track-order';
+import RoomPage from '@/pages/room/[id]';
+import NotFoundPage from '@/pages/not-found';
 
 const queryClient = new QueryClient();
 
@@ -48,6 +51,9 @@ const App: React.FC = () => {
                     }
                   />
                   <Route path='/contact' element={<ContactPage />} />
+                  <Route path='/track-order' element={<TrackOrderPage />} />
+                  <Route path='/room/:id' element={<RoomPage />} />
+                  <Route path='*' element={<NotFoundPage />} />
                 </Routes>
               </PresetProvider>
             </UploadProvider>
