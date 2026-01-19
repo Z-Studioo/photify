@@ -18,6 +18,8 @@ import RoomPage from '@/pages/room/[id]';
 import NotFoundPage from '@/pages/not-found';
 import ProductPage from '@/pages/product/[id]';
 import ProductsPage from '@/pages/products';
+import CheckoutPage from '@/pages/checkout';
+import ConfirmationPage from '@/pages/confirmation';
 
 const queryClient = new QueryClient();
 
@@ -57,6 +59,8 @@ const App: React.FC = () => {
                   <Route path='/room/:id' element={<RoomPage />} />
                   <Route path='/products' element={<ProductsPage />} />
                   <Route path='/product/:id' element={<ProductPage />} />
+                  <Route path='/checkout' element={<CheckoutPage />} />
+                  <Route path='/confirmation' element={<ConfirmationPage />} />
                   <Route path='*' element={<NotFoundPage />} />
                 </Routes>
               </PresetProvider>
