@@ -26,6 +26,14 @@ import Product3DViewPage from '@/pages/customize/product-3d-view';
 import CheckoutPage from '@/pages/checkout';
 import ConfirmationPage from '@/pages/confirmation';
 import CartPage from '@/pages/cart';
+import AIToolsPage from '@/pages/ai-tools';
+import AIBackgroundRemoverPage from '@/pages/ai-background-remover';
+import AICollagePage from '@/pages/ai-collage';
+import AIGeneratePage from '@/pages/ai-generate';
+import AIPhotoEditorPage from '@/pages/ai-photo-editor';
+import AIPrintSizePage from '@/pages/ai-print-size';
+import AIRestorePage from '@/pages/ai-restore';
+import AIResultsPage from '@/pages/ai-results';
 
 const queryClient = new QueryClient();
 
@@ -73,6 +81,14 @@ const App: React.FC = () => {
                   <Route path='/cart' element={<CartPage />} />
                   <Route path='/checkout' element={<CheckoutPage />} />
                   <Route path='/confirmation' element={<ConfirmationPage />} />
+                  <Route path='/ai-tools' element={<AIToolsPage />} />
+                  <Route path='/ai-background-remover' element={<AIBackgroundRemoverPage />} />
+                  <Route path='/ai-collage' element={<AICollagePage />} />
+                  <Route path='/ai-generate' element={<AIGeneratePage />} />
+                  <Route path='/ai-photo-editor' element={<AIPhotoEditorPage />} />
+                  <Route path='/ai-print-size' element={<AIPrintSizePage />} />
+                  <Route path='/ai-restore' element={<AIRestorePage />} />
+                  <Route path='/ai-results' element={<AIResultsPage />} />
                   <Route path='*' element={<NotFoundPage />} />
                 </Routes>
               </PresetProvider>
