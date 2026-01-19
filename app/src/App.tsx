@@ -18,6 +18,7 @@ import RoomPage from '@/pages/room/[id]';
 import NotFoundPage from '@/pages/not-found';
 import ProductPage from '@/pages/product/[id]';
 import ProductsPage from '@/pages/products';
+import Category from './pages/category/[category]/CategoryPageRoute';
 
 const queryClient = new QueryClient();
 
@@ -57,6 +58,7 @@ const App: React.FC = () => {
                   <Route path='/room/:id' element={<RoomPage />} />
                   <Route path='/products' element={<ProductsPage />} />
                   <Route path='/product/:id' element={<ProductPage />} />
+                  <Route path='/category/:category' element={<Category />} />
                   <Route path='*' element={<NotFoundPage />} />
                 </Routes>
               </PresetProvider>
