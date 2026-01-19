@@ -11,7 +11,7 @@ module.exports = {
   parserOptions: {
     ecmaVersion: 2022,
     sourceType: 'module',
-    project: './tsconfig.json',
+    project: true,
   },
   plugins: ['@typescript-eslint'],
   rules: {
@@ -22,7 +22,7 @@ module.exports = {
     ],
 
     // General rules
-    'no-console': 'warn',
+    'no-console': 'off', // Allow console statements in server for logging
     'no-debugger': 'error',
     'prefer-const': 'error',
     'no-var': 'error',

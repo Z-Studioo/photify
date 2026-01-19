@@ -10,6 +10,11 @@ interface Config {
   JWT_SECRET: string | undefined;
   DB_URL: string | undefined;
   LOG_LEVEL: string;
+  SUPABASE_URL: string | undefined;
+  SUPABASE_SERVICE_KEY: string | undefined;
+  STRIPE_SECRET_KEY: string | undefined;
+  STRIPE_WEBHOOK_SECRET: string | undefined;
+  OPENAI_API_KEY: string | undefined;
 }
 
 export const config: Config = {
@@ -19,11 +24,22 @@ export const config: Config = {
   JWT_SECRET: process.env.JWT_SECRET,
   DB_URL: process.env.DB_URL,
   LOG_LEVEL: process.env.LOG_LEVEL || 'info',
+  SUPABASE_URL: process.env.SUPABASE_URL,
+  SUPABASE_SERVICE_KEY: process.env.SUPABASE_SERVICE_KEY,
+  STRIPE_SECRET_KEY: process.env.STRIPE_SECRET_KEY,
+  STRIPE_WEBHOOK_SECRET: process.env.STRIPE_WEBHOOK_SECRET,
+  OPENAI_API_KEY: process.env.OPENAI_API_KEY,
 };
 
 // Validate required environment variables in production
 if (config.NODE_ENV === 'production') {
-  const requiredVars = ['JWT_SECRET'];
+  const requiredVars = [
+    'JWT_SECRET',
+    'SUPABASE_URL',
+    'SUPABASE_SERVICE_KEY',
+    'STRIPE_SECRET_KEY',
+    'STRIPE_WEBHOOK_SECRET',
+  ];
   const missing = requiredVars.filter(
     varName => !process.env[varName as keyof NodeJS.ProcessEnv]
   );
