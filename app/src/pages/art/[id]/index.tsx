@@ -19,24 +19,23 @@ export default function ArtPage() {
 
       const supabase = createClient();
 
-      // Check if id is a UUID or slug
       const isUUID =
         /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
           id
         );
 
-      // Fetch from art_products table
-      const { data, error } = await supabase
-        .from('art_products')
-        .select('*')
-        .or(isUUID ? `id.eq.${id}` : `slug.eq.${id}`)
-        .single();
+      const query = supabase.from('art_products').select('*');
+
+      const { data, error } = isUUID
+        ? await query.eq('id', id).maybeSingle()
+        : await query.eq('slug', id).maybeSingle();
 
       if (error || !data) {
         setNotFound(true);
       } else {
         setProduct(data);
       }
+
       setLoading(false);
     };
 
@@ -45,17 +44,17 @@ export default function ArtPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900 mx-auto" />
-          <p className="mt-4 text-gray-600">Loading...</p>
+      <div className='min-h-screen flex items-center justify-center'>
+        <div className='text-center'>
+          <div className='animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900 mx-auto' />
+          <p className='mt-4 text-gray-600'>Loading...</p>
         </div>
       </div>
     );
   }
 
   if (notFound || !id) {
-    return <Navigate to="/404" replace />;
+    return <Navigate to='/404' replace />;
   }
 
   return <ProductDetailPage initialProduct={product} productSlug={id} />;
