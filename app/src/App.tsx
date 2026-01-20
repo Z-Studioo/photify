@@ -20,6 +20,7 @@ import ProductPage from '@/pages/product/[id]';
 import ProductsPage from '@/pages/products';
 import Category from './pages/category/[category]/CategoryPageRoute';
 import ArtCollections from './pages/art-collections/ArtCollectionPageRoute';
+import ArtPage from './pages/art/[productId]';
 
 const queryClient = new QueryClient();
 
@@ -61,6 +62,7 @@ const App: React.FC = () => {
                   <Route path='/product/:id' element={<ProductPage />} />
                   <Route path='/category/:category' element={<Category />} />
                   <Route path='/art-collections' element={<ArtCollections />} />
+                  <Route path='/art/:productId' element={<ArtPage />} />
                   <Route path='*' element={<NotFoundPage />} />
                 </Routes>
               </PresetProvider>
