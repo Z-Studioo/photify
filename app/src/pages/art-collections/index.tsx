@@ -1,507 +1,54 @@
-import React, { useState, useEffect } from 'react';
-import { Ruler, Sparkles, Wand2, Zap } from 'lucide-react';
-import { motion } from 'framer-motion';
-import { useNavigate, useSearchParams } from 'react-router-dom';
-import { Header } from '@/components/layout/header';
-import { ImageWithFallback } from '@/components/figma/image-with-fallback';
-import { Footer } from '@/components/layout/footer';
+import { useEffect, useState } from 'react';
+import { ArtCollectionPage } from '@/components/pages/art-collection';
+import { createClient } from '@/lib/supabase/client';
 
-interface ArtProduct {
-  id: string;
-  name: string;
-  image: string;
-  size: string;
-  price: string;
-  isBestSeller: boolean;
-  category: string;
-}
+export default function ArtCollections() {
+  const [artProducts, setArtProducts] = useState<any[]>([]);
+  const [categories, setCategories] = useState<string[]>([]);
+  const [loading, setLoading] = useState(true);
 
-interface ArtCollectionPageProps {
-  initialArtProducts: any[];
-  initialCategories: string[];
-}
-
-const mockArtProducts: ArtProduct[] = [
-  // Abstract
-  {
-    id: 'art1',
-    name: 'Ocean Dreams',
-    image:
-      'https://images.unsplash.com/photo-1744096641619-646e1f6fbcd5?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxhYnN0cmFjdCUyMGFydCUyMHByaW50fGVufDF8fHx8MTc2MDYyODI1M3ww&ixlib=rb-4.1.0&q=80&w=1080',
-    size: '50cm x 70cm',
-    price: '£68.00',
-    isBestSeller: true,
-    category: 'Abstract',
-  },
-  {
-    id: 'art2',
-    name: 'Sunset Waves',
-    image:
-      'https://images.unsplash.com/photo-1744096641619-646e1f6fbcd5?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxhYnN0cmFjdCUyMGFydCUyMHByaW50fGVufDF8fHx8MTc2MDYyODI1M3ww&ixlib=rb-4.1.0&q=80&w=1080',
-    size: '60cm x 80cm',
-    price: '£82.00',
-    isBestSeller: false,
-    category: 'Abstract',
-  },
-  {
-    id: 'art3',
-    name: 'Color Burst',
-    image:
-      'https://images.unsplash.com/photo-1678117699040-b89738399ca7?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxtb2Rlcm4lMjB3YWxsJTIwYXJ0fGVufDF8fHx8MTc2MDcwNDYyOHww&ixlib=rb-4.1.0&q=80&w=1080',
-    size: '40cm x 60cm',
-    price: '£56.00',
-    isBestSeller: true,
-    category: 'Abstract',
-  },
-  {
-    id: 'art4',
-    name: 'Fluid Motion',
-    image:
-      'https://images.unsplash.com/photo-1744096641619-646e1f6fbcd5?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxhYnN0cmFjdCUyMGFydCUyMHByaW50fGVufDF8fHx8MTc2MDYyODI1M3ww&ixlib=rb-4.1.0&q=80&w=1080',
-    size: '70cm x 100cm',
-    price: '£125.00',
-    isBestSeller: false,
-    category: 'Abstract',
-  },
-  {
-    id: 'art17',
-    name: 'Geometric Harmony',
-    image:
-      'https://images.unsplash.com/photo-1744096641619-646e1f6fbcd5?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxhYnN0cmFjdCUyMGFydCUyMHByaW50fGVufDF8fHx8MTc2MDYyODI1M3ww&ixlib=rb-4.1.0&q=80&w=1080',
-    size: '30cm x 40cm',
-    price: '£48.00',
-    isBestSeller: false,
-    category: 'Abstract',
-  },
-  {
-    id: 'art18',
-    name: 'Modern Lines',
-    image:
-      'https://images.unsplash.com/photo-1678117699040-b89738399ca7?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxtb2Rlcm4lMjB3YWxsJTIwYXJ0fGVufDF8fHx8MTc2MDcwNDYyOHww&ixlib=rb-4.1.0&q=80&w=1080',
-    size: '45cm x 60cm',
-    price: '£62.00',
-    isBestSeller: true,
-    category: 'Abstract',
-  },
-
-  // Religion
-  {
-    id: 'art5',
-    name: 'Divine Light',
-    image:
-      'https://images.unsplash.com/photo-1584727638096-042c45049ebe?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxyZWxpZ2lvdXMlMjBhcnQlMjBwYWludGluZ3xlbnwxfHx8fDE3NjA3MDU3MzR8MA&ixlib=rb-4.1.0&q=80&w=1080',
-    size: '50cm x 70cm',
-    price: '£88.00',
-    isBestSeller: true,
-    category: 'Religion',
-  },
-  {
-    id: 'art6',
-    name: 'Sacred Symbols',
-    image:
-      'https://images.unsplash.com/photo-1584727638096-042c45049ebe?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxyZWxpZ2lvdXMlMjBhcnQlMjBwYWludGluZ3xlbnwxfHx8fDE3NjA3MDU3MzR8MA&ixlib=rb-4.1.0&q=80&w=1080',
-    size: '40cm x 60cm',
-    price: '£72.00',
-    isBestSeller: false,
-    category: 'Religion',
-  },
-  {
-    id: 'art7',
-    name: 'Spiritual Journey',
-    image:
-      'https://images.unsplash.com/photo-1584727638096-042c45049ebe?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxyZWxpZ2lvdXMlMjBhcnQlMjBwYWludGluZ3xlbnwxfHx8fDE3NjA3MDU3MzR8MA&ixlib=rb-4.1.0&q=80&w=1080',
-    size: '60cm x 90cm',
-    price: '£115.00',
-    isBestSeller: true,
-    category: 'Religion',
-  },
-  {
-    id: 'art8',
-    name: 'Temple Art',
-    image:
-      'https://images.unsplash.com/photo-1584727638096-042c45049ebe?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxyZWxpZ2lvdXMlMjBhcnQlMjBwYWludGluZ3xlbnwxfHx8fDE3NjA3MDU3MzR8MA&ixlib=rb-4.1.0&q=80&w=1080',
-    size: '30cm x 40cm',
-    price: '£58.00',
-    isBestSeller: false,
-    category: 'Religion',
-  },
-
-  // Animals
-  {
-    id: 'art9',
-    name: 'Wild Lion',
-    image:
-      'https://images.unsplash.com/photo-1683027062130-e70ca0fbc20f?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxhbmltYWwlMjB3aWxkbGlmZSUyMGFydHxlbnwxfHx8fDE3NjA3MDU3Mzd8MA&ixlib=rb-4.1.0&q=80&w=1080',
-    size: '60cm x 80cm',
-    price: '£92.00',
-    isBestSeller: true,
-    category: 'Animals',
-  },
-  {
-    id: 'art10',
-    name: 'Elephant Majesty',
-    image:
-      'https://images.unsplash.com/photo-1683027062130-e70ca0fbc20f?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxhbmltYWwlMjB3aWxkbGlmZSUyMGFydHxlbnwxfHx8fDE3NjA3MDU3Mzd8MA&ixlib=rb-4.1.0&q=80&w=1080',
-    size: '50cm x 70cm',
-    price: '£78.00',
-    isBestSeller: false,
-    category: 'Animals',
-  },
-  {
-    id: 'art11',
-    name: 'Bird Paradise',
-    image:
-      'https://images.unsplash.com/photo-1683027062130-e70ca0fbc20f?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxhbmltYWwlMjB3aWxkbGlmZSUyMGFydHxlbnwxfHx8fDE3NjA3MDU3Mzd8MA&ixlib=rb-4.1.0&q=80&w=1080',
-    size: '40cm x 60cm',
-    price: '£65.00',
-    isBestSeller: true,
-    category: 'Animals',
-  },
-  {
-    id: 'art12',
-    name: 'Wolf Spirit',
-    image:
-      'https://images.unsplash.com/photo-1683027062130-e70ca0fbc20f?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxhbmltYWwlMjB3aWxkbGlmZSUyMGFydHxlbnwxfHx8fDE3NjA3MDU3Mzd8MA&ixlib=rb-4.1.0&q=80&w=1080',
-    size: '70cm x 100cm',
-    price: '£135.00',
-    isBestSeller: false,
-    category: 'Animals',
-  },
-  {
-    id: 'art19',
-    name: 'Deer in Forest',
-    image:
-      'https://images.unsplash.com/photo-1683027062130-e70ca0fbc20f?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxhbmltYWwlMjB3aWxkbGlmZSUyMGFydHxlbnwxfHx8fDE3NjA3MDU3Mzd8MA&ixlib=rb-4.1.0&q=80&w=1080',
-    size: '55cm x 75cm',
-    price: '£85.00',
-    isBestSeller: false,
-    category: 'Animals',
-  },
-  {
-    id: 'art20',
-    name: 'Ocean Creatures',
-    image:
-      'https://images.unsplash.com/photo-1683027062130-e70ca0fbc20f?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxhbmltYWwlMjB3aWxkbGlmZSUyMGFydHxlbnwxfHx8fDE3NjA3MDU3Mzd8MA&ixlib=rb-4.1.0&q=80&w=1080',
-    size: '50cm x 70cm',
-    price: '£75.00',
-    isBestSeller: false,
-    category: 'Animals',
-  },
-
-  // Nepal
-  {
-    id: 'art13',
-    name: 'Himalayan Peaks',
-    image:
-      'https://images.unsplash.com/photo-1718106230088-ef0606677859?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxuZXBhbCUyMGxhbmRzY2FwZSUyMGFydHxlbnwxfHx8fDE3NjA3MDU3NDF8MA&ixlib=rb-4.1.0&q=80&w=1080',
-    size: '60cm x 90cm',
-    price: '£105.00',
-    isBestSeller: true,
-    category: 'Nepal',
-  },
-  {
-    id: 'art14',
-    name: 'Kathmandu Valley',
-    image:
-      'https://images.unsplash.com/photo-1718106230088-ef0606677859?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxuZXBhbCUyMGxhbmRzY2FwZSUyMGFydHxlbnwxfHx8fDE3NjA3MDU3NDF8MA&ixlib=rb-4.1.0&q=80&w=1080',
-    size: '50cm x 70cm',
-    price: '£88.00',
-    isBestSeller: false,
-    category: 'Nepal',
-  },
-  {
-    id: 'art15',
-    name: 'Prayer Flags',
-    image:
-      'https://images.unsplash.com/photo-1718106230088-ef0606677859?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxuZXBhbCUyMGxhbmRzY2FwZSUyMGFydHxlbnwxfHx8fDE3NjA3MDU3NDF8MA&ixlib=rb-4.1.0&q=80&w=1080',
-    size: '40cm x 60cm',
-    price: '£72.00',
-    isBestSeller: true,
-    category: 'Nepal',
-  },
-  {
-    id: 'art16',
-    name: 'Mountain Village',
-    image:
-      'https://images.unsplash.com/photo-1718106230088-ef0606677859?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxuZXBhbCUyMGxhbmRzY2FwZSUyMGFydHxlbnwxfHx8fDE3NjA3MDU3NDF8MA&ixlib=rb-4.1.0&q=80&w=1080',
-    size: '70cm x 100cm',
-    price: '£145.00',
-    isBestSeller: false,
-    category: 'Nepal',
-  },
-];
-
-export function ArtCollectionPage({
-  initialArtProducts,
-  initialCategories,
-}: ArtCollectionPageProps) {
-  const [searchParams] = useSearchParams();
-  const navigate = useNavigate();
-  const [selectedCategory, setSelectedCategory] = useState<string>('All');
-
-  // Use server-fetched data if available, otherwise use mock data
-  const categories =
-    initialCategories.length > 0
-      ? initialCategories
-      : ['All', 'Religion', 'Abstract', 'Animals', 'Nepal'];
-  const artProducts =
-    initialArtProducts.length > 0
-      ? initialArtProducts.map((art: any) => ({
-          id: art.id,
-          name: art.name,
-          image: art.image,
-          size: art.size,
-          price: art.price,
-          isBestSeller: art.is_bestseller || art.is_featured,
-          category: art.category,
-        }))
-      : mockArtProducts;
-
-  // Set initial category from URL params
   useEffect(() => {
-    const categoryParam = searchParams.get('category');
-    if (categoryParam && categories.includes(categoryParam)) {
-      setSelectedCategory(categoryParam);
-    }
-  }, [searchParams, categories]);
+    const fetchData = async () => {
+      const supabase = createClient();
 
-  const filteredProducts =
-    selectedCategory === 'All'
-      ? artProducts
-      : artProducts.filter(p => p.category === selectedCategory);
+      // Fetch all art products
+      const { data: productsData } = await supabase
+        .from('art_products')
+        .select('*')
+        .eq('active', true)
+        .order('created_at', { ascending: false });
 
-  return (
-    <div className="min-h-screen font-['Mona_Sans',_sans-serif]">
-      <Header />
+      // Fetch art categories
+      const { data: categoriesData } = await supabase
+        .from('art_categories')
+        .select('name')
+        .order('name', { ascending: true });
 
-      <div className='max-w-[1400px] mx-auto px-4 py-8'>
-        {/* Page Title */}
-        <h1
-          className="font-['Bricolage_Grotesque',_sans-serif] mb-6"
-          style={{ fontSize: '32px', lineHeight: '1.2', fontWeight: '600' }}
-        >
-          Browse our curated art collections
-        </h1>
+      const categoryNames = categoriesData?.map(c => c.name) || [];
 
-        {/* Category Filters */}
-        <div className='flex flex-wrap gap-3 mb-8'>
-          {categories.map(category => (
-            <button
-              key={category}
-              onClick={() => setSelectedCategory(category)}
-              className={`px-8 py-3 rounded-full transition-colors ${
-                selectedCategory === category
-                  ? 'bg-pink-100 text-[#f63a9e]'
-                  : 'bg-gray-100 text-gray-500 hover:bg-gray-200'
-              }`}
-            >
-              {category}
-            </button>
-          ))}
-        </div>
+      setArtProducts(productsData || []);
+      setCategories(['All', ...categoryNames]);
+      setLoading(false);
+    };
 
-        {/* Product Grid */}
-        <div className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6'>
-          {filteredProducts.map((product: ArtProduct, index: number) => {
-            const halfwayPoint = Math.floor(filteredProducts.length / 2);
-            const shouldShowAICard = index === halfwayPoint;
+    fetchData();
+  }, []);
 
-            return (
-              <React.Fragment key={`product-${product.id}-${index}`}>
-                {shouldShowAICard && (
-                  <motion.div
-                    key='ai-browse-card'
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.3, delay: index * 0.05 }}
-                    className='bg-gradient-to-br from-[#f63a9e] to-[#e02d8d] rounded-lg overflow-hidden aspect-square flex flex-col justify-between p-6'
-                  >
-                    {/* Top Section - Icons */}
-                    <div className='flex gap-2'>
-                      <motion.div
-                        className='bg-white/20 backdrop-blur-sm rounded-lg p-2'
-                        whileHover={{ scale: 1.05 }}
-                        transition={{ duration: 0.2 }}
-                      >
-                        <Sparkles className='w-5 h-5 text-white' />
-                      </motion.div>
-                      <motion.div
-                        className='bg-white/20 backdrop-blur-sm rounded-lg p-2'
-                        whileHover={{ scale: 1.05 }}
-                        transition={{ duration: 0.2 }}
-                      >
-                        <Wand2 className='w-5 h-5 text-white' />
-                      </motion.div>
-                      <motion.div
-                        className='bg-white/20 backdrop-blur-sm rounded-lg p-2'
-                        whileHover={{ scale: 1.05 }}
-                        transition={{ duration: 0.2 }}
-                      >
-                        <Zap className='w-5 h-5 text-white' />
-                      </motion.div>
-                    </div>
-
-                    {/* Middle Section - Text */}
-                    <div className='flex flex-col'>
-                      <h3
-                        className="font-['Bricolage_Grotesque',_sans-serif] text-white mb-2"
-                        style={{
-                          fontSize: '20px',
-                          lineHeight: '1.2',
-                          fontWeight: '600',
-                        }}
-                      >
-                        Can't find one?
-                        <br />
-                        Our AI Will Generate on the GO
-                      </h3>
-                      <p className='text-white/90 text-sm'>
-                        Create custom artwork tailored to your preferences with
-                        our AI-powered tools.
-                      </p>
-                    </div>
-
-                    {/* Bottom Section - CTA Button */}
-                    <button
-                      onClick={() => navigate('/ai-generate')}
-                      className='bg-white text-[#f63a9e] px-5 rounded-full hover:bg-white/90 transition-all inline-flex items-center justify-center gap-2 w-full'
-                      style={{ height: '50px' }}
-                    >
-                      <Sparkles className='w-5 h-5' />
-                      Try it now
-                    </button>
-                  </motion.div>
-                )}
-
-                <motion.div
-                  key={product.id}
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.3, delay: index * 0.05 }}
-                  className='group cursor-pointer'
-                  onClick={() => navigate(`/art/${product.id}`)}
-                >
-                  {/* Product Image */}
-                  <div className='relative aspect-square mb-3 overflow-hidden rounded-lg'>
-                    {product.isBestSeller && (
-                      <div className='absolute top-3 left-3 bg-[#f63a9e] text-white text-xs px-3 py-1 rounded-sm z-10'>
-                        BEST SELLER
-                      </div>
-                    )}
-                    <ImageWithFallback
-                      src={product.image}
-                      alt={product.name}
-                      className='w-full h-full object-cover transition-transform duration-300 group-hover:scale-105'
-                    />
-                  </div>
-
-                  {/* Product Info */}
-                  <div>
-                    <h3
-                      className="font-['Bricolage_Grotesque',_sans-serif] mb-1"
-                      style={{
-                        fontSize: '16px',
-                        lineHeight: '1.3',
-                        fontWeight: '600',
-                      }}
-                    >
-                      {product.name}
-                    </h3>
-                    <div className='flex items-center gap-2 text-gray-600 text-sm mb-1'>
-                      <Ruler className='w-4 h-4' />
-                      <span>{product.size}</span>
-                    </div>
-                    <p className='text-[#f63a9e]'>
-                      From <span>{product.price}</span>
-                    </p>
-                  </div>
-                </motion.div>
-              </React.Fragment>
-            );
-          })}
-        </div>
-
-        {/* No Results */}
-        {filteredProducts.length === 0 && (
-          <div className='text-center py-16'>
-            <p className='text-gray-500 text-lg'>
-              No products found in this category.
-            </p>
-          </div>
-        )}
-
-        {/* AI Generation CTA */}
-        <div className='relative bg-gradient-to-br from-[#f63a9e]/10 via-purple-50 to-pink-50 rounded-3xl overflow-hidden my-16 max-h-[400px]'>
-          <div className='grid grid-cols-1 lg:grid-cols-2 gap-6 items-center h-[400px]'>
-            {/* Left Side - Content */}
-            <div className='py-6 px-8 lg:pl-12 flex flex-col justify-center h-full'>
-              {/* Icon Features */}
-              <div className='flex gap-3 mb-6'>
-                <motion.div
-                  className='bg-white rounded-xl p-3 shadow-sm'
-                  whileHover={{ scale: 1.05 }}
-                  transition={{ duration: 0.2 }}
-                >
-                  <Sparkles className='w-6 h-6 text-[#f63a9e]' />
-                </motion.div>
-                <motion.div
-                  className='bg-white rounded-xl p-3 shadow-sm'
-                  whileHover={{ scale: 1.05 }}
-                  transition={{ duration: 0.2 }}
-                >
-                  <Wand2 className='w-6 h-6 text-purple-600' />
-                </motion.div>
-                <motion.div
-                  className='bg-white rounded-xl p-3 shadow-sm'
-                  whileHover={{ scale: 1.05 }}
-                  transition={{ duration: 0.2 }}
-                >
-                  <Zap className='w-6 h-6 text-pink-500' />
-                </motion.div>
-              </div>
-
-              <h2
-                className="font-['Bricolage_Grotesque',_sans-serif] mb-5"
-                style={{
-                  fontSize: '28px',
-                  lineHeight: '1.2',
-                  fontWeight: '600',
-                }}
-              >
-                Can't find one?
-                <br />
-                Our AI Will Generate on the GO
-              </h2>
-              <p className='text-gray-600 mb-7'>
-                Create custom artwork tailored to your preferences with our
-                AI-powered tools.
-              </p>
-
-              <button
-                onClick={() => navigate('/ai-generate')}
-                className='bg-[#f63a9e] text-white px-6 rounded-full hover:bg-[#e02d8d] transition-all hover:shadow-lg inline-flex items-center gap-2 w-fit'
-                style={{ height: '50px' }}
-              >
-                <Sparkles className='w-5 h-5' />
-                Try it now
-              </button>
-            </div>
-
-            {/* Right Side - Image */}
-            <div className='relative h-[400px]'>
-              <ImageWithFallback
-                src='https://images.unsplash.com/photo-1686749115331-e117fb58b46c?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxBSSUyMHRlY2hub2xvZ3klMjBjcmVhdGl2ZXxlbnwxfHx8fDE3NjA3MDY4Mzl8MA&ixlib=rb-4.1.0&q=80&w=1080&utm_source=figma&utm_medium=referral'
-                alt='AI Art Generation'
-                className='w-full h-full object-cover rounded-r-3xl'
-              />
-              {/* Gradient Overlay */}
-              <div className='absolute inset-0 bg-gradient-to-l from-transparent via-transparent to-pink-50/80 lg:to-pink-50/50 rounded-r-3xl'></div>
-            </div>
-          </div>
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900 mx-auto" />
+          <p className="mt-4 text-gray-600">Loading art collection...</p>
         </div>
       </div>
+    );
+  }
 
-      <Footer />
-    </div>
+  return (
+    <ArtCollectionPage
+      initialArtProducts={artProducts}
+      initialCategories={categories}
+    />
   );
 }
