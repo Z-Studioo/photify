@@ -36,6 +36,7 @@ import AIRestorePage from '@/pages/ai-restore';
 import AIResultsPage from '@/pages/ai-results';
 import ArtPage from '@/pages/art/[id]';
 import ArtCollectionsPage from '@/pages/art-collections';
+import Category from './pages/category/[category]/CategoryPageRoute';
 
 const queryClient = new QueryClient();
 
@@ -93,6 +94,7 @@ const App: React.FC = () => {
                   <Route path='/ai-print-size' element={<AIPrintSizePage />} />
                   <Route path='/ai-restore' element={<AIRestorePage />} />
                   <Route path='/ai-results' element={<AIResultsPage />} />
+                  <Route path='/category/:category' element={<Category />} />
                   <Route path='*' element={<NotFoundPage />} />
                 </Routes>
               </PresetProvider>
