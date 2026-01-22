@@ -204,7 +204,7 @@ export function AdminProductContentEditor({
       const filePath = `product-icons/${fileName}`;
 
       // eslint-disable-next-line @typescript-eslint/no-unused-vars
-      const { data: uploadData, error: uploadError } = await supabase.storage
+      const { error: uploadError } = await supabase.storage
         .from('photify')
         .upload(filePath, file, {
           cacheControl: '3600',

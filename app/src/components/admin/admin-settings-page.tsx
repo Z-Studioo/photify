@@ -156,7 +156,7 @@ export function AdminSettingsPage() {
     if (newRatio.label && newRatio.width_ratio && newRatio.height_ratio) {
       try {
         // eslint-disable-next-line @typescript-eslint/no-unused-vars
-        const { data, error } = await supabase
+        const { error } = await supabase
           .from('aspect_ratios')
           .insert([
             {
@@ -202,7 +202,7 @@ export function AdminSettingsPage() {
           `${calculatedWidth}" × ${newSize.height}" ${newSize.unit === 'inches' ? '' : newSize.unit}`.trim();
 
         // eslint-disable-next-line @typescript-eslint/no-unused-vars
-        const { data, error } = await supabase
+        const { error } = await supabase
           .from('sizes')
           .insert([
             {
@@ -241,7 +241,7 @@ export function AdminSettingsPage() {
     if (newTag.name && newTag.slug) {
       try {
         // eslint-disable-next-line @typescript-eslint/no-unused-vars
-        const { data, error } = await supabase
+        const { error } = await supabase
           .from('tags')
           .insert([
             {

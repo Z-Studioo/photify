@@ -220,7 +220,7 @@ export function AdminProductRoomBackgroundsEditor({
       const filePath = `room-backgrounds/${fileName}`;
 
       // eslint-disable-next-line @typescript-eslint/no-unused-vars
-      const { data, error } = await supabase.storage
+      const { error } = await supabase.storage
         .from('photify')
         .upload(filePath, file, {
           cacheControl: '3600',
