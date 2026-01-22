@@ -144,23 +144,28 @@ export function Footer() {
         </div>
 
         {/* Payment Methods & Social */}
-        <div className='border-t border-gray-800 pt-8 flex flex-col md:flex-row justify-between items-center gap-4'>
+        <div className='border-t border-gray-800 pt-8 flex flex-col md:flex-row justify-between items-center gap-6'>
           <p className='text-sm text-gray-400'>
-            © 2025 Photify. All Rights Reserved.
+            © {new Date().getFullYear()} Photify. All Rights Reserved.
           </p>
-          <div className='flex items-center gap-4'>
-            <div className='flex gap-2'>
-              <div className='bg-white rounded px-2 py-1'>
-                <span className='text-xs font-semibold'>VISA</span>
+          <div className='flex flex-col items-center md:items-end gap-2'>
+            <p className='text-xs text-gray-500'>Secure payments with</p>
+            <div className='flex items-center gap-3'>
+              <div className='bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 hover:border-[#f63a9e] transition-colors'>
+                <span className='text-sm font-bold text-white tracking-wider'>VISA</span>
               </div>
-              <div className='bg-white rounded px-2 py-1'>
-                <span className='text-xs font-semibold'>MC</span>
+              <div className='bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 hover:border-[#f63a9e] transition-colors'>
+                <span className='text-sm font-bold text-white tracking-wider'>Mastercard</span>
               </div>
-              <div className='bg-white rounded px-2 py-1'>
-                <span className='text-xs font-semibold'>AMEX</span>
+              <div className='bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 hover:border-[#f63a9e] transition-colors'>
+                <span className='text-sm font-bold text-white tracking-wider'>AMEX</span>
               </div>
-              <div className='bg-white rounded px-2 py-1'>
-                <span className='text-xs font-semibold'>PayPal</span>
+              <div className='bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 hover:border-[#f63a9e] transition-colors'>
+                <span className='text-sm font-bold text-[#0070ba]'>Pay</span>
+                <span className='text-sm font-bold text-[#00a3e0]'>Pal</span>
+              </div>
+              <div className='bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 hover:border-[#f63a9e] transition-colors'>
+                <span className='text-sm font-bold text-[#635bff]'>Stripe</span>
               </div>
             </div>
           </div>
