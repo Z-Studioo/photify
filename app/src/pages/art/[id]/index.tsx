@@ -19,23 +19,24 @@ export default function ArtPage() {
 
       const supabase = createClient();
 
+      // Check if id is a UUID or slug
       const isUUID =
         /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
           id
         );
 
-      const query = supabase.from('art_products').select('*');
-
-      const { data, error } = isUUID
-        ? await query.eq('id', id).maybeSingle()
-        : await query.eq('slug', id).maybeSingle();
+      // Fetch from art_products table
+      const { data, error } = await supabase
+        .from('art_products')
+        .select('*')
+        .or(isUUID ? `id.eq.${id}` : `slug.eq.${id}`)
+        .single();
 
       if (error || !data) {
         setNotFound(true);
       } else {
         setProduct(data);
       }
-
       setLoading(false);
     };
 
