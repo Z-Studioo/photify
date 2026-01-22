@@ -55,7 +55,7 @@ import AdminArtCollectionNewPage from '@/pages/admin/art-collection/new';
 import AdminArtCollectionEditPage from '@/pages/admin/art-collection/edit/[id]';
 import AdminSettingsPage from '@/pages/admin/settings';
 import AdminCustomersPage from '@/pages/admin/customers';
-import Category from './pages/category/[category]/CategoryPageRoute';
+import Category from '@/pages/category/[category]/CategoryPageRoute';
 
 const queryClient = new QueryClient();
 
@@ -208,7 +208,7 @@ const App: React.FC = () => {
                       element={<AdminCustomersPage />}
                     />
                     <Route path='/category/:category' element={<Category />} />
-                  <Route path='*' element={<NotFoundPage />} />
+                    <Route path='*' element={<NotFoundPage />} />
                   </Routes>
                 </PresetProvider>
               </UploadProvider>
