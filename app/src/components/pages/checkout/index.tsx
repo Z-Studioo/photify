@@ -125,7 +125,7 @@ export function CheckoutPage() {
       }
 
       // Create checkout session
-      const response = await fetch('/api/checkout', {
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/checkout`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

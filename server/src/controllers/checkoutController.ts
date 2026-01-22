@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 import { stripe } from '@/lib/stripe';
 import { supabase } from '@/lib/supabase';
+import { config } from '@/config/environment';
 
 interface CartItem {
   name: string;
@@ -166,8 +167,8 @@ export async function createCheckoutSession(
       payment_method_types: ['card'],
       line_items: lineItems,
       mode: 'payment',
-      success_url: `${process.env.CLIENT_URL}/confirmation?session_id={CHECKOUT_SESSION_ID}&order_id=${order.id}`,
-      cancel_url: `${process.env.CLIENT_URL}/checkout?canceled=true`,
+      success_url: `${config.CLIENT_URL}/confirmation?session_id={CHECKOUT_SESSION_ID}&order_id=${order.id}`,
+      cancel_url: `${config.CLIENT_URL}/checkout?canceled=true`,
       customer_email: customerInfo.email,
       metadata: {
         order_id: order.id,
