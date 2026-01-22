@@ -1,0 +1,33 @@
+// Admin Components - Export all admin-related components
+export { AdminAnalyticsPage } from './admin-analytics-page';
+export { AdminArtCollectionPage } from './admin-art-collection-page';
+export { AdminArtEditPage } from './admin-art-edit-page';
+export { AdminArtProductTagsEditor } from './admin-art-product-tags-editor';
+export { AdminArtSizeManager } from './admin-art-size-manager';
+export { AdminArtContentEditor } from './admin-art-content-editor';
+export { AdminCategoriesPage } from './admin-categories-page';
+export { AdminCategoryDetailPage } from './admin-category-detail-page';
+export { AdminCustomersPage } from './admin-customers-page';
+export { AdminDashboard } from './admin-dashboard';
+export { AdminLayout } from './admin-layout';
+export { AdminLoginPage } from './admin-login-page';
+export { AdminOrderDetailModal } from './admin-order-detail-modal';
+export { AdminOrderDetailPage } from './admin-order-detail-page';
+export { AdminOrdersPage } from './admin-orders-page';
+export { AdminProductConfigEditor } from './admin-product-config-editor';
+export { AdminProductContentEditor } from './admin-product-content-editor';
+export { AdminProductCategoriesEditor } from './admin-product-categories-editor';
+export { AdminFeaturedProductEditor } from './admin-featured-product-editor';
+export { AdminProductImageManager } from './admin-product-image-manager';
+export { AdminProductTagsEditor } from './admin-product-tags-editor';
+export { AdminConfigurerSelector } from './admin-configurer-selector';
+export { AdminProductEditPage } from './admin-product-edit-page';
+export { AdminProductsPage } from './admin-products-page';
+export { AdminPromotionEditPage } from './admin-promotion-edit-page';
+export { AdminPromotionsPage } from './admin-promotions-page';
+export { AdminRoomsPage } from './admin-rooms-page';
+export { AdminRoomEditPage } from './admin-room-edit-page';
+export { AdminRoomContentEditor } from './admin-room-content-editor';
+export { AdminProductRoomBackgroundsEditor } from './admin-product-room-backgrounds-editor';
+export { AdminSettingsPage } from './admin-settings-page';
+
