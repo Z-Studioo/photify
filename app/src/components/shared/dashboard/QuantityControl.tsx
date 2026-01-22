@@ -5,6 +5,9 @@ import { PlusCircle, MinusCircle, Loader2 } from 'lucide-react';
 import { ConfirmationModal } from '@/components/shared/dashboard/ConfirmModal';
 import { useState, useEffect } from 'react';
 import { useToast } from '@/components/shared/common/toast';
+import { useCart } from '@/context/CartContext';
+import { useNavigate } from 'react-router';
+import { useUpload } from '@/context/UploadContext';
 
 interface QuantityControlProps {
   quantity: number;
@@ -45,7 +48,9 @@ const QuantityControl: React.FC<QuantityControlProps> = ({
     actualPrice: 0,
   });
   const { addToast } = useToast();
-
+  const { addToCart } = useCart();
+  const navigate = useNavigate();
+  const { selectedSize, selectedRatio, preview, shape } = useUpload();
   // Get price data from localStorage
   useEffect(() => {
     const loadPriceData = () => {
@@ -92,7 +97,16 @@ const QuantityControl: React.FC<QuantityControlProps> = ({
     setLocalConfirming(true);
     try {
       await onConfirm();
-      addToast('Order placed successfully!', 'success');
+      addToCart({
+        quantity,
+        id: `${selectedRatio || 'custom'}-${selectedSize?.Slug || 'custom'}-${shape || 'rectangular'}`,
+        name: `${selectedRatio || 'Custom Ratio'} - ${selectedSize?.Slug || 'Custom Size'} - ${shape || 'Rectangular'}`,
+        image: preview || '',
+        price: priceData.sellPrice,
+        size: selectedSize?.Slug || 'Custom Size',
+      });
+      addToast('Quantity updated and added to cart successfully!', 'success');
+      navigate('/cart');
       setShowConfirmation(false);
     } catch (error) {
       addToast('Failed to update quantity. Please try again.', 'error');
