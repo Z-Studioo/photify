@@ -53,11 +53,12 @@ export function AdminRoomEditPage() {
   const navigate = useNavigate();
   const { roomId } = useParams<{ roomId: string }>();
   const supabase = createClient();
-  const isEditing = roomId !== 'new';
+  const isEditing = !!roomId;
   const [loading, setLoading] = useState(isEditing);
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
 
   // Fetch products for hotspot linking
   const { data: products } = useProducts();
@@ -600,6 +601,7 @@ export function AdminRoomEditPage() {
                   variant='outline'
                   onClick={() => setShowDeleteRoomDialog(true)}
                   className='text-red-600 hover:text-red-700 hover:bg-red-50'
+                  style={{ height: '44px' }}
                 >
                   <Trash2 className='w-4 h-4 mr-2' />
                   Delete Room
