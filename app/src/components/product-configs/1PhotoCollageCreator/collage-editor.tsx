@@ -656,6 +656,8 @@ export function CollageEditor({
               selectable: false,
               evented: true,
               hoverCursor: 'pointer',
+              originX: 'left',
+              originY: 'top',
             });
 
             (slotGroup as any).data = {
