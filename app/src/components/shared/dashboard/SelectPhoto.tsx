@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { ImagePlus, Layout, Crop, Square } from 'lucide-react';
+import { ImagePlus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import MyPhotos from '@/components/shared/dashboard/MyPhotos';
 import { useUpload } from '@/context/UploadContext';
@@ -16,14 +16,7 @@ interface SelectPhotoProps {
   onPhotoSelected?: (file: File) => void;
 }
 
-const canvasOptions = [
-  { id: 'landscape', label: 'Landscape', icon: <Layout className='h-6 w-6' /> },
-  { id: 'portrait', label: 'Portrait', icon: <Crop className='h-6 w-6' /> },
-  { id: 'square', label: 'Square', icon: <Square className='h-6 w-6' /> },
-];
-
 const SelectPhoto: React.FC<SelectPhotoProps> = ({ onPhotoSelected }) => {
-  const [selectedCanvas, setSelectedCanvas] = useState<string>('landscape');
   const [uploadedImages, setUploadedImages] = useState<UploadedImage[]>([]);
   const [selectedImageId, setSelectedImageId] = useState<string | null>(null);
   const { setPendingFile, setPendingPreview, applyPendingChanges } =
@@ -303,26 +296,6 @@ const SelectPhoto: React.FC<SelectPhotoProps> = ({ onPhotoSelected }) => {
             </span>{' '}
             to upload
           </p>
-        </div>
-
-        <div className='flex flex-col space-y-3'>
-          <h4 className='text-sm font-semibold text-center'>Use one of ours</h4>
-          <div className='flex flex-wrap gap-4'>
-            {canvasOptions.map(option => (
-              <div
-                key={option.id}
-                onClick={() => setSelectedCanvas(option.id)}
-                className={`flex-1 min-w-[100px] cursor-pointer border rounded-none p-4 flex flex-col items-center justify-center text-center transition ${
-                  selectedCanvas === option.id
-                    ? 'border-blue-500 bg-blue-50'
-                    : 'border-gray-300 hover:border-gray-500'
-                }`}
-              >
-                <span>{option.icon}</span>
-                <span className='mt-1 text-sm'>{option.label}</span>
-              </div>
-            ))}
-          </div>
         </div>
       </div>
     </div>
