@@ -8,9 +8,9 @@ import {
   Search,
   Home,
   Package,
-  Grid,
+  // Grid,
   Palette,
-  Wand2,
+  // Wand2,
   MapPin,
   Mail,
 } from 'lucide-react';
@@ -74,9 +74,9 @@ export function Header() {
   const navItems = [
     { href: '/', label: 'Home', icon: Home },
     { href: '/products', label: 'All Products', icon: Package },
-    { href: '/category/gallery-walls', label: 'Browse Collection', icon: Grid },
+    // { href: '/category/gallery-walls', label: 'Browse Collection', icon: Grid },
     { href: '/art-collections', label: 'Art Collections', icon: Palette },
-    { href: '/ai-tools', label: 'AI Tools', icon: Wand2 },
+    // { href: '/ai-tools', label: 'AI Tools', icon: Wand2 },
     { href: '/track-order', label: 'Track Order', icon: MapPin },
     { href: '/contact', label: 'Contact Us', icon: Mail },
   ];

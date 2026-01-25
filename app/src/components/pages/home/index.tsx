@@ -3,7 +3,7 @@ import { CategoryNav } from '@/components/shared/category-nav';
 import { FeaturedCollections } from '@/components/shared/featured-collections';
 import { ProductCard } from '@/components/shared/product-card';
 import { RoomInspiration } from '@/components/shared/room-inspiration';
-import { AIToolsSection } from '@/components/ai-tools/ai-tools-section';
+// import { AIToolsSection } from '@/components/ai-tools/ai-tools-section';
 import { Footer } from '@/components/layout/footer';
 import { ImageWithFallback } from '@/components/figma/image-with-fallback';
 import { motion } from 'framer-motion';
@@ -466,7 +466,7 @@ export function HomePage({
       </section>
 
       {/* AI Tools Section */}
-      <AIToolsSection />
+      {/* <AIToolsSection /> */}
 
       <Footer />
     </div>
