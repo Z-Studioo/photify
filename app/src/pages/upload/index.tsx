@@ -1,4 +1,4 @@
-import { useNavigate } from 'react-router';
+import { useNavigate, useSearchParams } from 'react-router';
 import { useUpload } from '@/context/UploadContext';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -6,9 +6,21 @@ import { Input } from '@/components/ui/input';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Crop, Image, Info, Scan, ShoppingBag } from 'lucide-react';
 import { motion, AnimatePresence, type Variants } from 'motion/react';
+import { createClient } from '@/lib/supabase/client';
 
 const Page = () => {
-  const { file: _file, setFile, preview, setPreview } = useUpload();
+  const { file: _file, setFile, preview, setPreview, setSelectedProduct } = useUpload();
+  const [searchParams] = useSearchParams();
+
+  const supabase = createClient();
+
+  supabase.from('products').select('*').eq('id', searchParams.get('productId')).then(({ data, error }) => {
+    if (error) {
+      console.error('Error fetching product:', error);
+    } else if (data && data.length > 0) {
+      setSelectedProduct(data[0]);
+    }
+  });
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const f = e.target.files?.[0];
@@ -183,7 +195,11 @@ const Page = () => {
                   >
                     <Button
                       className='w-full h-12 px-6 rounded-[var(--radius-lg)] text-base font-semibold'
-                      onClick={() => navigate('/crop')}
+                      onClick={() =>
+                        navigate(
+                          `/crop?productId=${searchParams.get('productId')}&configurerType=${searchParams.get('configurerType')}`
+                        )
+                      }
                     >
                       Continue
                     </Button>
