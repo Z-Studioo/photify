@@ -17,14 +17,6 @@ interface QuantityControlProps {
   isConfirming?: boolean;
 }
 
-interface Metadata {
-  selectedSize?: {
-    sell_price: number;
-    actual_price: number;
-  };
-  quantity?: number;
-}
-
 const buttonVariants = {
   idle: { scale: 1 },
   hover: { scale: 1.02 },
