@@ -2,6 +2,7 @@ import { ProductsPage } from '@/components/pages/products';
 import { useState, useEffect } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import { LoadingSpinner } from '@/components/shared/loading-spinner';
+import { Helmet } from '@dr.pogodin/react-helmet';
 
 export default function Products() {
   const [products, setProducts] = useState<any[]>([]);
@@ -39,9 +40,20 @@ export default function Products() {
     fetchData();
   }, []);
 
-  if (loading) {
-    return <LoadingSpinner />;
-  }
 
-  return <ProductsPage initialProducts={products} initialCategories={categories} />;
+  return (
+    <>
+      <Helmet>
+        <title>Products | Photify</title>
+        <meta
+          name="description"
+          content="Browse our collection of active products and explore categories."
+        />
+        <meta name="robots" content="index,follow" />
+      </Helmet>
+      {loading ? <LoadingSpinner /> :(
+        <ProductsPage initialProducts={products} initialCategories={categories} />
+      )}
+    </>
+  );
 }
