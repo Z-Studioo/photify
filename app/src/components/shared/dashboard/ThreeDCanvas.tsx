@@ -6,7 +6,6 @@ import { useUpload, type CanvasShape } from '@/context/UploadContext';
 import { useEdge } from '@/context/EdgeContext';
 import type { OrbitControls as OrbitControlsImpl } from 'three-stdlib';
 import backpanel from '@/assets/images/backpanel.png';
-import { useSearchParams } from 'react-router';
 import { useLocation } from 'react-router';
 
 interface ThreeDCanvasProps {
