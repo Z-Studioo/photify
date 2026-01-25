@@ -50,44 +50,54 @@ const QuantityControl: React.FC<QuantityControlProps> = ({
   const { addToast } = useToast();
   const { addToCart } = useCart();
   const navigate = useNavigate();
-  const { selectedSize, selectedRatio, preview, shape } = useUpload();
+  const { selectedSize, selectedRatio, preview, shape, selectedProduct } =
+    useUpload();
   // Get price data from localStorage
+  // useEffect(() => {
+  //   const loadPriceData = () => {
+  //     try {
+  //       const metadataStr = localStorage.getItem('photify_metadata');
+  //       if (metadataStr) {
+  //         const metadata: Metadata = JSON.parse(metadataStr);
+  //         const sellPrice = metadata.selectedSize?.sell_price || 0;
+  //         const actualPrice = metadata.selectedSize?.actual_price || sellPrice;
+  //         setPriceData({ sellPrice, actualPrice });
+  //       }
+  //     } catch (error) {
+  //       console.error('Error loading price data from localStorage:', error);
+  //     }
+  //   };
+
+  //   loadPriceData();
+
+  //   const handleStorageChange = (e: StorageEvent) => {
+  //     if (e.key === 'photify_metadata') {
+  //       loadPriceData();
+  //     }
+  //   };
+
+  //   window.addEventListener('storage', handleStorageChange);
+  //   return () => window.removeEventListener('storage', handleStorageChange);
+  // }, []);
+
+  // useEffect(() => {
+  //   const metadataStr = localStorage.getItem('photify_metadata');
+  //   if (metadataStr) {
+  //     const metadata: Metadata = JSON.parse(metadataStr);
+  //     const sellPrice = metadata.selectedSize?.sell_price || 0;
+  //     const actualPrice = metadata.selectedSize?.actual_price || sellPrice;
+  //     setPriceData({ sellPrice, actualPrice });
+  //   }
+  // }, [quantity]);
+
   useEffect(() => {
-    const loadPriceData = () => {
-      try {
-        const metadataStr = localStorage.getItem('photify_metadata');
-        if (metadataStr) {
-          const metadata: Metadata = JSON.parse(metadataStr);
-          const sellPrice = metadata.selectedSize?.sell_price || 0;
-          const actualPrice = metadata.selectedSize?.actual_price || sellPrice;
-          setPriceData({ sellPrice, actualPrice });
-        }
-      } catch (error) {
-        console.error('Error loading price data from localStorage:', error);
-      }
-    };
-
-    loadPriceData();
-
-    const handleStorageChange = (e: StorageEvent) => {
-      if (e.key === 'photify_metadata') {
-        loadPriceData();
-      }
-    };
-
-    window.addEventListener('storage', handleStorageChange);
-    return () => window.removeEventListener('storage', handleStorageChange);
-  }, []);
-
-  useEffect(() => {
-    const metadataStr = localStorage.getItem('photify_metadata');
-    if (metadataStr) {
-      const metadata: Metadata = JSON.parse(metadataStr);
-      const sellPrice = metadata.selectedSize?.sell_price || 0;
-      const actualPrice = metadata.selectedSize?.actual_price || sellPrice;
-      setPriceData({ sellPrice, actualPrice });
+    if (selectedProduct && selectedSize) {
+      setPriceData({
+        sellPrice: +(selectedProduct.price || 0) * selectedSize.area_in2,
+        actualPrice: +selectedProduct.price * selectedSize.area_in2,
+      });
     }
-  }, [quantity]);
+  }, [selectedProduct, selectedSize]);
 
   const handleConfirmClick = () => {
     setShowConfirmation(true);
@@ -99,11 +109,11 @@ const QuantityControl: React.FC<QuantityControlProps> = ({
       await onConfirm();
       addToCart({
         quantity,
-        id: `${selectedRatio || 'custom'}-${selectedSize?.Slug || 'custom'}-${shape || 'rectangular'}`,
-        name: `${selectedRatio || 'Custom Ratio'} - ${selectedSize?.Slug || 'Custom Size'} - ${shape || 'Rectangular'}`,
+        id: `${selectedRatio || 'custom'}-${selectedSize?.display_label || 'custom'}-${shape || 'rectangular'}`,
+        name: `${selectedRatio || 'Custom Ratio'} - ${selectedSize?.display_label || 'Custom Size'} - ${shape || 'Rectangular'}`,
         image: preview || '',
         price: priceData.sellPrice,
-        size: selectedSize?.Slug || 'Custom Size',
+        size: selectedSize?.display_label || 'Custom Size',
       });
       addToast('Quantity updated and added to cart successfully!', 'success');
       navigate('/cart');

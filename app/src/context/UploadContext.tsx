@@ -34,6 +34,7 @@ interface Metadata {
   quality?: number[] | null;
   edgeType?: EdgeType;
   quantity?: number;
+  selectedProduct?: Product | null;
 }
 
 interface UploadContextType {
@@ -97,9 +98,10 @@ const getStoredMetadata = (): Partial<Metadata> => {
       selectedSize:
         parsed.selectedSize &&
         typeof parsed.selectedSize === 'object' &&
-        typeof parsed.selectedSize._id === 'string' &&
-        typeof parsed.selectedSize.width === 'number' &&
-        typeof parsed.selectedSize.height === 'number'
+        typeof parsed.selectedSize.id === 'string' &&
+        typeof parsed.selectedSize.width_in === 'number' &&
+        typeof parsed.selectedSize.height_in === 'number' &&
+        typeof parsed.selectedSize.area_in2 === 'number'
           ? (parsed.selectedSize as InchData)
           : undefined,
       shape: ['rectangle', 'round', 'hexagon', 'octagon', 'dodecagon'].includes(
@@ -119,6 +121,10 @@ const getStoredMetadata = (): Partial<Metadata> => {
       quantity:
         typeof parsed.quantity === 'number' && parsed.quantity > 0
           ? parsed.quantity
+          : undefined,
+      selectedProduct:
+        parsed.selectedProduct && typeof parsed.selectedProduct === 'object'
+          ? (parsed.selectedProduct as Product)
           : undefined,
     };
   } catch (error) {
@@ -249,6 +255,10 @@ export const UploadProvider = ({ children }: { children: React.ReactNode }) => {
       if (metadata.shape) setShape(metadata.shape);
       if (metadata.edgeType) setEdgeType(metadata.edgeType);
       if (metadata.quantity) setQuantity(metadata.quantity);
+      if (metadata.quality) setQuality(metadata.quality);
+      if (metadata.selectedProduct) {
+        setSelectedProduct(metadata.selectedProduct);
+      }
     };
 
     restore();
@@ -279,8 +289,17 @@ export const UploadProvider = ({ children }: { children: React.ReactNode }) => {
       quality,
       edgeType,
       quantity,
+      selectedProduct,
     });
-  }, [selectedRatio, selectedSize, shape, quality, edgeType, quantity]);
+  }, [
+    selectedRatio,
+    selectedSize,
+    shape,
+    quality,
+    edgeType,
+    quantity,
+    selectedProduct,
+  ]);
 
   const applyPendingChanges = async () => {
     if (pendingRatio) {

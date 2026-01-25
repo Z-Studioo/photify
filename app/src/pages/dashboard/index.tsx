@@ -115,10 +115,17 @@ const Dashboard: React.FC = () => {
     selectedRatio,
     selectedSize,
     quality,
+    selectedProduct,
   } = useUpload();
   const { selectedView, setSelectedView } = useView();
   const { edgeType, applyPendingEdgeType } = useEdge();
-  const pricePerItem: number = selectedSize?.sell_price || 100;
+  const [pricePerItem, setPricePerItem] = useState<number>(0);
+
+  useEffect(() => {
+    setPricePerItem(
+      +(selectedProduct?.price || 0) * +(selectedSize?.area_in2 || 0)
+    );
+  }, [selectedProduct, selectedSize]);
 
   const features = featuresBase.map(feature => {
     if (feature.name === 'ROUND FORMATS AND SHAPES') {
@@ -131,7 +138,7 @@ const Dashboard: React.FC = () => {
       return {
         ...feature,
         subtitle: selectedSize
-          ? `${selectedSize.width}" × ${selectedSize.height}" (${selectedRatio})`
+          ? `${selectedSize.width_in}" × ${selectedSize.height_in}" (${selectedRatio})`
           : '24 by 16 (External: 24 by 16)',
       };
     }
@@ -635,7 +642,10 @@ const Dashboard: React.FC = () => {
                   <ApplyChangesControl
                     pricePerItem={pricePerItem}
                     quantity={quantity}
-                    selectedSize={selectedSize}
+                    selectedSize={{
+                      actual_price: pricePerItem,
+                      sell_price: pricePerItem,
+                    }}
                     onApply={() => {
                       applyPendingChanges();
                       applyPendingEdgeType();
@@ -678,20 +688,19 @@ const Dashboard: React.FC = () => {
                   ${(pricePerItem * quantity).toFixed(2)}
                 </motion.span>
                 {selectedSize &&
-                  selectedSize.actual_price > selectedSize.sell_price && (
+                  +(selectedProduct?.oldPrice || 0) > pricePerItem && (
                     <motion.div
                       className='text-sm'
                       initial={{ opacity: 0 }}
                       animate={{ opacity: 1 }}
                     >
                       <span className='line-through text-gray-500'>
-                        ${(selectedSize.actual_price * quantity).toFixed(2)}
+                        ${(pricePerItem * quantity).toFixed(2)}
                       </span>
                       <span className='ml-2 text-green-600 font-medium'>
                         {Math.round(
-                          ((selectedSize.actual_price -
-                            selectedSize.sell_price) /
-                            selectedSize.actual_price) *
+                          ((+(selectedProduct?.oldPrice || 0) - pricePerItem) /
+                            +(selectedProduct?.oldPrice || 0)) *
                             100
                         )}
                         % OFF
