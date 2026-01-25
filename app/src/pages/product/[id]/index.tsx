@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import { useNavigate } from 'react-router-dom';
 import { LoadingSpinner } from '@/components/shared/loading-spinner';
+import { Helmet } from '@dr.pogodin/react-helmet';
 
 export default function ProductPage() {
   const { id: productId } = useParams<{ id: string }>();
@@ -39,12 +40,27 @@ export default function ProductPage() {
   }, [productId, navigate]);
 
   if (loading) {
-    return <LoadingSpinner />;
+    return (
+    <>
+    <LoadingSpinner />
+    </>
+  );
   }
 
   if (!product) {
     return null;
   }
 
-  return <ProductDetailPage initialProduct={product} productSlug={productId || ''} />;
+  return (
+  <>
+    <Helmet>
+      <title>{product.name} | Photify</title>
+      <meta
+        name="description"
+        content={product.description || 'Explore this amazing product on Photify.'}
+      />
+      <meta name="robots" content="index,follow" />
+    </Helmet>
+    <ProductDetailPage initialProduct={product} productSlug={productId || ''} />
+  </>);
 }

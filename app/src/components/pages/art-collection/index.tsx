@@ -6,6 +6,7 @@ import { ImageWithFallback } from '@/components/figma/image-with-fallback';
 import { Ruler, Sparkles, Wand2, Zap } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useNavigate, useSearchParams } from 'react-router-dom';
+import { Helmet } from '@dr.pogodin/react-helmet';
 
 interface ArtProduct {
   id: string;
@@ -272,237 +273,248 @@ export function ArtCollectionPage({
       : artProducts.filter(p => p.category === selectedCategory);
 
   return (
-    <div className="min-h-screen font-['Mona_Sans',_sans-serif]">
-      <Header />
+    <>
+      <Helmet>
+        <title>Art Collection | Photify</title>
+        <meta
+          name="description"
+          content="Explore our curated collection of art pieces across various categories including Abstract, Religion, Animals, and Nepal."
+        />
+        <meta name="robots" content="index,follow" />
+        
+      </Helmet>
+      <div className="min-h-screen font-['Mona_Sans',_sans-serif]">
+        <Header />
 
-      <div className='max-w-[1400px] mx-auto px-4 py-8'>
-        {/* Page Title */}
-        <h1
-          className="font-['Bricolage_Grotesque',_sans-serif] mb-6"
-          style={{ fontSize: '32px', lineHeight: '1.2', fontWeight: '600' }}
-        >
-          Browse our curated art collections
-        </h1>
+        <div className='max-w-[1400px] mx-auto px-4 py-8'>
+          {/* Page Title */}
+          <h1
+            className="font-['Bricolage_Grotesque',_sans-serif] mb-6"
+            style={{ fontSize: '32px', lineHeight: '1.2', fontWeight: '600' }}
+          >
+            Browse our curated art collections
+          </h1>
 
-        {/* Category Filters */}
-        <div className='flex flex-wrap gap-3 mb-8'>
-          {categories.map(category => (
-            <button
-              key={category}
-              onClick={() => setSelectedCategory(category)}
-              className={`px-8 py-3 rounded-full transition-colors ${
-                selectedCategory === category
-                  ? 'bg-pink-100 text-[#f63a9e]'
-                  : 'bg-gray-100 text-gray-500 hover:bg-gray-200'
-              }`}
-            >
-              {category}
-            </button>
-          ))}
-        </div>
+          {/* Category Filters */}
+          <div className='flex flex-wrap gap-3 mb-8'>
+            {categories.map(category => (
+              <button
+                key={category}
+                onClick={() => setSelectedCategory(category)}
+                className={`px-8 py-3 rounded-full transition-colors ${
+                  selectedCategory === category
+                    ? 'bg-pink-100 text-[#f63a9e]'
+                    : 'bg-gray-100 text-gray-500 hover:bg-gray-200'
+                }`}
+              >
+                {category}
+              </button>
+            ))}
+          </div>
 
-        {/* Product Grid */}
-        <div className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6'>
-          {filteredProducts.map((product: ArtProduct, index: number) => {
-            const halfwayPoint = Math.floor(filteredProducts.length / 2);
-            const shouldShowAICard = index === halfwayPoint;
+          {/* Product Grid */}
+          <div className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6'>
+            {filteredProducts.map((product: ArtProduct, index: number) => {
+              const halfwayPoint = Math.floor(filteredProducts.length / 2);
+              const shouldShowAICard = index === halfwayPoint;
 
-            return (
-              <React.Fragment key={`product-${product.id}-${index}`}>
-                {shouldShowAICard && (
+              return (
+                <React.Fragment key={`product-${product.id}-${index}`}>
+                  {shouldShowAICard && (
+                    <motion.div
+                      key='ai-browse-card'
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ duration: 0.3, delay: index * 0.05 }}
+                      className='bg-gradient-to-br from-[#f63a9e] to-[#e02d8d] rounded-lg overflow-hidden aspect-square flex flex-col justify-between p-6'
+                    >
+                      {/* Top Section - Icons */}
+                      <div className='flex gap-2'>
+                        <motion.div
+                          className='bg-white/20 backdrop-blur-sm rounded-lg p-2'
+                          whileHover={{ scale: 1.05 }}
+                          transition={{ duration: 0.2 }}
+                        >
+                          <Sparkles className='w-5 h-5 text-white' />
+                        </motion.div>
+                        <motion.div
+                          className='bg-white/20 backdrop-blur-sm rounded-lg p-2'
+                          whileHover={{ scale: 1.05 }}
+                          transition={{ duration: 0.2 }}
+                        >
+                          <Wand2 className='w-5 h-5 text-white' />
+                        </motion.div>
+                        <motion.div
+                          className='bg-white/20 backdrop-blur-sm rounded-lg p-2'
+                          whileHover={{ scale: 1.05 }}
+                          transition={{ duration: 0.2 }}
+                        >
+                          <Zap className='w-5 h-5 text-white' />
+                        </motion.div>
+                      </div>
+
+                      {/* Middle Section - Text */}
+                      <div className='flex flex-col'>
+                        <h3
+                          className="font-['Bricolage_Grotesque',_sans-serif] text-white mb-2"
+                          style={{
+                            fontSize: '20px',
+                            lineHeight: '1.2',
+                            fontWeight: '600',
+                          }}
+                        >
+                          Can&apos;t find one?
+                          <br />
+                          Our AI Will Generate on the GO
+                        </h3>
+                        <p className='text-white/90 text-sm'>
+                          Create custom artwork tailored to your preferences with
+                          our AI-powered tools.
+                        </p>
+                      </div>
+
+                      {/* Bottom Section - CTA Button */}
+                      <button
+                        onClick={() => navigate('/ai-generate')}
+                        className='bg-white text-[#f63a9e] px-5 rounded-full hover:bg-white/90 transition-all inline-flex items-center justify-center gap-2 w-full'
+                        style={{ height: '50px' }}
+                      >
+                        <Sparkles className='w-5 h-5' />
+                        Try it now
+                      </button>
+                    </motion.div>
+                  )}
+
                   <motion.div
-                    key='ai-browse-card'
+                    key={product.id}
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.3, delay: index * 0.05 }}
-                    className='bg-gradient-to-br from-[#f63a9e] to-[#e02d8d] rounded-lg overflow-hidden aspect-square flex flex-col justify-between p-6'
+                    className='group cursor-pointer'
+                    onClick={() => navigate(`/art/${product.id}`)}
                   >
-                    {/* Top Section - Icons */}
-                    <div className='flex gap-2'>
-                      <motion.div
-                        className='bg-white/20 backdrop-blur-sm rounded-lg p-2'
-                        whileHover={{ scale: 1.05 }}
-                        transition={{ duration: 0.2 }}
-                      >
-                        <Sparkles className='w-5 h-5 text-white' />
-                      </motion.div>
-                      <motion.div
-                        className='bg-white/20 backdrop-blur-sm rounded-lg p-2'
-                        whileHover={{ scale: 1.05 }}
-                        transition={{ duration: 0.2 }}
-                      >
-                        <Wand2 className='w-5 h-5 text-white' />
-                      </motion.div>
-                      <motion.div
-                        className='bg-white/20 backdrop-blur-sm rounded-lg p-2'
-                        whileHover={{ scale: 1.05 }}
-                        transition={{ duration: 0.2 }}
-                      >
-                        <Zap className='w-5 h-5 text-white' />
-                      </motion.div>
+                    {/* Product Image */}
+                    <div className='relative aspect-square mb-3 overflow-hidden rounded-lg'>
+                      {product.isBestSeller && (
+                        <div className='absolute top-3 left-3 bg-[#f63a9e] text-white text-xs px-3 py-1 rounded-sm z-10'>
+                          BEST SELLER
+                        </div>
+                      )}
+                      <ImageWithFallback
+                        src={product.image}
+                        alt={product.name}
+                        className='w-full h-full object-cover transition-transform duration-300 group-hover:scale-105'
+                      />
                     </div>
 
-                    {/* Middle Section - Text */}
-                    <div className='flex flex-col'>
+                    {/* Product Info */}
+                    <div>
                       <h3
-                        className="font-['Bricolage_Grotesque',_sans-serif] text-white mb-2"
+                        className="font-['Bricolage_Grotesque',_sans-serif] mb-1"
                         style={{
-                          fontSize: '20px',
-                          lineHeight: '1.2',
+                          fontSize: '16px',
+                          lineHeight: '1.3',
                           fontWeight: '600',
                         }}
                       >
-                        Can&apos;t find one?
-                        <br />
-                        Our AI Will Generate on the GO
+                        {product.name}
                       </h3>
-                      <p className='text-white/90 text-sm'>
-                        Create custom artwork tailored to your preferences with
-                        our AI-powered tools.
+                      <div className='flex items-center gap-2 text-gray-600 text-sm mb-1'>
+                        <Ruler className='w-4 h-4' />
+                        <span>{product.size}</span>
+                      </div>
+                      <p className='text-[#f63a9e]'>
+                        From <span>{product.price}</span>
                       </p>
                     </div>
-
-                    {/* Bottom Section - CTA Button */}
-                    <button
-                      onClick={() => navigate('/ai-generate')}
-                      className='bg-white text-[#f63a9e] px-5 rounded-full hover:bg-white/90 transition-all inline-flex items-center justify-center gap-2 w-full'
-                      style={{ height: '50px' }}
-                    >
-                      <Sparkles className='w-5 h-5' />
-                      Try it now
-                    </button>
                   </motion.div>
-                )}
-
-                <motion.div
-                  key={product.id}
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.3, delay: index * 0.05 }}
-                  className='group cursor-pointer'
-                  onClick={() => navigate(`/art/${product.id}`)}
-                >
-                  {/* Product Image */}
-                  <div className='relative aspect-square mb-3 overflow-hidden rounded-lg'>
-                    {product.isBestSeller && (
-                      <div className='absolute top-3 left-3 bg-[#f63a9e] text-white text-xs px-3 py-1 rounded-sm z-10'>
-                        BEST SELLER
-                      </div>
-                    )}
-                    <ImageWithFallback
-                      src={product.image}
-                      alt={product.name}
-                      className='w-full h-full object-cover transition-transform duration-300 group-hover:scale-105'
-                    />
-                  </div>
-
-                  {/* Product Info */}
-                  <div>
-                    <h3
-                      className="font-['Bricolage_Grotesque',_sans-serif] mb-1"
-                      style={{
-                        fontSize: '16px',
-                        lineHeight: '1.3',
-                        fontWeight: '600',
-                      }}
-                    >
-                      {product.name}
-                    </h3>
-                    <div className='flex items-center gap-2 text-gray-600 text-sm mb-1'>
-                      <Ruler className='w-4 h-4' />
-                      <span>{product.size}</span>
-                    </div>
-                    <p className='text-[#f63a9e]'>
-                      From <span>{product.price}</span>
-                    </p>
-                  </div>
-                </motion.div>
-              </React.Fragment>
-            );
-          })}
-        </div>
-
-        {/* No Results */}
-        {filteredProducts.length === 0 && (
-          <div className='text-center py-16'>
-            <p className='text-gray-500 text-lg'>
-              No products found in this category.
-            </p>
+                </React.Fragment>
+              );
+            })}
           </div>
-        )}
 
-        {/* AI Generation CTA */}
-        <div className='relative bg-gradient-to-br from-[#f63a9e]/10 via-purple-50 to-pink-50 rounded-3xl overflow-hidden my-16 max-h-[400px]'>
-          <div className='grid grid-cols-1 lg:grid-cols-2 gap-6 items-center h-[400px]'>
-            {/* Left Side - Content */}
-            <div className='py-6 px-8 lg:pl-12 flex flex-col justify-center h-full'>
-              {/* Icon Features */}
-              <div className='flex gap-3 mb-6'>
-                <motion.div
-                  className='bg-white rounded-xl p-3 shadow-sm'
-                  whileHover={{ scale: 1.05 }}
-                  transition={{ duration: 0.2 }}
+          {/* No Results */}
+          {filteredProducts.length === 0 && (
+            <div className='text-center py-16'>
+              <p className='text-gray-500 text-lg'>
+                No products found in this category.
+              </p>
+            </div>
+          )}
+
+          {/* AI Generation CTA */}
+          <div className='relative bg-gradient-to-br from-[#f63a9e]/10 via-purple-50 to-pink-50 rounded-3xl overflow-hidden my-16 max-h-[400px]'>
+            <div className='grid grid-cols-1 lg:grid-cols-2 gap-6 items-center h-[400px]'>
+              {/* Left Side - Content */}
+              <div className='py-6 px-8 lg:pl-12 flex flex-col justify-center h-full'>
+                {/* Icon Features */}
+                <div className='flex gap-3 mb-6'>
+                  <motion.div
+                    className='bg-white rounded-xl p-3 shadow-sm'
+                    whileHover={{ scale: 1.05 }}
+                    transition={{ duration: 0.2 }}
+                  >
+                    <Sparkles className='w-6 h-6 text-[#f63a9e]' />
+                  </motion.div>
+                  <motion.div
+                    className='bg-white rounded-xl p-3 shadow-sm'
+                    whileHover={{ scale: 1.05 }}
+                    transition={{ duration: 0.2 }}
+                  >
+                    <Wand2 className='w-6 h-6 text-purple-600' />
+                  </motion.div>
+                  <motion.div
+                    className='bg-white rounded-xl p-3 shadow-sm'
+                    whileHover={{ scale: 1.05 }}
+                    transition={{ duration: 0.2 }}
+                  >
+                    <Zap className='w-6 h-6 text-pink-500' />
+                  </motion.div>
+                </div>
+
+                <h2
+                  className="font-['Bricolage_Grotesque',_sans-serif] mb-5"
+                  style={{
+                    fontSize: '28px',
+                    lineHeight: '1.2',
+                    fontWeight: '600',
+                  }}
                 >
-                  <Sparkles className='w-6 h-6 text-[#f63a9e]' />
-                </motion.div>
-                <motion.div
-                  className='bg-white rounded-xl p-3 shadow-sm'
-                  whileHover={{ scale: 1.05 }}
-                  transition={{ duration: 0.2 }}
+                  Can&apos;t find one?
+                  <br />
+                  Our AI Will Generate on the GO
+                </h2>
+                <p className='text-gray-600 mb-7'>
+                  Create custom artwork tailored to your preferences with our
+                  AI-powered tools.
+                </p>
+
+                <button
+                  onClick={() => navigate('/ai-generate')}
+                  className='bg-[#f63a9e] text-white px-6 rounded-full hover:bg-[#e02d8d] transition-all hover:shadow-lg inline-flex items-center gap-2 w-fit'
+                  style={{ height: '50px' }}
                 >
-                  <Wand2 className='w-6 h-6 text-purple-600' />
-                </motion.div>
-                <motion.div
-                  className='bg-white rounded-xl p-3 shadow-sm'
-                  whileHover={{ scale: 1.05 }}
-                  transition={{ duration: 0.2 }}
-                >
-                  <Zap className='w-6 h-6 text-pink-500' />
-                </motion.div>
+                  <Sparkles className='w-5 h-5' />
+                  Try it now
+                </button>
               </div>
 
-              <h2
-                className="font-['Bricolage_Grotesque',_sans-serif] mb-5"
-                style={{
-                  fontSize: '28px',
-                  lineHeight: '1.2',
-                  fontWeight: '600',
-                }}
-              >
-                Can&apos;t find one?
-                <br />
-                Our AI Will Generate on the GO
-              </h2>
-              <p className='text-gray-600 mb-7'>
-                Create custom artwork tailored to your preferences with our
-                AI-powered tools.
-              </p>
-
-              <button
-                onClick={() => navigate('/ai-generate')}
-                className='bg-[#f63a9e] text-white px-6 rounded-full hover:bg-[#e02d8d] transition-all hover:shadow-lg inline-flex items-center gap-2 w-fit'
-                style={{ height: '50px' }}
-              >
-                <Sparkles className='w-5 h-5' />
-                Try it now
-              </button>
-            </div>
-
-            {/* Right Side - Image */}
-            <div className='relative h-[400px]'>
-              <ImageWithFallback
-                src='https://images.unsplash.com/photo-1686749115331-e117fb58b46c?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxBSSUyMHRlY2hub2xvZ3klMjBjcmVhdGl2ZXxlbnwxfHx8fDE3NjA3MDY4Mzl8MA&ixlib=rb-4.1.0&q=80&w=1080&utm_source=figma&utm_medium=referral'
-                alt='AI Art Generation'
-                className='w-full h-full object-cover rounded-r-3xl'
-              />
-              {/* Gradient Overlay */}
-              <div className='absolute inset-0 bg-gradient-to-l from-transparent via-transparent to-pink-50/80 lg:to-pink-50/50 rounded-r-3xl' />
+              {/* Right Side - Image */}
+              <div className='relative h-[400px]'>
+                <ImageWithFallback
+                  src='https://images.unsplash.com/photo-1686749115331-e117fb58b46c?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxBSSUyMHRlY2hub2xvZ3klMjBjcmVhdGl2ZXxlbnwxfHx8fDE3NjA3MDY4Mzl8MA&ixlib=rb-4.1.0&q=80&w=1080&utm_source=figma&utm_medium=referral'
+                  alt='AI Art Generation'
+                  className='w-full h-full object-cover rounded-r-3xl'
+                />
+                {/* Gradient Overlay */}
+                <div className='absolute inset-0 bg-gradient-to-l from-transparent via-transparent to-pink-50/80 lg:to-pink-50/50 rounded-r-3xl' />
+              </div>
             </div>
           </div>
         </div>
-      </div>
 
-      <Footer />
-    </div>
+        <Footer />
+      </div>
+    </>
   );
 }

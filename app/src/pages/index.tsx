@@ -2,6 +2,7 @@
 import { useState, useEffect } from 'react';
 import { HomePage } from '@/components/pages/home';
 import { createClient } from '@/lib/supabase/client';
+import { Helmet } from '@dr.pogodin/react-helmet';
 
 export default function Home() {
   const [featuredProducts, setFeaturedProducts] = useState<any[]>([]);
@@ -49,17 +50,37 @@ export default function Home() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#f63a9e]" />
-      </div>
+      <>
+        <Helmet>
+            <title>Home | Photify</title>
+            <meta name='title' content='Home | Photify' />
+            <meta
+              name="description"
+              content="Discover stunning photo products and art collections at Photify. Transform your memories into beautiful wall art and decor."
+            />
+            <meta name="robots" content="index,follow" />
+        </Helmet>
+        <div className="min-h-screen flex items-center justify-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#f63a9e]" />
+        </div>
+      </>
     );
   }
 
   return (
+    <>
+    <Helmet>
+          <title>Home | Photify</title>
+          <meta
+            name="description"
+            content="Discover stunning photo products and art collections at Photify. Transform your memories into beautiful wall art and decor."
+          />
+        </Helmet>
     <HomePage 
       initialFeaturedProducts={featuredProducts} 
       initialRooms={rooms} 
       initialArtProducts={artProducts}
-    />
+      />
+      </>
   );
 }
