@@ -651,7 +651,8 @@ const Dashboard: React.FC = () => {
                       applyPendingEdgeType();
                       if (
                         selectedView === 'crop' ||
-                        selectedView === 'optimization'
+                        selectedView === 'optimization' ||
+                        selectedView === '3d'
                       )
                         setSelectedView('room');
                       setSelectedFeature(null);
