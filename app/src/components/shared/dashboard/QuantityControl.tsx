@@ -43,7 +43,7 @@ const QuantityControl: React.FC<QuantityControlProps> = ({
   const { addToast } = useToast();
   const { addToCart } = useCart();
   const navigate = useNavigate();
-  const { selectedSize, selectedRatio, preview, shape, selectedProduct } =
+  const { selectedSize, selectedRatio, shape, selectedProduct } =
     useUpload();
     const [params] = useSearchParams()
   // Get price data from localStorage
@@ -117,6 +117,7 @@ const QuantityControl: React.FC<QuantityControlProps> = ({
       setShowConfirmation(false);
     } catch (error) {
       addToast('Failed to update quantity. Please try again.', 'error');
+      console.warn(error);
     } finally {
       setLocalConfirming(false);
     }
