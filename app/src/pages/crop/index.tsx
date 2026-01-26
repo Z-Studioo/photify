@@ -1,14 +1,19 @@
-import { useNavigate } from 'react-router';
+import { useLocation, useNavigate } from 'react-router';
 import ImageCropper from '@/components/shared/common/ImageCropper';
 import { Button } from '@/components/ui/button';
 import { Check } from 'lucide-react';
-import { useUpload } from '@/context/UploadContext';
 import CropPanel from '@/components/shared/crop/CropPanel';
 import { useEffect } from 'react';
 
 export default function CropPage() {
   const navigate = useNavigate();
-  const { pendingFile, pendingPreview, applyPendingChanges } = useUpload();
+  const location = useLocation();
+
+  const searchParams = new URLSearchParams(location.search);
+
+  const encodedImageUrl = searchParams.get('image');
+
+  const imageUrl = encodedImageUrl ? decodeURIComponent(encodedImageUrl) : null;
 
   useEffect(() => {
     const setVH = () => {
@@ -27,8 +32,11 @@ export default function CropPage() {
   }, []);
 
   const handleApply = () => {
-    applyPendingChanges();
-    navigate('/dashboard', { replace: true });
+    // applyPendingChanges();
+    navigate(
+      `/dashboard?image=${encodeURIComponent(imageUrl?.replace(/image=/, '') || '')}`,
+      { replace: true }
+    );
   };
 
   return (
@@ -55,7 +63,7 @@ export default function CropPage() {
             <Button
               size='lg'
               className='w-full bg-primary text-white hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed'
-              disabled={!pendingFile || !pendingPreview}
+              disabled={!imageUrl}
               onClick={handleApply}
             >
               Apply & Continue

@@ -6,9 +6,40 @@ import { Input } from '@/components/ui/input';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Crop, Image, Info, Scan, ShoppingBag } from 'lucide-react';
 import { motion, AnimatePresence, type Variants } from 'motion/react';
+import { toast } from 'sonner';
+import { uploadFileToStorage } from '@/lib/supabase/storage';
 
 const Page = () => {
   const { file: _file, setFile, preview, setPreview } = useUpload();
+
+  const handleImageUpload = async (file: File) => {
+    if (!file.type.startsWith('image/')) {
+      toast.error('Please upload an image file');
+      return;
+    }
+
+    const uploadToast = toast.loading('Uploading image...');
+    try {
+      // First, upload the image to Supabase storage
+      const publicUrl = await uploadFileToStorage(file, 'canvas-uploads');
+
+      if (!publicUrl) {
+        toast.error('Failed to upload image. Please try again.', {
+          id: uploadToast,
+        });
+        return;
+      }
+      toast.success('Image uploaded successfully!', {
+        id: uploadToast,
+      });
+      navigate(`/crop?image=${encodeURIComponent(publicUrl)}`);
+    } catch (error) {
+      console.error('Error uploading file:', error);
+      toast.error('An error occurred during upload. Please try again.', {
+        id: uploadToast,
+      });
+    }
+  };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const f = e.target.files?.[0];
@@ -183,7 +214,7 @@ const Page = () => {
                   >
                     <Button
                       className='w-full h-12 px-6 rounded-[var(--radius-lg)] text-base font-semibold'
-                      onClick={() => navigate('/crop')}
+                      onClick={() => handleImageUpload(_file!)}
                     >
                       Continue
                     </Button>

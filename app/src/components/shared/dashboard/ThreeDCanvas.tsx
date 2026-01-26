@@ -6,6 +6,7 @@ import { useUpload, type CanvasShape } from '@/context/UploadContext';
 import { useEdge } from '@/context/EdgeContext';
 import type { OrbitControls as OrbitControlsImpl } from 'three-stdlib';
 import backpanel from '@/assets/images/backpanel.png';
+import { useLocation } from 'react-router';
 
 interface ThreeDCanvasProps {
   isVisible: boolean;
@@ -281,7 +282,15 @@ const ThreeDCanvas = ({
   isVisible,
   focusOnEdge = false,
 }: ThreeDCanvasProps) => {
-  const { preview, shape } = useUpload();
+   const location = useLocation();
+
+  const searchParams = new URLSearchParams(location.search);
+
+  const encodedImageUrl = searchParams.get('image');
+
+  const imageUrl = encodedImageUrl ? decodeURIComponent(encodedImageUrl) : null;
+
+  const { shape } = useUpload();
   const { edgeType } = useEdge();
   const controlsRef = useRef<OrbitControlsImpl | null>(null);
   const [isAutoRotating, setIsAutoRotating] = useState(false);
@@ -401,7 +410,7 @@ const ThreeDCanvas = ({
   };
 
   useEffect(() => {
-    if (isVisible && preview && focusOnEdge) {
+    if (isVisible && imageUrl && focusOnEdge) {
       const focusWithRetry = (retryCount = 0) => {
         if (controlsRef.current) {
           focusCameraOnEdge();
@@ -412,7 +421,7 @@ const ThreeDCanvas = ({
 
       focusWithRetry();
     }
-  }, [isVisible, preview, focusOnEdge]);
+  }, [isVisible, imageUrl, focusOnEdge]);
 
   if (!isVisible) return null;
 
@@ -438,8 +447,8 @@ const ThreeDCanvas = ({
           />
           <directionalLight position={[-4, 6, -4]} intensity={1.5} />
 
-          {preview && (
-            <Frame3D imageUrl={preview} shape={shape} edgeType={edgeType} />
+          {imageUrl && (
+            <Frame3D imageUrl={imageUrl} shape={shape} edgeType={edgeType} />
           )}
 
           <ContactShadows
