@@ -43,7 +43,7 @@ export default function CropPage() {
   return (
     <>
     <Header />
-    <div className='flex flex-col md:flex-row h-[calc(var(--vh,1vh)*100-5px)] w-full bg-app-muted rounded-2xl overflow-hidden'>
+    <div className='flex flex-col md:flex-row h-[calc(var(--vh,1vh)*100-100px)] w-full bg-app-muted rounded-2xl overflow-hidden'>
       <div className='flex flex-col h-1/2 md:h-full md:flex-1 items-center justify-center p-4 md:p-8 bg-white/80 backdrop-blur-sm overflow-hidden'>
         <div className='w-full h-full flex items-center justify-center overflow-hidden'>
           <ImageCropper />

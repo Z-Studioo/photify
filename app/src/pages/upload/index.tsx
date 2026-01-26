@@ -1,4 +1,4 @@
-import { useNavigate } from 'react-router';
+import { useNavigate, useSearchParams } from 'react-router';
 import { useUpload } from '@/context/UploadContext';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -8,9 +8,15 @@ import { Crop, Image, Info, Scan, ShoppingBag } from 'lucide-react';
 import { motion, AnimatePresence, type Variants } from 'motion/react';
 import { toast } from 'sonner';
 import { uploadFileToStorage } from '@/lib/supabase/storage';
+import { useEffect, useRef } from 'react';
+import { createClient } from '@/lib/supabase/client';
 
 const Page = () => {
-  const { file: _file, setFile, preview, setPreview } = useUpload();
+  const { file: _file, setFile, preview, setPreview, setSelectedProduct } = useUpload();
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
+   const [searchParams] = useSearchParams();
+   const supabase = createClient();
+
 
   const handleImageUpload = async (file: File) => {
     if (!file.type.startsWith('image/')) {
@@ -31,6 +37,7 @@ const Page = () => {
       }
       toast.success('Image uploaded successfully!', {
         id: uploadToast,
+        duration: 1000,
       });
       navigate(`/crop?image=${encodeURIComponent(publicUrl)}`);
     } catch (error) {
@@ -49,6 +56,16 @@ const Page = () => {
       setPreview(newPreview);
     }
   };
+
+  const resetUpload = () => {
+  setFile(null);
+  setPreview(null);
+
+  if (fileInputRef.current) {
+    fileInputRef.current.value = '';
+  }
+};
+
 
   const navigate = useNavigate();
 
@@ -84,6 +101,31 @@ const Page = () => {
       },
     }),
   };
+
+  useEffect(() => {
+    resetUpload();
+  }, []);
+
+  useEffect(() => {
+    const fetchProduct = async () => {
+      const productId = searchParams.get('productId');
+      if (!productId) return;
+
+      const { data, error } = await supabase
+        .from('products')
+        .select('*')
+        .eq('id', productId)
+        .single();
+
+      if (error) {
+        console.error('Error fetching product:', error);
+      } else {
+        setSelectedProduct(data);
+      }
+    };
+
+    fetchProduct();
+  }, [searchParams, supabase, setSelectedProduct]);
 
   return (
     <motion.div
@@ -146,6 +188,7 @@ const Page = () => {
                   </div>
                 </motion.label>
                 <Input
+                  ref={fileInputRef}
                   id='file-upload'
                   type='file'
                   accept='image/*'

@@ -6,8 +6,9 @@ import { ConfirmationModal } from '@/components/shared/dashboard/ConfirmModal';
 import { useState, useEffect } from 'react';
 import { useToast } from '@/components/shared/common/toast';
 import { useCart } from '@/context/CartContext';
-import { useNavigate } from 'react-router';
+import { useNavigate, useSearchParams } from 'react-router';
 import { useUpload } from '@/context/UploadContext';
+import { toast } from 'sonner';
 
 interface QuantityControlProps {
   quantity: number;
@@ -44,6 +45,7 @@ const QuantityControl: React.FC<QuantityControlProps> = ({
   const navigate = useNavigate();
   const { selectedSize, selectedRatio, preview, shape, selectedProduct } =
     useUpload();
+    const [params] = useSearchParams()
   // Get price data from localStorage
   // useEffect(() => {
   //   const loadPriceData = () => {
@@ -96,6 +98,9 @@ const QuantityControl: React.FC<QuantityControlProps> = ({
   };
 
   const handleFinalConfirm = async () => {
+    if(!params.get("image")) {
+      return toast.error('No image selected to add to cart.');
+    }
     setLocalConfirming(true);
     try {
       await onConfirm();
@@ -103,7 +108,7 @@ const QuantityControl: React.FC<QuantityControlProps> = ({
         quantity,
         id: `${selectedRatio || 'custom'}-${selectedSize?.display_label || 'custom'}-${shape || 'rectangular'}`,
         name: `${selectedRatio || 'Custom Ratio'} - ${selectedSize?.display_label || 'Custom Size'} - ${shape || 'Rectangular'}`,
-        image: preview || '',
+        image: params.get('image') || '',
         price: priceData.sellPrice,
         size: selectedSize?.display_label || 'Custom Size',
       });
