@@ -168,7 +168,7 @@ export function AdminProductContentEditor({
       toast.success('Product saved successfully');
 
       // Reload the page to update the header
-      window.location.reload();
+      // window.location.reload();
     } catch (error: any) {
       console.error('Error saving product:', error);
       toast.error('Failed to save product');
