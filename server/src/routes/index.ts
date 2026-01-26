@@ -7,7 +7,31 @@ import embeddingsRoutes from './embeddings';
 
 const router = Router();
 
-// Health check route
+/**
+ * @swagger
+ * /api/health:
+ *   get:
+ *     summary: Health check endpoint
+ *     description: Returns the API health status
+ *     tags: [Health]
+ *     responses:
+ *       200:
+ *         description: API is running
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 status:
+ *                   type: string
+ *                   example: OK
+ *                 message:
+ *                   type: string
+ *                   example: API is running
+ *                 timestamp:
+ *                   type: string
+ *                   format: date-time
+ */
 router.get('/health', (_req: Request, res: Response) => {
   res.status(200).json({
     status: 'OK',
@@ -16,10 +40,37 @@ router.get('/health', (_req: Request, res: Response) => {
   });
 });
 
+/**
+ * @swagger
+ * /api:
+ *   get:
+ *     summary: API information endpoint
+ *     description: Returns API version and available endpoints
+ *     tags: [Health]
+ *     responses:
+ *       200:
+ *         description: API information
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: Photify API v1.0.0
+ *                 documentation:
+ *                   type: string
+ *                   example: /api-docs
+ *                 health:
+ *                   type: string
+ *                   example: /api/health
+ *                 endpoints:
+ *                   type: object
+ */
 router.get('/', (_req: Request, res: Response) => {
   res.status(200).json({
     message: 'Photify API v1.0.0',
-    documentation: '/api/docs',
+    documentation: '/api-docs',
     health: '/api/health',
     endpoints: {
       checkout: 'POST /api/checkout',

@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useParams, Navigate } from 'react-router-dom';
 import { ProductDetailPage } from '@/components/pages/product/[id]';
 import { createClient } from '@/lib/supabase/client';
+import { Helmet } from '@dr.pogodin/react-helmet';
 
 export default function ArtPage() {
   const { id } = useParams<{ id: string }>();
@@ -45,18 +46,41 @@ export default function ArtPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900 mx-auto" />
-          <p className="mt-4 text-gray-600">Loading...</p>
+      <>
+        <Helmet>
+          <title>Art | Photify</title>
+          <meta
+            name="description"
+            content="Explore the amazing art product on Photify."
+          />
+          <meta name="robots" content="noindex,nofollow" />
+        </Helmet>
+        <div className='min-h-screen flex items-center justify-center'>
+          <div className='text-center'>
+            <div className='animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900 mx-auto' />
+            <p className='mt-4 text-gray-600'>Loading...</p>
+          </div>
         </div>
-      </div>
+      </>
+      
     );
   }
 
   if (notFound || !id) {
-    return <Navigate to="/404" replace />;
+    return <Navigate to='/404' replace />;
   }
 
-  return <ProductDetailPage initialProduct={product} productSlug={id} />;
+  return (
+    <>
+      <Helmet>
+        <title>{product?.name} | Photify</title>
+        <meta
+          name="description"
+          content={product?.description || 'Explore this amazing art product on Photify.'}
+        />
+        <meta name="robots" content="index,follow" />
+      </Helmet>
+      <ProductDetailPage initialProduct={product} productSlug={id} />
+    </>
+);
 }

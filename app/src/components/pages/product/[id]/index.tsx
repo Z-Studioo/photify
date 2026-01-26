@@ -31,6 +31,7 @@ import {
 import { motion, AnimatePresence } from 'framer-motion';
 import { getConfigurerById } from '@/lib/configures/registry';
 import { createClient } from '@/lib/supabase/client';
+import { Helmet } from '@dr.pogodin/react-helmet';
 
 // Mock reviews data
 const mockReviews = [
@@ -229,6 +230,14 @@ export function ProductDetailPage({
   };
 
   return (
+    <>
+    <Helmet>
+      <title>{product.title} | Photify</title>
+      <meta
+        name="description"
+        content={product.description || 'Explore this amazing product on Photify.'}
+      />
+    </Helmet>
     <div className="min-h-screen font-['Mona_Sans',_sans-serif] bg-white">
       <Header />
 
@@ -1097,5 +1106,7 @@ export function ProductDetailPage({
 
       <Footer />
     </div>
+    </>
+
   );
 }

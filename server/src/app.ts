@@ -4,7 +4,9 @@ import helmet from 'helmet';
 import morgan from 'morgan';
 import compression from 'compression';
 import rateLimit from 'express-rate-limit';
+import swaggerUi from 'swagger-ui-express';
 import { config } from '@/config/environment';
+import { swaggerSpec } from '@/config/swagger';
 import { errorHandler, notFoundHandler } from '@/middleware/errorHandler';
 import { requestLogger } from '@/middleware/requestLogger';
 import routes from '@/routes';
@@ -58,6 +60,12 @@ app.get('/health', (_req: express.Request, res: express.Response) => {
     environment: config.NODE_ENV,
   });
 });
+
+// Swagger API Documentation
+app.use('/api-docs', swaggerUi.serve as any, swaggerUi.setup(swaggerSpec, {
+  customCss: '.swagger-ui .topbar { display: none }',
+  customSiteTitle: 'Photify API Documentation',
+}) as any);
 
 // API routes
 app.use('/api', routes);

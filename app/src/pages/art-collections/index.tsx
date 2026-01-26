@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { ArtCollectionPage } from '@/components/pages/art-collection';
 import { createClient } from '@/lib/supabase/client';
+import { Helmet } from '@dr.pogodin/react-helmet';
 
 export default function ArtCollections() {
   const [artProducts, setArtProducts] = useState<any[]>([]);
@@ -46,9 +47,19 @@ export default function ArtCollections() {
   }
 
   return (
+    <>
+    <Helmet>
+      <title>Art Collections | Photify</title>
+      <meta
+        name="description"
+        content="Explore our curated art collections at Photify. Discover stunning art products to enhance your space."
+      />
+      <meta name="robots" content="index,follow" />
+    </Helmet>
     <ArtCollectionPage
       initialArtProducts={artProducts}
       initialCategories={categories}
-    />
+      />
+      </>
   );
 }

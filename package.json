@@ -46,7 +46,7 @@
   "devDependencies": {
     "@commitlint/cli": "^18.4.3",
     "@commitlint/config-conventional": "^18.4.3",
-    "commitizen": "^4.3.0",
+    "commitizen": "^4.2.4",
     "concurrently": "^8.2.2",
     "cz-conventional-changelog": "^3.3.0",
     "husky": "^8.0.3",
@@ -57,6 +57,11 @@
   "engines": {
     "node": ">=18.0.0",
     "npm": ">=8.0.0"
+  },
+  "overrides": {
+    "lodash": "^4.17.21",
+    "tmp": "^0.2.3",
+    "inquirer": "^10.0.0"
   },
   "config": {
     "commitizen": {
