@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Check } from 'lucide-react';
 import CropPanel from '@/components/shared/crop/CropPanel';
 import { useEffect } from 'react';
+import { Header } from '@/components/layout/header';
 
 export default function CropPage() {
   const navigate = useNavigate();
@@ -40,7 +41,9 @@ export default function CropPage() {
   };
 
   return (
-    <div className='flex flex-col md:flex-row h-[calc(var(--vh,1vh)*100-5px)] w-full bg-app-muted rounded-2xl overflow-hidden'>
+    <>
+    <Header />
+    <div className='flex flex-col md:flex-row h-[calc(var(--vh,1vh)*100-100px)] w-full bg-app-muted rounded-2xl overflow-hidden'>
       <div className='flex flex-col h-1/2 md:h-full md:flex-1 items-center justify-center p-4 md:p-8 bg-white/80 backdrop-blur-sm overflow-hidden'>
         <div className='w-full h-full flex items-center justify-center overflow-hidden'>
           <ImageCropper />
@@ -73,5 +76,6 @@ export default function CropPage() {
         </div>
       </div>
     </div>
+    </>
   );
 }

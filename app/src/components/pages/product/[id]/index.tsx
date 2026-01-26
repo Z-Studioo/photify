@@ -210,7 +210,7 @@ export function ProductDetailPage({
   const handleCustomize = () => {
     if (!productData?.config?.configurerType) return;
     navigate(
-      `/customize/${productData.config.configurerType}?productId=${productData.id}`
+      `/upload?productId=${productData.id}&configurerType=${productData.config.configurerType}`
     );
   };
 

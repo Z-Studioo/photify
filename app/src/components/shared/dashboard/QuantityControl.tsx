@@ -5,6 +5,10 @@ import { PlusCircle, MinusCircle, Loader2 } from 'lucide-react';
 import { ConfirmationModal } from '@/components/shared/dashboard/ConfirmModal';
 import { useState, useEffect } from 'react';
 import { useToast } from '@/components/shared/common/toast';
+import { useCart } from '@/context/CartContext';
+import { useNavigate, useSearchParams } from 'react-router';
+import { useUpload } from '@/context/UploadContext';
+import { toast } from 'sonner';
 
 interface QuantityControlProps {
   quantity: number;
@@ -12,14 +16,6 @@ interface QuantityControlProps {
   onDecrement: () => void;
   onConfirm: () => Promise<void> | void;
   isConfirming?: boolean;
-}
-
-interface Metadata {
-  selectedSize?: {
-    sell_price: number;
-    actual_price: number;
-  };
-  quantity?: number;
 }
 
 const buttonVariants = {
@@ -45,57 +41,83 @@ const QuantityControl: React.FC<QuantityControlProps> = ({
     actualPrice: 0,
   });
   const { addToast } = useToast();
-
+  const { addToCart } = useCart();
+  const navigate = useNavigate();
+  const { selectedSize, selectedRatio, shape, selectedProduct } =
+    useUpload();
+    const [params] = useSearchParams()
   // Get price data from localStorage
+  // useEffect(() => {
+  //   const loadPriceData = () => {
+  //     try {
+  //       const metadataStr = localStorage.getItem('photify_metadata');
+  //       if (metadataStr) {
+  //         const metadata: Metadata = JSON.parse(metadataStr);
+  //         const sellPrice = metadata.selectedSize?.sell_price || 0;
+  //         const actualPrice = metadata.selectedSize?.actual_price || sellPrice;
+  //         setPriceData({ sellPrice, actualPrice });
+  //       }
+  //     } catch (error) {
+  //       console.error('Error loading price data from localStorage:', error);
+  //     }
+  //   };
+
+  //   loadPriceData();
+
+  //   const handleStorageChange = (e: StorageEvent) => {
+  //     if (e.key === 'photify_metadata') {
+  //       loadPriceData();
+  //     }
+  //   };
+
+  //   window.addEventListener('storage', handleStorageChange);
+  //   return () => window.removeEventListener('storage', handleStorageChange);
+  // }, []);
+
+  // useEffect(() => {
+  //   const metadataStr = localStorage.getItem('photify_metadata');
+  //   if (metadataStr) {
+  //     const metadata: Metadata = JSON.parse(metadataStr);
+  //     const sellPrice = metadata.selectedSize?.sell_price || 0;
+  //     const actualPrice = metadata.selectedSize?.actual_price || sellPrice;
+  //     setPriceData({ sellPrice, actualPrice });
+  //   }
+  // }, [quantity]);
+
   useEffect(() => {
-    const loadPriceData = () => {
-      try {
-        const metadataStr = localStorage.getItem('photify_metadata');
-        if (metadataStr) {
-          const metadata: Metadata = JSON.parse(metadataStr);
-          const sellPrice = metadata.selectedSize?.sell_price || 0;
-          const actualPrice = metadata.selectedSize?.actual_price || sellPrice;
-          setPriceData({ sellPrice, actualPrice });
-        }
-      } catch (error) {
-        console.error('Error loading price data from localStorage:', error);
-      }
-    };
-
-    loadPriceData();
-
-    const handleStorageChange = (e: StorageEvent) => {
-      if (e.key === 'photify_metadata') {
-        loadPriceData();
-      }
-    };
-
-    window.addEventListener('storage', handleStorageChange);
-    return () => window.removeEventListener('storage', handleStorageChange);
-  }, []);
-
-  useEffect(() => {
-    const metadataStr = localStorage.getItem('photify_metadata');
-    if (metadataStr) {
-      const metadata: Metadata = JSON.parse(metadataStr);
-      const sellPrice = metadata.selectedSize?.sell_price || 0;
-      const actualPrice = metadata.selectedSize?.actual_price || sellPrice;
-      setPriceData({ sellPrice, actualPrice });
+    if (selectedProduct && selectedSize) {
+      setPriceData({
+        sellPrice: +(selectedProduct.price || 0) * selectedSize.area_in2,
+        actualPrice: +selectedProduct.price * selectedSize.area_in2,
+      });
     }
-  }, [quantity]);
+  }, [selectedProduct, selectedSize]);
 
   const handleConfirmClick = () => {
     setShowConfirmation(true);
   };
 
   const handleFinalConfirm = async () => {
+    if(!params.get("image")) {
+      return toast.error('No image selected to add to cart.');
+    }
     setLocalConfirming(true);
     try {
       await onConfirm();
-      addToast('Order placed successfully!', 'success');
+      addToCart({
+        quantity,
+        id: `${selectedRatio || 'custom'}-${selectedSize?.display_label || 'custom'}-${shape || 'rectangular'}`,
+        name: `${selectedRatio || 'Custom Ratio'} - ${selectedSize?.display_label || 'Custom Size'} - ${shape || 'Rectangular'}`,
+        image: params.get('image') || '',
+        price: priceData.sellPrice,
+        size: selectedSize?.display_label || 'Custom Size',
+      });
+      addToast('Quantity updated and added to cart successfully!', 'success');
+      navigate('/cart');
       setShowConfirmation(false);
     } catch (error) {
       addToast('Failed to update quantity. Please try again.', 'error');
+      console.warn(error);
     } finally {
       setLocalConfirming(false);
     }

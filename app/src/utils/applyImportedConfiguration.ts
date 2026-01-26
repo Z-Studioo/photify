@@ -1,19 +1,17 @@
 import { set } from 'idb-keyval';
 import {
   fetchRatios,
-  fetchInches,
   type InchData,
   type RatioData,
 } from '@/utils/ratio-sizes';
 import type { JsonExportData } from '@/utils/uploadHandler';
-import type { SizeData } from '@/context/UploadContext';
 
 export interface ApplyImportResult {
   success: boolean;
   file: File | null;
   preview: string | null;
   ratio: string | null;
-  size: SizeData | null;
+  size: InchData | null;
   quality: number[];
   edgeType: 'wrapped' | 'mirrored';
   quantity: number;
@@ -49,7 +47,7 @@ function findMatchingRatio(
   importedRatio: string,
   availableRatios: RatioData[]
 ): RatioData | null {
-  const exactMatch = availableRatios.find(r => r.ratio === importedRatio);
+  const exactMatch = availableRatios.find(r => r.id === importedRatio);
   if (exactMatch) return exactMatch;
   return availableRatios.length > 0 ? availableRatios[0] : null;
 }
@@ -58,19 +56,19 @@ function findMatchingSize(
   importedInches: string,
   availableSizes: InchData[],
   selectedRatio: RatioData
-): SizeData | null {
+): InchData | null {
   const ratioSizes = availableSizes.filter(size =>
-    selectedRatio.Inches.includes(size._id)
+    selectedRatio.sizes.includes(size)
   );
-  const exactMatch = ratioSizes.find(size => size.Slug === importedInches);
+  const exactMatch = ratioSizes.find(size => size.id === importedInches);
   if (exactMatch) {
-    return exactMatch as SizeData;
+    return exactMatch as InchData;
   }
   if (ratioSizes.length > 0) {
     const sorted = ratioSizes.sort(
-      (a, b) => a.width * a.height - b.width * b.height
+      (a, b) => a.width_in * a.height_in - b.width_in * b.height_in
     );
-    return sorted[0] as SizeData;
+    return sorted[0] as InchData;
   }
 
   return null;
@@ -102,15 +100,13 @@ export async function applyImportedConfiguration(
       await set('photify_uploaded_image', imageData);
     }
 
-    const [ratiosData, inchesData] = await Promise.all([
-      fetchRatios(),
-      fetchInches(),
-    ]);
+    const [ratiosData] = await Promise.all([fetchRatios()]);
     const matchedRatio = findMatchingRatio(importData.ratio, ratiosData);
 
     if (!matchedRatio) {
       throw new Error('Could not find matching ratio in available options');
     }
+    const inchesData: InchData[] = matchedRatio.sizes;
     const matchedSize = findMatchingSize(
       importData.inches,
       inchesData,
@@ -132,7 +128,7 @@ export async function applyImportedConfiguration(
       success: true,
       file,
       preview,
-      ratio: matchedRatio.ratio,
+      ratio: matchedRatio.id,
       size: matchedSize,
       quality,
       edgeType,

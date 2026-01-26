@@ -1,132 +1,114 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { useUpload, type SizeData } from '@/context/UploadContext';
+import { useUpload } from '@/context/UploadContext';
 import { useView } from '@/context/ViewContext';
 import { AspectRatioIcon } from '../common/icons';
-import { useQuery } from '@tanstack/react-query';
 import {
-  fetchInches,
   fetchRatios,
+  getAllPrintSizes,
   type InchData,
   type RatioData,
 } from '@/utils/ratio-sizes';
 import { motion } from 'framer-motion';
+import { toast } from 'sonner';
 
 interface CropPanelProps {
   onSelectionChange?: (ratio: string, size: InchData | null) => void;
 }
 
 const CropPanel: React.FC<CropPanelProps> = ({ onSelectionChange }) => {
-  const { selectedRatio, setSelectedRatio, selectedSize, setSelectedSize } =
-    useUpload();
+  const {
+    selectedRatio,
+    setSelectedRatio,
+    selectedSize,
+    setSelectedSize,
+    selectedProduct,
+  } = useUpload();
   const { setSelectedView } = useView();
   const sectionRefs = useRef<Record<string, HTMLDivElement | null>>({});
   const [_expandedRatio, setExpandedRatio] = useState<string | null>(null);
-
-  const {
-    data: ratios = [],
-    isLoading: ratiosLoading,
-    isError: ratiosError,
-    error: ratioError,
-  } = useQuery({
-    queryKey: ['ratios'],
-    queryFn: fetchRatios,
-    staleTime: 5 * 60 * 1000,
-  });
-
-  const {
-    data: inches = [],
-    isLoading: inchesLoading,
-    isError: inchesError,
-    error: inchError,
-  } = useQuery({
-    queryKey: ['inches'],
-    queryFn: fetchInches,
-    staleTime: 5 * 60 * 1000,
-  });
-
-  const loading = ratiosLoading || inchesLoading;
-  const error = ratiosError || inchesError;
+  const [ratiosLoading, setRatiosLoading] = useState<boolean>(false);
+  const [ratiosError, setRatiosError] = useState<Error | null>(null);
+  const [ratios, setRatios] = useState<RatioData[]>([]);
+  const [inches, setInches] = useState<InchData[]>([]);
 
   useEffect(() => {
-    if (!ratios.length || !inches.length) return;
+    const getRatioAndSizes = async () => {
+      setRatiosLoading(true);
+      try {
+        const ratiosData = await fetchRatios();
+        setRatios(ratiosData);
+        setInches(getAllPrintSizes(ratiosData));
+      } catch (error: any) {
+        toast.error('Failed to load ratios: ' + error.message);
+        setRatiosError(error);
+      } finally {
+        setRatiosLoading(false);
+      }
+    };
+
+    getRatioAndSizes();
+  }, []);
+
+  useEffect(() => {
+    if (!ratios.length) return;
 
     const defaultRatio =
-      ratios.find(r => r.ratio === selectedRatio) ||
-      ratios.find(r => r.ratio === '1:1') ||
+      ratios.find(r => r.label === selectedRatio) ||
+      ratios.find(r => r.label === '1:1') ||
       ratios[0];
 
     if (defaultRatio) {
       const available = inches
-        .filter(inch => defaultRatio.Inches.includes(inch._id))
-        .sort((a, b) => a.width * a.height - b.width * b.height);
+        .filter(inch => defaultRatio.sizes.includes(inch))
+        .sort((a, b) => a.width_in * a.height_in - b.width_in * b.height_in);
 
       const smallest = available[0] || null;
       if (smallest) {
-        setSelectedRatio(defaultRatio.ratio);
+        setSelectedRatio(defaultRatio.label);
         setSelectedSize(smallest);
-        onSelectionChange?.(defaultRatio.ratio, smallest);
+        onSelectionChange?.(defaultRatio.label, smallest);
       }
     }
-  }, [ratios, inches]);
+  }, [ratios]);
 
   const calculateDiscount = (actual: number, sell: number) =>
     Math.round(((actual - sell) / actual) * 100);
 
-  const getAvailableSizes = (ratioData: RatioData): InchData[] => {
-    if (!ratioData?.Inches) return [];
-    return inches
-      .filter(inch => ratioData.Inches.includes(inch._id))
-      .sort((a, b) => a.width * a.height - b.width * b.height);
-  };
-
   const handleRatioClick = (ratioData: RatioData) => {
-    const available = getAvailableSizes(ratioData);
-    if (available.length > 0) {
-      const smallest = available[0];
-      setSelectedRatio(ratioData.ratio);
-      setSelectedSize(smallest);
-      onSelectionChange?.(ratioData.ratio, smallest);
-      setSelectedView('crop');
+    const smallest = ratioData.sizes[0] || null;
+    setSelectedRatio(ratioData.label);
+    setSelectedSize(smallest);
+    onSelectionChange?.(ratioData.label, smallest);
+    setSelectedView('crop');
 
-      const ref = sectionRefs.current[ratioData._id];
-      if (ref) {
-        const isFirstRatio = ratios[0]?._id === ratioData._id;
+    const ref = sectionRefs.current[ratioData.label];
+    if (ref) {
+      const isFirstRatio = ratios[0]?.label === ratioData.label;
 
-        if (isFirstRatio) {
-          const container = ref.closest('.overflow-auto');
-          if (container) {
-            container.scrollTo({ top: 0, behavior: 'smooth' });
-          }
-        } else {
-          ref.scrollIntoView({
-            behavior: 'smooth',
-            block: 'start',
-          });
+      if (isFirstRatio) {
+        const container = ref.closest('.overflow-auto');
+        if (container) {
+          container.scrollTo({ top: 0, behavior: 'smooth' });
         }
+      } else {
+        ref.scrollIntoView({
+          behavior: 'smooth',
+          block: 'start',
+        });
       }
     }
   };
 
   const handleSizeChange = (ratio: string, size: InchData) => {
     setSelectedRatio(ratio);
-    const sizeData: SizeData = {
-      _id: size._id,
-      width: size.width,
-      height: size.height,
-      w: size.w,
-      h: size.h,
-      Slug: size.Slug,
-      sell_price: size.sell_price,
-      actual_price: size.actual_price,
-    };
-    setSelectedSize(sizeData);
+    setSelectedSize(size);
     onSelectionChange?.(ratio, size);
     setSelectedView('crop');
   };
 
-  if (loading)
+  if (ratiosLoading)
     return (
       <div className='flex flex-col items-center justify-center py-12'>
         <Loader2 className='h-6 w-6 animate-spin text-primary' />
@@ -134,16 +116,12 @@ const CropPanel: React.FC<CropPanelProps> = ({ onSelectionChange }) => {
       </div>
     );
 
-  if (error)
+  if (ratiosError)
     return (
       <div className='p-4 text-center text-red-600'>
         <p>
           Error loading data:{' '}
-          {ratioError instanceof Error
-            ? ratioError.message
-            : inchError instanceof Error
-              ? inchError.message
-              : 'Unknown error'}
+          {ratiosError instanceof Error ? ratiosError.message : 'Unknown error'}
         </p>
         <Button
           variant='outline'
@@ -160,13 +138,13 @@ const CropPanel: React.FC<CropPanelProps> = ({ onSelectionChange }) => {
       <div className='border-b border-gray-100 bg-white'>
         <div className='flex overflow-x-auto gap-1 px-2 py-3 scrollbar-hide'>
           {ratios.map(ratio => {
-            const isActive = selectedRatio === ratio.ratio;
+            const isActive = selectedRatio === ratio.label;
             return (
               <button
-                key={ratio._id}
+                key={ratio.id}
                 onClick={() => {
                   handleRatioClick(ratio);
-                  setExpandedRatio(ratio.ratio);
+                  setExpandedRatio(ratio.id);
                 }}
                 className={`flex items-center gap-1.5 px-3 py-2 rounded-lg whitespace-nowrap text-sm font-medium transition-all shrink-0 ${
                   isActive
@@ -174,8 +152,8 @@ const CropPanel: React.FC<CropPanelProps> = ({ onSelectionChange }) => {
                     : 'text-gray-600 hover:bg-gray-50 active:bg-gray-100'
                 }`}
               >
-                <AspectRatioIcon ratio={ratio.ratio} />
-                <span>{ratio.ratio}</span>
+                <AspectRatioIcon ratio={ratio.label} />
+                <span>{ratio.label}</span>
               </button>
             );
           })}
@@ -190,10 +168,10 @@ const CropPanel: React.FC<CropPanelProps> = ({ onSelectionChange }) => {
           <span className='text-xs text-gray-400'>
             {(() => {
               const currentRatioData = ratios.find(
-                r => r.ratio === selectedRatio
+                r => r.label === selectedRatio
               );
               if (!currentRatioData) return '';
-              const sizes = getAvailableSizes(currentRatioData);
+              const sizes = currentRatioData.sizes;
               return `${sizes.length} option${sizes.length !== 1 ? 's' : ''}`;
             })()}
           </span>
@@ -202,11 +180,11 @@ const CropPanel: React.FC<CropPanelProps> = ({ onSelectionChange }) => {
         <div className='grid gap-2.5'>
           {(() => {
             const currentRatioData = ratios.find(
-              r => r.ratio === selectedRatio
+              r => r.label === selectedRatio
             );
             if (!currentRatioData) return null;
 
-            const sizes = getAvailableSizes(currentRatioData);
+            const sizes = currentRatioData.sizes;
             if (sizes.length === 0) {
               return (
                 <div className='text-center py-12 text-gray-400 text-sm bg-white rounded-xl border border-gray-100'>
@@ -217,14 +195,14 @@ const CropPanel: React.FC<CropPanelProps> = ({ onSelectionChange }) => {
 
             return sizes.map(size => {
               const discount = calculateDiscount(
-                size.actual_price,
-                size.sell_price
+                +(selectedProduct?.price ?? 0) * size.area_in2,
+                +(selectedProduct?.price ?? 0) * size.area_in2
               );
-              const isSelected = selectedSize?._id === size._id;
+              const isSelected = selectedSize?.id === size.id;
 
               return (
                 <motion.button
-                  key={size._id}
+                  key={size.id}
                   onClick={() =>
                     selectedRatio && handleSizeChange(selectedRatio, size)
                   }
@@ -268,10 +246,10 @@ const CropPanel: React.FC<CropPanelProps> = ({ onSelectionChange }) => {
                       <div
                         className={`font-bold text-base mb-1 ${isSelected ? 'text-primary' : 'text-gray-900'}`}
                       >
-                        {size.width}&quot; × {size.height}&quot;
+                        {size.width_in}&quot; × {size.height_in}&quot;
                       </div>
                       <div className='text-xs text-gray-500 font-medium'>
-                        {size.Slug}
+                        {size.display_label}
                       </div>
                     </div>
 
@@ -279,12 +257,18 @@ const CropPanel: React.FC<CropPanelProps> = ({ onSelectionChange }) => {
                       <div
                         className={`font-bold text-lg leading-tight ${isSelected ? 'text-primary' : 'text-gray-900'}`}
                       >
-                        ${size.sell_price.toFixed(2)}
+                        $
+                        {selectedProduct
+                          ? (+selectedProduct.price * size.area_in2).toFixed(2)
+                          : '0.00'}
                       </div>
                       {discount > 0 && (
                         <>
                           <div className='text-gray-400 text-xs line-through leading-tight mt-0.5'>
-                            ${size.actual_price.toFixed(2)}
+                            $
+                            {(+selectedProduct!.price * size.area_in2).toFixed(
+                              2
+                            )}
                           </div>
                         </>
                       )}
@@ -310,7 +294,14 @@ const CropPanel: React.FC<CropPanelProps> = ({ onSelectionChange }) => {
                         </span>
                       </div>
                       <div className='text-xs text-green-600 font-semibold'>
-                        Save ${(size.actual_price - size.sell_price).toFixed(2)}
+                        Save $
+                        {(
+                          -(
+                            +(selectedProduct?.price ?? 0) *
+                            size.area_in2 *
+                            discount
+                          ) / 100
+                        ).toFixed(2)}
                       </div>
                     </div>
                   )}

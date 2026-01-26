@@ -121,7 +121,7 @@ export function CartPage() {
       <div className='max-w-[1400px] mx-auto px-6 py-8'>
         {/* Breadcrumb / Back Button */}
         <button
-          onClick={() => navigate(-1)}
+          onClick={() => navigate("/")}
           className='flex items-center gap-2 text-gray-600 hover:text-[#f63a9e] transition-colors mb-6 group'
         >
           <ArrowLeft className='w-4 h-4 group-hover:-translate-x-1 transition-transform' />

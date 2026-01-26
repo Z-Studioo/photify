@@ -104,13 +104,13 @@ const Frame3D = ({
     if (shape !== 'rectangle') return null;
 
     const frameWidth =
-      selectedSize?.width && !isNaN(selectedSize.width / BASE_SIZE)
-        ? selectedSize.width / BASE_SIZE
+      selectedSize?.width_in && !isNaN(selectedSize.height_in / BASE_SIZE)
+        ? selectedSize.width_in / BASE_SIZE
         : 1.8;
 
     const frameHeight =
-      selectedSize?.height && !isNaN(selectedSize.height / BASE_SIZE)
-        ? selectedSize.height / BASE_SIZE
+      selectedSize?.height_in && !isNaN(selectedSize.height_in / BASE_SIZE)
+        ? selectedSize.height_in / BASE_SIZE
         : 1.35;
 
     const box = new THREE.BoxGeometry(frameWidth, frameHeight, frameDepth);
@@ -171,7 +171,7 @@ const Frame3D = ({
     uv.setXY(19, 1, 0);
 
     return box;
-  }, [shape, edgeType, selectedSize?.width, selectedSize?.height]);
+  }, [shape, edgeType, selectedSize?.width_in, selectedSize?.height_in]);
 
   if (!texture) return null;
 
