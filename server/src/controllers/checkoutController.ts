@@ -47,8 +47,6 @@ export async function createCheckoutSession(
       total,
     } = req.body;
 
-    console.log('Checkout request received:', { body: req.body });
-
     // Validate required fields
     if (!cartItems || cartItems.length === 0) {
       res.status(400).json({ error: 'Cart is empty' });
