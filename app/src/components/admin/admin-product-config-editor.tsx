@@ -183,7 +183,7 @@ export function AdminProductConfigEditor({
       };
 
       // Update database
-      const { data, error } = await supabase
+      const { error } = await supabase
         .from('products')
         .update(updateData)
         .eq('id', productId)
