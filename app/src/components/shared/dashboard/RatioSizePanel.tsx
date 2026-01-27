@@ -136,6 +136,7 @@ const RatioSizePanel: React.FC<RatioSizePanelProps> = ({
         <div className='flex overflow-x-auto gap-2 px-3 py-3 scrollbar-hide'>
           {ratios.map(ratio => {
             const active = selectedRatio === ratio.label;
+            if(ratio.sizes.length === 0) return null;
             return (
               <button
                 key={ratio.id}
