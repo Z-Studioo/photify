@@ -7,7 +7,6 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Crop, Image, Info, Scan, ShoppingBag } from 'lucide-react';
 import { motion, AnimatePresence, type Variants } from 'motion/react';
 import { toast } from 'sonner';
-import { uploadFileToStorage } from '@/lib/supabase/storage';
 import { useEffect, useRef } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import { Header } from '@/components/layout/header';
@@ -24,42 +23,24 @@ const Page = () => {
   const [searchParams] = useSearchParams();
   const supabase = createClient();
 
-  const handleImageUpload = async (file: File) => {
-    if (!file.type.startsWith('image/')) {
-      toast.error('Please upload an image file');
-      return;
-    }
-
-    const uploadToast = toast.loading('Uploading image...');
-    try {
-      // First, upload the image to Supabase storage
-      const publicUrl = await uploadFileToStorage(file, 'canvas-uploads');
-
-      if (!publicUrl) {
-        toast.error('Failed to upload image. Please try again.', {
-          id: uploadToast,
-        });
-        return;
-      }
-      toast.success('Image uploaded successfully!', {
-        id: uploadToast,
-        duration: 1000,
-      });
-      navigate(`/crop?image=${encodeURIComponent(publicUrl)}`);
-    } catch (error) {
-      console.error('Error uploading file:', error);
-      toast.error('An error occurred during upload. Please try again.', {
-        id: uploadToast,
-      });
-    }
-  };
-
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const f = e.target.files?.[0];
     if (f) {
+      if (!f.type.startsWith('image/')) {
+        toast.error('Please upload an image file');
+        return;
+      }
+
       const newPreview = URL.createObjectURL(f);
       setFile(f);
       setPreview(newPreview);
+    }
+  };
+
+  const handleContinue = () => {
+    console.log('Continuing with file:', _file, 'and preview:', preview);
+    if (_file && preview) {
+      navigate('/crop');
     }
   };
 
@@ -133,7 +114,7 @@ const Page = () => {
   }, [searchParams, supabase, setSelectedProduct]);
 
   return (
-    <div className="min-h-screen flex flex-col">
+    <div className='min-h-screen flex flex-col'>
       <Header />
       <motion.div
         className='w-full flex-grow flex flex-col items-center justify-center font-[var(--font-heading)] p-4 m-0'
@@ -205,7 +186,7 @@ const Page = () => {
                   <div className='flex items-center justify-center'>
                     <Button
                       className={`w-full md:w-auto h-12 mt-4 px-6 md:px-14 rounded-[var(--radius-lg)] text-base font-semibold ${!preview ? 'opacity-50 cursor-not-allowed' : ''}`}
-                      onClick={() => preview && navigate('/crop')}
+                      onClick={handleContinue}
                       disabled={!preview}
                     >
                       Continue
@@ -268,7 +249,7 @@ const Page = () => {
                     >
                       <Button
                         className='w-full h-12 px-6 rounded-[var(--radius-lg)] text-base font-semibold'
-                        onClick={() => handleImageUpload(_file!)}
+                        onClick={handleContinue}
                       >
                         Continue
                       </Button>
