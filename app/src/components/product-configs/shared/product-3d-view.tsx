@@ -12,11 +12,14 @@ import {
   Loader2,
   ArrowLeft,
   Crop,
+  Box,
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { toast } from 'sonner';
 import { Canvas3DImageEditor } from '../single-canvas/canvas-3d-image-editor';
 import Canvas3DPreview from '../single-canvas/canvas-3d-preview.client';
+import { Room3DPreview } from './3d/room-3d-preview';
+import { SingleCanvasMesh } from '../single-canvas/single-canvas-mesh';
 
 export interface Product3DViewProps {
   imageUrl: string;
@@ -100,6 +103,7 @@ export function Product3DView({
   const [sizes, setSizes] = useState<Size[]>([]);
   const [loading, setLoading] = useState(true);
   const [showRuler, setShowRuler] = useState(false);
+  const [viewMode, setViewMode] = useState<'canvas' | 'room'>('canvas');
 
   // Selection state
   const [selectedAspectRatioId, setSelectedAspectRatioId] = useState<
@@ -444,18 +448,39 @@ export function Product3DView({
                   transition={{ duration: 0.5 }}
                   className='w-full h-full'
                 >
-                  <Canvas3DPreview
-                    imageUrl={currentImageUrl}
-                    width={currentWidth}
-                    height={currentHeight}
-                    rotation={rotation}
-                    zoom={zoom}
-                    wrapImage={wrapImage}
-                    sideColor={sideColor}
-                    mirrorEdges={mirrorEdges}
-                    showRuler={showRuler}
-                    wallColor={wallColor}
-                  />
+                  {viewMode === 'canvas' ? (
+                    <Canvas3DPreview
+                      imageUrl={currentImageUrl}
+                      width={currentWidth}
+                      height={currentHeight}
+                      rotation={rotation}
+                      zoom={zoom}
+                      wrapImage={wrapImage}
+                      sideColor={sideColor}
+                      mirrorEdges={mirrorEdges}
+                      showRuler={showRuler}
+                      wallColor={wallColor}
+                    />
+                  ) : (
+                    <Room3DPreview
+                      canvasMesh={
+                        <SingleCanvasMesh
+                          imageUrl={currentImageUrl}
+                          width={currentWidth}
+                          height={currentHeight}
+                          rotation={rotation}
+                          zoom={zoom}
+                          wrapImage={wrapImage}
+                          sideColor={sideColor}
+                          mirrorEdges={mirrorEdges}
+                        />
+                      }
+                      canvasWidth={currentWidth}
+                      canvasHeight={currentHeight}
+                      showRuler={showRuler}
+                      wallColor={wallColor}
+                    />
+                  )}
                 </motion.div>
               ) : (
                 <motion.div
@@ -501,6 +526,23 @@ export function Product3DView({
                       </span>
                     </button>
                   )}
+
+                  {/* 3D Room View Toggle */}
+                  <button
+                    className={`flex flex-col items-center gap-1 md:gap-1.5 px-3 py-1.5 md:px-4 md:py-2 hover:bg-gray-50 rounded-lg md:rounded-xl transition-colors group ${
+                      viewMode === 'room' ? 'bg-[#f63a9e]/10' : ''
+                    }`}
+                    onClick={() => setViewMode(viewMode === 'canvas' ? 'room' : 'canvas')}
+                  >
+                    <Box
+                      className={`w-5 h-5 md:w-6 md:h-6 ${viewMode === 'room' ? 'text-[#f63a9e]' : 'text-gray-700 group-hover:text-[#f63a9e]'}`}
+                    />
+                    <span
+                      className={`text-[10px] md:text-xs font-medium ${viewMode === 'room' ? 'text-[#f63a9e]' : 'text-gray-600'}`}
+                    >
+                      {viewMode === 'room' ? 'Canvas' : '3D Room'}
+                    </span>
+                  </button>
 
                   {/* Ruler Toggle */}
                   <button
