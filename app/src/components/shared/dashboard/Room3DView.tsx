@@ -53,12 +53,15 @@ function FrameMesh() {
   );
 
   return (
+    /* @ts-ignore react-three-fiber types */
     <mesh
       position={[0, 2.2, -4.9645]}
       castShadow
       receiveShadow
     >
+      {/* @ts-ignore react-three-fiber types */}
       <primitive object={geometry} attach="geometry" />
+      {/* @ts-ignore react-three-fiber types */}
       <meshStandardMaterial
         map={texture}
         toneMapped={false}
@@ -88,7 +91,9 @@ export function Room3DView({ isVisible }: Room3DViewProps) {
         style={{ background: '#f5f5f5' }}
       >
         {/* Lighting */}
+        {/* @ts-ignore react-three-fiber types */}
         <ambientLight intensity={1.2} />
+        {/* @ts-ignore react-three-fiber types */}
         <directionalLight
           position={[10, 10, 5]}
           intensity={2.5}
@@ -96,7 +101,9 @@ export function Room3DView({ isVisible }: Room3DViewProps) {
           shadow-mapSize-width={2048}
           shadow-mapSize-height={2048}
         />
+        {/* @ts-ignore react-three-fiber types */}
         <directionalLight position={[-5, 8, 5]} intensity={1.5} />
+        {/* @ts-ignore react-three-fiber types */}
         <directionalLight position={[0, -5, 0]} intensity={0.8} />
 
         {/* Room Environment */}
