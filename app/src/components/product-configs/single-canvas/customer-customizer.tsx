@@ -132,18 +132,6 @@ export function SingleCanvasCustomizer() {
         img.onload = () => {
           const imageAspectRatio = img.width / img.height;
           
-          console.log('Image analysis:', {
-            imageWidth: img.width,
-            imageHeight: img.height,
-            imageAspectRatio,
-            availableRatios: aspectRatios.map(r => ({
-              label: r.label,
-              ratio: r.width_ratio / r.height_ratio,
-              id: r.id
-            })),
-            availableSizes: sizes.length
-          });
-          
           // Find best matching aspect ratio
           let bestRatio = aspectRatios[0];
           let smallestDiff = Math.abs(imageAspectRatio - (aspectRatios[0].width_ratio / aspectRatios[0].height_ratio));
@@ -157,22 +145,9 @@ export function SingleCanvasCustomizer() {
             }
           });
           
-          console.log('Best matching aspect ratio:', {
-            label: bestRatio.label,
-            ratio: bestRatio.width_ratio / bestRatio.height_ratio,
-            id: bestRatio.id
-          });
           
           // Find best matching size for this ratio based on image dimensions
           const availableSizes = sizes.filter(s => s.aspect_ratio_id === bestRatio.id);
-          
-          console.log('Available sizes for ratio:', availableSizes.map(s => ({
-            label: s.display_label,
-            width: s.width_in,
-            height: s.height_in,
-            area: s.area_in2,
-            id: s.id
-          })));
           
           // If no sizes available for this specific ratio, try to find any enabled size
           let bestSize = availableSizes.length > 0 ? availableSizes[0] : sizes[0];
@@ -183,12 +158,6 @@ export function SingleCanvasCustomizer() {
             const estimatedWidthIn = img.width / dpi;
             const estimatedHeightIn = img.height / dpi;
             const estimatedAreaIn = estimatedWidthIn * estimatedHeightIn;
-            
-            console.log('Estimated print size:', {
-              widthIn: estimatedWidthIn.toFixed(2),
-              heightIn: estimatedHeightIn.toFixed(2),
-              areaIn2: estimatedAreaIn.toFixed(2)
-            });
             
             // Find size with closest area match
             let smallestAreaDiff = Math.abs(availableSizes[0].area_in2 - estimatedAreaIn);
@@ -204,13 +173,6 @@ export function SingleCanvasCustomizer() {
             // No sizes for this specific ratio - use any available size as fallback
             console.warn('No sizes found for aspect ratio, using fallback:', bestRatio.label);
           }
-          
-          console.log('Selected size:', {
-            label: bestSize.display_label,
-            width: bestSize.width_in,
-            height: bestSize.height_in,
-            area: bestSize.area_in2
-          });
           
           // Navigate directly to 3D viewer with auto-selected size and uploaded image URL
           if (bestSize) {

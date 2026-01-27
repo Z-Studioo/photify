@@ -64,7 +64,6 @@ export function AdminArtSizeManager({
     async function fetchData() {
       try {
         setLoading(true);
-        console.log('Fetching aspect ratios and sizes...');
         
         // Fetch aspect ratios
         const { data: ratios, error: ratiosError } = await supabase
@@ -74,10 +73,9 @@ export function AdminArtSizeManager({
           .order('label', { ascending: true });
         
         if (ratiosError) {
-          console.error('Error fetching aspect ratios:', ratiosError);
+          // console.error('Error fetching aspect ratios:', ratiosError);
           throw ratiosError;
         }
-        console.log(`Loaded ${ratios?.length || 0} aspect ratios`);
         setAspectRatios(ratios || []);
 
         // Fetch all sizes
@@ -88,13 +86,12 @@ export function AdminArtSizeManager({
           .order('width_in', { ascending: true });
         
         if (sizesError) {
-          console.error('Error fetching sizes:', sizesError);
+          // console.error('Error fetching sizes:', sizesError);
           throw sizesError;
         }
-        console.log(`Loaded ${sizes?.length || 0} sizes`);
         setAllSizes(sizes || []);
       } catch (error: any) {
-        console.error('Error fetching data:', error);
+        // console.error('Error fetching data:', error);
         const errorMessage = error?.message || error?.hint || 'Failed to load sizes and ratios';
         toast.error(errorMessage);
       } finally {

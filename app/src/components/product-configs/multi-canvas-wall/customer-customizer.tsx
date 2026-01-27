@@ -138,7 +138,6 @@ export function MultiCanvasWallCustomizer() {
       try {
         // If we have a productId from URL, fetch that product's room backgrounds
         if (productId) {
-          console.log('🔍 Fetching room backgrounds for product:', productId);
 
           const { data, error } = await supabase
             .from('products')
@@ -147,28 +146,17 @@ export function MultiCanvasWallCustomizer() {
             .single();
 
           if (error) {
-            console.error('❌ Error fetching product config:', error);
             // Fallback to hardcoded rooms
             setRooms(MULTI_CANVAS_WALL_PRODUCT.config.rooms || []);
           } else if (
             data?.config?.roomBackgrounds &&
             Array.isArray(data.config.roomBackgrounds)
           ) {
-            console.log(
-              '✅ Found room backgrounds in product config:',
-              data.config.roomBackgrounds
-            );
-            console.log(
-              '📊 Raw room data:',
-              JSON.stringify(data.config.roomBackgrounds, null, 2)
-            );
 
             // Filter active rooms and transform to Room interface
             const activeRooms: Room[] = data.config.roomBackgrounds
               .filter((room: any) => {
-                console.log(
-                  `  - Room "${room.name}": isActive=${room.isActive}, type=${typeof room.isActive}`
-                );
+              
                 return room.isActive !== false;
               })
               .map((room: any) => ({
@@ -176,12 +164,6 @@ export function MultiCanvasWallCustomizer() {
                 name: room.name,
                 imageUrl: room.imageUrl,
               }));
-
-            console.log(
-              '🎯 Active rooms after filter:',
-              activeRooms.length,
-              activeRooms
-            );
 
             if (activeRooms.length > 0) {
               setRooms(activeRooms);
@@ -194,20 +176,15 @@ export function MultiCanvasWallCustomizer() {
                 }));
               }
             } else {
-              console.log(
-                '⚠️ No active rooms in config, using hardcoded fallback'
-              );
+      
               setRooms(MULTI_CANVAS_WALL_PRODUCT.config.rooms || []);
             }
           } else {
-            console.log(
-              '⚠️ No room backgrounds in config, using hardcoded fallback'
-            );
+         
             setRooms(MULTI_CANVAS_WALL_PRODUCT.config.rooms || []);
           }
         } else {
           // No productId in URL, use hardcoded fallback
-          console.log('⚠️ No productId in URL, using hardcoded rooms');
           setRooms(MULTI_CANVAS_WALL_PRODUCT.config.rooms || []);
         }
       } catch (err) {

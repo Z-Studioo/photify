@@ -95,13 +95,6 @@ export function CollageEditor({
       const scaleY = availableHeight / canvasHeight;
       const scale = Math.min(scaleX, scaleY, 1); // Never scale up, only down
 
-      console.log('Viewport scale calculation:', {
-        canvasSize: { width: canvasWidth, height: canvasHeight },
-        available: { width: availableWidth, height: availableHeight },
-        scales: { scaleX, scaleY },
-        finalScale: scale,
-      });
-
       setViewportScale(scale);
     };
 
@@ -121,20 +114,16 @@ export function CollageEditor({
   // Initialize canvas once on mount
   useEffect(() => {
     if (!canvasRef.current) {
-      console.log('Canvas ref not available yet');
       return;
     }
 
     // Prevent double initialization
     if (fabricCanvasRef.current) {
-      console.log('Canvas already initialized, skipping');
       return;
     }
 
     const canvasWidth = inchesToPixels(width);
     const canvasHeight = inchesToPixels(height);
-
-    console.log('Initializing Fabric canvas:', canvasWidth, 'x', canvasHeight);
 
     // Set canvas element attributes explicitly
     canvasRef.current.width = canvasWidth;
@@ -150,19 +139,6 @@ export function CollageEditor({
     });
 
     fabricCanvasRef.current = fabricCanvas;
-    console.log('Fabric canvas initialized successfully');
-    console.log(
-      'Canvas element dimensions:',
-      canvasRef.current.width,
-      'x',
-      canvasRef.current.height
-    );
-    console.log(
-      'Fabric canvas dimensions:',
-      fabricCanvas.width,
-      'x',
-      fabricCanvas.height
-    );
 
     setIsLoading(false);
 
@@ -206,7 +182,6 @@ export function CollageEditor({
     });
 
     return () => {
-      console.log('Disposing canvas and cleaning up event listeners');
       // Remove all event listeners before disposing
       fabricCanvas.off('selection:created');
       fabricCanvas.off('selection:updated');
@@ -237,7 +212,6 @@ export function CollageEditor({
         targetSlot: { x: number; y: number; width: number; height: number };
       }
     ) => {
-      console.log('Photo selected from modal:', photo.id, slotInfo);
 
       // Open crop modal immediately with the selected photo and slot
       setPendingPhoto({
@@ -260,11 +234,9 @@ export function CollageEditor({
       const target = e.target;
       if (target && (target as any).data?.isGuide) {
         const slotData = (target as any).data;
-        console.log('Guide clicked via canvas event:', slotData);
 
         // Open photo modal with slot info and callback
         if (onOpenPhotoModal) {
-          console.log('Opening photo modal from canvas click');
           onOpenPhotoModal(
             { slotId: slotData.slotId, targetSlot: slotData.targetSlot },
             handlePhotoSelectedFromModal
@@ -287,8 +259,6 @@ export function CollageEditor({
     const canvasWidth = inchesToPixels(width);
     const canvasHeight = inchesToPixels(height);
 
-    console.log('Updating canvas size:', canvasWidth, 'x', canvasHeight);
-
     fabricCanvasRef.current.setDimensions({
       width: canvasWidth,
       height: canvasHeight,
@@ -299,11 +269,8 @@ export function CollageEditor({
   // Handle background color changes
   useEffect(() => {
     if (!fabricCanvasRef.current || isLoading) {
-      console.log('Canvas not ready for background color update');
       return;
     }
-
-    console.log('Updating background color to:', backgroundColor);
     fabricCanvasRef.current.backgroundColor = backgroundColor;
     fabricCanvasRef.current.renderAll();
     fabricCanvasRef.current.requestRenderAll();
@@ -312,22 +279,16 @@ export function CollageEditor({
   // Handle photo loading - only render placed photos
   useEffect(() => {
     if (!fabricCanvasRef.current) {
-      console.log('No fabric canvas ref');
       return;
     }
 
     // Skip if canvas is still loading
     if (isLoading) {
-      console.log('Canvas still initializing, skipping photo update');
       return;
     }
 
     const canvas = fabricCanvasRef.current;
     const placedPhotos = photos.filter(p => p.isPlaced);
-    console.log(
-      'Photos effect triggered, placed photos count:',
-      placedPhotos.length
-    );
 
     // Only sync if there's a mismatch between photos and canvas objects
     const existingObjects = canvas.getObjects();
@@ -343,11 +304,8 @@ export function CollageEditor({
       );
 
     if (!needsSync && placedPhotos.length > 0) {
-      console.log('Photos already in sync with canvas, skipping');
       return;
     }
-
-    console.log('Syncing canvas with placed photos...');
     setLoadingImages(true);
 
     // Clear existing image objects only
@@ -360,41 +318,21 @@ export function CollageEditor({
     canvas.renderAll();
 
     if (!placedPhotos.length) {
-      console.log('No placed photos to load');
       setLoadingImages(false);
       return;
     }
-
-    console.log('Starting to load', placedPhotos.length, 'placed photos');
 
     // Determine if template restricts movement
     const isFreeform = !template || template.type === 'freeform';
 
     // Load all placed photos
     const loadPromises = placedPhotos.map((photo, index) => {
-      console.log(`Loading photo ${index + 1}:`, {
-        id: photo.id,
-        position: { x: photo.x, y: photo.y },
-        size: { width: photo.width, height: photo.height },
-        crop: {
-          x: photo.cropX,
-          y: photo.cropY,
-          width: photo.cropWidth,
-          height: photo.cropHeight,
-        },
-      });
 
       return fabric.FabricImage.fromURL(photo.url, {
         crossOrigin: 'anonymous',
       })
         .then(fabricImg => {
-          console.log(
-            `✓ Image ${index + 1} loaded successfully, dimensions:`,
-            fabricImg.width,
-            'x',
-            fabricImg.height
-          );
-
+        
           // Apply crop if crop data exists
           if (
             photo.cropX !== undefined &&
@@ -409,12 +347,7 @@ export function CollageEditor({
               width: photo.cropWidth,
               height: photo.cropHeight,
             });
-            console.log(`✓ Applied crop to image ${index + 1}:`, {
-              cropX: photo.cropX,
-              cropY: photo.cropY,
-              cropWidth: photo.cropWidth,
-              cropHeight: photo.cropHeight,
-            });
+            
           }
 
           // Calculate scale to match desired size (after cropping)
@@ -475,21 +408,10 @@ export function CollageEditor({
             slotId: photo.slotId,
           };
 
-          console.log(`✓ Fabric image ${index + 1} configured:`, {
-            position: { x: photo.x, y: photo.y },
-            scale: { x: scaleX, y: scaleY },
-            finalSize: {
-              width: imageWidth * scaleX,
-              height: imageHeight * scaleY,
-            },
-            canvasSize: { width: canvas.width, height: canvas.height },
-            locked: !isFreeform,
-            cropped: photo.cropX !== undefined,
-          });
+    
           return fabricImg;
         })
-        .catch(error => {
-          console.error(`✗ Error loading image ${index + 1}:`, error);
+        .catch(() => {
           toast.error(`Failed to load image ${index + 1}`);
           return null;
         });
@@ -510,10 +432,6 @@ export function CollageEditor({
             (r.status === 'fulfilled' && r.value === null)
         ).length;
 
-        console.log(
-          `✓ Images loaded: ${validImages.length}/${placedPhotos.length} successful${failedCount > 0 ? `, ${failedCount} failed` : ''}`
-        );
-
         if (failedCount > 0) {
           toast.error(
             `${failedCount} image${failedCount > 1 ? 's' : ''} failed to load`,
@@ -523,39 +441,15 @@ export function CollageEditor({
           );
         }
 
-        validImages.forEach((img, index) => {
+        validImages.forEach((img) => {
           if (img) {
-            console.log(`✓ Adding image ${index + 1} to canvas`);
             canvas.add(img as any);
           }
-        });
-
-        console.log('✓ Canvas state:', {
-          objectCount: canvas.getObjects().length,
-          dimensions: `${canvas.width}x${canvas.height}`,
-          backgroundColor: canvas.backgroundColor,
-        });
-
-        // Debug: Log each object's actual position and visibility
-        canvas.getObjects().forEach((obj: any, idx) => {
-          console.log(`Object ${idx + 1}:`, {
-            visible: obj.visible,
-            opacity: obj.opacity,
-            left: obj.left,
-            top: obj.top,
-            width: obj.width,
-            height: obj.height,
-            scaleX: obj.scaleX,
-            scaleY: obj.scaleY,
-            originX: obj.originX,
-            originY: obj.originY,
-          });
         });
 
         canvas.renderAll();
         canvas.requestRenderAll(); // Force re-render
         setLoadingImages(false);
-        console.log('✓ Canvas render complete');
 
         // Export canvas as data URL for 3D preview
         if (onCanvasUpdate && validImages.length > 0) {
@@ -566,15 +460,13 @@ export function CollageEditor({
               multiplier: 1,
             });
             onCanvasUpdate(dataURL);
-            console.log('✓ Canvas exported for 3D preview');
           } catch (error) {
             console.error('✗ Failed to export canvas:', error);
             toast.error('Failed to generate preview');
           }
         }
       })
-      .catch(error => {
-        console.error('✗ Unexpected error in image loading:', error);
+      .catch(() => {
         setLoadingImages(false);
         toast.error('Unexpected error loading images');
       });
@@ -1062,8 +954,6 @@ export function CollageEditor({
           // Get drop position relative to canvas
           const dropX = (e.clientX - canvasLeft) / effectiveZoom;
           const dropY = (e.clientY - canvasTop) / effectiveZoom;
-
-          console.log('Drop detected from sidebar:', { photoId, dropX, dropY });
 
           // Find which slot this corresponds to
           let targetSlot: any = null;

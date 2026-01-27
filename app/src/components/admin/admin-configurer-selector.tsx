@@ -35,23 +35,13 @@ export function AdminConfigurerSelector({
 
   // Sync local state with prop changes (e.g., after refresh or save)
   useEffect(() => {
-    console.log(
-      '🔄 AdminConfigurerSelector: Syncing currentConfigurerId:',
-      currentConfigurerId
-    );
     setSelectedId(currentConfigurerId || null);
   }, [currentConfigurerId]);
 
-  const handleChange = (value: string) => {
-    console.log('\n🎯 === CONFIGURER DROPDOWN CHANGED ===');
-    console.log('📝 Raw value:', value);
+  const handleChange = (value: string) => {    
     const newValue = value === 'none' ? null : value;
-    console.log('✅ Processed value:', newValue);
-    console.log('🔄 Updating local selectedId state...');
     setSelectedId(newValue);
-    console.log('📤 Calling onSelect callback...');
     onSelect(newValue);
-    console.log('=== DROPDOWN CHANGE COMPLETE ===\n');
   };
 
   const handleTestConfigurer = () => {

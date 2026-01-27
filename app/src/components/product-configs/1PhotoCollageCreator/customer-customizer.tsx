@@ -211,7 +211,6 @@ export function CollageCustomizer() {
   const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const files = event.target.files;
     if (!files || files.length === 0) {
-      console.log('No files selected');
       return;
     }
 
@@ -230,17 +229,10 @@ export function CollageCustomizer() {
       return;
     }
 
-    console.log('Loading image file:', {
-      name: file.name,
-      type: file.type,
-      size: `${(file.size / 1024 / 1024).toFixed(2)}MB`,
-    });
-
     const reader = new FileReader();
 
     // Handle FileReader errors
-    reader.onerror = error => {
-      console.error('FileReader error:', error);
+    reader.onerror = () => {
       toast.error('Failed to read image file. Please try again.');
     };
 
@@ -253,18 +245,12 @@ export function CollageCustomizer() {
         const img = new Image();
 
         // Handle image load errors
-        img.onerror = error => {
-          console.error('Image load error:', error);
+        img.onerror = () => {
           toast.error('Failed to load image. Please try a different image.');
         };
 
         img.onload = () => {
           try {
-            console.log('Image loaded successfully:', {
-              width: img.width,
-              height: img.height,
-            });
-
             const photoId = `photo-${Date.now()}`;
             const photo: CollagePhoto = {
               id: photoId,
@@ -279,13 +265,11 @@ export function CollageCustomizer() {
 
             // If there's a pending slot, trigger placement flow
             if (pendingSlotForModal && onPhotoSelectedForSlot) {
-              console.log('Triggering photo placement flow for slot');
               setShowPhotoModal(false);
               onPhotoSelectedForSlot(photo, pendingSlotForModal);
               setPendingSlotForModal(null);
             } else {
               // Otherwise just add to photos list
-              console.log('Adding photo to selection');
               setSelection(prev => ({
                 ...prev,
                 photos: [...prev.photos, photo],
