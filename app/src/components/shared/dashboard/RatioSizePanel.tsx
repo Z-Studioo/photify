@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef } from 'react';
 import { Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useUpload } from '@/context/UploadContext';
@@ -11,7 +11,7 @@ import {
   type RatioData,
 } from '@/utils/ratio-sizes';
 import { motion } from 'framer-motion';
-import { toast } from 'sonner';
+import { useQuery } from '@tanstack/react-query';
 
 interface RatioSizePanelProps {
   onSelectionChange?: (ratio: string, size: InchData | null) => void;
@@ -30,29 +30,26 @@ const RatioSizePanel: React.FC<RatioSizePanelProps> = ({
 
   const { setSelectedView } = useView();
   const sectionRefs = useRef<Record<string, HTMLDivElement | null>>({});
+  
+  const {
+    data: ratios = [],
+    isLoading: loading,
+    error,
+    refetch,
+  } = useQuery<RatioData[]>({
+    queryKey: ['ratios'],
+    queryFn: fetchRatios,
+    staleTime: 1000 * 60 * 30, // Consider data fresh for 30 minutes
+    refetchOnWindowFocus: false,
+    refetchOnMount: false,
+  });
 
-  const [ratios, setRatios] = useState<RatioData[]>([]);
-  const [inches, setInches] = useState<InchData[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<Error | null>(null);
-
-  // Fetch ratios + sizes
-  useEffect(() => {
-    const load = async () => {
-      try {
-        setLoading(true);
-        const data = await fetchRatios();
-        setRatios(data);
-        setInches(getAllPrintSizes(data));
-      } catch (e: any) {
-        toast.error('Failed to load ratios');
-        setError(e);
-      } finally {
-        setLoading(false);
-      }
-    };
-    load();
-  }, []);
+  const { data: inches = [] } = useQuery<InchData[]>({
+    queryKey: ['printSizes', ratios],
+    queryFn: () => getAllPrintSizes(ratios),
+    enabled: ratios.length > 0,
+    staleTime: 1000 * 60 * 30,
+  });
 
   // Default selection
   useEffect(() => {
@@ -112,12 +109,8 @@ const RatioSizePanel: React.FC<RatioSizePanelProps> = ({
   if (error)
     return (
       <div className='p-4 text-center text-red-600'>
-        <p>{error.message}</p>
-        <Button
-          variant='outline'
-          className='mt-2'
-          onClick={() => location.reload()}
-        >
+        <p>{error?.message}</p>
+        <Button variant='outline' className='mt-2' onClick={() => refetch()}>
           Retry
         </Button>
       </div>
@@ -136,7 +129,7 @@ const RatioSizePanel: React.FC<RatioSizePanelProps> = ({
         <div className='flex overflow-x-auto gap-2 px-3 py-3 scrollbar-hide'>
           {ratios.map(ratio => {
             const active = selectedRatio === ratio.label;
-            if(ratio.sizes.length === 0) return null;
+            if (ratio.sizes.length === 0) return null;
             return (
               <button
                 key={ratio.id}
