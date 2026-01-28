@@ -29,8 +29,7 @@ export function AdminArtCollectionPage() {
     async function fetchArtProducts() {
       try {
         const supabase = createClient();
-        console.log('Fetching art products from database...');
-
+        
         const { data, error } = await supabase
           .from('art_products')
           .select('*')
@@ -41,7 +40,6 @@ export function AdminArtCollectionPage() {
           throw error;
         }
 
-        console.log(`Successfully loaded ${data?.length || 0} art products`);
         setArtProducts(data || []);
       } catch (error: any) {
         console.error('Error fetching art products:', error);

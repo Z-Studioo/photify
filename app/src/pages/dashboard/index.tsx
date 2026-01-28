@@ -27,6 +27,7 @@ import WallCarousel from '@/components/shared/dashboard/WallCarousel';
 import ViewControls from '@/components/shared/dashboard/ViewControls';
 import QuantityControl from '@/components/shared/dashboard/QuantityControl';
 import ApplyChangesControl from '@/components/shared/dashboard/ApplyChangesControl';
+import { Room3DView } from '@/components/shared/dashboard/Room3DView';
 import { handleConfirmChanges } from '@/utils/uploadHandler';
 
 interface MenuFeature {
@@ -115,10 +116,17 @@ const Dashboard: React.FC = () => {
     selectedRatio,
     selectedSize,
     quality,
+    selectedProduct,
   } = useUpload();
   const { selectedView, setSelectedView } = useView();
   const { edgeType, applyPendingEdgeType } = useEdge();
-  const pricePerItem: number = selectedSize?.sell_price || 100;
+  const [pricePerItem, setPricePerItem] = useState<number>(0);
+
+  useEffect(() => {
+    setPricePerItem(
+      +(selectedProduct?.price || 0) * +(selectedSize?.area_in2 || 0)
+    );
+  }, [selectedProduct, selectedSize]);
 
   const features = featuresBase.map(feature => {
     if (feature.name === 'ROUND FORMATS AND SHAPES') {
@@ -131,7 +139,7 @@ const Dashboard: React.FC = () => {
       return {
         ...feature,
         subtitle: selectedSize
-          ? `${selectedSize.width}" × ${selectedSize.height}" (${selectedRatio})`
+          ? `${selectedSize.width_in}" × ${selectedSize.height_in}" (${selectedRatio})`
           : '24 by 16 (External: 24 by 16)',
       };
     }
@@ -262,6 +270,17 @@ const Dashboard: React.FC = () => {
                   </div>
                 </div>
               </div>
+
+              <div
+                className={`absolute inset-0 transition-all duration-700 ease-out ${
+                  selectedView === '3droom'
+                    ? 'opacity-100 scale-100'
+                    : 'opacity-0 scale-110 pointer-events-none'
+                }`}
+              >
+                <Room3DView isVisible={selectedView === '3droom'} />
+              </div>
+
               <ViewControls
                 selectedView={selectedView}
                 onViewChange={view => {
@@ -635,13 +654,17 @@ const Dashboard: React.FC = () => {
                   <ApplyChangesControl
                     pricePerItem={pricePerItem}
                     quantity={quantity}
-                    selectedSize={selectedSize}
+                    selectedSize={{
+                      actual_price: pricePerItem,
+                      sell_price: pricePerItem,
+                    }}
                     onApply={() => {
                       applyPendingChanges();
                       applyPendingEdgeType();
                       if (
                         selectedView === 'crop' ||
-                        selectedView === 'optimization'
+                        selectedView === 'optimization' ||
+                        selectedView === '3d'
                       )
                         setSelectedView('room');
                       setSelectedFeature(null);
@@ -678,20 +701,19 @@ const Dashboard: React.FC = () => {
                   ${(pricePerItem * quantity).toFixed(2)}
                 </motion.span>
                 {selectedSize &&
-                  selectedSize.actual_price > selectedSize.sell_price && (
+                  +(selectedProduct?.oldPrice || 0) > pricePerItem && (
                     <motion.div
                       className='text-sm'
                       initial={{ opacity: 0 }}
                       animate={{ opacity: 1 }}
                     >
                       <span className='line-through text-gray-500'>
-                        ${(selectedSize.actual_price * quantity).toFixed(2)}
+                        ${(pricePerItem * quantity).toFixed(2)}
                       </span>
                       <span className='ml-2 text-green-600 font-medium'>
                         {Math.round(
-                          ((selectedSize.actual_price -
-                            selectedSize.sell_price) /
-                            selectedSize.actual_price) *
+                          ((+(selectedProduct?.oldPrice || 0) - pricePerItem) /
+                            +(selectedProduct?.oldPrice || 0)) *
                             100
                         )}
                         % OFF

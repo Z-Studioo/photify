@@ -1,7 +1,12 @@
-import { fetchInches, fetchRatios } from '@/utils/ratio-sizes';
-import { useQuery } from '@tanstack/react-query';
+import {
+  fetchRatios,
+  getAllPrintSizes,
+  type InchData,
+  type RatioData,
+} from '@/utils/ratio-sizes';
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { get, set, del } from 'idb-keyval';
+import type { Product } from '@/lib/data';
 
 export type CanvasShape =
   | 'rectangle'
@@ -11,17 +16,6 @@ export type CanvasShape =
   | 'dodecagon';
 
 export type EdgeType = 'wrapped' | 'mirrored';
-
-export interface SizeData {
-  _id: string;
-  width: number;
-  height: number;
-  w: number;
-  h: number;
-  Slug: string;
-  sell_price: number;
-  actual_price: number;
-}
 
 interface StoredImageData {
   fileName: string;
@@ -35,14 +29,17 @@ interface StoredImageData {
 
 interface Metadata {
   selectedRatio?: string | null;
-  selectedSize?: SizeData | null;
+  selectedSize?: InchData | null;
   shape?: CanvasShape;
   quality?: number[] | null;
   edgeType?: EdgeType;
   quantity?: number;
+  selectedProduct?: Product | null;
 }
 
 interface UploadContextType {
+  selectedProduct?: Product | null;
+  setSelectedProduct: (p: Product | null) => void;
   file: File | null;
   setFile: (f: File | null) => void;
   preview: string | null;
@@ -56,14 +53,14 @@ interface UploadContextType {
   setPendingPreview: (p: string | null) => void;
   selectedRatio: string | null;
   setSelectedRatio: (r: string | null) => void;
-  selectedSize: SizeData | null;
-  setSelectedSize: (s: SizeData | null) => void;
+  selectedSize: InchData | null;
+  setSelectedSize: (s: InchData | null) => void;
   committedRatio: string | null;
-  committedSize: SizeData | null;
+  committedSize: InchData | null;
   pendingRatio: string | null;
   setPendingRatio: (r: string | null) => void;
-  pendingSize: SizeData | null;
-  setPendingSize: (s: SizeData | null) => void;
+  pendingSize: InchData | null;
+  setPendingSize: (s: InchData | null) => void;
   quality: number[];
   setQuality: (q: number[]) => void;
   pendingQuality: number[] | null;
@@ -101,10 +98,11 @@ const getStoredMetadata = (): Partial<Metadata> => {
       selectedSize:
         parsed.selectedSize &&
         typeof parsed.selectedSize === 'object' &&
-        typeof parsed.selectedSize._id === 'string' &&
-        typeof parsed.selectedSize.width === 'number' &&
-        typeof parsed.selectedSize.height === 'number'
-          ? (parsed.selectedSize as SizeData)
+        typeof parsed.selectedSize.id === 'string' &&
+        typeof parsed.selectedSize.width_in === 'number' &&
+        typeof parsed.selectedSize.height_in === 'number' &&
+        typeof parsed.selectedSize.area_in2 === 'number'
+          ? (parsed.selectedSize as InchData)
           : undefined,
       shape: ['rectangle', 'round', 'hexagon', 'octagon', 'dodecagon'].includes(
         parsed.shape
@@ -124,6 +122,10 @@ const getStoredMetadata = (): Partial<Metadata> => {
         typeof parsed.quantity === 'number' && parsed.quantity > 0
           ? parsed.quantity
           : undefined,
+      selectedProduct:
+        parsed.selectedProduct && typeof parsed.selectedProduct === 'object'
+          ? (parsed.selectedProduct as Product)
+          : undefined,
     };
   } catch (error) {
     console.error('Error getting stored metadata:', error);
@@ -141,6 +143,7 @@ const persistMetadata = (meta: Metadata): void => {
 };
 
 export const UploadProvider = ({ children }: { children: React.ReactNode }) => {
+  const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [file, setFile] = useState<File | null>(null);
   const [preview, setPreview] = useState<string | null>(null);
   const [originalPreview, setOriginalPreview] = useState<string | null>(null);
@@ -148,11 +151,11 @@ export const UploadProvider = ({ children }: { children: React.ReactNode }) => {
   const [pendingFile, setPendingFile] = useState<File | null>(null);
   const [pendingPreview, setPendingPreview] = useState<string | null>(null);
   const [selectedRatio, setSelectedRatio] = useState<string | null>(null);
-  const [selectedSize, setSelectedSize] = useState<SizeData | null>(null);
+  const [selectedSize, setSelectedSize] = useState<InchData | null>(null);
   const [committedRatio, setCommittedRatio] = useState<string | null>(null);
-  const [committedSize, setCommittedSize] = useState<SizeData | null>(null);
+  const [committedSize, setCommittedSize] = useState<InchData | null>(null);
   const [pendingRatio, setPendingRatio] = useState<string | null>(null);
-  const [pendingSize, setPendingSize] = useState<SizeData | null>(null);
+  const [pendingSize, setPendingSize] = useState<InchData | null>(null);
 
   const [quality, setQuality] = useState<number[]>(
     () => getStoredMetadata().quality || [70]
@@ -168,18 +171,6 @@ export const UploadProvider = ({ children }: { children: React.ReactNode }) => {
     () => getStoredMetadata().quantity || 1
   );
   const [pendingQuantity, setPendingQuantity] = useState<number | null>(null);
-
-  const { refetch: refetchRatios } = useQuery({
-    queryKey: ['ratios'],
-    queryFn: fetchRatios,
-    enabled: false,
-  });
-
-  const { refetch: refetchInches } = useQuery({
-    queryKey: ['inches'],
-    queryFn: fetchInches,
-    enabled: false,
-  });
 
   const fileToBase64 = (file: File): Promise<string> =>
     new Promise((resolve, reject) => {
@@ -264,6 +255,10 @@ export const UploadProvider = ({ children }: { children: React.ReactNode }) => {
       if (metadata.shape) setShape(metadata.shape);
       if (metadata.edgeType) setEdgeType(metadata.edgeType);
       if (metadata.quantity) setQuantity(metadata.quantity);
+      if (metadata.quality) setQuality(metadata.quality);
+      if (metadata.selectedProduct) {
+        setSelectedProduct(metadata.selectedProduct);
+      }
     };
 
     restore();
@@ -294,8 +289,17 @@ export const UploadProvider = ({ children }: { children: React.ReactNode }) => {
       quality,
       edgeType,
       quantity,
+      selectedProduct,
     });
-  }, [selectedRatio, selectedSize, shape, quality, edgeType, quantity]);
+  }, [
+    selectedRatio,
+    selectedSize,
+    shape,
+    quality,
+    edgeType,
+    quantity,
+    selectedProduct,
+  ]);
 
   const applyPendingChanges = async () => {
     if (pendingRatio) {
@@ -346,27 +350,24 @@ export const UploadProvider = ({ children }: { children: React.ReactNode }) => {
   };
 
   const reset = async () => {
-    const [ratiosRes, inchesRes] = await Promise.all([
-      refetchRatios(),
-      refetchInches(),
-    ]);
-    const ratios = ratiosRes.data || [];
-    const inches = inchesRes.data || [];
+    const [ratios] = await Promise.all([fetchRatios()]);
+    const inches = getAllPrintSizes(ratios);
 
     if (ratios.length && inches.length) {
       const defaultRatio =
-        ratios.find((r: any) => r.ratio === '1:1') || ratios[0];
+        ratios.find((r: RatioData) => r.label === '1:1') || ratios[0];
       const available = inches
-        .filter((inch: any) => defaultRatio.Inches.includes(inch._id))
+        .filter((inch: InchData) => defaultRatio.sizes.includes(inch))
         .sort(
-          (a: SizeData, b: SizeData) => a.width * a.height - b.width * b.height
+          (a: InchData, b: InchData) =>
+            a.width_in * a.height_in - b.width_in * b.height_in
         );
       const smallest = available[0] || null;
 
       if (defaultRatio && smallest) {
-        setSelectedRatio(defaultRatio.ratio);
+        setSelectedRatio(defaultRatio.label);
         setSelectedSize(smallest);
-        setCommittedRatio(defaultRatio.ratio);
+        setCommittedRatio(defaultRatio.label);
         setCommittedSize(smallest);
       }
     }
@@ -395,6 +396,8 @@ export const UploadProvider = ({ children }: { children: React.ReactNode }) => {
   return (
     <UploadContext.Provider
       value={{
+        selectedProduct,
+        setSelectedProduct,
         file,
         setFile,
         preview,

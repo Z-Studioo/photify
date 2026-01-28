@@ -21,8 +21,7 @@ const ApplyChangesControl: React.FC<ApplyChangesControlProps> = ({
 }) => {
   const totalPrice = pricePerItem * quantity;
   const hasDiscount =
-    selectedSize &&
-    selectedSize.actual_price > selectedSize.sell_price;
+    selectedSize && selectedSize.actual_price > selectedSize.sell_price;
   const discountPercentage = hasDiscount
     ? Math.round(
         ((selectedSize.actual_price - selectedSize.sell_price) /

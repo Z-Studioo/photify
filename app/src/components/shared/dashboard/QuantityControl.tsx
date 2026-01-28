@@ -5,6 +5,11 @@ import { PlusCircle, MinusCircle, Loader2 } from 'lucide-react';
 import { ConfirmationModal } from '@/components/shared/dashboard/ConfirmModal';
 import { useState, useEffect } from 'react';
 import { useToast } from '@/components/shared/common/toast';
+import { useCart } from '@/context/CartContext';
+import { useNavigate, useSearchParams } from 'react-router';
+import { useUpload } from '@/context/UploadContext';
+import { toast } from 'sonner';
+import { uploadFileToStorage } from '@/lib/supabase/storage';
 
 interface QuantityControlProps {
   quantity: number;
@@ -14,18 +19,16 @@ interface QuantityControlProps {
   isConfirming?: boolean;
 }
 
-interface Metadata {
-  selectedSize?: {
-    sell_price: number;
-    actual_price: number;
-  };
-  quantity?: number;
-}
-
 const buttonVariants = {
   idle: { scale: 1 },
   hover: { scale: 1.02 },
   tap: { scale: 0.98 },
+};
+
+const dataUrlToFile = async (dataUrl: string, fileName: string): Promise<File> => {
+  const response = await fetch(dataUrl);
+  const blob = await response.blob();
+  return new File([blob], fileName, { type: blob.type });
 };
 
 const QuantityControl: React.FC<QuantityControlProps> = ({
@@ -45,57 +48,108 @@ const QuantityControl: React.FC<QuantityControlProps> = ({
     actualPrice: 0,
   });
   const { addToast } = useToast();
-
+  const { addToCart } = useCart();
+  const navigate = useNavigate();
+  const { selectedSize, selectedRatio, shape, selectedProduct, preview } =
+    useUpload();
+  const [params] = useSearchParams();
   // Get price data from localStorage
+  // useEffect(() => {
+  //   const loadPriceData = () => {
+  //     try {
+  //       const metadataStr = localStorage.getItem('photify_metadata');
+  //       if (metadataStr) {
+  //         const metadata: Metadata = JSON.parse(metadataStr);
+  //         const sellPrice = metadata.selectedSize?.sell_price || 0;
+  //         const actualPrice = metadata.selectedSize?.actual_price || sellPrice;
+  //         setPriceData({ sellPrice, actualPrice });
+  //       }
+  //     } catch (error) {
+  //       console.error('Error loading price data from localStorage:', error);
+  //     }
+  //   };
+
+  //   loadPriceData();
+
+  //   const handleStorageChange = (e: StorageEvent) => {
+  //     if (e.key === 'photify_metadata') {
+  //       loadPriceData();
+  //     }
+  //   };
+
+  //   window.addEventListener('storage', handleStorageChange);
+  //   return () => window.removeEventListener('storage', handleStorageChange);
+  // }, []);
+
+  // useEffect(() => {
+  //   const metadataStr = localStorage.getItem('photify_metadata');
+  //   if (metadataStr) {
+  //     const metadata: Metadata = JSON.parse(metadataStr);
+  //     const sellPrice = metadata.selectedSize?.sell_price || 0;
+  //     const actualPrice = metadata.selectedSize?.actual_price || sellPrice;
+  //     setPriceData({ sellPrice, actualPrice });
+  //   }
+  // }, [quantity]);
+
   useEffect(() => {
-    const loadPriceData = () => {
-      try {
-        const metadataStr = localStorage.getItem('photify_metadata');
-        if (metadataStr) {
-          const metadata: Metadata = JSON.parse(metadataStr);
-          const sellPrice = metadata.selectedSize?.sell_price || 0;
-          const actualPrice = metadata.selectedSize?.actual_price || sellPrice;
-          setPriceData({ sellPrice, actualPrice });
-        }
-      } catch (error) {
-        console.error('Error loading price data from localStorage:', error);
-      }
-    };
-
-    loadPriceData();
-
-    const handleStorageChange = (e: StorageEvent) => {
-      if (e.key === 'photify_metadata') {
-        loadPriceData();
-      }
-    };
-
-    window.addEventListener('storage', handleStorageChange);
-    return () => window.removeEventListener('storage', handleStorageChange);
-  }, []);
-
-  useEffect(() => {
-    const metadataStr = localStorage.getItem('photify_metadata');
-    if (metadataStr) {
-      const metadata: Metadata = JSON.parse(metadataStr);
-      const sellPrice = metadata.selectedSize?.sell_price || 0;
-      const actualPrice = metadata.selectedSize?.actual_price || sellPrice;
-      setPriceData({ sellPrice, actualPrice });
+    if (selectedProduct && selectedSize) {
+      setPriceData({
+        sellPrice: +(selectedProduct.price || 0) * selectedSize.area_in2,
+        actualPrice: +selectedProduct.price * selectedSize.area_in2,
+      });
     }
-  }, [quantity]);
+  }, [selectedProduct, selectedSize]);
 
   const handleConfirmClick = () => {
     setShowConfirmation(true);
   };
 
   const handleFinalConfirm = async () => {
+    const imageUrl = preview || params.get('image') || '';
+    if (!imageUrl) {
+      return toast.error('No image selected to add to cart.');
+    }
+    console.log('Final confirm clicked',preview);
     setLocalConfirming(true);
     try {
       await onConfirm();
-      addToast('Order placed successfully!', 'success');
+      let finalImageUrl = imageUrl;
+      if (imageUrl.startsWith('data:')) {
+        const uploadToast = toast.loading('Uploading image to cart...');
+        try {
+          const fileName = `cart-image-${Date.now()}.jpg`;
+          const file = await dataUrlToFile(imageUrl, fileName);
+          const supabaseUrl = await uploadFileToStorage(file, 'cart-images');
+
+          if (!supabaseUrl) {
+            toast.error('Failed to upload image', { id: uploadToast });
+            setLocalConfirming(false);
+            return;
+          }
+
+          finalImageUrl = supabaseUrl;
+          toast.dismiss(uploadToast);
+        } catch (error) {
+          console.error('Failed to upload image to Supabase:', error);
+          toast.error('Failed to upload image', { id: uploadToast });
+          setLocalConfirming(false);
+          return;
+        }
+      }
+      addToCart({
+        quantity,
+        id: `${selectedRatio || 'custom'}-${selectedSize?.display_label || 'custom'}-${shape || 'rectangular'}`,
+        name: `${selectedRatio || 'Custom Ratio'} - ${selectedSize?.display_label || 'Custom Size'} - ${shape || 'Rectangular'}`,
+        image: finalImageUrl,
+        price: priceData.sellPrice,
+        size: selectedSize?.display_label || 'Custom Size',
+      });
+      addToast('Quantity updated and added to cart successfully!', 'success');
+      navigate('/cart');
       setShowConfirmation(false);
     } catch (error) {
       addToast('Failed to update quantity. Please try again.', 'error');
+      console.warn(error);
     } finally {
       setLocalConfirming(false);
     }

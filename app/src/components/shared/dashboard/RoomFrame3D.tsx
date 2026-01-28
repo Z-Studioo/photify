@@ -2,12 +2,9 @@ import { Canvas } from '@react-three/fiber';
 import { OrbitControls } from '@react-three/drei';
 import { Suspense, useRef, useState, useEffect, useMemo } from 'react';
 import * as THREE from 'three';
-import {
-  useUpload,
-  type CanvasShape,
-  type SizeData,
-} from '@/context/UploadContext';
+import { useUpload, type CanvasShape } from '@/context/UploadContext';
 import { useEdge } from '@/context/EdgeContext';
+import type { InchData } from '@/utils/ratio-sizes';
 
 interface RoomFrame3DProps {
   onInteraction: () => void;
@@ -23,7 +20,7 @@ const RoomFrame3D = ({
   imageUrl: string;
   shape: CanvasShape;
   onInteraction: () => void;
-  selectedSize: SizeData;
+  selectedSize: InchData;
   selectedRatio: string | null;
 }) => {
   const frameRef = useRef<THREE.Group>(null);
@@ -39,14 +36,14 @@ const RoomFrame3D = ({
   const HOVER_FACTOR = 1.05;
 
   const scaleX = useMemo(() => {
-    const baseScale = selectedSize.width / BASE_SIZE;
+    const baseScale = selectedSize.width_in / BASE_SIZE;
     return isMobile ? baseScale * MOBILE_SCALE_FACTOR : baseScale;
-  }, [selectedSize.width, isMobile]);
+  }, [selectedSize.width_in, isMobile]);
 
   const scaleY = useMemo(() => {
-    const baseScale = selectedSize.height / BASE_SIZE;
+    const baseScale = selectedSize.height_in / BASE_SIZE;
     return isMobile ? baseScale * MOBILE_SCALE_FACTOR : baseScale;
-  }, [selectedSize.height, isMobile]);
+  }, [selectedSize.height_in, isMobile]);
 
   useEffect(() => {
     if (!imageUrl) {
