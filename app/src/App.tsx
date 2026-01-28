@@ -28,14 +28,14 @@ const Product3DViewPage = lazy(() => import('@/pages/customize/product-3d-view')
 const CheckoutPage = lazy(() => import('@/pages/checkout'));
 const ConfirmationPage = lazy(() => import('@/pages/confirmation'));
 const CartPage = lazy(() => import('@/pages/cart'));
-const AIToolsPage = lazy(() => import('@/pages/ai-tools'));
-const AIBackgroundRemoverPage = lazy(() => import('@/pages/ai-background-remover'));
-const AICollagePage = lazy(() => import('@/pages/ai-collage'));
-const AIGeneratePage = lazy(() => import('@/pages/ai-generate'));
-const AIPhotoEditorPage = lazy(() => import('@/pages/ai-photo-editor'));
-const AIPrintSizePage = lazy(() => import('@/pages/ai-print-size'));
-const AIRestorePage = lazy(() => import('@/pages/ai-restore'));
-const AIResultsPage = lazy(() => import('@/pages/ai-results'));
+// const AIToolsPage = lazy(() => import('@/pages/ai-tools'));
+// const AIBackgroundRemoverPage = lazy(() => import('@/pages/ai-background-remover'));
+// const AICollagePage = lazy(() => import('@/pages/ai-collage'));
+// const AIGeneratePage = lazy(() => import('@/pages/ai-generate'));
+// const AIPhotoEditorPage = lazy(() => import('@/pages/ai-photo-editor'));
+// const AIPrintSizePage = lazy(() => import('@/pages/ai-print-size'));
+// const AIRestorePage = lazy(() => import('@/pages/ai-restore'));
+// const AIResultsPage = lazy(() => import('@/pages/ai-results'));
 const ArtPage = lazy(() => import('@/pages/art/[id]'));
 const ArtCollectionsPage = lazy(() => import('@/pages/art-collections'));
 const AdminLoginPage = lazy(() => import('@/pages/admin/login'));
@@ -135,7 +135,7 @@ const App: React.FC = () => {
                         path='/confirmation'
                         element={<ConfirmationPage />}
                       />
-                      <Route path='/ai-tools' element={<AIToolsPage />} />
+                      {/* <Route path='/ai-tools' element={<AIToolsPage />} />
                       <Route
                         path='/ai-background-remover'
                         element={<AIBackgroundRemoverPage />}
@@ -151,7 +151,7 @@ const App: React.FC = () => {
                         element={<AIPrintSizePage />}
                       />
                       <Route path='/ai-restore' element={<AIRestorePage />} />
-                      <Route path='/ai-results' element={<AIResultsPage />} />
+                      <Route path='/ai-results' element={<AIResultsPage />} /> */}
                       <Route path='/admin/login' element={<AdminLoginPage />} />
                       <Route
                         path='/admin/dashboard'

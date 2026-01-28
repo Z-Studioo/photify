@@ -118,26 +118,26 @@ export function CartPage() {
       <Header />
 
       {/* Main Content */}
-      <div className='max-w-[1400px] mx-auto px-6 py-8'>
+      <div className='max-w-[1400px] mx-auto px-4 sm:px-6 py-4 sm:py-8'>
         {/* Breadcrumb / Back Button */}
         <button
           onClick={() => navigate("/")}
-          className='flex items-center gap-2 text-gray-600 hover:text-[#f63a9e] transition-colors mb-6 group'
+          className='flex items-center gap-2 text-gray-600 hover:text-[#f63a9e] transition-colors mb-4 sm:mb-6 group'
         >
           <ArrowLeft className='w-4 h-4 group-hover:-translate-x-1 transition-transform' />
           <span style={{ fontWeight: '500' }}>Continue Shopping</span>
         </button>
 
         {/* Page Header */}
-        <div className='mb-8 bg-white rounded-2xl p-6 shadow-sm border-2 border-gray-200'>
-          <div className='flex items-center gap-4'>
-            <div className='w-16 h-16 rounded-2xl bg-[#f63a9e] flex items-center justify-center shadow-lg ring-4 ring-[#f63a9e]/10'>
-              <ShoppingCartIcon className='w-8 h-8 text-white' />
+        <div className='mb-4 sm:mb-8 bg-white rounded-2xl p-4 sm:p-6 shadow-sm border-2 border-gray-200'>
+          <div className='flex items-center gap-3 sm:gap-4'>
+            <div className='w-12 h-12 sm:w-16 sm:h-16 rounded-2xl bg-[#f63a9e] flex items-center justify-center shadow-lg ring-4 ring-[#f63a9e]/10'>
+              <ShoppingCartIcon className='w-6 h-6 sm:w-8 sm:h-8 text-white' />
             </div>
             <div className='flex-1'>
               <h1
-                className="font-['Bricolage_Grotesque',_sans-serif] text-gray-900 mb-1"
-                style={{ fontSize: '32px', fontWeight: '700' }}
+                className="font-['Bricolage_Grotesque',_sans-serif] text-gray-900 mb-1 text-xl sm:text-2xl md:text-3xl"
+                style={{ fontWeight: '700' }}
               >
                 Shopping Cart
               </h1>
@@ -162,37 +162,36 @@ export function CartPage() {
         </div>
 
         {cartItems.length === 0 ? (
-          <div className='flex flex-col items-center justify-center text-center py-20 bg-white rounded-3xl shadow-sm'>
-            <div className='w-32 h-32 rounded-3xl bg-[#FFF5FB] flex items-center justify-center mb-6 shadow-xl'>
-              <ShoppingCartIcon className='w-16 h-16 text-[#f63a9e]' />
+          <div className='flex flex-col items-center justify-center text-center py-12 sm:py-20 bg-white rounded-3xl shadow-sm px-4'>
+            <div className='w-24 h-24 sm:w-32 sm:h-32 rounded-3xl bg-[#FFF5FB] flex items-center justify-center mb-4 sm:mb-6 shadow-xl'>
+              <ShoppingCartIcon className='w-12 h-12 sm:w-16 sm:h-16 text-[#f63a9e]' />
             </div>
             <h3
-              className="font-['Bricolage_Grotesque',_sans-serif] text-gray-900 mb-3"
-              style={{ fontSize: '32px', fontWeight: '700' }}
+              className="font-['Bricolage_Grotesque',_sans-serif] text-gray-900 mb-3 text-2xl sm:text-3xl"
+              style={{ fontWeight: '700' }}
             >
               Your cart is empty
             </h3>
             <p
-              className='text-gray-600 mb-8 max-w-md'
-              style={{ fontSize: '16px' }}
+              className='text-gray-600 mb-6 sm:mb-8 max-w-md text-sm sm:text-base'
             >
               Discover our collection of beautiful prints and bring art into
               your home
             </p>
             <Button
               onClick={() => navigate('/')}
-              className='bg-[#f63a9e] hover:bg-[#e02d8d] text-white shadow-lg px-8'
-              style={{ height: '56px', fontSize: '16px', fontWeight: '600' }}
+              className='bg-[#f63a9e] hover:bg-[#e02d8d] text-white shadow-lg px-6 sm:px-8 h-12 sm:h-14 text-sm sm:text-base'
+              style={{ fontWeight: '600' }}
             >
-              Start Shopping <ArrowRight className='ml-2 w-5 h-5' />
+              Start Shopping <ArrowRight className='ml-2 w-4 h-4 sm:w-5 sm:h-5' />
             </Button>
           </div>
         ) : (
-          <div className='grid grid-cols-1 lg:grid-cols-3 gap-6'>
+          <div className='grid grid-cols-1 lg:grid-cols-3 gap-4 lg:gap-6'>
             {/* Left Column - Cart Items & Order Summary */}
-            <div className='lg:col-span-2 space-y-4'>
+            <div className='lg:col-span-2 space-y-3 sm:space-y-4'>
               {/* Cart Items */}
-              <div className='bg-white rounded-2xl shadow-sm p-6 border-2 border-gray-200'>
+              <div className='bg-white rounded-2xl shadow-sm p-4 sm:p-6 border-2 border-gray-200'>
                 <div className='flex items-center justify-between mb-5'>
                   <h2
                     className="font-['Bricolage_Grotesque',_sans-serif] text-gray-900 flex items-center gap-3"
@@ -215,13 +214,13 @@ export function CartPage() {
                   {cartItems.map(item => (
                     <div
                       key={item.id}
-                      className='flex gap-4 bg-gray-50 rounded-xl p-4 border-2 border-gray-200 hover:border-[#f63a9e]/40 hover:shadow-lg transition-all duration-300 group relative overflow-hidden'
+                      className='flex flex-col sm:flex-row gap-3 sm:gap-4 bg-gray-50 rounded-xl p-3 sm:p-4 border-2 border-gray-200 hover:border-[#f63a9e]/40 hover:shadow-lg transition-all duration-300 group relative overflow-hidden'
                     >
                       {/* Decorative accent */}
                       <div className='absolute top-0 left-0 w-1 h-full bg-[#f63a9e] opacity-0 group-hover:opacity-100 transition-opacity' />
 
                       {/* Product Image */}
-                      <div className='w-24 h-24 rounded-xl overflow-hidden flex-shrink-0 bg-white shadow-md ring-2 ring-gray-100 group-hover:ring-[#f63a9e]/20 transition-all'>
+                      <div className='w-full sm:w-20 h-48 sm:h-20 rounded-xl overflow-hidden flex-shrink-0 bg-white shadow-md ring-2 ring-gray-100 group-hover:ring-[#f63a9e]/20 transition-all'>
                         <ImageWithFallback
                           src={item.image}
                           alt={item.name}
@@ -231,11 +230,11 @@ export function CartPage() {
 
                       {/* Product Details */}
                       <div className='flex-1 min-w-0 flex flex-col'>
-                        <div className='flex items-start justify-between mb-2'>
+                        <div className='flex items-start justify-between mb-2 gap-2'>
                           <div className='flex-1 min-w-0'>
                             <h4
-                              className='text-gray-900 mb-1.5 group-hover:text-[#f63a9e] transition-colors'
-                              style={{ fontWeight: '600', fontSize: '16px' }}
+                              className='text-gray-900 mb-1.5 group-hover:text-[#f63a9e] transition-colors text-sm sm:text-base'
+                              style={{ fontWeight: '600' }}
                             >
                               {item.name}
                             </h4>
@@ -260,15 +259,15 @@ export function CartPage() {
                         </div>
 
                         {/* Quantity and Price */}
-                        <div className='flex items-end justify-between mt-auto'>
+                        <div className='flex flex-col sm:flex-row items-start sm:items-end justify-between mt-auto gap-2 sm:gap-0'>
                           <div className='flex items-center gap-2'>
                             <span
                               className='text-xs text-gray-600'
                               style={{ fontWeight: '600' }}
                             >
-                              Quantity:
+                              Qty:
                             </span>
-                            <div className='flex items-center gap-1.5 bg-white rounded-lg border-2 border-gray-200 p-1 shadow-sm'>
+                            <div className='flex items-center gap-1 sm:gap-1.5 bg-white rounded-lg border-2 border-gray-200 p-1 shadow-sm'>
                               <button
                                 onClick={() =>
                                   updateQuantity(item.id, item.quantity - 1)
@@ -312,7 +311,7 @@ export function CartPage() {
               </div>
 
               {/* Order Summary */}
-              <div className='bg-white rounded-2xl p-6 shadow-lg border-2 border-gray-200'>
+              <div className='bg-white rounded-2xl p-4 sm:p-6 shadow-lg border-2 border-gray-200'>
                 <h3
                   className="font-['Bricolage_Grotesque',_sans-serif] mb-5 flex items-center gap-3"
                   style={{
@@ -448,9 +447,9 @@ export function CartPage() {
             </div>
 
             {/* Right Column - Delivery & Promo */}
-            <div className='space-y-4'>
+            <div className='space-y-3 sm:space-y-4'>
               {/* Delivery Method */}
-              <div className='bg-white rounded-2xl border-2 border-gray-200 p-5 shadow-sm hover:shadow-md transition-shadow'>
+              <div className='bg-white rounded-2xl border-2 border-gray-200 p-4 sm:p-5 shadow-sm hover:shadow-md transition-shadow'>
                 <h3
                   className="font-['Bricolage_Grotesque',_sans-serif] text-gray-900 mb-4 flex items-center gap-2.5"
                   style={{ fontWeight: '700', fontSize: '17px' }}
@@ -573,7 +572,7 @@ export function CartPage() {
               </div>
 
               {/* Promo Code */}
-              <div className='bg-white rounded-2xl border-2 border-gray-200 p-5 shadow-sm hover:shadow-md transition-shadow'>
+              <div className='bg-white rounded-2xl border-2 border-gray-200 p-4 sm:p-5 shadow-sm hover:shadow-md transition-shadow'>
                 <h3
                   className="font-['Bricolage_Grotesque',_sans-serif] text-gray-900 mb-4 flex items-center gap-2.5"
                   style={{ fontWeight: '700', fontSize: '17px' }}

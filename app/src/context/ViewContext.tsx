@@ -1,7 +1,7 @@
 import { createContext, useContext, useState } from 'react';
 import type { ReactNode } from 'react';
 
-type ViewMode = 'room' | '3d' | 'crop' | 'optimization';
+type ViewMode = 'room' | '3d' | '3droom' | 'crop' | 'optimization';
 
 interface ViewContextType {
   selectedView: ViewMode;

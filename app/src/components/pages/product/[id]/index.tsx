@@ -251,27 +251,27 @@ export function ProductDetailPage({
             transition={{ duration: 0.3, ease: 'easeOut' }}
             className='fixed top-0 left-0 right-0 z-50 bg-white/95 backdrop-blur-xl border-b border-gray-100 shadow-lg'
           >
-            <div className='max-w-[1400px] mx-auto px-6 py-3'>
-              <div className='flex items-center justify-between gap-4'>
-                <div className='flex items-center gap-4'>
-                  <div className='w-12 h-12 rounded-lg overflow-hidden bg-gray-100 flex-shrink-0'>
+            <div className='max-w-[1400px] mx-auto px-4 sm:px-6 py-2 sm:py-3'>
+              <div className='flex items-center justify-between gap-2 sm:gap-4'>
+                <div className='flex items-center gap-2 sm:gap-4 flex-1 min-w-0'>
+                  <div className='w-10 h-10 sm:w-12 sm:h-12 rounded-lg overflow-hidden bg-gray-100 flex-shrink-0'>
                     <ImageWithFallback
                       src={product.images[0]}
                       alt={product.title}
                       className='w-full h-full object-cover'
                     />
                   </div>
-                  <div className='hidden sm:block'>
-                    <h3 className='font-semibold text-gray-900 text-sm line-clamp-1'>
+                  <div className='hidden sm:block min-w-0'>
+                    <h3 className='font-semibold text-gray-900 text-xs sm:text-sm line-clamp-1'>
                       {product.title}
                     </h3>
-                    <p className='text-[#f63a9e] font-bold'>
+                    <p className='text-[#f63a9e] font-bold text-sm sm:text-base'>
                       From £{product.price}
                     </p>
                   </div>
                 </div>
 
-                <div className='flex items-center gap-3'>
+                <div className='flex items-center gap-2 sm:gap-3 flex-shrink-0'>
                   <div className='hidden md:flex items-center gap-1 text-amber-500'>
                     {[...Array(5)].map((_, i) => (
                       <Star key={i} className='w-4 h-4 fill-current' />
@@ -289,10 +289,11 @@ export function ProductDetailPage({
                           : handleCustomize
                         : undefined
                     }
-                    className='bg-[#f63a9e] hover:bg-[#e02d8d] text-white px-6 h-10 rounded-full font-bold text-sm shadow-lg shadow-pink-500/25'
+                    className='bg-[#f63a9e] hover:bg-[#e02d8d] text-white px-3 sm:px-6 h-9 sm:h-10 rounded-full font-bold text-xs sm:text-sm shadow-lg shadow-pink-500/25'
                   >
-                    <Sparkles className='w-4 h-4 mr-2' />
-                    Customize Now
+                    <Sparkles className='w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2' />
+                    <span className='hidden xs:inline'>Customize</span>
+                    <span className='xs:hidden'>Start</span>
                   </Button>
                 </div>
               </div>
@@ -307,16 +308,16 @@ export function ProductDetailPage({
         className='bg-gradient-to-br from-[#FFF5FB] via-white to-pink-50/30'
       >
         {/* Back Button Row */}
-        <div className='max-w-[1400px] mx-auto px-6 pt-6'>
+        <div className='max-w-[1400px] mx-auto px-4 sm:px-6 pt-4 sm:pt-6'>
           <div className='flex items-center justify-between'>
             <motion.button
               onClick={() => navigate(-1)}
-              className='flex items-center gap-2 text-gray-600 hover:text-gray-900 transition-colors group'
+              className='flex items-center gap-1 sm:gap-2 text-gray-600 hover:text-gray-900 transition-colors group'
               whileHover={{ x: -4 }}
               whileTap={{ scale: 0.95 }}
             >
-              <div className='w-10 h-10 rounded-full bg-white border-2 border-gray-200 group-hover:border-[#f63a9e] flex items-center justify-center transition-all shadow-sm group-hover:shadow-md'>
-                <ArrowLeft className='w-5 h-5 group-hover:text-[#f63a9e] transition-colors' />
+              <div className='w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-white border-2 border-gray-200 group-hover:border-[#f63a9e] flex items-center justify-center transition-all shadow-sm group-hover:shadow-md'>
+                <ArrowLeft className='w-4 h-4 sm:w-5 sm:h-5 group-hover:text-[#f63a9e] transition-colors' />
               </div>
               <span className='font-medium hidden sm:block'>
                 Back to Products
@@ -351,16 +352,17 @@ export function ProductDetailPage({
         </div>
 
         {/* Main Hero Content */}
-        <div className='max-w-[1400px] mx-auto px-6 py-8 lg:py-12'>
-          <div className='grid lg:grid-cols-[1.2fr_1fr] gap-8 lg:gap-16'>
+        <div className='max-w-[1400px] mx-auto px-4 sm:px-6 py-4 sm:py-8 lg:py-12'>
+          <div className='grid lg:grid-cols-[1.2fr_1fr] gap-4 sm:gap-8 lg:gap-16'>
             {/* Left: Image Gallery */}
             <motion.div
               initial={{ opacity: 0, x: -30 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ duration: 0.6 }}
+              className='w-full min-w-0'
             >
               {/* Main Image */}
-              <div className='relative bg-white rounded-3xl overflow-hidden shadow-2xl shadow-pink-500/10 group'>
+              <div className='relative bg-white rounded-2xl sm:rounded-3xl overflow-hidden shadow-2xl shadow-pink-500/10 group w-full'>
                 {/* Badge */}
                 {product.isFeatured && (
                   <motion.div
@@ -383,12 +385,12 @@ export function ProductDetailPage({
                     animate={{ opacity: 1, scale: 1 }}
                     exit={{ opacity: 0, scale: 0.95 }}
                     transition={{ duration: 0.4 }}
-                    className='aspect-square'
+                    className='aspect-square w-full max-w-full'
                   >
                     <ImageWithFallback
                       src={product.images[mainImage]}
                       alt={product.title}
-                      className='w-full h-full object-cover'
+                      className='w-full h-full object-cover max-w-full'
                     />
                   </motion.div>
                 </AnimatePresence>
@@ -424,14 +426,14 @@ export function ProductDetailPage({
 
               {/* Thumbnails */}
               {product.images.length > 1 && (
-                <div className='flex gap-3 mt-4 overflow-x-auto pb-2'>
+                <div className='flex gap-2 sm:gap-3 mt-3 sm:mt-4 overflow-x-auto pb-2 scrollbar-hide'>
                   {product.images.map((img: string, index: number) => (
                     <motion.button
                       key={index}
                       onClick={() => setMainImage(index)}
                       whileHover={{ scale: 1.05 }}
                       whileTap={{ scale: 0.95 }}
-                      className={`flex-shrink-0 w-20 h-20 rounded-xl overflow-hidden border-2 transition-all ${
+                      className={`flex-shrink-0 w-16 h-16 sm:w-20 sm:h-20 rounded-lg sm:rounded-xl overflow-hidden border-2 transition-all ${
                         mainImage === index
                           ? 'border-[#f63a9e] shadow-lg shadow-pink-500/20'
                           : 'border-gray-200 hover:border-gray-300'
@@ -456,20 +458,16 @@ export function ProductDetailPage({
               className='flex flex-col'
             >
               {/* Title & Rating */}
-              <div className='mb-6'>
+              <div className='mb-4 sm:mb-6'>
                 <h1
-                  className="font-['Bricolage_Grotesque',_sans-serif] text-gray-900 mb-4"
-                  style={{
-                    fontSize: '42px',
-                    fontWeight: '700',
-                    lineHeight: '1.1',
-                  }}
+                  className="font-['Bricolage_Grotesque',_sans-serif] text-gray-900 mb-3 sm:mb-4 text-2xl sm:text-3xl lg:text-4xl"
+                  style={{ fontWeight: '700', lineHeight: '1.1' }}
                 >
                   {product.title}
                 </h1>
 
                 {/* Rating Row */}
-                <div className='flex items-center gap-4 mb-4'>
+                <div className='flex items-center gap-2 sm:gap-4 mb-3 sm:mb-4 flex-wrap'>
                   <div className='flex items-center gap-1'>
                     {[...Array(5)].map((_, i) => (
                       <Star
@@ -487,24 +485,24 @@ export function ProductDetailPage({
                 </div>
 
                 {/* Price */}
-                <div className='flex items-baseline gap-3'>
+                <div className='flex items-baseline gap-2 sm:gap-3'>
                   <span
-                    className='text-[#f63a9e]'
-                    style={{ fontSize: '36px', fontWeight: '700' }}
+                    className='text-[#f63a9e] text-2xl sm:text-3xl lg:text-4xl'
+                    style={{ fontWeight: '700' }}
                   >
                     £{product.price}
                   </span>
-                  <span className='text-gray-500 text-lg'>per sq in</span>
+                  <span className='text-gray-500 text-base sm:text-lg'>per sq in</span>
                 </div>
               </div>
 
               {/* Description */}
-              <p className='text-gray-600 text-lg leading-relaxed mb-6'>
+              <p className='text-gray-600 text-base sm:text-lg leading-relaxed mb-4 sm:mb-6'>
                 {product.description}
               </p>
 
               {/* Quick Trust Signals */}
-              <div className='grid grid-cols-2 gap-3 mb-6'>
+              <div className='grid grid-cols-2 gap-2 sm:gap-3 mb-4 sm:mb-6'>
                 {[
                   { icon: Truck, text: 'Free UK Shipping' },
                   { icon: RotateCcw, text: '30-Day Returns' },
@@ -527,7 +525,7 @@ export function ProductDetailPage({
               </div>
 
               {/* CTA Section */}
-              <div ref={ctaRef} className='space-y-4 mb-6'>
+              <div ref={ctaRef} className='space-y-3 sm:space-y-4 mb-4 sm:mb-6'>
                 {(isCollageProduct || hasConfigurer) && (
                   <motion.div
                     whileHover={{ scale: 1.02 }}
@@ -539,7 +537,7 @@ export function ProductDetailPage({
                           ? handleOpenCollageCreator
                           : handleCustomize
                       }
-                      className='w-full bg-[#f63a9e] hover:bg-[#e02d8d] text-white h-14 rounded-2xl text-lg shadow-xl shadow-pink-500/30 transition-all'
+                      className='w-full bg-[#f63a9e] hover:bg-[#e02d8d] text-white h-12 sm:h-14 rounded-2xl text-base sm:text-lg shadow-xl shadow-pink-500/30 transition-all'
                       style={{ fontWeight: '700' }}
                     >
                       <Sparkles className='w-5 h-5 mr-2' />
@@ -585,9 +583,9 @@ export function ProductDetailPage({
       </div>
 
       {/* Trust Strip */}
-      <div className='bg-gray-900 text-white py-4 overflow-hidden'>
-        <div className='max-w-[1400px] mx-auto px-6'>
-          <div className='flex flex-wrap justify-center md:justify-between items-center gap-6 md:gap-8'>
+      <div className='bg-gray-900 text-white py-3 sm:py-4 overflow-hidden'>
+        <div className='max-w-[1400px] mx-auto px-4 sm:px-6'>
+          <div className='flex flex-wrap justify-center md:justify-between items-center gap-3 sm:gap-6 md:gap-8'>
             {[
               { icon: Truck, text: 'Free UK Shipping Over £50' },
               { icon: Clock, text: 'Fast 3-5 Day Production' },
@@ -612,26 +610,26 @@ export function ProductDetailPage({
       </div>
 
       {/* Feature Cards Section */}
-      <div className='py-16 bg-white'>
-        <div className='max-w-[1400px] mx-auto px-6'>
+      <div className='py-8 sm:py-12 lg:py-16 bg-white'>
+        <div className='max-w-[1400px] mx-auto px-4 sm:px-6'>
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
-            className='text-center mb-12'
+            className='text-center mb-8 sm:mb-12'
           >
             <h2
-              className="font-['Bricolage_Grotesque',_sans-serif] text-gray-900 mb-4"
-              style={{ fontSize: '32px', fontWeight: '700' }}
+              className="font-['Bricolage_Grotesque',_sans-serif] text-gray-900 mb-3 sm:mb-4 text-2xl sm:text-3xl"
+              style={{ fontWeight: '700' }}
             >
               Why Choose Our Canvas Prints
             </h2>
-            <p className='text-gray-600 text-lg max-w-2xl mx-auto'>
+            <p className='text-gray-600 text-base sm:text-lg max-w-2xl mx-auto'>
               Premium quality materials and craftsmanship in every detail
             </p>
           </motion.div>
 
-          <div className='grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4'>
+          <div className='grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3 sm:gap-4'>
             {[
               {
                 icon: Palette,
@@ -682,21 +680,21 @@ export function ProductDetailPage({
       </div>
 
       {/* Room Visualization Section */}
-      <div className='py-16 bg-gradient-to-br from-gray-50 to-white'>
-        <div className='max-w-[1400px] mx-auto px-6'>
+      <div className='py-8 sm:py-12 lg:py-16 bg-gradient-to-br from-gray-50 to-white'>
+        <div className='max-w-[1400px] mx-auto px-4 sm:px-6'>
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
-            className='text-center mb-8'
+            className='text-center mb-6 sm:mb-8'
           >
             <h2
-              className="font-['Bricolage_Grotesque',_sans-serif] text-gray-900 mb-4"
-              style={{ fontSize: '32px', fontWeight: '700' }}
+              className="font-['Bricolage_Grotesque',_sans-serif] text-gray-900 mb-3 sm:mb-4 text-2xl sm:text-3xl"
+              style={{ fontWeight: '700' }}
             >
               See It In Your Space
             </h2>
-            <p className='text-gray-600 text-lg'>
+            <p className='text-gray-600 text-base sm:text-lg'>
               Visualize how your canvas will look in different rooms
             </p>
           </motion.div>
@@ -706,7 +704,7 @@ export function ProductDetailPage({
             initial={{ opacity: 0, scale: 0.98 }}
             whileInView={{ opacity: 1, scale: 1 }}
             viewport={{ once: true }}
-            className='relative rounded-3xl overflow-hidden shadow-2xl mb-6'
+            className='relative rounded-2xl sm:rounded-3xl overflow-hidden shadow-2xl mb-4 sm:mb-6'
           >
             <div className='aspect-[16/9] md:aspect-[21/9] relative'>
               <ImageWithFallback
@@ -729,14 +727,14 @@ export function ProductDetailPage({
           </motion.div>
 
           {/* Room Selector */}
-          <div className='flex justify-center gap-3 flex-wrap'>
+          <div className='flex justify-center gap-2 sm:gap-3 flex-wrap'>
             {roomBackgrounds.map(room => (
               <motion.button
                 key={room.id}
                 onClick={() => setSelectedRoom(room.id)}
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
-                className={`px-6 py-3 rounded-full text-sm font-semibold transition-all ${
+                className={`px-4 sm:px-6 py-2 sm:py-3 rounded-full text-xs sm:text-sm font-semibold transition-all ${
                   selectedRoom === room.id
                     ? 'bg-[#f63a9e] text-white shadow-lg shadow-pink-500/30'
                     : 'bg-white text-gray-700 border-2 border-gray-200 hover:border-[#f63a9e]'
@@ -750,26 +748,26 @@ export function ProductDetailPage({
       </div>
 
       {/* Accordion Specs Section */}
-      <div className='py-16 bg-white'>
-        <div className='max-w-3xl mx-auto px-6'>
+      <div className='py-8 sm:py-12 lg:py-16 bg-white'>
+        <div className='max-w-3xl mx-auto px-4 sm:px-6'>
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
-            className='text-center mb-8'
+            className='text-center mb-6 sm:mb-8'
           >
             <h2
-              className="font-['Bricolage_Grotesque',_sans-serif] text-gray-900 mb-4"
-              style={{ fontSize: '32px', fontWeight: '700' }}
+              className="font-['Bricolage_Grotesque',_sans-serif] text-gray-900 mb-3 sm:mb-4 text-2xl sm:text-3xl"
+              style={{ fontWeight: '700' }}
             >
               Product Details
             </h2>
           </motion.div>
 
-          <Accordion type='single' collapsible className='space-y-3'>
+          <Accordion type='single' collapsible className='space-y-2 sm:space-y-3'>
             <AccordionItem
               value='specs'
-              className='border-2 border-gray-100 rounded-2xl px-6 overflow-hidden'
+              className='border-2 border-gray-100 rounded-2xl px-4 sm:px-6 overflow-hidden'
             >
               <AccordionTrigger className='py-5 hover:no-underline'>
                 <div className='flex items-center gap-3'>
@@ -799,14 +797,14 @@ export function ProductDetailPage({
 
             <AccordionItem
               value='shipping'
-              className='border-2 border-gray-100 rounded-2xl px-6 overflow-hidden'
+              className='border-2 border-gray-100 rounded-2xl px-4 sm:px-6 overflow-hidden'
             >
-              <AccordionTrigger className='py-5 hover:no-underline'>
-                <div className='flex items-center gap-3'>
-                  <div className='w-10 h-10 rounded-xl bg-[#f63a9e]/10 flex items-center justify-center'>
-                    <Truck className='w-5 h-5 text-[#f63a9e]' />
+              <AccordionTrigger className='py-4 sm:py-5 hover:no-underline'>
+                <div className='flex items-center gap-2 sm:gap-3'>
+                  <div className='w-8 h-8 sm:w-10 sm:h-10 rounded-xl bg-[#f63a9e]/10 flex items-center justify-center'>
+                    <Truck className='w-4 h-4 sm:w-5 sm:h-5 text-[#f63a9e]' />
                   </div>
-                  <span className='font-semibold text-gray-900 text-lg'>
+                  <span className='font-semibold text-gray-900 text-base sm:text-lg'>
                     Shipping & Delivery
                   </span>
                 </div>
@@ -908,22 +906,22 @@ export function ProductDetailPage({
       </div>
 
       {/* Reviews Section */}
-      <div className='py-16 bg-gradient-to-br from-[#FFF5FB] to-white'>
-        <div className='max-w-[1400px] mx-auto px-6'>
+      <div className='py-8 sm:py-12 lg:py-16 bg-gradient-to-br from-[#FFF5FB] to-white'>
+        <div className='max-w-[1400px] mx-auto px-4 sm:px-6'>
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
-            className='flex flex-col md:flex-row md:items-center justify-between mb-12'
+            className='flex flex-col md:flex-row md:items-center justify-between mb-8 sm:mb-12 gap-4'
           >
             <div>
               <h2
-                className="font-['Bricolage_Grotesque',_sans-serif] text-gray-900 mb-2"
-                style={{ fontSize: '32px', fontWeight: '700' }}
+                className="font-['Bricolage_Grotesque',_sans-serif] text-gray-900 mb-2 text-2xl sm:text-3xl"
+                style={{ fontWeight: '700' }}
               >
                 Customer Reviews
               </h2>
-              <div className='flex items-center gap-3'>
+              <div className='flex items-center gap-2 sm:gap-3 flex-wrap'>
                 <div className='flex items-center gap-1'>
                   {[...Array(5)].map((_, i) => (
                     <Star
@@ -942,7 +940,7 @@ export function ProductDetailPage({
             </div>
           </motion.div>
 
-          <div className='grid md:grid-cols-3 gap-6'>
+          <div className='grid md:grid-cols-3 gap-4 sm:gap-6'>
             {mockReviews.map((review, index) => (
               <motion.div
                 key={review.id}
@@ -950,7 +948,7 @@ export function ProductDetailPage({
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
                 transition={{ delay: index * 0.1 }}
-                className='bg-white rounded-2xl p-6 shadow-lg border border-gray-100 hover:shadow-xl transition-shadow'
+                className='bg-white rounded-2xl p-4 sm:p-6 shadow-lg border border-gray-100 hover:shadow-xl transition-shadow'
               >
                 <div className='flex items-center gap-4 mb-4'>
                   <img
@@ -991,30 +989,30 @@ export function ProductDetailPage({
 
       {/* Related Products Section */}
       {relatedProducts.length > 0 && (
-        <div className='py-16 bg-white'>
-          <div className='max-w-[1400px] mx-auto px-6'>
+        <div className='py-8 sm:py-12 lg:py-16 bg-white'>
+          <div className='max-w-[1400px] mx-auto px-4 sm:px-6'>
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
-              className='flex items-center justify-between mb-8'
+              className='flex flex-col sm:flex-row items-start sm:items-center justify-between mb-6 sm:mb-8 gap-3 sm:gap-0'
             >
               <h2
-                className="font-['Bricolage_Grotesque',_sans-serif] text-gray-900"
-                style={{ fontSize: '32px', fontWeight: '700' }}
+                className="font-['Bricolage_Grotesque',_sans-serif] text-gray-900 text-2xl sm:text-3xl"
+                style={{ fontWeight: '700' }}
               >
                 You Might Also Like
               </h2>
               <Button
                 variant='outline'
                 onClick={() => navigate('/products')}
-                className='border-2 border-gray-200 hover:border-[#f63a9e] hover:text-[#f63a9e] rounded-full px-6'
+                className='border-2 border-gray-200 hover:border-[#f63a9e] hover:text-[#f63a9e] rounded-full px-4 sm:px-6 text-sm sm:text-base'
               >
                 View All Products
               </Button>
             </motion.div>
 
-            <div className='grid grid-cols-2 md:grid-cols-4 gap-6'>
+            <div className='grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-6'>
               {relatedProducts.map((relProduct, index) => (
                 <motion.div
                   key={relProduct.id}
@@ -1064,20 +1062,20 @@ export function ProductDetailPage({
       )}
 
       {/* Final CTA Section */}
-      <div className='py-20 bg-gradient-to-r from-[#f63a9e] to-[#e02d8d]'>
-        <div className='max-w-3xl mx-auto px-6 text-center'>
+      <div className='py-12 sm:py-16 lg:py-20 bg-gradient-to-r from-[#f63a9e] to-[#e02d8d]'>
+        <div className='max-w-3xl mx-auto px-4 sm:px-6 text-center'>
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
           >
             <h2
-              className="font-['Bricolage_Grotesque',_sans-serif] text-white mb-4"
-              style={{ fontSize: '36px', fontWeight: '700' }}
+              className="font-['Bricolage_Grotesque',_sans-serif] text-white mb-3 sm:mb-4 text-2xl sm:text-3xl lg:text-4xl"
+              style={{ fontWeight: '700' }}
             >
               Ready to Create Your Masterpiece?
             </h2>
-            <p className='text-white/90 text-lg mb-8'>
+            <p className='text-white/90 text-base sm:text-lg mb-6 sm:mb-8'>
               Transform your memories into stunning wall art today
             </p>
 
@@ -1092,7 +1090,7 @@ export function ProductDetailPage({
                       ? handleOpenCollageCreator
                       : handleCustomize
                   }
-                  className='bg-white text-[#f63a9e] hover:bg-gray-100 h-14 px-10 rounded-2xl text-lg shadow-xl'
+                  className='bg-white text-[#f63a9e] hover:bg-gray-100 h-12 sm:h-14 px-6 sm:px-10 rounded-2xl text-base sm:text-lg shadow-xl'
                   style={{ fontWeight: '700' }}
                 >
                   <Sparkles className='w-5 h-5 mr-2' />

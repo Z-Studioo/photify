@@ -27,6 +27,7 @@ import WallCarousel from '@/components/shared/dashboard/WallCarousel';
 import ViewControls from '@/components/shared/dashboard/ViewControls';
 import QuantityControl from '@/components/shared/dashboard/QuantityControl';
 import ApplyChangesControl from '@/components/shared/dashboard/ApplyChangesControl';
+import { Room3DView } from '@/components/shared/dashboard/Room3DView';
 import { handleConfirmChanges } from '@/utils/uploadHandler';
 
 interface MenuFeature {
@@ -269,6 +270,17 @@ const Dashboard: React.FC = () => {
                   </div>
                 </div>
               </div>
+
+              <div
+                className={`absolute inset-0 transition-all duration-700 ease-out ${
+                  selectedView === '3droom'
+                    ? 'opacity-100 scale-100'
+                    : 'opacity-0 scale-110 pointer-events-none'
+                }`}
+              >
+                <Room3DView isVisible={selectedView === '3droom'} />
+              </div>
+
               <ViewControls
                 selectedView={selectedView}
                 onViewChange={view => {
