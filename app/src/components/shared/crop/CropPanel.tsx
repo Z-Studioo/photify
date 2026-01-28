@@ -139,6 +139,7 @@ const CropPanel: React.FC<CropPanelProps> = ({ onSelectionChange }) => {
         <div className='flex overflow-x-auto gap-1 px-2 py-3 scrollbar-hide'>
           {ratios.map(ratio => {
             const isActive = selectedRatio === ratio.label;
+            if(ratio.sizes.length === 0) return null;
             return (
               <button
                 key={ratio.id}

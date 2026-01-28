@@ -9,6 +9,7 @@ import { useCart } from '@/context/CartContext';
 import { useNavigate, useSearchParams } from 'react-router';
 import { useUpload } from '@/context/UploadContext';
 import { toast } from 'sonner';
+import { uploadFileToStorage } from '@/lib/supabase/storage';
 
 interface QuantityControlProps {
   quantity: number;
@@ -22,6 +23,12 @@ const buttonVariants = {
   idle: { scale: 1 },
   hover: { scale: 1.02 },
   tap: { scale: 0.98 },
+};
+
+const dataUrlToFile = async (dataUrl: string, fileName: string): Promise<File> => {
+  const response = await fetch(dataUrl);
+  const blob = await response.blob();
+  return new File([blob], fileName, { type: blob.type });
 };
 
 const QuantityControl: React.FC<QuantityControlProps> = ({
@@ -43,9 +50,9 @@ const QuantityControl: React.FC<QuantityControlProps> = ({
   const { addToast } = useToast();
   const { addToCart } = useCart();
   const navigate = useNavigate();
-  const { selectedSize, selectedRatio, shape, selectedProduct } =
+  const { selectedSize, selectedRatio, shape, selectedProduct, preview } =
     useUpload();
-    const [params] = useSearchParams()
+  const [params] = useSearchParams();
   // Get price data from localStorage
   // useEffect(() => {
   //   const loadPriceData = () => {
@@ -98,17 +105,42 @@ const QuantityControl: React.FC<QuantityControlProps> = ({
   };
 
   const handleFinalConfirm = async () => {
-    if(!params.get("image")) {
+    const imageUrl = preview || params.get('image') || '';
+    if (!imageUrl) {
       return toast.error('No image selected to add to cart.');
     }
+    console.log('Final confirm clicked',preview);
     setLocalConfirming(true);
     try {
       await onConfirm();
+      let finalImageUrl = imageUrl;
+      if (imageUrl.startsWith('data:')) {
+        const uploadToast = toast.loading('Uploading image to cart...');
+        try {
+          const fileName = `cart-image-${Date.now()}.jpg`;
+          const file = await dataUrlToFile(imageUrl, fileName);
+          const supabaseUrl = await uploadFileToStorage(file, 'cart-images');
+
+          if (!supabaseUrl) {
+            toast.error('Failed to upload image', { id: uploadToast });
+            setLocalConfirming(false);
+            return;
+          }
+
+          finalImageUrl = supabaseUrl;
+          toast.dismiss(uploadToast);
+        } catch (error) {
+          console.error('Failed to upload image to Supabase:', error);
+          toast.error('Failed to upload image', { id: uploadToast });
+          setLocalConfirming(false);
+          return;
+        }
+      }
       addToCart({
         quantity,
         id: `${selectedRatio || 'custom'}-${selectedSize?.display_label || 'custom'}-${shape || 'rectangular'}`,
         name: `${selectedRatio || 'Custom Ratio'} - ${selectedSize?.display_label || 'Custom Size'} - ${shape || 'Rectangular'}`,
-        image: params.get('image') || '',
+        image: finalImageUrl,
         price: priceData.sellPrice,
         size: selectedSize?.display_label || 'Custom Size',
       });
