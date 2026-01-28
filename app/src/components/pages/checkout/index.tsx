@@ -40,23 +40,6 @@ interface FormData {
   videoPermission: boolean;
 }
 
-// Mock addresses for postcode search
-const mockAddresses: { [key: string]: string[] } = {
-  '10001': [
-    '123 Main Street, New York, NY 10001',
-    '456 Park Avenue, New York, NY 10001',
-    '789 Broadway, New York, NY 10001',
-  ],
-  '90210': [
-    '321 Beverly Drive, Beverly Hills, CA 90210',
-    '654 Sunset Blvd, Beverly Hills, CA 90210',
-  ],
-  SW1A: [
-    '10 Downing Street, London, SW1A 2AA',
-    '20 Parliament Square, London, SW1A 1AA',
-  ],
-};
-
 export function CheckoutPage() {
   const navigate = useNavigate();
   const { cartItems } = useCart();
@@ -74,6 +57,7 @@ export function CheckoutPage() {
   const [fieldFocus, setFieldFocus] = useState<string | null>(null);
   const [completedSteps, setCompletedSteps] = useState<number[]>([]);
   const [isProcessing, setIsProcessing] = useState(false);
+  const [isSearchingAddress, setIsSearchingAddress] = useState(false);
 
   // Fetch delivery fee from settings
   const { data: shippingSetting } = useSiteSetting('shipping_flat_rate');
@@ -98,13 +82,131 @@ export function CheckoutPage() {
     }
   };
 
-  const handlePostcodeSearch = () => {
-    const addresses =
-      mockAddresses[formData.postcode] ||
-      mockAddresses[formData.postcode.toUpperCase()] ||
-      [];
-    setSearchedAddresses(addresses);
-    setShowAddresses(true);
+  const handlePostcodeSearch = async () => {
+    if (!formData.postcode.trim()) {
+      toast.error('Please enter a postcode');
+      return;
+    }
+
+    setIsSearchingAddress(true);
+    setSearchedAddresses([]);
+    
+    try {
+      // Normalize postcode: remove extra spaces, convert to uppercase
+      let postcode = formData.postcode.trim().toUpperCase().replace(/\s+/g, '');
+      
+      // Add space before last 3 characters if not present (standard UK format)
+      if (postcode.length >= 5 && !postcode.includes(' ')) {
+        postcode = postcode.slice(0, -3) + ' ' + postcode.slice(-3);
+      }
+      
+      // Try exact postcode first
+      let response = await fetch(
+        `https://api.postcodes.io/postcodes/${encodeURIComponent(postcode)}`
+      );
+
+      // If exact match fails, try autocomplete/partial match
+      if (!response.ok && response.status === 404) {
+        const partialPostcode = postcode.replace(/\s+/g, '');
+        const autocompleteResponse = await fetch(
+          `https://api.postcodes.io/postcodes/${encodeURIComponent(partialPostcode)}/autocomplete`
+        );
+        
+        if (autocompleteResponse.ok) {
+          const autocompleteData = await autocompleteResponse.json();
+          if (autocompleteData.status === 200 && autocompleteData.result && autocompleteData.result.length > 0) {
+            // Use the first suggested postcode
+            const suggestedPostcode = autocompleteData.result[0];
+            response = await fetch(
+              `https://api.postcodes.io/postcodes/${encodeURIComponent(suggestedPostcode)}`
+            );
+            
+            if (response.ok) {
+              toast.info(`Using closest match: ${suggestedPostcode}`);
+            }
+          }
+        }
+      }
+
+      if (!response.ok) {
+        if (response.status === 404) {
+          toast.error('Postcode not found. Please check and try again.');
+          setSearchedAddresses([]);
+          setShowAddresses(true);
+          return;
+        }
+        throw new Error('Failed to search postcode');
+      }
+
+      const data = await response.json();
+
+      if (data.status === 200 && data.result) {
+        const result = data.result;
+        
+        // Build comprehensive address list
+        const addresses: string[] = [];
+        
+        // Primary address
+        addresses.push(
+          `${result.postcode}, ${result.admin_district || result.parish || ''}, ${result.region}, ${result.country}`
+        );
+        
+        // Add ward/parish if available
+        if (result.parish && result.parish !== result.admin_district) {
+          addresses.push(
+            `${result.postcode}, ${result.parish}, ${result.admin_district}, ${result.region}`
+          );
+        }
+        
+        // Add specific locality if available
+        if (result.admin_ward) {
+          addresses.push(
+            `${result.postcode}, ${result.admin_ward}, ${result.admin_district}, ${result.region}`
+          );
+        }
+
+        // Try to get nearby postcodes for more options
+        try {
+          const nearbyResponse = await fetch(
+            `https://api.postcodes.io/postcodes?lon=${result.longitude}&lat=${result.latitude}&radius=500&limit=5`
+          );
+          
+          if (nearbyResponse.ok) {
+            const nearbyData = await nearbyResponse.json();
+            if (nearbyData.status === 200 && nearbyData.result) {
+              nearbyData.result.forEach((nearby: any) => {
+                if (nearby.postcode !== result.postcode) {
+                  addresses.push(
+                    `${nearby.postcode}, ${nearby.admin_district}, ${nearby.region}`
+                  );
+                }
+              });
+            }
+          }
+        } catch (e) {
+          // Ignore nearby search errors
+          console.warn('Nearby postcode search failed:', e);
+        }
+
+        // Remove duplicates
+        const uniqueAddresses = [...new Set(addresses)];
+        
+        setSearchedAddresses(uniqueAddresses);
+        setShowAddresses(true);
+        toast.success(`Found ${uniqueAddresses.length} address${uniqueAddresses.length > 1 ? 'es' : ''}`);
+      } else {
+        toast.error('No address found for this postcode');
+        setSearchedAddresses([]);
+        setShowAddresses(true);
+      }
+    } catch (error) {
+      console.error('Postcode search error:', error);
+      toast.error('Failed to search postcode. Please try again.');
+      setSearchedAddresses([]);
+      setShowAddresses(true);
+    } finally {
+      setIsSearchingAddress(false);
+    }
   };
 
   const selectAddress = (address: string) => {
@@ -349,13 +451,13 @@ export function CheckoutPage() {
                         className='text-gray-700 mb-2 sm:mb-3 block text-sm sm:text-base'
                         style={{ fontWeight: '600' }}
                       >
-                        Enter Your Post Code / ZIP Code
+                        Enter Your UK Postcode
                       </Label>
                       <div className='flex gap-2 sm:gap-3'>
                         <Input
                           id='postcode'
                           type='text'
-                          placeholder='Enter postcode'
+                          placeholder='e.g., SW1A 1AA, EC1A 1BB, M1 1AE'
                           value={formData.postcode}
                           onChange={e =>
                             setFormData({
@@ -381,11 +483,21 @@ export function CheckoutPage() {
                         >
                           <Button
                             onClick={handlePostcodeSearch}
-                            className='h-12 sm:h-14 lg:h-16 px-4 sm:px-6 lg:px-8 bg-[#f63a9e] hover:bg-[#e02d8d] text-white rounded-xl sm:rounded-2xl shadow-lg text-sm sm:text-base'
+                            disabled={isSearchingAddress}
+                            className='h-16 px-8 bg-[#f63a9e] hover:bg-[#e02d8d] text-white rounded-2xl shadow-lg disabled:opacity-50'
                             style={{ fontWeight: '700' }}
                           >
-                            <Search className='w-4 h-4 sm:w-5 sm:h-5 mr-1 sm:mr-2' />
-                            Find
+                            {isSearchingAddress ? (
+                              <>
+                                <Loader2 className='w-5 h-5 mr-2 animate-spin' />
+                                Searching...
+                              </>
+                            ) : (
+                              <>
+                                <Search className='w-5 h-5 mr-2' />
+                                Find
+                              </>
+                            )}
                           </Button>
                         </motion.div>
                       </div>
@@ -454,17 +566,20 @@ export function CheckoutPage() {
                         </motion.div>
                       )}
 
-                      {showAddresses && searchedAddresses.length === 0 && (
+                      {showAddresses && searchedAddresses.length === 0 && !isSearchingAddress && (
                         <motion.div
                           initial={{ opacity: 0, scale: 0.9 }}
                           animate={{ opacity: 1, scale: 1 }}
-                          className='p-6 bg-red-50 border-2 border-red-200 rounded-2xl text-center'
+                          className='p-4 sm:p-6 bg-red-50 border-2 border-red-200 rounded-xl sm:rounded-2xl text-center'
                         >
                           <p
-                            className='text-red-700'
+                            className='text-red-700 text-sm sm:text-base'
                             style={{ fontWeight: '600' }}
                           >
-                            No addresses found. Try: 10001, 90210, or SW1A
+                            No addresses found for this postcode. Please check and try again.
+                          </p>
+                          <p className='text-red-600 text-xs sm:text-sm mt-2'>
+                            Example UK postcodes: SW1A 1AA, EC1A 1BB, M1 1AE
                           </p>
                         </motion.div>
                       )}
