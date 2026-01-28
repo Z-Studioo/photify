@@ -46,8 +46,6 @@ export function AdminProductEditPage() {
   // Fetch product data
   useEffect(() => {
     const fetchProduct = async () => {
-      console.log('\n🔍 === FETCHING PRODUCT ===');
-      console.log('🆔 Product ID/Slug:', productId);
       setLoading(true);
 
       const supabase = createClient();
@@ -58,7 +56,6 @@ export function AdminProductEditPage() {
           /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
             productId as string
           );
-        console.log('📋 Is UUID:', isUUID, 'Value:', productId);
 
         const { data, error } = await supabase
           .from('products')
@@ -73,28 +70,13 @@ export function AdminProductEditPage() {
           .or(isUUID ? `id.eq.${productId}` : `slug.eq.${productId}`)
           .single();
 
-        console.log('📡 Query result:', { data, error });
-
         if (error) {
-          console.error('❌ Supabase error:', error);
           throw error;
         }
 
         if (!data) {
-          console.error('❌ No product found for:', productId);
+          // console.error('❌ No product found for:', productId);
         }
-
-        console.log('📦 Product data loaded:');
-        console.log('  - ID:', data?.id);
-        console.log('  - Slug:', data?.slug);
-        console.log('  - Name:', data?.name);
-        console.log(
-          '  - Full config object:',
-          JSON.stringify(data?.config, null, 2)
-        );
-        console.log('  - config type:', typeof data?.config);
-        console.log('  - config.configurerType:', data?.config?.configurerType);
-        console.log('=== FETCH COMPLETE ===\n');
 
         setProduct(data);
       } catch (error: any) {
@@ -128,29 +110,18 @@ export function AdminProductEditPage() {
   };
 
   const handleConfigurerSelect = async (configurerId: string | null) => {
-    console.log('\n🚀 === CONFIGURER SELECT STARTED ===');
-    console.log('📝 Selected Configurer ID:', configurerId);
-    console.log('📦 Current Product:', {
-      id: product.id,
-      slug: product.slug,
-      currentConfig: product.config,
-    });
-
     const supabase = createClient();
 
     try {
-      // Check authentication
-      console.log('🔐 Checking authentication...');
       const {
         data: { user },
         error: authError,
       } = await supabase.auth.getUser();
       if (authError || !user) {
-        console.error('❌ Not authenticated:', authError);
+        // console.error('❌ Not authenticated:', authError);
         toast.error('You must be logged in to save changes');
         return;
       }
-      console.log('✅ Authenticated as:', user.id);
 
       // Get current product config, ensure it's an object
       const currentConfig =
@@ -164,17 +135,6 @@ export function AdminProductEditPage() {
         configurerType: configurerId,
       };
 
-      console.log('📊 Config Update Details:', {
-        productId: product.id,
-        productSlug: product.slug,
-        userId: user.id,
-        currentConfig: JSON.stringify(currentConfig),
-        updatedConfig: JSON.stringify(updatedConfig),
-        configType: typeof updatedConfig,
-      });
-
-      // Update the product
-      console.log('💾 Sending update to database...');
       const { data, error } = await supabase
         .from('products')
         .update({
@@ -184,27 +144,15 @@ export function AdminProductEditPage() {
         .eq('id', product.id)
         .select('id, name, slug, config');
 
-      console.log('📡 Database Response:', { data, error });
-
       if (error) {
-        console.error('❌ Database error:', error);
-        console.error('Error details:', JSON.stringify(error, null, 2));
         toast.error(`Failed to save: ${error.message || 'Unknown error'}`);
         return;
       }
 
       if (!data || data.length === 0) {
-        console.error('❌ No data returned from update');
         toast.error('Update failed: No data returned');
         return;
       }
-
-      console.log('✅ Update successful!');
-      console.log('📦 Returned data:', JSON.stringify(data[0], null, 2));
-      console.log(
-        '🔧 Saved config.configurerType:',
-        data[0].config?.configurerType
-      );
 
       // Update local state with the returned data
       setProduct({
@@ -212,17 +160,12 @@ export function AdminProductEditPage() {
         config: data[0].config,
       });
 
-      console.log('🔄 Local state updated');
-      console.log('=== CONFIGURER SELECT COMPLETED ===\n');
-
       toast.success(
         configurerId
           ? '✅ Configurer saved successfully!'
           : 'Configurer removed'
       );
     } catch (error: any) {
-      console.error('❌ Unexpected error:', error);
-      console.error('Error stack:', error.stack);
       toast.error(`Error: ${error.message || 'Failed to save'}`);
     }
   };

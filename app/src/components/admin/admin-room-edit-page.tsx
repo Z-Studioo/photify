@@ -442,24 +442,20 @@ export function AdminRoomEditPage() {
         label: newHotspot.label || null,
       };
 
-      console.log('Inserting hotspot:', insertData);
 
-      const { data: insertedData, error } = await supabase
+      const { data: _, error } = await supabase
         .from('room_hotspots')
         .insert(insertData)
         .select();
 
       if (error) {
-        console.error('Insert error:', error);
         throw error;
       }
-
-      console.log('Hotspot inserted:', insertedData);
 
       toast.success('Hotspot added successfully');
 
       // Refresh hotspots directly from table
-      const { data: hotspotsData, error: fetchError } = await supabase
+      const { data: hotspotsData } = await supabase
         .from('room_hotspots')
         .select(
           `
@@ -476,9 +472,6 @@ export function AdminRoomEditPage() {
         )
         .eq('room_id', roomData.id)
         .order('display_order', { ascending: true });
-
-      console.log('Refreshed hotspots data:', hotspotsData);
-      console.log('Fetch error:', fetchError);
 
       if (hotspotsData) {
         const updatedHotspots = hotspotsData.map((h: any) => {
@@ -497,7 +490,6 @@ export function AdminRoomEditPage() {
           };
         });
 
-        console.log('Updated hotspots array:', updatedHotspots);
         setHotspots(updatedHotspots);
 
         // Reset form with updated display_order

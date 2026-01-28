@@ -146,10 +146,6 @@ export function AdminProductConfigEditor({
   };
 
   const handleSave = async () => {
-    console.log('=== Save Configuration ===');
-    console.log('Product ID:', productId);
-    console.log('Config to save:', config);
-
     // Validate config
     if (!config.allowedRatios || config.allowedRatios.length === 0) {
       toast.error('Please select at least one aspect ratio');
@@ -164,7 +160,6 @@ export function AdminProductConfigEditor({
     setSaving(true);
     try {
       // First, fetch the current config to preserve other properties (like configurerType)
-      console.log('📥 Fetching current config from database...');
       const { data: currentProduct, error: fetchError } = await supabase
         .from('products')
         .select('config')
@@ -173,19 +168,12 @@ export function AdminProductConfigEditor({
 
       if (fetchError) throw fetchError;
 
-      console.log('📦 Current config in DB:', currentProduct?.config);
-
       // Merge with current config to preserve other properties
       const mergedConfig = {
         ...(currentProduct?.config || {}),
         ...config,
         version: (currentProduct?.config?.version || 0) + 1,
       };
-
-      console.log(
-        '🔀 Merged config (preserving configurerType):',
-        mergedConfig
-      );
 
       const updateData = {
         config: mergedConfig,
@@ -194,16 +182,12 @@ export function AdminProductConfigEditor({
         config_updated_at: new Date().toISOString(),
       };
 
-      console.log('Update data:', updateData);
-
       // Update database
-      const { data, error } = await supabase
+      const { error } = await supabase
         .from('products')
         .update(updateData)
         .eq('id', productId)
         .select();
-
-      console.log('Update result:', { data, error });
 
       if (error) throw error;
 

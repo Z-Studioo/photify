@@ -93,12 +93,6 @@ export function AdminArtEditPage() {
     async function fetchData() {
       try {
         setLoading(true);
-        console.log(
-          'Fetching data for productId:',
-          productId,
-          'isNewProduct:',
-          isNewProduct
-        );
 
         if (isNewProduct) {
           // Initialize empty product - use null for optional UUIDs
@@ -126,29 +120,19 @@ export function AdminArtEditPage() {
           });
         } else {
           // Fetch existing product
-          console.log('Fetching existing art product with ID:', productId);
           const { data, error } = await supabase
             .from('art_products')
             .select('*')
             .eq('id', productId)
             .single();
 
-          console.log('Fetch result:', { data, error });
-
           if (error) {
-            console.error(
-              'Supabase error details:',
-              JSON.stringify(error, null, 2)
-            );
             throw new Error(
               error.message || error.hint || 'Failed to fetch art product'
             );
           }
 
           if (data) {
-            console.log('Successfully loaded art product:', data.name);
-            console.log('Product data fields:', Object.keys(data));
-
             // Handle both old and new data structures
             setProduct({
               id: data.id,
@@ -186,36 +170,27 @@ export function AdminArtEditPage() {
         }
 
         // Fetch available products for customization dropdown
-        console.log('Fetching products for customization dropdown...');
         const { data: products, error: productsError } = await supabase
           .from('products')
           .select('id, name, slug')
           .order('name');
 
         if (productsError) {
-          console.warn(
-            'Failed to fetch products for customization:',
-            productsError
-          );
+          // console.warn(
+          //   'Failed to fetch products for customization:',
+          //   productsError
+          // );
           // Don't fail the whole page if customization products can't load
         } else {
-          console.log(
-            'Loaded products for customization:',
-            products?.length || 0
-          );
+          // console.log(
+          //   'Loaded products for customization:',
+          //   products?.length || 0
+          // );
         }
 
         setAvailableProducts(products || []);
 
-        console.log('Fetch data completed successfully');
       } catch (error: any) {
-        console.error('=== ERROR FETCHING DATA ===');
-        console.error('Error object:', error);
-        console.error('Error type:', typeof error);
-        console.error('Error keys:', Object.keys(error || {}));
-        console.error('Error message:', error?.message);
-        console.error('Error stack:', error?.stack);
-
         const errorMessage =
           error?.message ||
           error?.error_description ||
@@ -254,14 +229,6 @@ export function AdminArtEditPage() {
 
       if (isNewProduct) {
         // Create new product
-        console.log('Creating new art product with data:', {
-          name: product.name,
-          slug: product.slug,
-          category: product.category,
-          product_type: product.product_type,
-          status: product.status,
-        });
-
         const { data, error } = await supabase
           .from('art_products')
           .insert([
@@ -306,22 +273,14 @@ export function AdminArtEditPage() {
           .single();
 
         if (error) {
-          console.error('Insert error:', error);
+          // console.error('Insert error:', error);
           throw error;
         }
 
-        console.log('Art product created successfully:', data);
         toast.success('Art product created successfully');
         navigate(`/admin/art-collection/edit/${data.id}`);
       } else {
         // Update existing product
-        console.log('Updating art product:', productId, 'with data:', {
-          name: product.name,
-          slug: product.slug,
-          category: product.category,
-          product_type: product.product_type,
-          status: product.status,
-        });
 
         const { error } = await supabase
           .from('art_products')
@@ -364,15 +323,13 @@ export function AdminArtEditPage() {
           .eq('id', productId);
 
         if (error) {
-          console.error('Update error:', error);
+          // console.error('Update error:', error);
           throw error;
         }
-
-        console.log('Art product updated successfully');
         toast.success('Art product updated successfully');
       }
     } catch (error: any) {
-      console.error('Error saving:', error);
+      // console.error('Error saving:', error);
       toast.error(error.message || 'Failed to save art product');
     } finally {
       setSaving(false);

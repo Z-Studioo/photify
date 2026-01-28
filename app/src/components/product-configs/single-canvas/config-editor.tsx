@@ -133,9 +133,7 @@ export function SingleCanvasConfigEditor({
   };
 
   const handleSave = async () => {
-    console.log('=== Saving Single Canvas Configuration ===');
-    console.log('Config to save:', config);
-    
+
     // Validate based on product rules
     const validation = SINGLE_CANVAS_PRODUCT.config.validation;
     
@@ -152,7 +150,6 @@ export function SingleCanvasConfigEditor({
     setSaving(true);
     try {
       // First, fetch the current config to preserve other properties (like configurerType)
-      console.log('📥 Fetching current config from database...');
       const { data: currentProduct, error: fetchError } = await supabase
         .from('products')
         .select('config')
@@ -161,7 +158,6 @@ export function SingleCanvasConfigEditor({
 
       if (fetchError) throw fetchError;
 
-      console.log('📦 Current config in DB:', currentProduct?.config);
       
       // Merge with current config to preserve other properties
       const mergedConfig = {
@@ -169,7 +165,6 @@ export function SingleCanvasConfigEditor({
         ...config
       };
       
-      console.log('🔀 Merged config (preserving configurerType):', mergedConfig);
 
       const updateData = {
         config: mergedConfig,
@@ -177,21 +172,18 @@ export function SingleCanvasConfigEditor({
         config_updated_at: new Date().toISOString()
       };
       
-      console.log('💾 Saving to database...');
-      const { data, error } = await supabase
+      const { error } = await supabase
         .from('products')
         .update(updateData)
         .eq('id', SINGLE_CANVAS_PRODUCT.id)
         .select();
 
-      console.log('✅ Update result:', { data, error });
 
       if (error) throw error;
 
       toast.success('Single Canvas configuration saved successfully');
       if (onSave) onSave(mergedConfig);
     } catch (error: any) {
-      console.error('❌ Error saving config:', error);
       toast.error('Failed to save configuration: ' + error.message);
     } finally {
       setSaving(false);
