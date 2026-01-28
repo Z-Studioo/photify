@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { ImagePlus } from 'lucide-react';
+import { AlertCircle, ImagePlus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import MyPhotos from '@/components/shared/dashboard/MyPhotos';
 import { useUpload } from '@/context/UploadContext';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
 interface UploadedImage {
   id: string;
@@ -19,6 +20,10 @@ interface SelectPhotoProps {
 const SelectPhoto: React.FC<SelectPhotoProps> = ({ onPhotoSelected }) => {
   const [uploadedImages, setUploadedImages] = useState<UploadedImage[]>([]);
   const [selectedImageId, setSelectedImageId] = useState<string | null>(null);
+  const [duplicateAlert, setDuplicateAlert] = useState<{
+    show: boolean;
+    files: string[];
+  }>({ show: false, files: [] });
   const { setPendingFile, setPendingPreview, applyPendingChanges } =
     useUpload();
 
@@ -45,6 +50,12 @@ const SelectPhoto: React.FC<SelectPhotoProps> = ({ onPhotoSelected }) => {
     }
     const byteArray = new Uint8Array(byteNumbers);
     return new File([byteArray], fileName, { type: fileType });
+  };
+
+  const isDuplicateFile = (file: File): boolean => {
+    return uploadedImages.some(
+      img => img.file.name === file.name && img.file.size === file.size
+    );
   };
 
   useEffect(() => {
@@ -97,6 +108,13 @@ const SelectPhoto: React.FC<SelectPhotoProps> = ({ onPhotoSelected }) => {
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
       const file = e.target.files[0];
+
+      if (isDuplicateFile(file)) {
+        setDuplicateAlert({ show: true, files: [file.name] });
+        e.target.value = '';
+        return;
+      }
+
       const imageId = Date.now().toString();
 
       try {
@@ -150,7 +168,14 @@ const SelectPhoto: React.FC<SelectPhotoProps> = ({ onPhotoSelected }) => {
     if (e.target.files) {
       const files = Array.from(e.target.files);
       const newImages: UploadedImage[] = [];
+      const duplicateFiles: string[] = [];
+
       for (const file of files) {
+        if (isDuplicateFile(file)) {
+          duplicateFiles.push(file.name);
+          continue; // Skip this file
+        }
+
         const imageId =
           Date.now().toString() + Math.random().toString(36).substr(2, 9);
 
@@ -176,12 +201,17 @@ const SelectPhoto: React.FC<SelectPhotoProps> = ({ onPhotoSelected }) => {
           newImages.push(newImage);
         }
       }
+      if (duplicateFiles.length > 0) {
+        setDuplicateAlert({ show: true, files: duplicateFiles });
+      }
 
-      setUploadedImages(prev => [...prev, ...newImages]);
+      if (newImages.length > 0) {
+        setUploadedImages(prev => [...prev, ...newImages]);
 
-      if (!selectedImageId && newImages.length > 0) {
-        setSelectedImageId(newImages[0].id);
-        onPhotoSelected?.(newImages[0].file);
+        if (!selectedImageId) {
+          setSelectedImageId(newImages[0].id);
+          onPhotoSelected?.(newImages[0].file);
+        }
       }
       e.target.value = '';
     }
@@ -235,6 +265,35 @@ const SelectPhoto: React.FC<SelectPhotoProps> = ({ onPhotoSelected }) => {
   if (uploadedImages.length > 0) {
     return (
       <div className='relative overflow-auto p-4'>
+        {duplicateAlert.show && (
+          <Alert variant='destructive' className='mb-4'>
+            <AlertCircle className='h-4 w-4' />
+            <AlertTitle>Duplicate Files Detected</AlertTitle>
+            <AlertDescription>
+              <div className='mt-2'>
+                <p className='mb-2'>
+                  The following file(s) have already been uploaded and were
+                  skipped:
+                </p>
+                <ul className='list-disc list-inside space-y-1'>
+                  {duplicateAlert.files.map((fileName, index) => (
+                    <li key={index} className='text-sm'>
+                      {fileName}
+                    </li>
+                  ))}
+                </ul>
+                <Button
+                  variant='outline'
+                  size='sm'
+                  onClick={() => setDuplicateAlert({ show: false, files: [] })}
+                  className='mt-3'
+                >
+                  Dismiss
+                </Button>
+              </div>
+            </AlertDescription>
+          </Alert>
+        )}
         <input
           type='file'
           id='my-photos-input'
@@ -264,6 +323,34 @@ const SelectPhoto: React.FC<SelectPhotoProps> = ({ onPhotoSelected }) => {
 
   return (
     <div className='relative overflow-auto p-4'>
+      {duplicateAlert.show && (
+        <Alert variant='destructive' className='mb-4'>
+          <AlertCircle className='h-4 w-4' />
+          <AlertTitle>Duplicate File Detected</AlertTitle>
+          <AlertDescription>
+            <div className='mt-2'>
+              <p className='mb-2'>
+                The following file(s) have already been uploaded:
+              </p>
+              <ul className='list-disc list-inside space-y-1'>
+                {duplicateAlert.files.map((fileName, index) => (
+                  <li key={index} className='text-sm'>
+                    {fileName}
+                  </li>
+                ))}
+              </ul>
+              <Button
+                variant='outline'
+                size='sm'
+                onClick={() => setDuplicateAlert({ show: false, files: [] })}
+                className='mt-3'
+              >
+                Dismiss
+              </Button>
+            </div>
+          </AlertDescription>
+        </Alert>
+      )}
       <div className='flex flex-col space-y-6'>
         <div className='border-2 border-dashed border-gray-300 rounded-lg p-6 flex flex-col items-center space-y-4 bg-white'>
           <ImagePlus className='h-10 w-10 text-gray-400' />
