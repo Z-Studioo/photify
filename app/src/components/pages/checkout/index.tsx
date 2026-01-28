@@ -302,16 +302,16 @@ export function CheckoutPage() {
       </div>
 
       {/* Header */}
-      <div className='relative z-10 max-w-[1600px] mx-auto px-8 py-6'>
+      <div className='relative z-10 max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-6'>
         <div className='flex items-center justify-between'>
           <motion.button
             onClick={() => navigate('/cart')}
-            className='flex items-center gap-2 text-gray-600 hover:text-gray-900 transition-colors group'
+            className='flex items-center gap-1 sm:gap-2 text-gray-600 hover:text-gray-900 transition-colors group'
             whileHover={{ x: -5 }}
             whileTap={{ scale: 0.95 }}
           >
-            <div className='w-10 h-10 rounded-full bg-white shadow-md flex items-center justify-center group-hover:shadow-lg transition-shadow'>
-              <ArrowLeft className='w-5 h-5' />
+            <div className='w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-white shadow-md flex items-center justify-center group-hover:shadow-lg transition-shadow'>
+              <ArrowLeft className='w-4 h-4 sm:w-5 sm:h-5' />
             </div>
             <span style={{ fontWeight: '600' }}>Back to Cart</span>
           </motion.button>
@@ -319,8 +319,8 @@ export function CheckoutPage() {
       </div>
 
       {/* Main Content */}
-      <div className='relative z-10 max-w-[1600px] mx-auto px-8 pb-12'>
-        <div className='grid lg:grid-cols-2 gap-12 items-start'>
+      <div className='relative z-10 max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 pb-8 sm:pb-12'>
+        <div className='grid lg:grid-cols-2 gap-6 sm:gap-8 lg:gap-12 items-start'>
           {/* Left Side - Form */}
           <div>
             <AnimatePresence mode='wait'>
@@ -331,24 +331,20 @@ export function CheckoutPage() {
                 animate={{ opacity: 1, x: 0 }}
                 exit={{ opacity: 0, x: -50 }}
                 transition={{ duration: 0.4 }}
-                className='bg-white rounded-3xl p-10 shadow-xl border border-gray-100'
+                className='bg-white rounded-2xl sm:rounded-3xl p-6 sm:p-8 lg:p-10 shadow-xl border border-gray-100'
               >
                 {/* Step Title Inside Container */}
-                <div className='mb-8 pb-6 border-b border-gray-200'>
+                <div className='mb-6 sm:mb-8 pb-4 sm:pb-6 border-b border-gray-200'>
                   <h1
-                    className="font-['Bricolage_Grotesque',_sans-serif] text-gray-900 mb-3"
-                    style={{
-                      fontSize: '40px',
-                      fontWeight: '700',
-                      lineHeight: '1.1',
-                    }}
+                    className="font-['Bricolage_Grotesque',_sans-serif] text-gray-900 mb-2 sm:mb-3 text-2xl sm:text-3xl lg:text-4xl"
+                    style={{ fontWeight: '700', lineHeight: '1.1' }}
                   >
                     {currentStep === 1 && "Let's get your details"}
                     {currentStep === 2 && 'Where to deliver?'}
                     {currentStep === 3 && 'Review everything'}
                     {currentStep === 4 && 'Secure Payment'}
                   </h1>
-                  <p className='text-gray-600'>
+                  <p className='text-gray-600 text-sm sm:text-base'>
                     {currentStep === 1 &&
                       "We'll use this to keep you updated about your order"}
                     {currentStep === 2 &&
@@ -362,7 +358,7 @@ export function CheckoutPage() {
 
                 {/* Step 1: Contact Information */}
                 {currentStep === 1 && (
-                  <div className='space-y-8'>
+                  <div className='space-y-6 sm:space-y-8'>
                     {[
                       {
                         id: 'name',
@@ -398,8 +394,8 @@ export function CheckoutPage() {
                         >
                           <Label
                             htmlFor={field.id}
-                            className='text-gray-700 mb-3 block'
-                            style={{ fontWeight: '600', fontSize: '15px' }}
+                            className='text-gray-700 mb-2 sm:mb-3 block text-sm sm:text-base'
+                            style={{ fontWeight: '600' }}
                           >
                             {field.label}
                           </Label>
@@ -418,7 +414,7 @@ export function CheckoutPage() {
                               onFocus={() => setFieldFocus(field.id)}
                               onBlur={() => setFieldFocus(null)}
                               className={cn(
-                                'h-16 border-2 rounded-2xl text-base pl-6 pr-14 transition-all bg-gray-50 focus:bg-white',
+                                'h-12 sm:h-14 lg:h-16 border-2 rounded-xl sm:rounded-2xl text-sm sm:text-base pl-4 sm:pl-6 pr-12 sm:pr-14 transition-all bg-gray-50 focus:bg-white',
                                 fieldFocus === field.id
                                   ? 'border-[#f63a9e] ring-4 ring-[#f63a9e]/10 shadow-lg'
                                   : 'border-gray-200'
@@ -430,10 +426,10 @@ export function CheckoutPage() {
                                   initial={{ scale: 0, rotate: -180 }}
                                   animate={{ scale: 1, rotate: 0 }}
                                   exit={{ scale: 0, rotate: 180 }}
-                                  className='absolute right-5 top-1/2 -translate-y-1/2'
+                                  className='absolute right-3 sm:right-5 top-1/2 -translate-y-1/2'
                                 >
-                                  <div className='w-8 h-8 rounded-full bg-green-500 flex items-center justify-center'>
-                                    <Check className='w-5 h-5 text-white' />
+                                  <div className='w-6 h-6 sm:w-8 sm:h-8 rounded-full bg-green-500 flex items-center justify-center'>
+                                    <Check className='w-4 h-4 sm:w-5 sm:h-5 text-white' />
                                   </div>
                                 </motion.div>
                               )}
@@ -447,17 +443,17 @@ export function CheckoutPage() {
 
                 {/* Step 2: Delivery Address */}
                 {currentStep === 2 && (
-                  <div className='space-y-6'>
+                  <div className='space-y-4 sm:space-y-6'>
                     {/* Postcode Search Only */}
                     <div>
                       <Label
                         htmlFor='postcode'
-                        className='text-gray-700 mb-3 block'
-                        style={{ fontWeight: '600', fontSize: '15px' }}
+                        className='text-gray-700 mb-2 sm:mb-3 block text-sm sm:text-base'
+                        style={{ fontWeight: '600' }}
                       >
                         Enter Your UK Postcode
                       </Label>
-                      <div className='flex gap-3'>
+                      <div className='flex gap-2 sm:gap-3'>
                         <Input
                           id='postcode'
                           type='text'
@@ -475,7 +471,7 @@ export function CheckoutPage() {
                             e.key === 'Enter' && handlePostcodeSearch()
                           }
                           className={cn(
-                            'h-16 border-2 rounded-2xl text-base pl-6 flex-1 transition-all bg-gray-50 focus:bg-white',
+                            'h-12 sm:h-14 lg:h-16 border-2 rounded-xl sm:rounded-2xl text-sm sm:text-base pl-4 sm:pl-6 flex-1 transition-all bg-gray-50 focus:bg-white',
                             fieldFocus === 'postcode'
                               ? 'border-[#f63a9e] ring-4 ring-[#f63a9e]/10 shadow-lg'
                               : 'border-gray-200'
@@ -618,26 +614,26 @@ export function CheckoutPage() {
 
                 {/* Step 3: Review */}
                 {currentStep === 3 && (
-                  <div className='space-y-6'>
+                  <div className='space-y-4 sm:space-y-6'>
                     <motion.div
-                      className='p-8 bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 rounded-2xl border-2 border-indigo-200 relative overflow-hidden'
+                      className='p-4 sm:p-6 lg:p-8 bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 rounded-xl sm:rounded-2xl border-2 border-indigo-200 relative overflow-hidden'
                       initial={{ opacity: 0, y: 20 }}
                       animate={{ opacity: 1, y: 0 }}
                     >
-                      <div className='absolute top-0 right-0 w-40 h-40 bg-indigo-300/30 rounded-full blur-3xl' />
+                      <div className='absolute top-0 right-0 w-20 h-20 sm:w-40 sm:h-40 bg-indigo-300/30 rounded-full blur-3xl' />
                       <div className='relative z-10'>
-                        <div className='flex items-center gap-3 mb-6'>
-                          <div className='w-12 h-12 rounded-2xl bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center'>
-                            <User className='w-6 h-6 text-white' />
+                        <div className='flex items-center gap-2 sm:gap-3 mb-4 sm:mb-6'>
+                          <div className='w-10 h-10 sm:w-12 sm:h-12 rounded-xl sm:rounded-2xl bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center flex-shrink-0'>
+                            <User className='w-5 h-5 sm:w-6 sm:h-6 text-white' />
                           </div>
                           <h3
-                            className="font-['Bricolage_Grotesque',_sans-serif] text-gray-900"
-                            style={{ fontSize: '20px', fontWeight: '700' }}
+                            className="font-['Bricolage_Grotesque',_sans-serif] text-gray-900 text-base sm:text-lg lg:text-xl"
+                            style={{ fontWeight: '700' }}
                           >
                             Contact Information
                           </h3>
                         </div>
-                        <div className='space-y-4'>
+                        <div className='space-y-3 sm:space-y-4'>
                           {[
                             { icon: User, label: 'Name', value: formData.name },
                             {
@@ -655,19 +651,19 @@ export function CheckoutPage() {
                             return (
                               <motion.div
                                 key={item.label}
-                                className='flex items-center justify-between p-5 bg-white/80 backdrop-blur-sm rounded-xl'
+                                className='flex flex-col sm:flex-row sm:items-center justify-between gap-2 p-3 sm:p-4 lg:p-5 bg-white/80 backdrop-blur-sm rounded-lg sm:rounded-xl'
                                 initial={{ opacity: 0, x: -20 }}
                                 animate={{ opacity: 1, x: 0 }}
                                 transition={{ delay: index * 0.1 }}
                               >
-                                <div className='flex items-center gap-3'>
-                                  <ItemIcon className='w-5 h-5 text-gray-400' />
-                                  <span className='text-gray-600'>
+                                <div className='flex items-center gap-2 sm:gap-3'>
+                                  <ItemIcon className='w-4 h-4 sm:w-5 sm:h-5 text-gray-400 flex-shrink-0' />
+                                  <span className='text-gray-600 text-sm sm:text-base'>
                                     {item.label}:
                                   </span>
                                 </div>
                                 <span
-                                  className='text-gray-900'
+                                  className='text-gray-900 text-sm sm:text-base break-words ml-6 sm:ml-0'
                                   style={{ fontWeight: '600' }}
                                 >
                                   {item.value}
@@ -680,28 +676,28 @@ export function CheckoutPage() {
                     </motion.div>
 
                     <motion.div
-                      className='p-8 bg-gradient-to-br from-purple-50 via-pink-50 to-rose-50 rounded-2xl border-2 border-purple-200 relative overflow-hidden'
+                      className='p-4 sm:p-6 lg:p-8 bg-gradient-to-br from-purple-50 via-pink-50 to-rose-50 rounded-xl sm:rounded-2xl border-2 border-purple-200 relative overflow-hidden'
                       initial={{ opacity: 0, y: 20 }}
                       animate={{ opacity: 1, y: 0 }}
                       transition={{ delay: 0.2 }}
                     >
-                      <div className='absolute bottom-0 left-0 w-40 h-40 bg-purple-300/30 rounded-full blur-3xl' />
+                      <div className='absolute bottom-0 left-0 w-20 h-20 sm:w-40 sm:h-40 bg-purple-300/30 rounded-full blur-3xl' />
                       <div className='relative z-10'>
-                        <div className='flex items-center gap-3 mb-6'>
-                          <div className='w-12 h-12 rounded-2xl bg-gradient-to-br from-purple-500 to-pink-600 flex items-center justify-center'>
-                            <Truck className='w-6 h-6 text-white' />
+                        <div className='flex items-center gap-2 sm:gap-3 mb-4 sm:mb-6'>
+                          <div className='w-10 h-10 sm:w-12 sm:h-12 rounded-xl sm:rounded-2xl bg-gradient-to-br from-purple-500 to-pink-600 flex items-center justify-center flex-shrink-0'>
+                            <Truck className='w-5 h-5 sm:w-6 sm:h-6 text-white' />
                           </div>
                           <h3
-                            className="font-['Bricolage_Grotesque',_sans-serif] text-gray-900"
-                            style={{ fontSize: '20px', fontWeight: '700' }}
+                            className="font-['Bricolage_Grotesque',_sans-serif] text-gray-900 text-base sm:text-lg lg:text-xl"
+                            style={{ fontWeight: '700' }}
                           >
                             Delivery Address
                           </h3>
                         </div>
-                        <div className='p-5 bg-white/80 backdrop-blur-sm rounded-xl flex items-start gap-3'>
-                          <MapPin className='w-5 h-5 text-[#f63a9e] mt-0.5 flex-shrink-0' />
+                        <div className='p-3 sm:p-4 lg:p-5 bg-white/80 backdrop-blur-sm rounded-lg sm:rounded-xl flex items-start gap-2 sm:gap-3'>
+                          <MapPin className='w-4 h-4 sm:w-5 sm:h-5 text-[#f63a9e] mt-0.5 flex-shrink-0' />
                           <p
-                            className='text-gray-900'
+                            className='text-gray-900 text-sm sm:text-base break-words'
                             style={{ fontWeight: '600' }}
                           >
                             {formData.address}
@@ -712,19 +708,19 @@ export function CheckoutPage() {
 
                     {/* Video Consent - Compact */}
                     <motion.div
-                      className='p-5 bg-gradient-to-br from-orange-50 to-rose-50 rounded-xl border-2 border-orange-100'
+                      className='p-3 sm:p-4 lg:p-5 bg-gradient-to-br from-orange-50 to-rose-50 rounded-lg sm:rounded-xl border-2 border-orange-100'
                       initial={{ opacity: 0, y: 20 }}
                       animate={{ opacity: 1, y: 0 }}
                       transition={{ delay: 0.3 }}
                     >
-                      <div className='flex items-center justify-between gap-4'>
-                        <div className='flex items-center gap-3'>
-                          <div className='w-10 h-10 rounded-xl bg-gradient-to-br from-orange-500 to-rose-600 flex items-center justify-center'>
-                            <Video className='w-5 h-5 text-white' />
+                      <div className='flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-4'>
+                        <div className='flex items-center gap-2 sm:gap-3 flex-1 min-w-0'>
+                          <div className='w-8 h-8 sm:w-10 sm:h-10 rounded-lg sm:rounded-xl bg-gradient-to-br from-orange-500 to-rose-600 flex items-center justify-center flex-shrink-0'>
+                            <Video className='w-4 h-4 sm:w-5 sm:h-5 text-white' />
                           </div>
-                          <div>
+                          <div className='min-w-0'>
                             <h4
-                              className='text-gray-900 text-sm'
+                              className='text-gray-900 text-xs sm:text-sm'
                               style={{ fontWeight: '700' }}
                             >
                               Order Preparation Video
@@ -734,7 +730,7 @@ export function CheckoutPage() {
                             </p>
                           </div>
                         </div>
-                        <div className='flex items-center gap-2'>
+                        <div className='flex items-center gap-2 w-full sm:w-auto'>
                           <button
                             onClick={() =>
                               setFormData({
@@ -743,7 +739,7 @@ export function CheckoutPage() {
                               })
                             }
                             className={cn(
-                              'px-4 py-2 rounded-lg transition-all text-sm',
+                              'flex-1 sm:flex-none px-3 sm:px-4 py-2 rounded-lg transition-all text-xs sm:text-sm',
                               formData.videoPermission
                                 ? 'bg-[#f63a9e] text-white shadow-md'
                                 : 'bg-white text-gray-600 border border-gray-200 hover:border-[#f63a9e]/50'
@@ -760,7 +756,7 @@ export function CheckoutPage() {
                               })
                             }
                             className={cn(
-                              'px-4 py-2 rounded-lg transition-all text-sm',
+                              'flex-1 sm:flex-none px-3 sm:px-4 py-2 rounded-lg transition-all text-xs sm:text-sm',
                               !formData.videoPermission
                                 ? 'bg-gray-700 text-white shadow-md'
                                 : 'bg-white text-gray-600 border border-gray-200 hover:border-gray-300'
@@ -864,8 +860,8 @@ export function CheckoutPage() {
                 )}
 
                 {/* Navigation Buttons - Inside Container */}
-                <div className='pt-6 border-t border-gray-200 mt-8'>
-                  <div className='flex gap-4'>
+                <div className='pt-4 sm:pt-6 border-t border-gray-200 mt-6 sm:mt-8'>
+                  <div className='flex gap-2 sm:gap-4'>
                     {currentStep > 1 && (
                       <motion.div
                         whileHover={{ scale: 1.02 }}
@@ -875,10 +871,10 @@ export function CheckoutPage() {
                         <Button
                           onClick={handleBack}
                           variant='outline'
-                          className='w-full h-16 rounded-2xl border-2 border-gray-300 bg-white hover:bg-gray-50 text-gray-700 text-base shadow-sm'
+                          className='w-full h-12 sm:h-14 lg:h-16 rounded-xl sm:rounded-2xl border-2 border-gray-300 bg-white hover:bg-gray-50 text-gray-700 text-sm sm:text-base shadow-sm'
                           style={{ fontWeight: '600' }}
                         >
-                          <ArrowLeft className='w-5 h-5 mr-2' />
+                          <ArrowLeft className='w-4 h-4 sm:w-5 sm:h-5 mr-1 sm:mr-2' />
                           Back
                         </Button>
                       </motion.div>
@@ -896,11 +892,11 @@ export function CheckoutPage() {
                             (currentStep === 1 && !isStep1Valid) ||
                             (currentStep === 2 && !isStep2Valid)
                           }
-                          className='w-full h-16 rounded-2xl text-white text-base shadow-xl bg-[#f63a9e] hover:bg-[#e02d8d] disabled:opacity-50 disabled:cursor-not-allowed transition-all'
+                          className='w-full h-12 sm:h-14 lg:h-16 rounded-xl sm:rounded-2xl text-white text-sm sm:text-base shadow-xl bg-[#f63a9e] hover:bg-[#e02d8d] disabled:opacity-50 disabled:cursor-not-allowed transition-all'
                           style={{ fontWeight: '700' }}
                         >
                           Continue
-                          <ArrowRight className='w-5 h-5 ml-2' />
+                          <ArrowRight className='w-4 h-4 sm:w-5 sm:h-5 ml-1 sm:ml-2' />
                         </Button>
                       </motion.div>
                     ) : (
@@ -912,7 +908,7 @@ export function CheckoutPage() {
                         <Button
                           onClick={handleCheckout}
                           disabled={isProcessing}
-                          className='w-full h-16 bg-[#f63a9e] hover:bg-[#e02d8d] text-white rounded-2xl shadow-2xl shadow-[#f63a9e]/40 text-base relative overflow-hidden group transition-all disabled:opacity-70 disabled:cursor-not-allowed'
+                          className='w-full h-12 sm:h-14 lg:h-16 bg-[#f63a9e] hover:bg-[#e02d8d] text-white rounded-xl sm:rounded-2xl shadow-2xl shadow-[#f63a9e]/40 text-sm sm:text-base relative overflow-hidden group transition-all disabled:opacity-70 disabled:cursor-not-allowed'
                           style={{ fontWeight: '700' }}
                         >
                           {!isProcessing && (
@@ -955,21 +951,21 @@ export function CheckoutPage() {
             animate={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.5, delay: 0.2 }}
           >
-            <div className='bg-white rounded-2xl p-6 shadow-lg border border-gray-100'>
+            <div className='bg-white rounded-2xl sm:rounded-3xl p-4 sm:p-6 shadow-xl border border-gray-100'>
               <div>
                 {/* Header */}
-                <div className='flex items-center gap-3 mb-6'>
-                  <div className='w-10 h-10 rounded-xl bg-[#f63a9e] flex items-center justify-center'>
-                    <ShoppingBag className='w-5 h-5 text-white' />
+                <div className='flex items-center gap-2 sm:gap-3 mb-4 sm:mb-6'>
+                  <div className='w-8 h-8 sm:w-10 sm:h-10 rounded-xl bg-[#f63a9e] flex items-center justify-center'>
+                    <ShoppingBag className='w-4 h-4 sm:w-5 sm:h-5 text-white' />
                   </div>
                   <div>
                     <h2
-                      className="font-['Bricolage_Grotesque',_sans-serif] text-gray-900"
-                      style={{ fontSize: '20px', fontWeight: '700' }}
+                      className="font-['Bricolage_Grotesque',_sans-serif] text-gray-900 text-lg sm:text-xl"
+                      style={{ fontWeight: '700' }}
                     >
                       Order Summary
                     </h2>
-                    <p className='text-gray-500 text-sm'>
+                    <p className='text-gray-500 text-xs sm:text-sm'>
                       {cartItems.length}{' '}
                       {cartItems.length === 1 ? 'item' : 'items'}
                     </p>
@@ -977,11 +973,11 @@ export function CheckoutPage() {
                 </div>
 
                 {/* Cart Items - Compact */}
-                <div className='space-y-3 mb-6 max-h-64 overflow-y-auto pr-2'>
+                <div className='space-y-2 sm:space-y-3 mb-4 sm:mb-6 max-h-48 sm:max-h-64 overflow-y-auto pr-1 sm:pr-2'>
                   {cartItems.map((item, index) => (
                     <motion.div
                       key={item.id}
-                      className='flex gap-3 p-3 bg-gray-50 rounded-xl border border-gray-100'
+                      className='flex gap-2 sm:gap-3 p-2 sm:p-3 bg-gray-50 rounded-lg sm:rounded-xl border border-gray-100'
                       initial={{ opacity: 0, y: 10 }}
                       animate={{ opacity: 1, y: 0 }}
                       transition={{ delay: index * 0.05 }}
