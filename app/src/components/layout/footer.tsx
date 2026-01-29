@@ -100,14 +100,6 @@ export function Footer() {
                   Contact us
                 </Link>
               </li>
-              <li>
-                <Link
-                  to='/admin/login'
-                  className='text-gray-400 hover:text-[#f63a9e] transition-colors'
-                >
-                  Admin Login
-                </Link>
-              </li>
             </ul>
           </div>
 
