@@ -17,6 +17,7 @@ import { useView } from '@/context/ViewContext';
 import { useFeature } from '@/context/dashboard/FeatureContext';
 import { usePreset } from '@/context/PresetContext';
 import { ImportConfirmationModal } from '@/components/shared/dashboard/ImportConfirmationModal';
+import { Link } from 'react-router-dom';
 
 const Navbar = () => {
   const { setSelectedFeature } = useFeature();
@@ -44,9 +45,9 @@ const Navbar = () => {
     <>
       <header className='w-full bg-background border-b shadow-sm'>
         <div className='container mx-auto px-0 py-3 flex items-center justify-between'>
-          <div className='flex items-center space-x-2 cursor-pointer'>
+          <Link to='/' className='flex items-center space-x-2 cursor-pointer'>
             <img src={logo} alt='WHITEWALL Logo' className='h-10 w-auto' />
-          </div>
+          </Link>
 
           <div className='flex items-center space-x-2'>
             <DropdownMenu>
