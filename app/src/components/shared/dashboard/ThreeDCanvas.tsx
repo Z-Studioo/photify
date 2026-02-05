@@ -6,6 +6,7 @@ import { useUpload, type CanvasShape } from '@/context/UploadContext';
 import { useEdge } from '@/context/EdgeContext';
 import type { OrbitControls as OrbitControlsImpl } from 'three-stdlib';
 import backpanel from '@/assets/images/backpanel.png';
+import { RoundedBoxGeometry } from 'three/examples/jsm/geometries/RoundedBoxGeometry.js';
 
 interface ThreeDCanvasProps {
   isVisible: boolean;
@@ -112,7 +113,22 @@ const Frame3D = ({
         ? selectedSize.height_in / BASE_SIZE
         : 1.35;
 
-    const box = new THREE.BoxGeometry(frameWidth, frameHeight, frameDepth);
+    const cornerRadius = Math.min(
+      0.08,
+      frameDepth * 0.5,
+      frameWidth * 0.02,
+      frameHeight * 0.02
+    );
+    const smoothness = 8;
+
+    // const box = new THREE.BoxGeometry(frameWidth, frameHeight, frameDepth);
+    const box = new RoundedBoxGeometry(
+      frameWidth,
+      frameHeight,
+      frameDepth,
+      smoothness,
+      cornerRadius
+    );
     const uv = box.getAttribute('uv');
 
     const wrapX = frameDepth / frameWidth;
@@ -481,7 +497,7 @@ const ThreeDCanvas = ({
             </span>
           </button>
 
-          <div className='w-px h-5 bg-gray-200'></div>
+          <div className='w-px h-5 bg-gray-200' />
 
           <button
             onClick={handleCenter}
@@ -508,7 +524,7 @@ const ThreeDCanvas = ({
             </span>
           </button>
 
-          <div className='w-px h-5 bg-gray-200'></div>
+          <div className='w-px h-5 bg-gray-200' />
 
           <button
             onClick={() => handleZoom(0.7)}
@@ -535,7 +551,7 @@ const ThreeDCanvas = ({
             </span>
           </button>
 
-          <div className='w-px h-5 bg-gray-200'></div>
+          <div className='w-px h-5 bg-gray-200' />
 
           <button
             onClick={() => handleZoom(1.4)}
