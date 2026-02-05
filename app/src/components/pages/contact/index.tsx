@@ -33,22 +33,44 @@ export function ContactPage() {
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
+    setError(null);
 
-    // Simulate API call
-    setTimeout(() => {
+    try {
+      const response = await fetch(
+        `${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/contact`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(formData),
+        }
+      );
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || 'Failed to send message');
+      }
+
       setIsSubmitting(false);
       setIsSubmitted(true);
       
-      // Reset form after 3 seconds
+      // Reset form after 5 seconds
       setTimeout(() => {
         setIsSubmitted(false);
         setFormData({ name: '', email: '', subject: '', message: '' });
-      }, 3000);
-    }, 1500);
+      }, 5000);
+    } catch (err: any) {
+      setIsSubmitting(false);
+      setError(err.message || 'Failed to send message. Please try again.');
+      console.error('Contact form error:', err);
+    }
   };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
@@ -62,9 +84,9 @@ export function ContactPage() {
     {
       icon: Mail,
       title: 'Email Us',
-      detail: 'support@photify.com',
+      detail: 'support@photify.co',
       description: 'Send us an email anytime',
-      link: 'mailto:support@photify.com'
+      link: 'mailto:support@photify.co'
     },
     {
       icon: Phone,
@@ -286,6 +308,32 @@ export function ContactPage() {
                 </div>
 
                 <form onSubmit={handleSubmit} className="space-y-6">
+                  {/* Error Message */}
+                  {error && (
+                    <motion.div
+                      initial={{ opacity: 0, y: -10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      className="bg-red-50 border-2 border-red-200 rounded-xl p-4"
+                    >
+                      <p className="text-red-600 text-sm" style={{ fontWeight: '600' }}>
+                        {error}
+                      </p>
+                    </motion.div>
+                  )}
+
+                  {/* Success Message */}
+                  {isSubmitted && (
+                    <motion.div
+                      initial={{ opacity: 0, y: -10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      className="bg-green-50 border-2 border-green-200 rounded-xl p-4"
+                    >
+                      <p className="text-green-600 text-sm" style={{ fontWeight: '600' }}>
+                        ✓ Thank you! We've received your message and will get back to you soon.
+                      </p>
+                    </motion.div>
+                  )}
+
                   {/* Name Input */}
                   <div>
                     <label className="block text-gray-700 mb-2" style={{ fontWeight: '600' }}>
