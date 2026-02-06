@@ -18,6 +18,7 @@ import {
 import { Separator } from '@/components/ui/separator';
 import { toast } from 'sonner';
 import { createClient } from '@/lib/supabase/client';
+import { Link } from 'react-router-dom';
 
 export function AdminOrderDetailPage() {
   const navigate = useNavigate();
@@ -152,6 +153,7 @@ export function AdminOrderDetailPage() {
               invoice: `#INV-${Math.random().toString(36).substr(2, 9).toUpperCase()}`,
               unitPrice: `£${parseFloat(item.price).toFixed(2)}`,
             })),
+            hosted_invoice_url: data.hosted_invoice_url || '#',
           };
 
           setOrder(transformedOrder);
@@ -191,6 +193,7 @@ export function AdminOrderDetailPage() {
   }
 
   const handlePrintInvoice = () => {
+    navigate(order.hosted_invoice_url);
     toast.success('Invoice sent to printer');
   };
 
@@ -565,13 +568,22 @@ export function AdminOrderDetailPage() {
             <div className='bg-white rounded-lg border border-gray-200 p-6'>
               <h3 className='font-semibold mb-4'>Actions</h3>
               <div className='space-y-3'>
-                <Button
+                {/* <Button
                   onClick={handlePrintInvoice}
                   className='w-full bg-[#f63a9e] hover:bg-[#e02d8d]'
                   style={{ height: '44px' }}
                 >
                   Invoice
-                </Button>
+                </Button> */}
+                <Link to={order.hosted_invoice_url} target='_blank'>
+                  <Button
+                    onClick={handlePrintInvoice}
+                    className='w-full bg-[#f63a9e] hover:bg-[#e02d8d]'
+                    style={{ height: '44px' }}
+                  >
+                    Invoice
+                  </Button>
+                </Link>
                 <Button
                   onClick={handleDownloadLabel}
                   variant='outline'
