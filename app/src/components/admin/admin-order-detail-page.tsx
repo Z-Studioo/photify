@@ -195,6 +195,7 @@ export function AdminOrderDetailPage() {
               image: item.image || '#',
               invoice: `#INV-${Math.random().toString(36).substr(2, 9).toUpperCase()}`,
               unitPrice: `£${parseFloat(item.price).toFixed(2)}`,
+              quantity: item.quantity || 1,
             })),
           };
 
@@ -770,6 +771,9 @@ export function AdminOrderDetailPage() {
                         Sizes
                       </th>
                       <th className='text-left py-3 px-2 text-xs font-medium text-gray-600'>
+                        Qty.
+                      </th>
+                      <th className='text-left py-3 px-2 text-xs font-medium text-gray-600'>
                         Category
                       </th>
                       <th className='text-left py-3 px-2 text-xs font-medium text-gray-600'>
@@ -791,6 +795,7 @@ export function AdminOrderDetailPage() {
                       >
                         <td className='py-4 px-2 text-sm'>{item.product}</td>
                         <td className='py-4 px-2 text-sm'>{item.size}</td>
+                        <td className='py-4 px-2 text-sm'>{item.quantity}</td>
                         <td className='py-4 px-2 text-sm'>{item.category}</td>
                         <td className='py-4 px-2'>
                           <a
