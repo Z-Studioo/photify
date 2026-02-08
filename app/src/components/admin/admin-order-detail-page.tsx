@@ -299,27 +299,25 @@ export function AdminOrderDetailPage() {
         .from('orders')
         .update({
           status: 'cancelled',
-          // cancelled_at: new Date().toISOString(),
-          // cancellation_reason: cancelReason || null,
+          remarks: cancelReason,
         })
         .eq('order_number', order.id);
 
       setOrder((prev: any) => ({
         ...prev,
         status: 'cancelled',
-        // cancelled_at: new Date().toISOString(),
-        // cancellation_reason: cancelReason,
+        remarks: cancelReason,
         timeline: generateTimeline({
           ...prev,
           status: 'cancelled',
-          // cancelled_at: new Date().toISOString(),
+          remarks: cancelReason,
         }),
       }));
 
       toast.success('Order cancelled');
       setShowCancelDialog(false);
     } catch (err) {
-      console.error(err);
+      console.error('Error cancelling order:', err);
       toast.error('Failed to cancel order');
     }
   };
