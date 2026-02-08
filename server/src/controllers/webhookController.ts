@@ -96,7 +96,7 @@ export async function handleStripeWebhook(
             payment_status: 'paid',
             status: 'processing',
             paid_at: new Date().toISOString(),
-            invoice_hosted_url: invoice.hosted_invoice_url,
+            hosted_invoice_url: invoice.hosted_invoice_url,
           })
           .eq(
             'stripe_payment_intent_id',
