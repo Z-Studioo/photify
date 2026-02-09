@@ -10,6 +10,9 @@ import { swaggerSpec } from '@/config/swagger';
 import { errorHandler, notFoundHandler } from '@/middleware/errorHandler';
 import { requestLogger } from '@/middleware/requestLogger';
 import routes from '@/routes';
+// import webhookRoutes from '@/routes/webhook';
+import { handleStripeWebhook } from './controllers/webhookController';
+import bodyParser from 'body-parser';
 
 const app = express();
 
@@ -37,6 +40,15 @@ const limiter = rateLimit({
   legacyHeaders: false,
 });
 app.use(limiter);
+
+// Webhook route MUST be mounted before JSON body parser
+// Stripe webhooks require raw body for signature verification
+// app.use('/api/webhook', webhookRoutes);
+app.post(
+  '/api/webhook',
+  bodyParser.raw({ type: "application/json" }),
+  handleStripeWebhook
+);
 
 // Body parsing middleware
 app.use(express.json({ limit: '10mb' }));

@@ -22,6 +22,15 @@ interface Product {
   price: number;
   is_featured: boolean;
   active: boolean;
+  tags: Tag[];
+}
+
+interface Tag {
+  id: string;
+  name: string;
+  slug: string;
+  description: string;
+  color: string;
 }
 
 type SizeFilter = 'All' | 'Small' | 'Medium' | 'Large';
@@ -29,6 +38,7 @@ type SizeFilter = 'All' | 'Small' | 'Medium' | 'Large';
 interface CategoryPageProps {
   initialCategoryData: Category;
   initialProducts: Product[];
+  tags: Tag[];
 }
 
 function getSizeCategory(size: string | null): SizeFilter {
@@ -60,16 +70,29 @@ function getSizeCategory(size: string | null): SizeFilter {
 export function CategoryPage({
   initialCategoryData,
   initialProducts,
+  tags,
 }: CategoryPageProps) {
   const [selectedSize, setSelectedSize] = useState<SizeFilter>('All');
   const categoryData = initialCategoryData;
   const products = initialProducts;
+  const [selectedTagId, setSelectedTagId] = useState<string | null>(null);
 
-  // Filter products by size
-  const filteredProducts =
-    selectedSize === 'All'
-      ? products
-      : products.filter(p => getSizeCategory(p.size) === selectedSize);
+  const toggleTag = (tagId: string | null) => {
+    setSelectedTagId(prev => (prev === tagId ? null : tagId));
+  };
+
+  // Filter products by size & tag
+  const filteredProducts = products.filter(product => {
+    // Size filter
+    const matchesSize =
+      selectedSize === 'All' || getSizeCategory(product.size) === selectedSize;
+
+    // Tag filter
+    const matchesTags =
+      !selectedTagId || product.tags?.some(tag => tag.id === selectedTagId);
+
+    return matchesSize && matchesTags;
+  });
 
   // Empty state - no products in category
   if (filteredProducts.length === 0 && products.length === 0) {
@@ -78,10 +101,10 @@ export function CategoryPage({
         <Helmet>
           <title>{categoryData.name} | Photify</title>
           <meta
-            name="description"
+            name='description'
             content={`Explore products in the ${categoryData.name} category on Photify.`}
           />
-          <meta name="robots" content="index,follow" />
+          <meta name='robots' content='index,follow' />
         </Helmet>
         <div className="min-h-screen font-['Mona_Sans',_sans-serif]">
           <Header />
@@ -112,10 +135,10 @@ export function CategoryPage({
       <Helmet>
         <title>{categoryData.name} | Photify</title>
         <meta
-          name="description"
+          name='description'
           content={`Explore products in the ${categoryData.name} category on Photify.`}
         />
-        <meta name="robots" content="index,follow" />
+        <meta name='robots' content='index,follow' />
       </Helmet>
       <div className="min-h-screen font-['Mona_Sans',_sans-serif]">
         <Header />
@@ -136,46 +159,87 @@ export function CategoryPage({
 
           {/* Size Filters */}
           <div className='flex gap-3 mb-8'>
-            <button
-              onClick={() => setSelectedSize('All')}
-              className={`px-6 py-2 rounded-full transition-colors ${
-                selectedSize === 'All'
-                  ? 'bg-gray-200 text-gray-900'
-                  : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-              }`}
-            >
-              All
-            </button>
-            <button
-              onClick={() => setSelectedSize('Small')}
-              className={`px-6 py-2 rounded-full transition-colors ${
-                selectedSize === 'Small'
-                  ? 'bg-gray-200 text-gray-900'
-                  : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-              }`}
-            >
-              Small
-            </button>
-            <button
-              onClick={() => setSelectedSize('Medium')}
-              className={`px-6 py-2 rounded-full transition-colors ${
-                selectedSize === 'Medium'
-                  ? 'bg-gray-200 text-gray-900'
-                  : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-              }`}
-            >
-              Medium
-            </button>
-            <button
-              onClick={() => setSelectedSize('Large')}
-              className={`px-6 py-2 rounded-full transition-colors ${
-                selectedSize === 'Large'
-                  ? 'bg-gray-200 text-gray-900'
-                  : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-              }`}
-            >
-              Large
-            </button>
+            <div className='flex flex-wrap gap-3 mb-10'>
+              {/* ALL BUTTON */}
+              <button
+                type='button'
+                onClick={() => toggleTag(null)}
+                aria-pressed={selectedTagId === null}
+                className={`
+                relative inline-flex items-center gap-2
+                px-5 py-2.5 rounded-full text-sm font-semibold
+                transition-all duration-300 ease-out
+                focus:outline-none focus-visible:ring-2 focus-visible:ring-[#f63a9e]/40
+                ${
+                  selectedTagId === null
+                    ? `
+                      bg-gradient-to-r from-[#f63a9e] to-pink-500
+                      text-white
+                      shadow-lg shadow-pink-500/30
+                    `
+                    : `
+                      bg-white
+                      text-[#f63a9e]
+                      hover:bg-pink-50
+                      hover:border-[#f63a9e]
+                    `
+                }
+              `}
+              >
+                <span className='text-base'>✨</span>
+                All
+              </button>
+
+              {tags.map(tag => {
+                const isSelected = selectedTagId === tag.id;
+
+                return (
+                  <button
+                    key={tag.id}
+                    type='button'
+                    onClick={() => toggleTag(tag.id)}
+                    aria-pressed={isSelected}
+                    className={`
+                      group relative inline-flex items-center gap-2
+                      px-4 py-2 rounded-full text-sm font-medium
+                      transition-all duration-300 ease-out
+                      focus:outline-none focus-visible:ring-2 focus-visible:ring-[#f63a9e]/40
+                      ${
+                        isSelected
+                          ? `
+                            bg-gradient-to-r from-[#f63a9e] to-pink-500
+                            text-white border border-transparent
+                            shadow-lg shadow-pink-500/25
+                          `
+                          : `
+                            bg-white/70 backdrop-blur
+                            border border-gray-300
+                            text-gray-700
+                            hover:bg-gray-100
+                            hover:border-gray-400
+                          `
+                      }
+                      `}
+                  >
+                    {/* Optional color dot */}
+                    <span
+                      className={`
+                          h-2.5 w-2.5 rounded-full
+                          ${isSelected ? 'bg-white' : ''}
+                        `}
+                      style={!isSelected ? { backgroundColor: tag.color } : {}}
+                    />
+
+                    {tag.name}
+
+                    {/* Subtle hover glow */}
+                    {!isSelected && (
+                      <span className='absolute inset-0 rounded-full opacity-0 group-hover:opacity-100 transition-opacity bg-pink-500/5' />
+                    )}
+                  </button>
+                );
+              })}
+            </div>
           </div>
 
           {/* Products Grid */}
@@ -199,10 +263,13 @@ export function CategoryPage({
           {filteredProducts.length === 0 && products.length > 0 && (
             <div className='text-center py-16'>
               <p className='text-gray-600 text-lg mb-4'>
-                No products match the selected size filter.
+                No products match the selected filters.
               </p>
               <button
-                onClick={() => setSelectedSize('All')}
+                onClick={() => {
+                  setSelectedSize('All');
+                  setSelectedTagId(null);
+                }}
                 className='px-6 py-2 bg-gray-200 text-gray-900 rounded-full hover:bg-gray-300 transition-colors'
               >
                 Clear Filter

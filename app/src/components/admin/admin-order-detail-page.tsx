@@ -152,6 +152,7 @@ export function AdminOrderDetailPage() {
               invoice: `#INV-${Math.random().toString(36).substr(2, 9).toUpperCase()}`,
               unitPrice: `£${parseFloat(item.price).toFixed(2)}`,
             })),
+            hosted_invoice_url: data.hosted_invoice_url || '#',
           };
 
           setOrder(transformedOrder);
@@ -191,6 +192,7 @@ export function AdminOrderDetailPage() {
   }
 
   const handlePrintInvoice = () => {
+    window.open(order.hosted_invoice_url, '_blank', 'noopener,noreferrer');
     toast.success('Invoice sent to printer');
   };
 
@@ -514,6 +516,8 @@ export function AdminOrderDetailPage() {
                         <td className='py-4 px-2'>
                           <a
                             href={item.image}
+                            target='_blank'
+                            rel='noopener noreferrer'
                             className='text-sm text-blue-600 hover:underline'
                           >
                             link/SJDJDH
@@ -521,10 +525,12 @@ export function AdminOrderDetailPage() {
                         </td>
                         <td className='py-4 px-2'>
                           <a
-                            href='#'
+                            href={order.hosted_invoice_url}
+                            target='_blank'
+                            rel='noopener noreferrer'
                             className='text-sm text-blue-600 hover:underline'
                           >
-                            {item.invoice}
+                            INV/{orderId}
                           </a>
                         </td>
                         <td className='py-4 px-2 text-sm text-right'>
@@ -565,6 +571,14 @@ export function AdminOrderDetailPage() {
             <div className='bg-white rounded-lg border border-gray-200 p-6'>
               <h3 className='font-semibold mb-4'>Actions</h3>
               <div className='space-y-3'>
+                {/* <Button
+                  onClick={handlePrintInvoice}
+                  className='w-full bg-[#f63a9e] hover:bg-[#e02d8d]'
+                  style={{ height: '44px' }}
+                >
+                  Invoice
+                </Button> */}
+
                 <Button
                   onClick={handlePrintInvoice}
                   className='w-full bg-[#f63a9e] hover:bg-[#e02d8d]'

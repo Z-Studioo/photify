@@ -64,8 +64,8 @@ export async function createCheckoutSession(
     }
 
     // Generate order number
-    const { data: orderNumberData, error: orderNumberError } = await supabase
-      .rpc('generate_order_number');
+    const { data: orderNumberData, error: orderNumberError } =
+      await supabase.rpc('generate_order_number');
 
     if (orderNumberError) {
       console.error('Error generating order number:', orderNumberError);
@@ -117,12 +117,14 @@ export async function createCheckoutSession(
         },
         items: cartItems,
       });
-      res.status(500).json({ error: `Failed to create order: ${orderError.message}` });
+      res
+        .status(500)
+        .json({ error: `Failed to create order: ${orderError.message}` });
       return;
     }
 
     // Create line items for Stripe
-    const lineItems = cartItems.map((item) => {
+    const lineItems = cartItems.map(item => {
       const productData: any = {
         name: item.name,
       };
@@ -172,6 +174,9 @@ export async function createCheckoutSession(
         order_id: order.id,
         order_number: orderNumber,
       },
+      invoice_creation: {
+        enabled: true,
+      },
     });
 
     // Update order with Stripe session ID
@@ -190,7 +195,8 @@ export async function createCheckoutSession(
     });
   } catch (error) {
     console.error('Checkout error:', error);
-    const errorMessage = error instanceof Error ? error.message : 'Internal server error';
+    const errorMessage =
+      error instanceof Error ? error.message : 'Internal server error';
     res.status(500).json({ error: errorMessage });
   }
 }

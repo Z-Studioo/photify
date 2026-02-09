@@ -82,6 +82,29 @@ export async function handleStripeWebhook(
         break;
       }
 
+      case 'invoice_payment.paid': {
+        const invoice_payment = event.data.object as Stripe.InvoicePayment;
+        const invoice = await stripe.invoices.retrieve(
+          invoice_payment.invoice as string
+        );
+
+        console.log("Invoice url", invoice.hosted_invoice_url);
+
+        await supabase
+          .from('orders')
+          .update({
+            payment_status: 'paid',
+            status: 'processing',
+            paid_at: new Date().toISOString(),
+            hosted_invoice_url: invoice.hosted_invoice_url,
+          })
+          .eq(
+            'stripe_payment_intent_id',
+            invoice_payment.payment.payment_intent as string
+          );
+        break;
+      }
+
       default:
         console.log('Unhandled event type:', event.type);
     }
