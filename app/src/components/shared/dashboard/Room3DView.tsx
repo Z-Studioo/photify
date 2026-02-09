@@ -8,6 +8,8 @@ import * as THREE from 'three';
 import { RoundedBoxGeometry } from 'three/examples/jsm/geometries/RoundedBoxGeometry.js';
 import { Ruler } from 'lucide-react';
 import { motion } from 'motion/react';
+import { applyRoundedBoxUVs } from './ThreeDCanvas';
+import { useEdge } from '@/context/EdgeContext';
 
 interface Room3DViewProps {
   isVisible: boolean;
@@ -15,7 +17,9 @@ interface Room3DViewProps {
 
 function FrameMesh() {
   const { preview, selectedSize } = useUpload();
+  const { edgeType } = useEdge();
   const [texture, setTexture] = useState<THREE.Texture | null>(null);
+  const { cornerStyle } = useUpload();
 
   useEffect(() => {
     if (preview) {
@@ -34,7 +38,7 @@ function FrameMesh() {
   const canvasWidth = selectedSize.width_in / 10;
   const canvasHeight = selectedSize.height_in / 10;
   const canvasDepth = 0.0709;
-  const cornerRadius = Math.min(
+  const cornerRadius = cornerStyle === 'sharp' ? 0 : Math.min(
     0.08,
     canvasDepth * 0.5,
     canvasWidth * 0.02,
@@ -51,6 +55,8 @@ function FrameMesh() {
     smoothness,
     cornerRadius
   );
+
+  applyRoundedBoxUVs(geometry, canvasWidth, canvasHeight, canvasDepth, edgeType);
 
   return (
     /* @ts-ignore react-three-fiber types */
