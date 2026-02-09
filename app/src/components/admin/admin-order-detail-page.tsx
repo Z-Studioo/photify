@@ -18,7 +18,6 @@ import {
 import { Separator } from '@/components/ui/separator';
 import { toast } from 'sonner';
 import { createClient } from '@/lib/supabase/client';
-import { Link } from 'react-router-dom';
 
 export function AdminOrderDetailPage() {
   const navigate = useNavigate();
