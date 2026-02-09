@@ -75,14 +75,10 @@ export function CategoryPage({
   const [selectedSize, setSelectedSize] = useState<SizeFilter>('All');
   const categoryData = initialCategoryData;
   const products = initialProducts;
-  const [selectedTagIds, setSelectedTagIds] = useState<string[]>([]);
+  const [selectedTagId, setSelectedTagId] = useState<string | null>(null);
 
-  console.log(initialProducts, selectedTagIds);
-
-  const toggleTag = (tagId: string) => {
-    setSelectedTagIds(prev =>
-      prev.includes(tagId) ? prev.filter(id => id !== tagId) : [...prev, tagId]
-    );
+  const toggleTag = (tagId: string | null) => {
+    setSelectedTagId(prev => (prev === tagId ? null : tagId));
   };
 
   // Filter products by size & tag
@@ -93,8 +89,7 @@ export function CategoryPage({
 
     // Tag filter
     const matchesTags =
-      selectedTagIds.length === 0 ||
-      product.tags?.some(tag => selectedTagIds.includes(tag.id));
+      !selectedTagId || product.tags?.some(tag => tag.id === selectedTagId);
 
     return matchesSize && matchesTags;
   });
@@ -165,8 +160,38 @@ export function CategoryPage({
           {/* Size Filters */}
           <div className='flex gap-3 mb-8'>
             <div className='flex flex-wrap gap-3 mb-10'>
+              {/* ALL BUTTON */}
+              <button
+                type='button'
+                onClick={() => toggleTag(null)}
+                aria-pressed={selectedTagId === null}
+                className={`
+                relative inline-flex items-center gap-2
+                px-5 py-2.5 rounded-full text-sm font-semibold
+                transition-all duration-300 ease-out
+                focus:outline-none focus-visible:ring-2 focus-visible:ring-[#f63a9e]/40
+                ${
+                  selectedTagId === null
+                    ? `
+                      bg-gradient-to-r from-[#f63a9e] to-pink-500
+                      text-white
+                      shadow-lg shadow-pink-500/30
+                    `
+                    : `
+                      bg-white
+                      text-[#f63a9e]
+                      hover:bg-pink-50
+                      hover:border-[#f63a9e]
+                    `
+                }
+              `}
+              >
+                <span className='text-base'>✨</span>
+                All
+              </button>
+
               {tags.map(tag => {
-                const isSelected = selectedTagIds.includes(tag.id);
+                const isSelected = selectedTagId === tag.id;
 
                 return (
                   <button
@@ -185,7 +210,6 @@ export function CategoryPage({
                             bg-gradient-to-r from-[#f63a9e] to-pink-500
                             text-white border border-transparent
                             shadow-lg shadow-pink-500/25
-                            scale-[1.03]
                           `
                           : `
                             bg-white/70 backdrop-blur
@@ -244,7 +268,7 @@ export function CategoryPage({
               <button
                 onClick={() => {
                   setSelectedSize('All');
-                  setSelectedTagIds([]);
+                  setSelectedTagId(null);
                 }}
                 className='px-6 py-2 bg-gray-200 text-gray-900 rounded-full hover:bg-gray-300 transition-colors'
               >
