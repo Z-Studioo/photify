@@ -2,24 +2,105 @@ import { Canvas, useLoader } from '@react-three/fiber';
 import { OrbitControls, ContactShadows } from '@react-three/drei';
 import { Suspense, useRef, useState, useEffect, useMemo } from 'react';
 import * as THREE from 'three';
-import { useUpload, type CanvasShape } from '@/context/UploadContext';
-import { useEdge } from '@/context/EdgeContext';
+import { useUpload, type CanvasShape, type CornerStyle } from '@/context/UploadContext';
+import { useEdge, type EdgeType } from '@/context/EdgeContext';
 import type { OrbitControls as OrbitControlsImpl } from 'three-stdlib';
 import backpanel from '@/assets/images/backpanel.png';
+import { RoundedBoxGeometry } from 'three/examples/jsm/geometries/RoundedBoxGeometry.js';
+import { motion } from 'motion/react';
 
 interface ThreeDCanvasProps {
   isVisible: boolean;
   focusOnEdge?: boolean;
 }
 
+export const applyRoundedBoxUVs = (
+  geometry: THREE.BufferGeometry,
+  width: number,
+  height: number,
+  depth: number,
+  edgeType: EdgeType
+) => {
+  const pos = geometry.getAttribute('position') as THREE.BufferAttribute;
+  const normal = geometry.getAttribute('normal') as THREE.BufferAttribute;
+  const uv = geometry.getAttribute('uv') as THREE.BufferAttribute;
+
+  const halfW = width / 2;
+  const halfH = height / 2;
+  const halfD = depth / 2;
+
+  const wrapX = depth / width;
+  const wrapY = depth / height;
+  const sideWrapX = wrapX * 3;
+  const sideWrapY = wrapY * 3;
+  const edgeSlice = 0.005;
+
+  for (let i = 0; i < pos.count; i++) {
+    const x = pos.getX(i);
+    const y = pos.getY(i);
+    const z = pos.getZ(i);
+
+    const nx = normal.getX(i);
+    const ny = normal.getY(i);
+    const nz = normal.getZ(i);
+
+    let u = 0;
+    let v = 0;
+
+    const ax = Math.abs(nx);
+    const ay = Math.abs(ny);
+    const az = Math.abs(nz);
+
+    if (az >= ax && az >= ay) {
+      // front/back
+      u = (x + halfW) / width;
+      v = (y + halfH) / height;
+    } else if (ax >= ay) {
+      // left/right
+      const baseU = (z + halfD) / depth;
+      const baseV = (y + halfH) / height;
+
+      if (edgeType === 'mirrored') {
+        u =
+          nx > 0
+            ? 1 + sideWrapX - baseU * sideWrapX
+            : 0 - sideWrapX + baseU * sideWrapX;
+      } else {
+        u = nx > 0 ? 1 - edgeSlice + baseU * edgeSlice : baseU * edgeSlice;
+      }
+      v = baseV;
+    } else {
+      // top/bottom
+      const baseU = (x + halfW) / width;
+      const baseV = (z + halfD) / depth;
+
+      if (edgeType === 'mirrored') {
+        v =
+          ny > 0
+            ? 1 + sideWrapY - baseV * sideWrapY
+            : 0 - sideWrapY + baseV * sideWrapY;
+      } else {
+        v = ny > 0 ? 1 - edgeSlice + baseV * edgeSlice : baseV * edgeSlice;
+      }
+      u = baseU;
+    }
+
+    uv.setXY(i, u, v);
+  }
+
+  uv.needsUpdate = true;
+};
+
 const Frame3D = ({
   imageUrl,
   shape,
   edgeType,
+  cornerStyle = 'rounded',
 }: {
   imageUrl: string;
   shape: CanvasShape;
   edgeType: 'wrapped' | 'mirrored';
+  cornerStyle?: CornerStyle;
 }) => {
   const [texture, setTexture] = useState<THREE.Texture | null>(null);
   const backTexture = useLoader(THREE.TextureLoader, backpanel as string);
@@ -112,65 +193,29 @@ const Frame3D = ({
         ? selectedSize.height_in / BASE_SIZE
         : 1.35;
 
-    const box = new THREE.BoxGeometry(frameWidth, frameHeight, frameDepth);
-    const uv = box.getAttribute('uv');
+    const cornerRadius = cornerStyle === 'sharp'
+      ? 0
+      : Math.min(0.08, frameDepth * 0.5, frameWidth * 0.02, frameHeight * 0.02);
+    const smoothness = 8;
 
-    const wrapX = frameDepth / frameWidth;
-    const wrapY = frameDepth / frameHeight;
-    const sideWrapX = wrapX * 3;
-    const sideWrapY = wrapY * 3;
+    const box = new RoundedBoxGeometry(
+      frameWidth,
+      frameHeight,
+      frameDepth,
+      smoothness,
+      cornerRadius
+    );
 
-    if (edgeType === 'mirrored') {
-      uv.setXY(0, 1 + sideWrapX, 1);
-      uv.setXY(1, 1, 1);
-      uv.setXY(2, 1 + sideWrapX, 0);
-      uv.setXY(3, 1, 0);
-
-      uv.setXY(4, 0, 1);
-      uv.setXY(5, 0 - sideWrapX, 1);
-      uv.setXY(6, 0, 0);
-      uv.setXY(7, 0 - sideWrapX, 0);
-
-      uv.setXY(8, 0, 1);
-      uv.setXY(9, 1, 1);
-      uv.setXY(10, 0, 1 + sideWrapY);
-      uv.setXY(11, 1, 1 + sideWrapY);
-
-      uv.setXY(12, 0, 0 - sideWrapY);
-      uv.setXY(13, 1, 0 - sideWrapY);
-      uv.setXY(14, 0, 0);
-      uv.setXY(15, 1, 0);
-    } else {
-      const edgeSlice = 0.005;
-
-      uv.setXY(0, 1, 1);
-      uv.setXY(1, 1 - edgeSlice, 1);
-      uv.setXY(2, 1, 0);
-      uv.setXY(3, 1 - edgeSlice, 0);
-
-      uv.setXY(4, edgeSlice, 1);
-      uv.setXY(5, 0, 1);
-      uv.setXY(6, edgeSlice, 0);
-      uv.setXY(7, 0, 0);
-
-      uv.setXY(8, 0, 1 - edgeSlice);
-      uv.setXY(9, 1, 1 - edgeSlice);
-      uv.setXY(10, 0, 1);
-      uv.setXY(11, 1, 1);
-
-      uv.setXY(12, 0, 0);
-      uv.setXY(13, 1, 0);
-      uv.setXY(14, 0, edgeSlice);
-      uv.setXY(15, 1, edgeSlice);
-    }
-
-    uv.setXY(16, 0, 1);
-    uv.setXY(17, 1, 1);
-    uv.setXY(18, 0, 0);
-    uv.setXY(19, 1, 0);
+    applyRoundedBoxUVs(box, frameWidth, frameHeight, frameDepth, edgeType);
 
     return box;
-  }, [shape, edgeType, selectedSize?.width_in, selectedSize?.height_in]);
+  }, [
+    shape,
+    edgeType,
+    selectedSize?.width_in,
+    selectedSize?.height_in,
+    cornerStyle,
+  ]);
 
   if (!texture) return null;
 
@@ -285,6 +330,8 @@ const ThreeDCanvas = ({
   const { edgeType } = useEdge();
   const controlsRef = useRef<OrbitControlsImpl | null>(null);
   const [isAutoRotating, setIsAutoRotating] = useState(false);
+  // const [cornered, setCornered] = useState<boolean>(false);
+  const { cornerStyle, setCornerStyle } = useUpload();
 
   const handleCenter = () => {
     if (controlsRef.current) {
@@ -439,7 +486,12 @@ const ThreeDCanvas = ({
           <directionalLight position={[-4, 6, -4]} intensity={1.5} />
 
           {preview && (
-            <Frame3D imageUrl={preview} shape={shape} edgeType={edgeType} />
+            <Frame3D
+              imageUrl={preview}
+              shape={shape}
+              edgeType={edgeType}
+              cornerStyle={cornerStyle}
+            />
           )}
 
           <ContactShadows
@@ -454,6 +506,53 @@ const ThreeDCanvas = ({
           <CameraControls controlsRef={controlsRef} />
         </Suspense>
       </Canvas>
+      <div
+        className='flex justify-end absolute top-10 right-4 md:top-16 md:left-4 z-[9999]'
+        style={{ pointerEvents: 'auto', isolation: 'isolate' }}
+      >
+        <motion.div
+          className='fixed flex gap-2 pointer-events-auto right-0 md:right-2'
+          initial={{ opacity: 0, scale: 0.9 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{
+            delay: 0.5,
+            duration: 0.3,
+            ease: [0.22, 1, 0.36, 1],
+          }}
+        >
+          <div className='flex border border-gray-300 divide-x divide-gray-300'>
+            <motion.button
+              onClick={() => setCornerStyle('sharp')}
+              className={`flex items-center justify-center px-2 py-2 md:px-5 md:py-3 text-xs md:text-sm font-medium rounded-none cursor-pointer transition-all flex-shrink-0 whitespace-nowrap ${
+                cornerStyle === 'sharp'
+                  ? 'bg-primary text-white'
+                  : 'bg-white text-gray-700 hover:bg-gray-100'
+              }`}
+              type='button'
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+            >
+              <span className='hidden md:inline ml-1'>Sharp</span>
+              <span className='md:hidden'>Sharp</span>
+            </motion.button>
+
+            <motion.button
+              onClick={() => setCornerStyle('rounded')}
+              className={`flex items-center justify-center px-2 py-2 md:px-5 md:py-3 text-xs md:text-sm font-medium rounded-none cursor-pointer transition-all flex-shrink-0 whitespace-nowrap ${
+                cornerStyle === 'rounded'
+                  ? 'bg-primary text-white'
+                  : 'bg-white text-gray-700 hover:bg-gray-100'
+              }`}
+              type='button'
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+            >
+              <span className='hidden md:inline ml-1'>Rounded</span>
+              <span className='md:hidden'>Round</span>
+            </motion.button>
+          </div>
+        </motion.div>
+      </div>
 
       <div
         className='absolute top-2 left-2 md:top-4 md:left-4 z-[9999]'
@@ -481,7 +580,7 @@ const ThreeDCanvas = ({
             </span>
           </button>
 
-          <div className='w-px h-5 bg-gray-200'></div>
+          <div className='w-px h-5 bg-gray-200' />
 
           <button
             onClick={handleCenter}
@@ -508,7 +607,7 @@ const ThreeDCanvas = ({
             </span>
           </button>
 
-          <div className='w-px h-5 bg-gray-200'></div>
+          <div className='w-px h-5 bg-gray-200' />
 
           <button
             onClick={() => handleZoom(0.7)}
@@ -535,7 +634,7 @@ const ThreeDCanvas = ({
             </span>
           </button>
 
-          <div className='w-px h-5 bg-gray-200'></div>
+          <div className='w-px h-5 bg-gray-200' />
 
           <button
             onClick={() => handleZoom(1.4)}
