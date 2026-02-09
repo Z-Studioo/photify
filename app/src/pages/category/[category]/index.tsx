@@ -164,7 +164,7 @@ export function CategoryPage({
 
           {/* Size Filters */}
           <div className='flex gap-3 mb-8'>
-            <div className='flex flex-wrap gap-2'>
+            <div className='flex flex-wrap gap-3 mb-10'>
               {tags.map(tag => {
                 const isSelected = selectedTagIds.includes(tag.id);
 
@@ -173,16 +173,45 @@ export function CategoryPage({
                     key={tag.id}
                     type='button'
                     onClick={() => toggleTag(tag.id)}
-                    className={`px-3 py-1.5 rounded-full text-sm font-medium border transition-all
-                    ${
-                      isSelected
-                        ? 'border-[#f63a9e] bg-pink-50 text-[#f63a9e]'
-                        : 'border-gray-300 text-gray-600 hover:border-gray-400 hover:bg-gray-50'
-                    }
-                  `}
                     aria-pressed={isSelected}
+                    className={`
+                      group relative inline-flex items-center gap-2
+                      px-4 py-2 rounded-full text-sm font-medium
+                      transition-all duration-300 ease-out
+                      focus:outline-none focus-visible:ring-2 focus-visible:ring-[#f63a9e]/40
+                      ${
+                        isSelected
+                          ? `
+                            bg-gradient-to-r from-[#f63a9e] to-pink-500
+                            text-white border border-transparent
+                            shadow-lg shadow-pink-500/25
+                            scale-[1.03]
+                          `
+                          : `
+                            bg-white/70 backdrop-blur
+                            border border-gray-300
+                            text-gray-700
+                            hover:bg-gray-100
+                            hover:border-gray-400
+                          `
+                      }
+                      `}
                   >
+                    {/* Optional color dot */}
+                    <span
+                      className={`
+                          h-2.5 w-2.5 rounded-full
+                          ${isSelected ? 'bg-white' : ''}
+                        `}
+                      style={!isSelected ? { backgroundColor: tag.color } : {}}
+                    />
+
                     {tag.name}
+
+                    {/* Subtle hover glow */}
+                    {!isSelected && (
+                      <span className='absolute inset-0 rounded-full opacity-0 group-hover:opacity-100 transition-opacity bg-pink-500/5' />
+                    )}
                   </button>
                 );
               })}
