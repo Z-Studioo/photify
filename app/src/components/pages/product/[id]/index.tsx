@@ -195,6 +195,9 @@ export function ProductDetailPage({
   const hasConfigurer = productData?.config?.configurerType;
   const configurerType = productData?.config?.configurerType;
   const isCollageProduct =
+    configurerType === 'photo-collage-creator' ||
+    configurerType === '1PhotoCollageCreator' ||
+    configurerType === 'poster-collage' ||
     productSlug === 'photo-collage-creator' ||
     productSlug === '1PhotoCollageCreator';
 
@@ -207,21 +210,22 @@ export function ProductDetailPage({
     setMainImage(prev => (prev === product.images.length - 1 ? 0 : prev + 1));
   };
 
-  // const handleCustomize = () => {
-  //   if (!productData?.config?.configurerType) return;
-  //   navigate(
-  //     `/upload?productId=${productData.id}&configurerType=${productData.config.configurerType}`
-  //   );
-  // };
-
   const handleCustomize = () => {
     if (!productData?.config?.configurerType) return;
     navigate(
-      `/customize/${productData.config.configurerType}?productId=${productData.id}`
+      `/upload?productId=${productData.id}&configurerType=${productData.config.configurerType}`
     );
   };
 
+  // const handleCustomize = () => {
+  //   if (!productData?.config?.configurerType) return;
+  //   navigate(
+  //     `/customize/${productData.config.configurerType}?productId=${productData.id}`
+  //   );
+  // };
+
   const handleOpenCollageCreator = () => {
+    if (!isCollageProduct) return;
     navigate('/customize/photo-collage-creator');
   };
 
