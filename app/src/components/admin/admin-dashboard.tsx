@@ -17,6 +17,8 @@ import {
   SelectContent,
   SelectItem,
 } from '@/components/ui/select';
+import type { error } from 'console';
+import { data } from 'react-router';
 
 // const stats = [
 //   {
@@ -125,7 +127,14 @@ type StatsSnapshot = {
   previousOrders: number;
 };
 
-type DateRangeKey = '7days' | '30days' | '90days' | 'year' | 'custom';
+type DateRangeKey = '7days' | '30days' | '90days' | 'year' | 'all';
+
+type DateRangeWindow = {
+  now: Date;
+  startCurrent: Date | null;
+  startPrevious: Date | null;
+  isAllTime: boolean;
+};
 
 const getChange = (current: number, previous: number) => {
   if (previous === 0) {
@@ -154,6 +163,9 @@ export function AdminDashboard() {
 
   const getDateRange = (range: DateRangeKey) => {
     const now = new Date();
+    if (range === 'all') {
+      return { now, startCurrent: null, startPrevious: null, isAllTime: true };
+    }
     const startCurrent = new Date(now);
     const startPrevious = new Date(now);
 
@@ -170,10 +182,6 @@ export function AdminDashboard() {
         startCurrent.setFullYear(now.getFullYear() - 1);
         startPrevious.setFullYear(now.getFullYear() - 2);
         break;
-      case 'custom':
-        startCurrent.setDate(now.getDate() - 30);
-        startPrevious.setDate(now.getDate() - 60);
-        break;
       case '30days':
       default:
         startCurrent.setDate(now.getDate() - 30);
@@ -181,7 +189,7 @@ export function AdminDashboard() {
         break;
     }
 
-    return { now, startCurrent, startPrevious };
+    return { now, startCurrent, startPrevious, isAllTime: false };
   };
 
   // const fetchStats = async () => {
@@ -205,13 +213,17 @@ export function AdminDashboard() {
   const fetchStats = async () => {
     try {
       const supabase = createClient();
-      const { now, startCurrent, startPrevious } = getDateRange(dateRange);
+      const { now, startCurrent, startPrevious, isAllTime } =
+        getDateRange(dateRange);
 
-      const { data, error } = await supabase
-        .from('orders')
-        .select('created_at, total')
-        .gte('created_at', startPrevious.toISOString())
-        .lt('created_at', now.toISOString());
+      let query = supabase.from('orders').select('created_at, total');
+      if (!isAllTime && startPrevious) {
+        query = query
+          .gte('created_at', startPrevious.toISOString())
+          .lt('created_at', now.toISOString());
+      }
+
+      const { data, error } = await query;
 
       if (error) throw error;
 
@@ -225,7 +237,7 @@ export function AdminDashboard() {
         const createdAt = new Date(order.created_at);
         const total = Number(order.total || 0);
 
-        if (createdAt >= startCurrent) {
+        if (isAllTime || (startCurrent && createdAt >= startCurrent)) {
           currentRevenue += total;
           currentOrders += 1;
         } else {
@@ -248,16 +260,21 @@ export function AdminDashboard() {
   const fetchRecentOrders = async () => {
     try {
       const supabase = createClient();
-      const { now, startCurrent } = getDateRange(dateRange);
-      const { data, error } = await supabase
+      const { now, startCurrent, isAllTime } = getDateRange(dateRange);
+      let query = supabase
         .from('orders')
         .select(
           'id, order_number, customer_name, items, total, status, created_at'
         )
-        .gte('created_at', startCurrent.toISOString())
-        .lt('created_at', now.toISOString())
         .order('created_at', { ascending: false })
         .limit(10);
+      if (!isAllTime && startCurrent) {
+        query = query
+          .gte('created_at', startCurrent.toISOString())
+          .lt('created_at', now.toISOString());
+      }
+
+      const { data, error } = await query;
 
       if (error) throw error;
 
@@ -368,7 +385,7 @@ export function AdminDashboard() {
               <SelectItem value='30days'>Last 30 days</SelectItem>
               <SelectItem value='90days'>Last 90 days</SelectItem>
               <SelectItem value='year'>This year</SelectItem>
-              <SelectItem value='custom'>Custom range</SelectItem>
+              <SelectItem value='all'>All time</SelectItem>
             </SelectContent>
           </Select>
         </div>
@@ -376,6 +393,7 @@ export function AdminDashboard() {
         {/* Stats Grid */}
         <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8'>
           {stats.map(stat => {
+            const isAllTime = dateRange === 'all';
             const Icon = stat.icon;
             return (
               <div
@@ -388,18 +406,20 @@ export function AdminDashboard() {
                   >
                     <Icon className={`w-6 h-6 ${stat.iconColor}`} />
                   </div>
-                  <div
-                    className={`flex items-center gap-1 text-sm ${
-                      stat.trend === 'up' ? 'text-green-600' : 'text-red-600'
-                    }`}
-                  >
-                    {stat.trend === 'up' ? (
-                      <ArrowUp className='w-4 h-4' />
-                    ) : (
-                      <ArrowDown className='w-4 h-4' />
-                    )}
-                    <span>{stat.change}</span>
-                  </div>
+                  {!isAllTime && (
+                    <div
+                      className={`flex items-center gap-1 text-sm ${
+                        stat.trend === 'up' ? 'text-green-600' : 'text-red-600'
+                      }`}
+                    >
+                      {stat.trend === 'up' ? (
+                        <ArrowUp className='w-4 h-4' />
+                      ) : (
+                        <ArrowDown className='w-4 h-4' />
+                      )}
+                      <span>{stat.change}</span>
+                    </div>
+                  )}
                 </div>
                 <p className='text-gray-600 text-sm mb-1'>{stat.label}</p>
                 <p
