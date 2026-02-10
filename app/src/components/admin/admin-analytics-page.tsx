@@ -49,7 +49,7 @@ export function AdminAnalyticsPage() {
   const [dateRange, setDateRange] = useState('30days');
   const [activeTab, setActiveTab] = useState('overview');
   const [loading, setLoading] = useState(true);
-  
+
   // Analytics state
   const [totalRevenue, setTotalRevenue] = useState(0);
   const [totalOrders, setTotalOrders] = useState(0);
@@ -107,14 +107,16 @@ export function AdminAnalyticsPage() {
       if (customersError) throw customersError;
 
       // Fetch products
-      const { data: products, error: productsError } = await supabase
+      const { error: productsError } = await supabase
         .from('products')
         .select('*');
 
       if (productsError) throw productsError;
 
       // Calculate metrics
-      const revenue = orders?.reduce((sum, order) => sum + parseFloat(order.total || 0), 0) || 0;
+      const revenue =
+        orders?.reduce((sum, order) => sum + parseFloat(order.total || 0), 0) ||
+        0;
       const orderCount = orders?.length || 0;
       const customerCount = customers?.length || 0;
       const avgOrder = orderCount > 0 ? revenue / orderCount : 0;
@@ -129,7 +131,7 @@ export function AdminAnalyticsPage() {
       setMonthlyData(monthlyStats);
 
       // Top products (from order items)
-      const productStats = calculateTopProducts(orders || [], products || []);
+      const productStats = calculateTopProducts(orders || []);
       setTopProducts(productStats);
 
       // Category performance
@@ -145,23 +147,29 @@ export function AdminAnalyticsPage() {
       setHourlyData(hourStats);
 
       // Customer metrics
-      const newCustomerCount = customers?.filter(c => {
-        const createdDate = new Date(c.created_at);
-        return createdDate >= startDate;
-      }).length || 0;
+      const newCustomerCount =
+        customers?.filter(c => {
+          const createdDate = new Date(c.created_at);
+          return createdDate >= startDate;
+        }).length || 0;
       setNewCustomers(newCustomerCount);
 
       // Retention rate (customers with more than 1 order)
-      const returningCustomers = customers?.filter(c => (c.total_orders || 0) > 1).length || 0;
-      const retention = customerCount > 0 ? (returningCustomers / customerCount) * 100 : 0;
+      const returningCustomers =
+        customers?.filter(c => (c.total_orders || 0) > 1).length || 0;
+      const retention =
+        customerCount > 0 ? (returningCustomers / customerCount) * 100 : 0;
       setRetentionRate(retention);
 
       // Avg lifetime value
-      const lifetimeValue = customerCount > 0 
-        ? customers.reduce((sum, c) => sum + parseFloat(c.total_spent || 0), 0) / customerCount 
-        : 0;
+      const lifetimeValue =
+        customerCount > 0
+          ? customers.reduce(
+              (sum, c) => sum + parseFloat(c.total_spent || 0),
+              0
+            ) / customerCount
+          : 0;
       setAvgLifetimeValue(lifetimeValue);
-
     } catch (error) {
       console.error('Error fetching analytics:', error);
       toast.error('Failed to load analytics data');
@@ -171,7 +179,20 @@ export function AdminAnalyticsPage() {
   };
 
   const aggregateMonthlyData = (orders: any[]) => {
-    const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    const monthNames = [
+      'Jan',
+      'Feb',
+      'Mar',
+      'Apr',
+      'May',
+      'Jun',
+      'Jul',
+      'Aug',
+      'Sep',
+      'Oct',
+      'Nov',
+      'Dec',
+    ];
     const monthlyMap = new Map();
 
     orders.forEach(order => {
@@ -205,7 +226,7 @@ export function AdminAnalyticsPage() {
       .slice(-10); // Last 10 months
   };
 
-  const calculateTopProducts = (orders: any[], products: any[]) => {
+  const calculateTopProducts = (orders: any[]) => {
     const productMap = new Map();
 
     orders.forEach(order => {
@@ -222,7 +243,8 @@ export function AdminAnalyticsPage() {
         }
         const productData = productMap.get(productId);
         productData.sales += item.quantity || 1;
-        productData.revenue += parseFloat(item.price || 0) * (item.quantity || 1);
+        productData.revenue +=
+          parseFloat(item.price || 0) * (item.quantity || 1);
       });
     });
 
@@ -251,10 +273,11 @@ export function AdminAnalyticsPage() {
       const items = order.items || [];
       items.forEach((item: any) => {
         const type = item.product_type || 'Others';
-        let category = categories.find(c => 
-          c.name.toLowerCase().includes(type.toLowerCase())
-        ) || categories[3];
-        
+        const category =
+          categories.find(c =>
+            c.name.toLowerCase().includes(type.toLowerCase())
+          ) || categories[3];
+
         category.revenue += parseFloat(item.price || 0) * (item.quantity || 1);
         category.orders += 1;
       });
@@ -264,7 +287,8 @@ export function AdminAnalyticsPage() {
     return categories
       .map(c => ({
         ...c,
-        value: totalRevenue > 0 ? Math.round((c.revenue / totalRevenue) * 100) : 0,
+        value:
+          totalRevenue > 0 ? Math.round((c.revenue / totalRevenue) * 100) : 0,
       }))
       .filter(c => c.value > 0);
   };
@@ -275,7 +299,7 @@ export function AdminAnalyticsPage() {
     orders.forEach(order => {
       const postcode = order.shipping_postcode || 'Unknown';
       const city = extractCityFromPostcode(postcode);
-      
+
       if (!locationMap.has(city)) {
         locationMap.set(city, { location: city, orders: 0, revenue: 0 });
       }
@@ -293,7 +317,8 @@ export function AdminAnalyticsPage() {
       .map(loc => ({
         ...loc,
         revenue: Math.round(loc.revenue),
-        percentage: totalRevenue > 0 ? Math.round((loc.revenue / totalRevenue) * 100) : 0,
+        percentage:
+          totalRevenue > 0 ? Math.round((loc.revenue / totalRevenue) * 100) : 0,
       }))
       .sort((a, b) => b.revenue - a.revenue)
       .slice(0, 6);
@@ -303,17 +328,23 @@ export function AdminAnalyticsPage() {
     // Simple city extraction - enhance based on your needs
     if (!postcode || postcode === 'Unknown') return 'Other';
     const prefix = postcode.split(' ')[0].toUpperCase();
-    
+
     // UK postcode to city mapping (simplified)
     const cityMap: Record<string, string> = {
-      'E': 'London', 'EC': 'London', 'N': 'London', 'NW': 'London',
-      'SE': 'London', 'SW': 'London', 'W': 'London', 'WC': 'London',
-      'M': 'Manchester',
-      'B': 'Birmingham',
-      'EH': 'Edinburgh',
-      'BS': 'Bristol',
-      'L': 'Liverpool',
-      'LS': 'Leeds',
+      E: 'London',
+      EC: 'London',
+      N: 'London',
+      NW: 'London',
+      SE: 'London',
+      SW: 'London',
+      W: 'London',
+      WC: 'London',
+      M: 'Manchester',
+      B: 'Birmingham',
+      EH: 'Edinburgh',
+      BS: 'Bristol',
+      L: 'Liverpool',
+      LS: 'Leeds',
     };
 
     for (const [key, city] of Object.entries(cityMap)) {
@@ -414,10 +445,21 @@ export function AdminAnalyticsPage() {
               className="font-['Bricolage_Grotesque',_sans-serif]"
               style={{ fontSize: '28px', fontWeight: '600' }}
             >
-              £{totalRevenue.toLocaleString('en-GB', { maximumFractionDigits: 0 })}
+              £
+              {totalRevenue.toLocaleString('en-GB', {
+                maximumFractionDigits: 0,
+              })}
             </p>
             <p className='text-xs text-gray-500 mt-2'>
-              Last {dateRange === '7days' ? '7' : dateRange === '30days' ? '30' : dateRange === '90days' ? '90' : '365'} days
+              Last{' '}
+              {dateRange === '7days'
+                ? '7'
+                : dateRange === '30days'
+                  ? '30'
+                  : dateRange === '90days'
+                    ? '90'
+                    : '365'}{' '}
+              days
             </p>
           </div>
 
@@ -438,7 +480,9 @@ export function AdminAnalyticsPage() {
             >
               {totalOrders.toLocaleString()}
             </p>
-            <p className='text-xs text-gray-500 mt-2'>{totalOrders} orders in period</p>
+            <p className='text-xs text-gray-500 mt-2'>
+              {totalOrders} orders in period
+            </p>
           </div>
 
           <div className='bg-white rounded-lg border border-gray-200 p-6'>
