@@ -1,13 +1,14 @@
 import { useEffect, useState } from 'react';
 import { AdminLayout } from './admin-layout';
 import {
-  TrendingUp,
+  // TrendingUp,
   ShoppingCart,
-  Package,
+  // Package,
   DollarSign,
   ArrowUp,
   ArrowDown,
   Calendar,
+  Minus,
 } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 import {
@@ -17,98 +18,8 @@ import {
   SelectContent,
   SelectItem,
 } from '@/components/ui/select';
-import type { error } from 'console';
-import { data } from 'react-router';
-
-// const stats = [
-//   {
-//     label: 'Total Revenue',
-//     value: '£24,563',
-//     change: '+12.5%',
-//     trend: 'up',
-//     icon: DollarSign,
-//     bgColor: 'bg-green-50',
-//     iconColor: 'text-green-600',
-//   },
-//   {
-//     label: 'Total Orders',
-//     value: '342',
-//     change: '+8.2%',
-//     trend: 'up',
-//     icon: ShoppingCart,
-//     bgColor: 'bg-blue-50',
-//     iconColor: 'text-blue-600',
-//   },
-//   // {
-//   //   label: 'Products Sold',
-//   //   value: '1,247',
-//   //   change: '+15.3%',
-//   //   trend: 'up',
-//   //   icon: Package,
-//   //   bgColor: 'bg-purple-50',
-//   //   iconColor: 'text-purple-600',
-//   // },
-//   // {
-//   //   label: 'Conversion Rate',
-//   //   value: '3.24%',
-//   //   change: '-0.4%',
-//   //   trend: 'down',
-//   //   icon: TrendingUp,
-//   //   bgColor: 'bg-orange-50',
-//   //   iconColor: 'text-orange-600',
-//   // },
-// ];
-
-// const recentOrders = [
-//   {
-//     id: 'ORD-1234',
-//     customer: 'John Smith',
-//     product: 'Ocean Dreams Canvas',
-//     amount: '£68.00',
-//     status: 'Processing',
-//     date: '2025-10-20',
-//   },
-//   {
-//     id: 'ORD-1235',
-//     customer: 'Sarah Johnson',
-//     product: 'Parallel Triplet',
-//     amount: '£69.00',
-//     status: 'Shipped',
-//     date: '2025-10-20',
-//   },
-//   {
-//     id: 'ORD-1236',
-//     customer: 'Mike Wilson',
-//     product: 'Wild Lion Print',
-//     amount: '£92.00',
-//     status: 'Delivered',
-//     date: '2025-10-19',
-//   },
-//   {
-//     id: 'ORD-1237',
-//     customer: 'Emma Davis',
-//     product: 'Divine Light',
-//     amount: '£88.00',
-//     status: 'Processing',
-//     date: '2025-10-19',
-//   },
-//   {
-//     id: 'ORD-1238',
-//     customer: 'Tom Brown',
-//     product: 'Himalayan Peaks',
-//     amount: '£105.00',
-//     status: 'Pending',
-//     date: '2025-10-18',
-//   },
-// ];
-
-// const topProducts = [
-//   { name: 'Ocean Dreams', sales: 145, revenue: '£9,860' },
-//   { name: 'Wild Lion', sales: 128, revenue: '£11,776' },
-//   { name: 'Parallel Triplet', sales: 96, revenue: '£6,624' },
-//   { name: 'Divine Light', sales: 84, revenue: '£7,392' },
-//   { name: 'Himalayan Peaks', sales: 72, revenue: '£7,560' },
-// ];
+import { Button } from '../ui/button';
+import { Link } from 'react-router-dom';
 
 type RecentOrder = {
   id: string;
@@ -129,19 +40,12 @@ type StatsSnapshot = {
 
 type DateRangeKey = '7days' | '30days' | '90days' | 'year' | 'all';
 
-type DateRangeWindow = {
-  now: Date;
-  startCurrent: Date | null;
-  startPrevious: Date | null;
-  isAllTime: boolean;
-};
-
 const getChange = (current: number, previous: number) => {
   if (previous === 0) {
-    return {
-      changeText: current === 0 ? '0.0%' : '+100.0%',
-      trend: current === 0 ? 'up' : 'up',
-    };
+    if (current === 0) {
+      return { changeText: '0.0%', trend: 'neutral' };
+    }
+    return { changeText: '', trend: 'neutral' };
   }
 
   const delta = ((current - previous) / previous) * 100;
@@ -154,6 +58,8 @@ const getChange = (current: number, previous: number) => {
 export function AdminDashboard() {
   const [dateRange, setDateRange] = useState<DateRangeKey>('30days');
   const [recentOrders, setRecentOrders] = useState<RecentOrder[]>([]);
+  const [statsLoading, setStatsLoading] = useState(true);
+  const [ordersLoading, setOrdersLoading] = useState(true);
   const [statsSnapshot, setStatsSnapshot] = useState<StatsSnapshot>({
     currentRevenue: 0,
     previousRevenue: 0,
@@ -192,118 +98,106 @@ export function AdminDashboard() {
     return { now, startCurrent, startPrevious, isAllTime: false };
   };
 
-  // const fetchStats = async () => {
-  //   try {
-  //     const supabase = createClient();
-  //     const { data, error } = await supabase.from('orders').select('id, total');
-
-  //     if (error) throw error;
-
-  //     const totalOrders = data?.length || 0;
-  //     const totalRevenue =
-  //       data?.reduce((sum, order) => sum + Number(order.total || 0), 0) || 0;
-
-  //     setTotalOrders(totalOrders);
-  //     setTotalRevenue(totalRevenue);
-  //   } catch (error) {
-  //     console.error('Error fetching stats:', error);
-  //   }
-  // };
-
-  const fetchStats = async () => {
-    try {
-      const supabase = createClient();
-      const { now, startCurrent, startPrevious, isAllTime } =
-        getDateRange(dateRange);
-
-      let query = supabase.from('orders').select('created_at, total');
-      if (!isAllTime && startPrevious) {
-        query = query
-          .gte('created_at', startPrevious.toISOString())
-          .lt('created_at', now.toISOString());
-      }
-
-      const { data, error } = await query;
-
-      if (error) throw error;
-
-      let currentRevenue = 0;
-      let previousRevenue = 0;
-      let currentOrders = 0;
-      let previousOrders = 0;
-
-      (data || []).forEach(order => {
-        if (!order?.created_at) return;
-        const createdAt = new Date(order.created_at);
-        const total = Number(order.total || 0);
-
-        if (isAllTime || (startCurrent && createdAt >= startCurrent)) {
-          currentRevenue += total;
-          currentOrders += 1;
-        } else {
-          previousRevenue += total;
-          previousOrders += 1;
-        }
-      });
-
-      setStatsSnapshot({
-        currentRevenue,
-        previousRevenue,
-        currentOrders,
-        previousOrders,
-      });
-    } catch (error) {
-      console.error('Error fetching stats:', error);
-    }
-  };
-
-  const fetchRecentOrders = async () => {
-    try {
-      const supabase = createClient();
-      const { now, startCurrent, isAllTime } = getDateRange(dateRange);
-      let query = supabase
-        .from('orders')
-        .select(
-          'id, order_number, customer_name, items, total, status, created_at'
-        )
-        .order('created_at', { ascending: false })
-        .limit(10);
-      if (!isAllTime && startCurrent) {
-        query = query
-          .gte('created_at', startCurrent.toISOString())
-          .lt('created_at', now.toISOString());
-      }
-
-      const { data, error } = await query;
-
-      if (error) throw error;
-
-      const mapped: RecentOrder[] = (data || []).map(order => {
-        const total = Number(order.total);
-        return {
-          id: order.id,
-          orderNumber: order.order_number,
-          customer: order.customer_name || 'Unknown',
-          product: order.items?.[0]?.name,
-          amount: Number.isFinite(total) ? `£${total.toFixed(2)}` : '£0.00',
-          status:
-            order.status?.charAt(0).toUpperCase() + order.status?.slice(1) ||
-            'Pending',
-          date: order.created_at,
-        };
-      });
-
-      if (mapped.length > 0) {
-        setRecentOrders(mapped);
-      }
-    } catch (error) {
-      console.error('Error fetching recent orders:', error);
-    }
-  };
-
   useEffect(() => {
-    fetchStats();
+    const fetchRecentOrders = async () => {
+      setOrdersLoading(true);
+      try {
+        const supabase = createClient();
+        const { now, startCurrent, isAllTime } = getDateRange(dateRange);
+        let query = supabase
+          .from('orders')
+          .select(
+            'id, order_number, customer_name, items, total, status, created_at'
+          )
+          .order('created_at', { ascending: false })
+          .limit(10);
+        if (!isAllTime && startCurrent) {
+          query = query
+            .gte('created_at', startCurrent.toISOString())
+            .lt('created_at', now.toISOString());
+        }
+
+        const { data, error } = await query;
+
+        if (error) throw error;
+
+        const mapped: RecentOrder[] = (data || []).map(order => {
+          const total = Number(order.total);
+          return {
+            id: order.id,
+            orderNumber: order.order_number,
+            customer: order.customer_name || 'Unknown',
+            product: order.items?.[0]?.name,
+            amount: Number.isFinite(total) ? `£${total.toFixed(2)}` : '£0.00',
+            status:
+              order.status?.charAt(0).toUpperCase() + order.status?.slice(1) ||
+              'Pending',
+            date: order.created_at,
+          };
+        });
+
+        if (mapped.length > 0) {
+          setRecentOrders(mapped);
+        }
+      } catch (error) {
+        console.error('Error fetching recent orders:', error);
+      } finally {
+        setOrdersLoading(false);
+      }
+    };
     fetchRecentOrders();
+  }, []);
+  useEffect(() => {
+    const fetchStats = async () => {
+      setStatsLoading(true);
+      try {
+        const supabase = createClient();
+        const { now, startCurrent, startPrevious, isAllTime } =
+          getDateRange(dateRange);
+
+        let query = supabase.from('orders').select('created_at, total');
+        if (!isAllTime && startPrevious) {
+          query = query
+            .gte('created_at', startPrevious.toISOString())
+            .lt('created_at', now.toISOString());
+        }
+
+        const { data, error } = await query;
+
+        if (error) throw error;
+
+        let currentRevenue = 0;
+        let previousRevenue = 0;
+        let currentOrders = 0;
+        let previousOrders = 0;
+
+        (data || []).forEach(order => {
+          if (!order?.created_at) return;
+          const createdAt = new Date(order.created_at);
+          const total = Number(order.total || 0);
+
+          if (isAllTime || (startCurrent && createdAt >= startCurrent)) {
+            currentRevenue += total;
+            currentOrders += 1;
+          } else {
+            previousRevenue += total;
+            previousOrders += 1;
+          }
+        });
+
+        setStatsSnapshot({
+          currentRevenue,
+          previousRevenue,
+          currentOrders,
+          previousOrders,
+        });
+      } catch (error) {
+        console.error('Error fetching stats:', error);
+      } finally {
+        setStatsLoading(false);
+      }
+    };
+    fetchStats();
   }, [dateRange]);
 
   const revenueChange = getChange(
@@ -314,7 +208,6 @@ export function AdminDashboard() {
     statsSnapshot.currentOrders,
     statsSnapshot.previousOrders
   );
-
   const stats = [
     {
       label: 'Total Revenue',
@@ -409,15 +302,27 @@ export function AdminDashboard() {
                   {!isAllTime && (
                     <div
                       className={`flex items-center gap-1 text-sm ${
-                        stat.trend === 'up' ? 'text-green-600' : 'text-red-600'
+                        stat.trend === 'up'
+                          ? 'text-green-600'
+                          : stat.trend === 'down'
+                            ? 'text-red-600'
+                            : 'text-gray-600'
                       }`}
                     >
-                      {stat.trend === 'up' ? (
-                        <ArrowUp className='w-4 h-4' />
+                      {statsLoading ? (
+                        <span className='bg-gray-50 rounded-sm border border-gray-200 h-5 w-20 animate-pulse ' />
                       ) : (
-                        <ArrowDown className='w-4 h-4' />
+                        <>
+                          {stat.trend === 'up' ? (
+                            <ArrowUp className='w-4 h-4' />
+                          ) : stat.trend === 'down' ? (
+                            <ArrowDown className='w-4 h-4' />
+                          ) : (
+                            <Minus className='w-4 h-4' />
+                          )}
+                          <span>{stat.change}</span>
+                        </>
                       )}
-                      <span>{stat.change}</span>
                     </div>
                   )}
                 </div>
@@ -436,12 +341,24 @@ export function AdminDashboard() {
         <div className='grid grid-cols-1 lg:grid-cols-3 gap-8'>
           {/* Recent Orders */}
           <div className='lg:col-span-3 bg-white rounded-lg border border-gray-200 p-6'>
-            <h2
-              className="font-['Bricolage_Grotesque',_sans-serif] mb-6"
-              style={{ fontSize: '20px', fontWeight: '600' }}
-            >
-              Recent Orders
-            </h2>
+            <div className='flex items-center justify-between mb-6'>
+              <h2
+                className="font-['Bricolage_Grotesque',_sans-serif] mb-6"
+                style={{ fontSize: '20px', fontWeight: '600' }}
+              >
+                Recent Orders
+              </h2>
+              <Button
+                variant='default'
+                size='sm'
+                disabled={recentOrders.length === 0}
+                className='cursor-pointer'
+              >
+                <Link to='/admin/orders' className='flex items-center gap-1'>
+                  View All
+                </Link>
+              </Button>
+            </div>
             <div className='overflow-x-auto'>
               <table className='w-full'>
                 <thead>
@@ -467,39 +384,50 @@ export function AdminDashboard() {
                   </tr>
                 </thead>
                 <tbody>
-                  {recentOrders.map(order => (
-                    <tr
-                      key={order.id}
-                      className='border-b border-gray-100 last:border-0'
-                    >
-                      <td className='py-4 text-sm font-medium'>{order.id}</td>
-                      <td className='py-4 text-sm'>{order.customer}</td>
-                      <td className='py-4 text-sm text-gray-600'>
-                        {order.product}
-                      </td>
-                      <td className='py-4 text-sm font-medium'>
-                        {order.amount}
-                      </td>
-                      <td className='py-4'>
-                        <span
-                          className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium ${
-                            order.status === 'Delivered'
-                              ? 'bg-green-100 text-green-700'
-                              : order.status === 'Shipped'
-                                ? 'bg-blue-100 text-blue-700'
-                                : order.status === 'Processing'
-                                  ? 'bg-yellow-100 text-yellow-700'
-                                  : 'bg-gray-100 text-gray-700'
-                          }`}
-                        >
-                          {order.status}
-                        </span>
-                      </td>
-                      <td className='py-4 text-sm text-gray-600'>
-                        {new Date(order.date).toLocaleDateString()}
+                  {ordersLoading ? (
+                    <tr>
+                      <td
+                        colSpan={6}
+                        className='py-6 text-center text-sm text-gray-500'
+                      >
+                        Loading orders...
                       </td>
                     </tr>
-                  ))}
+                  ) : (
+                    recentOrders.map(order => (
+                      <tr
+                        key={order.id}
+                        className='border-b border-gray-100 last:border-0'
+                      >
+                        <td className='py-4 text-sm font-medium'>{order.id}</td>
+                        <td className='py-4 text-sm'>{order.customer}</td>
+                        <td className='py-4 text-sm text-gray-600'>
+                          {order.product}
+                        </td>
+                        <td className='py-4 text-sm font-medium'>
+                          {order.amount}
+                        </td>
+                        <td className='py-4'>
+                          <span
+                            className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium ${
+                              order.status === 'Delivered'
+                                ? 'bg-green-100 text-green-700'
+                                : order.status === 'Shipped'
+                                  ? 'bg-blue-100 text-blue-700'
+                                  : order.status === 'Processing'
+                                    ? 'bg-yellow-100 text-yellow-700'
+                                    : 'bg-gray-100 text-gray-700'
+                            }`}
+                          >
+                            {order.status}
+                          </span>
+                        </td>
+                        <td className='py-4 text-sm text-gray-600'>
+                          {new Date(order.date).toLocaleDateString()}
+                        </td>
+                      </tr>
+                    ))
+                  )}
                 </tbody>
               </table>
             </div>
