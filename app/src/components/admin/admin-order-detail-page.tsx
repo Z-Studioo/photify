@@ -18,6 +18,7 @@ import {
   MoveRight,
   XCircle,
   X,
+  CheckCircle2Icon,
 } from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
 import { toast } from 'sonner';
@@ -32,6 +33,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '../ui/alert-dialog';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
 const STATUS_FLOW = ['pending', 'processing', 'shipped', 'delivered'] as const;
 type OrderStatus = (typeof STATUS_FLOW)[number] | 'cancelled';
@@ -198,6 +200,7 @@ export function AdminOrderDetailPage() {
               quantity: item.quantity || 1,
             })),
             hosted_invoice_url: data.hosted_invoice_url || '#',
+            remarks: data.remarks || '',
           };
 
           setOrder(transformedOrder);
@@ -625,6 +628,14 @@ export function AdminOrderDetailPage() {
                     </Button>
                   </div>
                 </div>
+
+                {order.remarks && order.remarks.length && (
+                  <Alert className='max-w-full mt-4 border border-[#f63a9e]'>
+                    <CheckCircle2Icon color='#f63a9e' />
+                    <AlertTitle>Remarks</AlertTitle>
+                    <AlertDescription>{order.remarks}</AlertDescription>
+                  </Alert>
+                )}
               </div>
             </div>
 
