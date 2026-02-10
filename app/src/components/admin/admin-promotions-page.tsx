@@ -3,6 +3,7 @@ import { AdminLayout } from './admin-layout';
 import { DeleteConfirmDialog } from '@/components/shared/delete-confirm-dialog';
 import { Plus, Edit, Trash2, Copy, Tag, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Pagination } from '@/components/ui/pagination';
 import { toast } from 'sonner';
 import { usePromotions } from '@/lib/supabase/hooks';
 import { createClient } from '@/lib/supabase/client';
@@ -17,6 +18,25 @@ export function AdminPromotionsPage() {
     code: string;
   } | null>(null);
   const [deleting, setDeleting] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10;
+
+  const formatDate = (value?: string | null) => {
+    if (!value) return '—';
+    const parsed = new Date(value);
+    if (Number.isNaN(parsed.getTime())) return value;
+    return parsed.toLocaleDateString('en-GB', {
+      day: '2-digit',
+      month: 'short',
+      year: 'numeric',
+    });
+  };
+
+  const normalizeNumber = (value: any, fallback = 0) => {
+    if (value === null || value === undefined) return fallback;
+    const parsed = Number(value);
+    return Number.isNaN(parsed) ? fallback : parsed;
+  };
 
   // Transform database promotions to display format
   const promotions = (dbPromotions || []).map((promo: any) => {
@@ -42,15 +62,46 @@ export function AdminPromotionsPage() {
       code: promo.code,
       description: promo.description,
       type: displayType,
-      value: promo.value,
-      minOrder: promo.min_order,
-      maxUses: promo.max_uses,
-      used: promo.used_count,
+      value: normalizeNumber(promo.value),
+      minOrder: normalizeNumber(promo.min_order),
+      maxUses:
+        promo.max_uses === null || promo.max_uses === undefined
+          ? null
+          : normalizeNumber(promo.max_uses),
+      used: normalizeNumber(promo.used_count),
       startDate: promo.start_date,
       endDate: promo.end_date,
       status,
     };
   });
+
+  const totalPromotions = promotions.length;
+  const activePromotions = promotions.filter(p => p.status === 'Active').length;
+  const inactivePromotions = promotions.filter(p => p.status !== 'Active').length;
+  const totalUses = promotions.reduce((sum, p) => sum + p.used, 0);
+  const estimatedTotalDiscount = promotions.reduce((sum, promo) => {
+    if (promo.type === 'Fixed Amount') {
+      return sum + promo.value * promo.used;
+    }
+    if (promo.type === 'Percentage') {
+      return sum + (promo.minOrder * promo.value * promo.used) / 100;
+    }
+    return sum;
+  }, 0);
+  const conversionRate = totalPromotions
+    ? (activePromotions / totalPromotions) * 100
+    : 0;
+
+  // Pagination
+  const totalPages = Math.ceil(totalPromotions / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const endIndex = startIndex + itemsPerPage;
+  const paginatedPromotions = promotions.slice(startIndex, endIndex);
+
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
 
   const handleEdit = (promotionId: string) => {
     navigate(`/admin/promotions/edit/${promotionId}`);
@@ -130,7 +181,7 @@ export function AdminPromotionsPage() {
               className="font-['Bricolage_Grotesque',_sans-serif]"
               style={{ fontSize: '28px', fontWeight: '600' }}
             >
-              {promotions.filter(p => p.status === 'Active').length}
+              {activePromotions}
             </p>
           </div>
           <div className='bg-white rounded-lg border border-gray-200 p-6'>
@@ -139,7 +190,7 @@ export function AdminPromotionsPage() {
               className="font-['Bricolage_Grotesque',_sans-serif]"
               style={{ fontSize: '28px', fontWeight: '600' }}
             >
-              {promotions.reduce((sum, p) => sum + p.used, 0)}
+              {totalUses}
             </p>
           </div>
           <div className='bg-white rounded-lg border border-gray-200 p-6'>
@@ -148,7 +199,7 @@ export function AdminPromotionsPage() {
               className="font-['Bricolage_Grotesque',_sans-serif]"
               style={{ fontSize: '28px', fontWeight: '600' }}
             >
-              £2,847
+              £{estimatedTotalDiscount.toFixed(2)}
             </p>
           </div>
           <div className='bg-white rounded-lg border border-gray-200 p-6'>
@@ -157,7 +208,10 @@ export function AdminPromotionsPage() {
               className="font-['Bricolage_Grotesque',_sans-serif]"
               style={{ fontSize: '28px', fontWeight: '600' }}
             >
-              12.4%
+              {conversionRate.toFixed(1)}%
+            </p>
+            <p className='text-xs text-gray-500 mt-1'>
+              {inactivePromotions} inactive or scheduled
             </p>
           </div>
         </div>
@@ -195,7 +249,7 @@ export function AdminPromotionsPage() {
                 </tr>
               </thead>
               <tbody>
-                {promotions.map(promo => (
+                {paginatedPromotions.map(promo => (
                   <tr
                     key={promo.id}
                     className='border-b border-gray-100 last:border-0 hover:bg-gray-50'
@@ -234,20 +288,25 @@ export function AdminPromotionsPage() {
                         <span className='font-medium'>{promo.used}</span>
                         <span className='text-gray-600'>
                           {' '}
-                          / {promo.maxUses}
+                          / {promo.maxUses ?? 'Unlimited'}
                         </span>
                       </div>
-                      <div className='w-full bg-gray-200 rounded-full h-1.5 mt-1'>
-                        <div
-                          className='bg-[#f63a9e] h-1.5 rounded-full'
-                          style={{
-                            width: `${(promo.used / promo.maxUses) * 100}%`,
-                          }}
-                        />
-                      </div>
+                      {promo.maxUses ? (
+                        <div className='w-full bg-gray-200 rounded-full h-1.5 mt-1'>
+                          <div
+                            className='bg-[#f63a9e] h-1.5 rounded-full'
+                            style={{
+                              width: `${Math.min(
+                                (promo.used / promo.maxUses) * 100,
+                                100
+                              )}%`,
+                            }}
+                          />
+                        </div>
+                      ) : null}
                     </td>
                     <td className='px-6 py-4 text-sm text-gray-600'>
-                      {promo.endDate}
+                      {formatDate(promo.endDate)}
                     </td>
                     <td className='px-6 py-4'>
                       <span
@@ -289,6 +348,16 @@ export function AdminPromotionsPage() {
               </tbody>
             </table>
           </div>
+
+          {/* Pagination */}
+          <Pagination
+            currentPage={currentPage}
+            totalPages={totalPages}
+            onPageChange={handlePageChange}
+            itemsPerPage={itemsPerPage}
+            totalItems={totalPromotions}
+            itemName='promotions'
+          />
         </div>
       </div>
 
