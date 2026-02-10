@@ -46,6 +46,8 @@ const AdminCategoryDetailPage = lazy(() => import('@/pages/admin/categories/[cat
 const AdminOrdersPage = lazy(() => import('@/pages/admin/orders'));
 const AdminOrderDetailPage = lazy(() => import('@/pages/admin/orders/[orderId]'));
 const AdminPromotionsPage = lazy(() => import('@/pages/admin/promotions'));
+const AdminPromotionNewPage = lazy(() => import('@/pages/admin/promotions/new'));
+const AdminPromotionEditPage = lazy(() => import('@/pages/admin/promotions/edit/[promotionId]'));
 const AdminRoomsPage = lazy(() => import('@/pages/admin/rooms'));
 const AdminRoomNewPage = lazy(() => import('@/pages/admin/rooms/new'));
 const AdminRoomEditPage = lazy(() => import('@/pages/admin/rooms/[roomId]'));
@@ -177,6 +179,14 @@ const App: React.FC = () => {
                       <Route
                         path='/admin/promotions'
                         element={<AdminPromotionsPage />}
+                      />
+                      <Route
+                        path='/admin/promotions/new'
+                        element={<AdminPromotionNewPage />}
+                      />
+                      <Route
+                        path='/admin/promotions/edit/:promotionId'
+                        element={<AdminPromotionEditPage />}
                       />
                       <Route path='/admin/rooms' element={<AdminRoomsPage />} />
                       <Route
