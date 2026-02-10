@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { AdminLayout } from './admin-layout';
 import {
   TrendingUp,
@@ -14,6 +14,7 @@ import {
   ArrowDownRight,
   BarChart3,
   PieChart as PieChartIcon,
+  Loader2,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
@@ -42,152 +43,316 @@ import {
   AreaChart,
 } from 'recharts';
 import { toast } from 'sonner';
-
-const monthlyData = [
-  {
-    month: 'Jan',
-    revenue: 18500,
-    orders: 245,
-    customers: 198,
-    avgOrder: 75.51,
-  },
-  {
-    month: 'Feb',
-    revenue: 22300,
-    orders: 298,
-    customers: 234,
-    avgOrder: 74.83,
-  },
-  {
-    month: 'Mar',
-    revenue: 19800,
-    orders: 267,
-    customers: 221,
-    avgOrder: 74.16,
-  },
-  {
-    month: 'Apr',
-    revenue: 25600,
-    orders: 342,
-    customers: 289,
-    avgOrder: 74.85,
-  },
-  {
-    month: 'May',
-    revenue: 28900,
-    orders: 389,
-    customers: 312,
-    avgOrder: 74.29,
-  },
-  {
-    month: 'Jun',
-    revenue: 31200,
-    orders: 425,
-    customers: 356,
-    avgOrder: 73.41,
-  },
-  {
-    month: 'Jul',
-    revenue: 29500,
-    orders: 398,
-    customers: 334,
-    avgOrder: 74.12,
-  },
-  {
-    month: 'Aug',
-    revenue: 33800,
-    orders: 456,
-    customers: 387,
-    avgOrder: 74.12,
-  },
-  {
-    month: 'Sep',
-    revenue: 36200,
-    orders: 487,
-    customers: 412,
-    avgOrder: 74.33,
-  },
-  {
-    month: 'Oct',
-    revenue: 24563,
-    orders: 342,
-    customers: 298,
-    avgOrder: 71.82,
-  },
-];
-
-const categoryPerformance = [
-  {
-    name: 'Custom Frames',
-    value: 35,
-    revenue: 48250,
-    orders: 645,
-    color: '#f63a9e',
-  },
-  {
-    name: 'Canvas Prints',
-    value: 28,
-    revenue: 38420,
-    orders: 512,
-    color: '#8b5cf6',
-  },
-  {
-    name: 'Art Collection',
-    value: 21,
-    revenue: 29180,
-    orders: 387,
-    color: '#06b6d4',
-  },
-  {
-    name: 'Photo Prints',
-    value: 16,
-    revenue: 22150,
-    orders: 298,
-    color: '#10b981',
-  },
-];
-
-const topProducts = [
-  {
-    id: 1,
-    name: 'Ocean Dreams Canvas',
-    sales: 145,
-    revenue: 5800,
-    growth: 12.5,
-  },
-  { id: 2, name: 'Wild Lion Print', sales: 132, revenue: 4620, growth: 8.3 },
-  { id: 3, name: 'Buddha Serenity', sales: 128, revenue: 5120, growth: -2.1 },
-  { id: 4, name: 'Abstract Waves', sales: 114, revenue: 3990, growth: 15.7 },
-  { id: 5, name: 'Mountain Vista', sales: 98, revenue: 3430, growth: 6.2 },
-];
-
-const geographicData = [
-  { location: 'London', orders: 1245, revenue: 92840, percentage: 32 },
-  { location: 'Manchester', orders: 687, revenue: 51225, percentage: 18 },
-  { location: 'Birmingham', orders: 534, revenue: 39780, percentage: 14 },
-  { location: 'Edinburgh', orders: 423, revenue: 31545, percentage: 11 },
-  { location: 'Bristol', orders: 389, revenue: 28995, percentage: 10 },
-  { location: 'Other', orders: 571, revenue: 40315, percentage: 15 },
-];
-
-const hourlyData = [
-  { hour: '00:00', orders: 12 },
-  { hour: '03:00', orders: 8 },
-  { hour: '06:00', orders: 15 },
-  { hour: '09:00', orders: 45 },
-  { hour: '12:00', orders: 67 },
-  { hour: '15:00', orders: 82 },
-  { hour: '18:00', orders: 95 },
-  { hour: '21:00', orders: 58 },
-];
+import { createClient } from '@/lib/supabase/client';
 
 export function AdminAnalyticsPage() {
   const [dateRange, setDateRange] = useState('30days');
   const [activeTab, setActiveTab] = useState('overview');
+  const [loading, setLoading] = useState(true);
+  
+  // Analytics state
+  const [totalRevenue, setTotalRevenue] = useState(0);
+  const [totalOrders, setTotalOrders] = useState(0);
+  const [totalCustomers, setTotalCustomers] = useState(0);
+  const [avgOrderValue, setAvgOrderValue] = useState(0);
+  const [monthlyData, setMonthlyData] = useState<any[]>([]);
+  const [topProducts, setTopProducts] = useState<any[]>([]);
+  const [categoryPerformance, setCategoryPerformance] = useState<any[]>([]);
+  const [geographicData, setGeographicData] = useState<any[]>([]);
+  const [hourlyData, setHourlyData] = useState<any[]>([]);
+  const [newCustomers, setNewCustomers] = useState(0);
+  const [retentionRate, setRetentionRate] = useState(0);
+  const [avgLifetimeValue, setAvgLifetimeValue] = useState(0);
+
+  useEffect(() => {
+    fetchAnalyticsData();
+  }, [dateRange]);
+
+  const getDaysFromDateRange = () => {
+    switch (dateRange) {
+      case '7days':
+        return 7;
+      case '30days':
+        return 30;
+      case '90days':
+        return 90;
+      case 'year':
+        return 365;
+      default:
+        return 30;
+    }
+  };
+
+  const fetchAnalyticsData = async () => {
+    setLoading(true);
+    try {
+      const supabase = createClient();
+      const days = getDaysFromDateRange();
+      const startDate = new Date();
+      startDate.setDate(startDate.getDate() - days);
+
+      // Fetch orders
+      const { data: orders, error: ordersError } = await supabase
+        .from('orders')
+        .select('*')
+        .gte('created_at', startDate.toISOString());
+
+      if (ordersError) throw ordersError;
+
+      // Fetch customers
+      const { data: customers, error: customersError } = await supabase
+        .from('customers')
+        .select('*');
+
+      if (customersError) throw customersError;
+
+      // Fetch products
+      const { data: products, error: productsError } = await supabase
+        .from('products')
+        .select('*');
+
+      if (productsError) throw productsError;
+
+      // Calculate metrics
+      const revenue = orders?.reduce((sum, order) => sum + parseFloat(order.total || 0), 0) || 0;
+      const orderCount = orders?.length || 0;
+      const customerCount = customers?.length || 0;
+      const avgOrder = orderCount > 0 ? revenue / orderCount : 0;
+
+      setTotalRevenue(revenue);
+      setTotalOrders(orderCount);
+      setTotalCustomers(customerCount);
+      setAvgOrderValue(avgOrder);
+
+      // Monthly data aggregation
+      const monthlyStats = aggregateMonthlyData(orders || []);
+      setMonthlyData(monthlyStats);
+
+      // Top products (from order items)
+      const productStats = calculateTopProducts(orders || [], products || []);
+      setTopProducts(productStats);
+
+      // Category performance
+      const categoryStats = calculateCategoryPerformance(orders || []);
+      setCategoryPerformance(categoryStats);
+
+      // Geographic data (from shipping addresses)
+      const geoStats = calculateGeographicData(orders || []);
+      setGeographicData(geoStats);
+
+      // Hourly data
+      const hourStats = calculateHourlyData(orders || []);
+      setHourlyData(hourStats);
+
+      // Customer metrics
+      const newCustomerCount = customers?.filter(c => {
+        const createdDate = new Date(c.created_at);
+        return createdDate >= startDate;
+      }).length || 0;
+      setNewCustomers(newCustomerCount);
+
+      // Retention rate (customers with more than 1 order)
+      const returningCustomers = customers?.filter(c => (c.total_orders || 0) > 1).length || 0;
+      const retention = customerCount > 0 ? (returningCustomers / customerCount) * 100 : 0;
+      setRetentionRate(retention);
+
+      // Avg lifetime value
+      const lifetimeValue = customerCount > 0 
+        ? customers.reduce((sum, c) => sum + parseFloat(c.total_spent || 0), 0) / customerCount 
+        : 0;
+      setAvgLifetimeValue(lifetimeValue);
+
+    } catch (error) {
+      console.error('Error fetching analytics:', error);
+      toast.error('Failed to load analytics data');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const aggregateMonthlyData = (orders: any[]) => {
+    const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    const monthlyMap = new Map();
+
+    orders.forEach(order => {
+      const date = new Date(order.created_at);
+      const monthKey = `${date.getFullYear()}-${date.getMonth()}`;
+      const monthName = monthNames[date.getMonth()];
+
+      if (!monthlyMap.has(monthKey)) {
+        monthlyMap.set(monthKey, {
+          month: monthName,
+          revenue: 0,
+          orders: 0,
+          customers: new Set(),
+        });
+      }
+
+      const monthData = monthlyMap.get(monthKey);
+      monthData.revenue += parseFloat(order.total || 0);
+      monthData.orders += 1;
+      monthData.customers.add(order.customer_email);
+    });
+
+    return Array.from(monthlyMap.values())
+      .map(data => ({
+        month: data.month,
+        revenue: Math.round(data.revenue),
+        orders: data.orders,
+        customers: data.customers.size,
+        avgOrder: data.orders > 0 ? Math.round(data.revenue / data.orders) : 0,
+      }))
+      .slice(-10); // Last 10 months
+  };
+
+  const calculateTopProducts = (orders: any[], products: any[]) => {
+    const productMap = new Map();
+
+    orders.forEach(order => {
+      const items = order.items || [];
+      items.forEach((item: any) => {
+        const productId = item.product_id || item.id;
+        if (!productMap.has(productId)) {
+          productMap.set(productId, {
+            id: productId,
+            name: item.name || 'Unknown Product',
+            sales: 0,
+            revenue: 0,
+          });
+        }
+        const productData = productMap.get(productId);
+        productData.sales += item.quantity || 1;
+        productData.revenue += parseFloat(item.price || 0) * (item.quantity || 1);
+      });
+    });
+
+    return Array.from(productMap.values())
+      .sort((a, b) => b.revenue - a.revenue)
+      .slice(0, 5)
+      .map((p, index) => ({
+        id: index + 1,
+        name: p.name,
+        sales: p.sales,
+        revenue: Math.round(p.revenue),
+        growth: 0, // Would need historical data to calculate
+      }));
+  };
+
+  const calculateCategoryPerformance = (orders: any[]) => {
+    // Simplified category aggregation - you may need to enhance based on your data structure
+    const categories = [
+      { name: 'Canvas Prints', color: '#f63a9e', revenue: 0, orders: 0 },
+      { name: 'Framed Canvas', color: '#8b5cf6', revenue: 0, orders: 0 },
+      { name: 'Metal Prints', color: '#06b6d4', revenue: 0, orders: 0 },
+      { name: 'Others', color: '#10b981', revenue: 0, orders: 0 },
+    ];
+
+    orders.forEach(order => {
+      const items = order.items || [];
+      items.forEach((item: any) => {
+        const type = item.product_type || 'Others';
+        let category = categories.find(c => 
+          c.name.toLowerCase().includes(type.toLowerCase())
+        ) || categories[3];
+        
+        category.revenue += parseFloat(item.price || 0) * (item.quantity || 1);
+        category.orders += 1;
+      });
+    });
+
+    const totalRevenue = categories.reduce((sum, c) => sum + c.revenue, 0);
+    return categories
+      .map(c => ({
+        ...c,
+        value: totalRevenue > 0 ? Math.round((c.revenue / totalRevenue) * 100) : 0,
+      }))
+      .filter(c => c.value > 0);
+  };
+
+  const calculateGeographicData = (orders: any[]) => {
+    const locationMap = new Map();
+
+    orders.forEach(order => {
+      const postcode = order.shipping_postcode || 'Unknown';
+      const city = extractCityFromPostcode(postcode);
+      
+      if (!locationMap.has(city)) {
+        locationMap.set(city, { location: city, orders: 0, revenue: 0 });
+      }
+      const locationData = locationMap.get(city);
+      locationData.orders += 1;
+      locationData.revenue += parseFloat(order.total || 0);
+    });
+
+    const totalRevenue = Array.from(locationMap.values()).reduce(
+      (sum, loc) => sum + loc.revenue,
+      0
+    );
+
+    return Array.from(locationMap.values())
+      .map(loc => ({
+        ...loc,
+        revenue: Math.round(loc.revenue),
+        percentage: totalRevenue > 0 ? Math.round((loc.revenue / totalRevenue) * 100) : 0,
+      }))
+      .sort((a, b) => b.revenue - a.revenue)
+      .slice(0, 6);
+  };
+
+  const extractCityFromPostcode = (postcode: string) => {
+    // Simple city extraction - enhance based on your needs
+    if (!postcode || postcode === 'Unknown') return 'Other';
+    const prefix = postcode.split(' ')[0].toUpperCase();
+    
+    // UK postcode to city mapping (simplified)
+    const cityMap: Record<string, string> = {
+      'E': 'London', 'EC': 'London', 'N': 'London', 'NW': 'London',
+      'SE': 'London', 'SW': 'London', 'W': 'London', 'WC': 'London',
+      'M': 'Manchester',
+      'B': 'Birmingham',
+      'EH': 'Edinburgh',
+      'BS': 'Bristol',
+      'L': 'Liverpool',
+      'LS': 'Leeds',
+    };
+
+    for (const [key, city] of Object.entries(cityMap)) {
+      if (prefix.startsWith(key)) return city;
+    }
+    return 'Other';
+  };
+
+  const calculateHourlyData = (orders: any[]) => {
+    const hours = Array.from({ length: 8 }, (_, i) => ({
+      hour: `${String(i * 3).padStart(2, '0')}:00`,
+      orders: 0,
+    }));
+
+    orders.forEach(order => {
+      const date = new Date(order.created_at);
+      const hour = date.getHours();
+      const index = Math.floor(hour / 3);
+      if (index < hours.length) {
+        hours[index].orders += 1;
+      }
+    });
+
+    return hours;
+  };
 
   const handleExportReport = (type: string) => {
     toast.success(`${type} report downloaded successfully`);
   };
+
+  if (loading) {
+    return (
+      <AdminLayout>
+        <div className='max-w-7xl mx-auto flex items-center justify-center py-20'>
+          <Loader2 className='w-8 h-8 animate-spin text-[#f63a9e]' />
+        </div>
+      </AdminLayout>
+    );
+  }
 
   return (
     <AdminLayout>
@@ -249,10 +414,10 @@ export function AdminAnalyticsPage() {
               className="font-['Bricolage_Grotesque',_sans-serif]"
               style={{ fontSize: '28px', fontWeight: '600' }}
             >
-              £284,700
+              £{totalRevenue.toLocaleString('en-GB', { maximumFractionDigits: 0 })}
             </p>
             <p className='text-xs text-gray-500 mt-2'>
-              vs. £241,300 last period
+              Last {dateRange === '7days' ? '7' : dateRange === '30days' ? '30' : dateRange === '90days' ? '90' : '365'} days
             </p>
           </div>
 
@@ -271,9 +436,9 @@ export function AdminAnalyticsPage() {
               className="font-['Bricolage_Grotesque',_sans-serif]"
               style={{ fontSize: '28px', fontWeight: '600' }}
             >
-              3,849
+              {totalOrders.toLocaleString()}
             </p>
-            <p className='text-xs text-gray-500 mt-2'>vs. 3,421 last period</p>
+            <p className='text-xs text-gray-500 mt-2'>{totalOrders} orders in period</p>
           </div>
 
           <div className='bg-white rounded-lg border border-gray-200 p-6'>
@@ -291,9 +456,9 @@ export function AdminAnalyticsPage() {
               className="font-['Bricolage_Grotesque',_sans-serif]"
               style={{ fontSize: '28px', fontWeight: '600' }}
             >
-              2,847
+              {totalCustomers.toLocaleString()}
             </p>
-            <p className='text-xs text-gray-500 mt-2'>vs. 2,281 last period</p>
+            <p className='text-xs text-gray-500 mt-2'>All time customers</p>
           </div>
 
           <div className='bg-white rounded-lg border border-gray-200 p-6'>
@@ -311,9 +476,9 @@ export function AdminAnalyticsPage() {
               className="font-['Bricolage_Grotesque',_sans-serif]"
               style={{ fontSize: '28px', fontWeight: '600' }}
             >
-              £73.95
+              £{avgOrderValue.toFixed(2)}
             </p>
-            <p className='text-xs text-gray-500 mt-2'>vs. £70.29 last period</p>
+            <p className='text-xs text-gray-500 mt-2'>Per order average</p>
           </div>
         </div>
 
@@ -740,7 +905,7 @@ export function AdminAnalyticsPage() {
                       className="font-['Bricolage_Grotesque',_sans-serif]"
                       style={{ fontSize: '24px', fontWeight: '600' }}
                     >
-                      912
+                      {newCustomers}
                     </p>
                   </div>
                 </div>
@@ -758,7 +923,7 @@ export function AdminAnalyticsPage() {
                       className="font-['Bricolage_Grotesque',_sans-serif]"
                       style={{ fontSize: '24px', fontWeight: '600' }}
                     >
-                      68%
+                      {retentionRate.toFixed(0)}%
                     </p>
                   </div>
                 </div>
@@ -776,7 +941,7 @@ export function AdminAnalyticsPage() {
                       className="font-['Bricolage_Grotesque',_sans-serif]"
                       style={{ fontSize: '24px', fontWeight: '600' }}
                     >
-                      £243
+                      £{avgLifetimeValue.toFixed(0)}
                     </p>
                   </div>
                 </div>
