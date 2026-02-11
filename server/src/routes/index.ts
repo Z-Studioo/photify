@@ -3,6 +3,7 @@ import { Request, Response } from 'express';
 import checkoutRoutes from './checkout';
 import searchRoutes from './search';
 import embeddingsRoutes from './embeddings';
+import contactRoutes from './contact';
 
 const router = Router();
 
@@ -76,6 +77,7 @@ router.get('/', (_req: Request, res: Response) => {
       webhook: 'POST /api/webhook',
       search: 'GET /api/search/semantic',
       embeddings: 'POST /api/embeddings/generate',
+      contact: 'POST /api/contact',
     },
   });
 });
@@ -85,5 +87,6 @@ router.get('/', (_req: Request, res: Response) => {
 router.use('/checkout', checkoutRoutes);
 router.use('/search', searchRoutes);
 router.use('/embeddings', embeddingsRoutes);
+router.use('/contact', contactRoutes);
 
 export default router;
