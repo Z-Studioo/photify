@@ -32,121 +32,142 @@ export async function sendContactEmail(data: ContactEmailData): Promise<void> {
     replyTo: email,
     subject: `Contact Form: ${subject}`,
     html: `
-      <!DOCTYPE html>
-      <html>
-      <head>
-        <meta charset="utf-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>Contact Form Submission</title>
-        <style>
-          body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-            line-height: 1.6;
-            color: #333;
-            max-width: 600px;
-            margin: 0 auto;
-            padding: 20px;
+      <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+      <html xmlns="http://www.w3.org/1999/xhtml">
+        <head>
+          <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+          <meta name="x-apple-disable-message-reformatting" />
+          <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+          <meta name="color-scheme" content="light dark" />
+          <meta name="supported-color-schemes" content="light dark" />
+          <title>New Contact Form Submission</title>
+          <style type="text/css" rel="stylesheet" media="all">
+          @import url("https://fonts.googleapis.com/css?family=Nunito+Sans:400,700&display=swap");
+          body { width: 100% !important; height: 100%; margin: 0; -webkit-text-size-adjust: none; font-family: "Nunito Sans", Helvetica, Arial, sans-serif; background-color: #F2F4F6; color: #51545E; }
+          a { color: #F63A9E; }
+          td { word-break: break-word; font-family: "Nunito Sans", Helvetica, Arial, sans-serif; font-size: 16px; }
+          h1 { margin-top: 0; color: #333333; font-size: 22px; font-weight: bold; text-align: left; }
+          p { margin: .4em 0 1.1875em; font-size: 16px; line-height: 1.625; color: #51545E; }
+          .email-wrapper { width: 100%; margin: 0; padding: 0; background-color: #F2F4F6; }
+          .email-content { width: 100%; margin: 0; padding: 0; }
+          .email-masthead { padding: 25px 0; text-align: center; }
+          .email-masthead_logo { width: 300px; }
+          .email-body { width: 100%; margin: 0; padding: 0; }
+          .email-body_inner { width: 570px; margin: 0 auto; padding: 0; background-color: #FFFFFF; }
+          .email-footer { width: 570px; margin: 0 auto; padding: 0; text-align: center; }
+          .email-footer p { color: #A8AAAF; }
+          .content-cell { padding: 45px; }
+          .attributes { margin: 0 0 21px; }
+          .attributes_content { background-color: #F4F4F7; padding: 16px; }
+          .attributes_item { padding: 8px 0; }
+          .button { background-color: #F63A9E; border-top: 10px solid #F63A9E; border-right: 18px solid #F63A9E; border-bottom: 10px solid #F63A9E; border-left: 18px solid #F63A9E; display: inline-block; color: #FFF; text-decoration: none; border-radius: 3px; box-shadow: 0 2px 3px rgba(0, 0, 0, 0.16); -webkit-text-size-adjust: none; box-sizing: border-box; }
+          .body-action { width: 100%; margin: 30px auto; padding: 0; text-align: center; }
+          .social { width: auto; }
+          .social td { padding: 0; width: auto; }
+          .social_icon { height: 20px; margin: 0 8px 10px 8px; padding: 0; }
+          @media only screen and (max-width: 600px) {
+            .email-body_inner, .email-footer { width: 100% !important; }
           }
-          .header {
-            background: linear-gradient(135deg, #f63a9e 0%, #e02d8d 100%);
-            color: white;
-            padding: 30px;
-            border-radius: 10px 10px 0 0;
-            text-align: center;
+          @media (prefers-color-scheme: dark) {
+            body, .email-body, .email-body_inner, .email-content, .email-wrapper, .email-masthead, .email-footer { background-color: #333333 !important; color: #FFF !important; }
+            p, a, h1, span, .attributes_item { color: #FFF !important; }
+            .attributes_content { background-color: #222 !important; }
           }
-          .header h1 {
-            margin: 0;
-            font-size: 24px;
-          }
-          .content {
-            background: #ffffff;
-            padding: 30px;
-            border: 1px solid #e5e7eb;
-            border-top: none;
-          }
-          .field {
-            margin-bottom: 20px;
-          }
-          .field-label {
-            font-weight: 600;
-            color: #f63a9e;
-            font-size: 14px;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-            margin-bottom: 5px;
-          }
-          .field-value {
-            background: #f9fafb;
-            padding: 12px;
-            border-radius: 6px;
-            border-left: 3px solid #f63a9e;
-          }
-          .message-box {
-            background: #f9fafb;
-            padding: 20px;
-            border-radius: 6px;
-            border-left: 3px solid #f63a9e;
-            white-space: pre-wrap;
-            word-wrap: break-word;
-          }
-          .footer {
-            background: #f9fafb;
-            padding: 20px;
-            border-radius: 0 0 10px 10px;
-            text-align: center;
-            font-size: 12px;
-            color: #6b7280;
-            border: 1px solid #e5e7eb;
-            border-top: none;
-          }
-          .reply-button {
-            display: inline-block;
-            background: #f63a9e;
-            color: white;
-            padding: 12px 24px;
-            text-decoration: none;
-            border-radius: 6px;
-            margin: 20px 0;
-            font-weight: 600;
-          }
-        </style>
-      </head>
-      <body>
-        <div class="header">
-          <h1>📬 New Contact Form Submission</h1>
-        </div>
-        
-        <div class="content">
-          <div class="field">
-            <div class="field-label">From</div>
-            <div class="field-value">
-              <strong>${name}</strong><br>
-              <a href="mailto:${email}" style="color: #f63a9e; text-decoration: none;">${email}</a>
-            </div>
-          </div>
-          
-          <div class="field">
-            <div class="field-label">Subject</div>
-            <div class="field-value">${subject}</div>
-          </div>
-          
-          <div class="field">
-            <div class="field-label">Message</div>
-            <div class="message-box">${message}</div>
-          </div>
-          
-          <div style="text-align: center;">
-            <a href="mailto:${email}?subject=Re: ${encodeURIComponent(subject)}" class="reply-button">
-              Reply to ${name}
-            </a>
-          </div>
-        </div>
-        
-        <div class="footer">
-          <p>This email was sent from the Photify contact form.</p>
-          <p>Received at: ${new Date().toLocaleString()}</p>
-        </div>
-      </body>
+          </style>
+        </head>
+        <body>
+          <table class="email-wrapper" width="100%" cellpadding="0" cellspacing="0" role="presentation">
+            <tr>
+              <td align="center">
+                <table class="email-content" width="100%" cellpadding="0" cellspacing="0" role="presentation">
+                  <tr>
+                    <td class="email-masthead">
+                      <a href="https://photify.co">
+                        <img src="https://5fa4a340f8c967ae9d08053cb424cc05.cdn.bubble.io/f1734091251381x155693691169358940/Frame%2012.png" alt="Photify Logo" class="email-masthead_logo" style="max-width: 150px; height: auto;">
+                      </a>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td class="email-body" width="570" cellpadding="0" cellspacing="0">
+                      <table class="email-body_inner" align="center" width="570" cellpadding="0" cellspacing="0" role="presentation">
+                        <tr>
+                          <td class="content-cell">
+                            <h1>📬 New Contact Form Submission</h1>
+                            <p>You have received a new message from the Photify contact form.</p>
+                            
+                            <table class="attributes">
+                              <tr>
+                                <td class="attributes_content">
+                                  <table width="100%" cellpadding="0" cellspacing="0">
+                                    <tr>
+                                      <td class="attributes_item">
+                                        <strong>From:</strong> ${name}
+                                      </td>
+                                    </tr>
+                                    <tr>
+                                      <td class="attributes_item">
+                                        <strong>Email:</strong> <a href="mailto:${email}" style="color: #F63A9E;">${email}</a>
+                                      </td>
+                                    </tr>
+                                    <tr>
+                                      <td class="attributes_item">
+                                        <strong>Subject:</strong> ${subject}
+                                      </td>
+                                    </tr>
+                                    <tr>
+                                      <td class="attributes_item">
+                                        <strong>Received:</strong> ${new Date().toLocaleString()}
+                                      </td>
+                                    </tr>
+                                  </table>
+                                </td>
+                              </tr>
+                            </table>
+
+                            <h2>Message</h2>
+                            <p style="white-space: pre-wrap; background-color: #F4F4F7; padding: 20px; border-radius: 4px;">${message}</p>
+
+                            <table class="body-action" align="center" width="100%" cellpadding="0" cellspacing="0" role="presentation">
+                              <tr>
+                                <td align="center">
+                                  <a href="mailto:${email}?subject=Re: ${encodeURIComponent(subject)}" class="button" style="color: #ffffff;">Reply to ${name}</a>
+                                </td>
+                              </tr>
+                            </table>
+                          </td>
+                        </tr>
+                      </table>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td>
+                      <table class="email-footer" align="center" width="570" cellpadding="0" cellspacing="0" role="presentation">
+                        <tr>
+                          <td class="content-cell" align="center">
+                            <p>Photify Limited<br>London, United Kingdom</p>
+                            <table class="social" align="center" width="100%" cellpadding="0" cellspacing="0" role="presentation">
+                              <tr>
+                                <td align="center">
+                                  <table align="center" cellpadding="0" cellspacing="0">
+                                    <tr>
+                                      <td><a href="https://www.facebook.com/profile.php?id=61567498383981"><img src="https://img.icons8.com/fluency/24/facebook-new.png" alt="Facebook" class="social_icon" width="24" height="24" /></a></td>
+                                      <td><a href="https://www.instagram.com/photify.co/"><img src="https://img.icons8.com/fluency/24/instagram-new.png" alt="Instagram" class="social_icon" width="24" height="24" /></a></td>
+                                      <td><a href="https://www.tiktok.com/@photify.co"><img src="https://img.icons8.com/fluency/24/tiktok.png" alt="TikTok" class="social_icon" width="24" height="24" /></a></td>
+                                    </tr>
+                                  </table>
+                                </td>
+                              </tr>
+                            </table>
+                          </td>
+                        </tr>
+                      </table>
+                    </td>
+                  </tr>
+                </table>
+              </td>
+            </tr>
+          </table>
+        </body>
       </html>
     `,
     text: `
@@ -183,110 +204,164 @@ export async function sendContactConfirmationEmail(data: ContactEmailData): Prom
     from: config.SENDGRID_FROM_EMAIL || 'noreply@photify.co',
     subject: 'We received your message - Photify',
     html: `
-      <!DOCTYPE html>
-      <html>
-      <head>
-        <meta charset="utf-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>Message Received</title>
-        <style>
-          body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-            line-height: 1.6;
-            color: #333;
-            max-width: 600px;
-            margin: 0 auto;
-            padding: 20px;
+      <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+      <html xmlns="http://www.w3.org/1999/xhtml">
+        <head>
+          <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+          <meta name="x-apple-disable-message-reformatting" />
+          <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+          <meta name="color-scheme" content="light dark" />
+          <meta name="supported-color-schemes" content="light dark" />
+          <title>Message Received - Photify</title>
+          <style type="text/css" rel="stylesheet" media="all">
+          @import url("https://fonts.googleapis.com/css?family=Nunito+Sans:400,700&display=swap");
+          body { width: 100% !important; height: 100%; margin: 0; -webkit-text-size-adjust: none; font-family: "Nunito Sans", Helvetica, Arial, sans-serif; background-color: #F2F4F6; color: #51545E; }
+          a { color: #F63A9E; }
+          td { word-break: break-word; font-family: "Nunito Sans", Helvetica, Arial, sans-serif; font-size: 16px; }
+          h1 { margin-top: 0; color: #333333; font-size: 22px; font-weight: bold; text-align: left; }
+          h3 { margin-top: 0; color: #333333; font-size: 14px; font-weight: bold; text-align: left; }
+          p { margin: .4em 0 1.1875em; font-size: 16px; line-height: 1.625; color: #51545E; }
+          p.sub { font-size: 13px; }
+          ul { margin: .4em 0 1.1875em; font-size: 16px; line-height: 1.625; }
+          .email-wrapper { width: 100%; margin: 0; padding: 0; background-color: #F2F4F6; }
+          .email-content { width: 100%; margin: 0; padding: 0; }
+          .email-masthead { padding: 25px 0; text-align: center; }
+          .email-masthead_logo { width: 300px; }
+          .email-body { width: 100%; margin: 0; padding: 0; }
+          .email-body_inner { width: 570px; margin: 0 auto; padding: 0; background-color: #FFFFFF; }
+          .email-footer { width: 570px; margin: 0 auto; padding: 0; text-align: center; }
+          .email-footer p { color: #A8AAAF; }
+          .content-cell { padding: 45px; }
+          .attributes { margin: 0 0 21px; }
+          .attributes_content { background-color: #F4F4F7; padding: 16px; border-radius: 4px; }
+          .attributes_item { padding: 8px 0; }
+          .button { background-color: #F63A9E; border-top: 10px solid #F63A9E; border-right: 18px solid #F63A9E; border-bottom: 10px solid #F63A9E; border-left: 18px solid #F63A9E; display: inline-block; color: #FFF; text-decoration: none; border-radius: 3px; box-shadow: 0 2px 3px rgba(0, 0, 0, 0.16); -webkit-text-size-adjust: none; box-sizing: border-box; }
+          .body-action { width: 100%; margin: 30px auto; padding: 0; text-align: center; }
+          .body-sub { margin-top: 25px; padding-top: 25px; border-top: 1px solid #EAEAEC; }
+          .social { width: auto; }
+          .social td { padding: 0; width: auto; }
+          .social_icon { height: 20px; margin: 0 8px 10px 8px; padding: 0; }
+          @media only screen and (max-width: 600px) {
+            .email-body_inner, .email-footer { width: 100% !important; }
+            .button { width: 100% !important; text-align: center !important; }
           }
-          .header {
-            background: linear-gradient(135deg, #f63a9e 0%, #e02d8d 100%);
-            color: white;
-            padding: 40px;
-            border-radius: 10px 10px 0 0;
-            text-align: center;
+          @media (prefers-color-scheme: dark) {
+            body, .email-body, .email-body_inner, .email-content, .email-wrapper, .email-masthead, .email-footer { background-color: #333333 !important; color: #FFF !important; }
+            p, a, ul, h1, h3, span, .attributes_item { color: #FFF !important; }
+            .attributes_content { background-color: #222 !important; }
           }
-          .header h1 {
-            margin: 0;
-            font-size: 28px;
-          }
-          .icon {
-            font-size: 60px;
-            margin-bottom: 10px;
-          }
-          .content {
-            background: #ffffff;
-            padding: 40px;
-            border: 1px solid #e5e7eb;
-            border-top: none;
-          }
-          .footer {
-            background: #f9fafb;
-            padding: 30px;
-            border-radius: 0 0 10px 10px;
-            text-align: center;
-            font-size: 14px;
-            color: #6b7280;
-            border: 1px solid #e5e7eb;
-            border-top: none;
-          }
-          .button {
-            display: inline-block;
-            background: #f63a9e;
-            color: white;
-            padding: 14px 32px;
-            text-decoration: none;
-            border-radius: 8px;
-            margin: 20px 0;
-            font-weight: 600;
-          }
-          .info-box {
-            background: #FFF5FB;
-            padding: 20px;
-            border-radius: 8px;
-            border-left: 4px solid #f63a9e;
-            margin: 20px 0;
-          }
-        </style>
-      </head>
-      <body>
-        <div class="header">
-          <div class="icon">✓</div>
-          <h1>Thank You, ${name}!</h1>
-          <p style="margin: 10px 0 0 0; font-size: 16px; opacity: 0.95;">We've received your message</p>
-        </div>
-        
-        <div class="content">
-          <p>Hi ${name},</p>
-          
-          <p>Thank you for reaching out to Photify! We've successfully received your message regarding <strong>"${subject}"</strong>.</p>
-          
-          <div class="info-box">
-            <p style="margin: 0;"><strong>📧 What happens next?</strong></p>
-            <p style="margin: 10px 0 0 0;">Our support team will review your message and get back to you within 24 hours during business days. We're here to help!</p>
-          </div>
-          
-          <p>In the meantime, feel free to explore:</p>
-          <ul>
-            <li><strong>Order Tracking:</strong> Track your existing orders</li>
-            <li><strong>FAQ:</strong> Find quick answers to common questions</li>
-            <li><strong>Product Gallery:</strong> Browse our latest collections</li>
-          </ul>
-          
-          <div style="text-align: center;">
-            <a href="${config.CLIENT_URL || 'https://photify.co'}" class="button">
-              Visit Photify
-            </a>
-          </div>
-        </div>
-        
-        <div class="footer">
-          <p><strong>Photify</strong></p>
-          <p>📧 ${config.SUPPORT_EMAIL || 'support@photify.co'} • 📱 +44 7585 630176</p>
-          <p style="margin-top: 15px; font-size: 12px;">
-            This is an automated confirmation email. Please do not reply to this email.
-          </p>
-        </div>
-      </body>
+          </style>
+        </head>
+        <body>
+          <span class="preheader">Thank you for contacting Photify. We've received your message and will respond soon.</span>
+          <table class="email-wrapper" width="100%" cellpadding="0" cellspacing="0" role="presentation">
+            <tr>
+              <td align="center">
+                <table class="email-content" width="100%" cellpadding="0" cellspacing="0" role="presentation">
+                  <tr>
+                    <td class="email-masthead">
+                      <a href="https://photify.co">
+                        <img src="https://5fa4a340f8c967ae9d08053cb424cc05.cdn.bubble.io/f1734091251381x155693691169358940/Frame%2012.png" alt="Photify Logo" class="email-masthead_logo" style="max-width: 150px; height: auto;">
+                      </a>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td class="email-body" width="570" cellpadding="0" cellspacing="0">
+                      <table class="email-body_inner" align="center" width="570" cellpadding="0" cellspacing="0" role="presentation">
+                        <tr>
+                          <td class="content-cell">
+                            <h1>Thank You for Contacting Us! 💬</h1>
+                            <p>Hi ${name},</p>
+                            <p>We've successfully received your message and wanted to let you know that we're on it! Our support team will review your inquiry and get back to you as soon as possible.</p>
+                            
+                            <table class="attributes">
+                              <tr>
+                                <td class="attributes_content">
+                                  <table width="100%" cellpadding="0" cellspacing="0">
+                                    <tr>
+                                      <td class="attributes_item">
+                                        <strong>Your Message Subject:</strong> ${subject}
+                                      </td>
+                                    </tr>
+                                    <tr>
+                                      <td class="attributes_item">
+                                        <strong>Submitted:</strong> ${new Date().toLocaleString()}
+                                      </td>
+                                    </tr>
+                                    <tr>
+                                      <td class="attributes_item">
+                                        <strong>Response Time:</strong> Within 24 hours (business days)
+                                      </td>
+                                    </tr>
+                                  </table>
+                                </td>
+                              </tr>
+                            </table>
+
+                            <h3>What happens next?</h3>
+                            <p>Our support team will carefully review your message and respond to your email address: <strong>${email}</strong></p>
+                            
+                            <p>In the meantime, you can:</p>
+                            <ul>
+                              <li>Track your existing orders</li>
+                              <li>Browse our product gallery</li>
+                              <li>Explore our AI-powered photo tools</li>
+                              <li>Check out our latest collections</li>
+                            </ul>
+
+                            <table class="body-action" align="center" width="100%" cellpadding="0" cellspacing="0" role="presentation">
+                              <tr>
+                                <td align="center">
+                                  <a href="${config.CLIENT_URL || 'https://photify.co'}" class="button" style="color: #ffffff;">Visit Photify</a>
+                                </td>
+                              </tr>
+                            </table>
+
+                            <p>If you have any urgent questions, feel free to reach out to us directly at <a href="mailto:${config.SUPPORT_EMAIL || 'support@photify.co'}">${config.SUPPORT_EMAIL || 'support@photify.co'}</a></p>
+                            
+                            <p>Thanks for choosing Photify!<br>The Photify Team</p>
+
+                            <table class="body-sub" role="presentation">
+                              <tr>
+                                <td>
+                                  <p class="sub">This is an automated confirmation email. Please don't reply directly to this message.</p>
+                                </td>
+                              </tr>
+                            </table>
+                          </td>
+                        </tr>
+                      </table>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td>
+                      <table class="email-footer" align="center" width="570" cellpadding="0" cellspacing="0" role="presentation">
+                        <tr>
+                          <td class="content-cell" align="center">
+                            <p>Photify Limited<br>London, United Kingdom</p>
+                            <table class="social" align="center" width="100%" cellpadding="0" cellspacing="0" role="presentation">
+                              <tr>
+                                <td align="center">
+                                  <table align="center" cellpadding="0" cellspacing="0">
+                                    <tr>
+                                      <td><a href="https://www.facebook.com/profile.php?id=61567498383981"><img src="https://img.icons8.com/fluency/24/facebook-new.png" alt="Facebook" class="social_icon" width="24" height="24" /></a></td>
+                                      <td><a href="https://www.instagram.com/photify.co/"><img src="https://img.icons8.com/fluency/24/instagram-new.png" alt="Instagram" class="social_icon" width="24" height="24" /></a></td>
+                                      <td><a href="https://www.tiktok.com/@photify.co"><img src="https://img.icons8.com/fluency/24/tiktok.png" alt="TikTok" class="social_icon" width="24" height="24" /></a></td>
+                                    </tr>
+                                  </table>
+                                </td>
+                              </tr>
+                            </table>
+                          </td>
+                        </tr>
+                      </table>
+                    </td>
+                  </tr>
+                </table>
+              </td>
+            </tr>
+          </table>
+        </body>
       </html>
     `,
     text: `
