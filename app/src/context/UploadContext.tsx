@@ -8,6 +8,8 @@ import React, { createContext, useContext, useState, useEffect } from 'react';
 import { get, set, del } from 'idb-keyval';
 import type { Product } from '@/lib/data';
 
+export type CornerStyle = 'rounded' | 'sharp';
+
 export type CanvasShape =
   | 'rectangle'
   | 'round'
@@ -33,6 +35,7 @@ interface Metadata {
   shape?: CanvasShape;
   quality?: number[] | null;
   edgeType?: EdgeType;
+  cornerStyle?: CornerStyle;
   quantity?: number;
   selectedProduct?: Product | null;
 }
@@ -47,6 +50,10 @@ interface UploadContextType {
   originalPreview: string | null;
   shape: CanvasShape;
   setShape: (s: CanvasShape) => void;
+  cornerStyle: CornerStyle;
+  setCornerStyle: (c: CornerStyle) => void;
+  pendingCornerStyle: CornerStyle | null;
+  setPendingCornerStyle: (c: CornerStyle | null) => void;
   pendingFile: File | null;
   setPendingFile: (f: File | null) => void;
   pendingPreview: string | null;
@@ -160,6 +167,11 @@ export const UploadProvider = ({ children }: { children: React.ReactNode }) => {
   const [quality, setQuality] = useState<number[]>(
     () => getStoredMetadata().quality || [70]
   );
+  const [cornerStyle, setCornerStyle] = useState<CornerStyle>(
+    () => getStoredMetadata().cornerStyle || 'rounded'
+  );
+  const [pendingCornerStyle, setPendingCornerStyle] = useState<CornerStyle | null>(null);
+
   const [pendingQuality, setPendingQuality] = useState<number[] | null>(null);
 
   const [edgeType, setEdgeType] = useState<EdgeType>(
@@ -254,6 +266,7 @@ export const UploadProvider = ({ children }: { children: React.ReactNode }) => {
       }
       if (metadata.shape) setShape(metadata.shape);
       if (metadata.edgeType) setEdgeType(metadata.edgeType);
+      if (metadata.cornerStyle) setCornerStyle(metadata.cornerStyle);
       if (metadata.quantity) setQuantity(metadata.quantity);
       if (metadata.quality) setQuality(metadata.quality);
       if (metadata.selectedProduct) {
@@ -288,6 +301,7 @@ export const UploadProvider = ({ children }: { children: React.ReactNode }) => {
       shape,
       quality,
       edgeType,
+      cornerStyle,
       quantity,
       selectedProduct,
     });
@@ -298,6 +312,7 @@ export const UploadProvider = ({ children }: { children: React.ReactNode }) => {
     quality,
     edgeType,
     quantity,
+    cornerStyle,
     selectedProduct,
   ]);
 
@@ -328,6 +343,11 @@ export const UploadProvider = ({ children }: { children: React.ReactNode }) => {
       setPendingQuantity(null);
     }
 
+    if (pendingCornerStyle) {
+      setCornerStyle(pendingCornerStyle);
+      setPendingCornerStyle(null);
+    }
+    
     if (pendingFile && pendingPreview) {
       setFile(pendingFile);
       setPreview(pendingPreview);
@@ -378,8 +398,10 @@ export const UploadProvider = ({ children }: { children: React.ReactNode }) => {
     setPendingSize(null);
     setPendingEdgeType(null);
     setPendingQuantity(null);
+    setPendingCornerStyle(null);
     setShape('rectangle');
     setQuality([70]);
+    setCornerStyle('rounded');
     setEdgeType('wrapped');
     setQuantity(1);
 
@@ -430,6 +452,10 @@ export const UploadProvider = ({ children }: { children: React.ReactNode }) => {
         setEdgeType,
         pendingEdgeType,
         setPendingEdgeType,
+        cornerStyle,
+        setCornerStyle,
+        pendingCornerStyle,
+        setPendingCornerStyle,
         quantity,
         setQuantity,
         pendingQuantity,

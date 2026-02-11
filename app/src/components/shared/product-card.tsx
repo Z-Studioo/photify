@@ -101,11 +101,11 @@ export function ProductCard({
         )}
 
         <div className='flex items-center justify-between'>
-          <div>
-            <p className='text-[#f63a9e] font-bold text-xl'>
+          <div className='flex gap-2'>
+            <p className='text-[#f63a9e] font-bold text-2xl'>
               £{typeof price === 'number' ? price.toFixed(2) : price}
             </p>
-            <p className='text-gray-500 text-xs'>per sq in</p>
+            <p className='text-gray-500'>per sq in</p>
           </div>
 
           <div className='w-10 h-10 bg-[#f63a9e] text-white rounded-full flex items-center justify-center group-hover:bg-[#e02d8d] transition-colors shadow-md'>

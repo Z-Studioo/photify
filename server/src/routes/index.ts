@@ -1,7 +1,6 @@
 import { Router } from 'express';
 import { Request, Response } from 'express';
 import checkoutRoutes from './checkout';
-import webhookRoutes from './webhook';
 import searchRoutes from './search';
 import embeddingsRoutes from './embeddings';
 import contactRoutes from './contact';
@@ -84,8 +83,8 @@ router.get('/', (_req: Request, res: Response) => {
 });
 
 // Mount route modules
+// Note: Webhook route is mounted directly in app.ts before JSON body parser
 router.use('/checkout', checkoutRoutes);
-router.use('/webhook', webhookRoutes);
 router.use('/search', searchRoutes);
 router.use('/embeddings', embeddingsRoutes);
 router.use('/contact', contactRoutes);

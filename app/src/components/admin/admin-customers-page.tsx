@@ -1,4 +1,5 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
+import { createClient } from '@/lib/supabase/client';
 import { AdminLayout } from './admin-layout';
 import {
   Search,
@@ -29,98 +30,96 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
+import { LoadingSpinner } from '@/components/shared/loading-spinner';
 
-const customers = [
-  {
-    id: 'CUST-001',
-    name: 'John Smith',
-    email: 'john@example.com',
-    phone: '+44 7700 900001',
-    totalOrders: 12,
-    totalSpent: '£842.00',
-    lastOrder: '2025-10-20',
-    status: 'Active',
-    joined: '2024-03-15',
-  },
-  {
-    id: 'CUST-002',
-    name: 'Sarah Johnson',
-    email: 'sarah@example.com',
-    phone: '+44 7700 900002',
-    totalOrders: 8,
-    totalSpent: '£624.00',
-    lastOrder: '2025-10-18',
-    status: 'Active',
-    joined: '2024-05-22',
-  },
-  {
-    id: 'CUST-003',
-    name: 'Mike Wilson',
-    email: 'mike@example.com',
-    phone: '+44 7700 900003',
-    totalOrders: 15,
-    totalSpent: '£1,245.00',
-    lastOrder: '2025-10-19',
-    status: 'VIP',
-    joined: '2024-01-08',
-  },
-  {
-    id: 'CUST-004',
-    name: 'Emma Davis',
-    email: 'emma@example.com',
-    phone: '+44 7700 900004',
-    totalOrders: 5,
-    totalSpent: '£380.00',
-    lastOrder: '2025-10-15',
-    status: 'Active',
-    joined: '2024-08-12',
-  },
-  {
-    id: 'CUST-005',
-    name: 'Tom Brown',
-    email: 'tom@example.com',
-    phone: '+44 7700 900005',
-    totalOrders: 2,
-    totalSpent: '£156.00',
-    lastOrder: '2025-09-28',
-    status: 'New',
-    joined: '2024-09-15',
-  },
-];
+interface Order {
+  order_number: string;
+  status: string;
+  amount: number;
+  created_at: string;
+}
 
-const orderHistory = [
-  {
-    orderId: 'ORD-1234',
-    date: '2025-10-20',
-    amount: '£68.00',
-    status: 'Delivered',
-  },
-  {
-    orderId: 'ORD-1198',
-    date: '2025-10-05',
-    amount: '£92.00',
-    status: 'Delivered',
-  },
-  {
-    orderId: 'ORD-1156',
-    date: '2025-09-22',
-    amount: '£115.00',
-    status: 'Delivered',
-  },
-  {
-    orderId: 'ORD-1089',
-    date: '2025-09-08',
-    amount: '£84.00',
-    status: 'Delivered',
-  },
-];
+export interface Customer {
+  id: string;
+  name: string;
+  email: string;
+  phone: string;
+  total_orders: number;
+  total_spent: number;
+  status: 'VIP' | 'Active' | 'New';
+  joined: string;
+  last_order_at: string | null;
+  orders: Order[];
+}
 
-export function AdminCustomersPage() {
+export const AdminCustomersPage = () => {
+  const supabase = createClient();
+
+  const [customers, setCustomers] = useState<Customer[]>([]);
+  const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
-  const [selectedCustomer, setSelectedCustomer] = useState<
-    (typeof customers)[0] | null
-  >(null);
+  const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(
+    null
+  );
+
+  useEffect(() => {
+    const fetchCustomers = async () => {
+      setLoading(true);
+
+      const { data, error } = await supabase
+        .from('customers')
+        .select(
+          `
+          id,
+          name,
+          email,
+          phone,
+          total_spent,
+          created_at
+          `
+        )
+        .order('created_at', { ascending: false });
+        
+        // orders (
+        //   order_number,
+        //   status,
+        //   amount,
+        //   created_at
+        // )
+      if (error) {
+        console.error(error);
+        setLoading(false);
+        return;
+      }
+
+      const mapped: Customer[] = data.map((c: any) => {
+        const orders = [...(c.orders ?? [])].sort(
+          (a, b) =>
+            new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+        );
+
+        return {
+          id: c.id,
+          name: c.name,
+          email: c.email,
+          phone: c.phone,
+          joined: c.created_at,
+          orders,
+          total_orders: orders.length,
+          total_spent: Number(c.total_spent ?? 0),
+          last_order_at: orders[0]?.created_at ?? null,
+          status:
+            orders.length >= 10 ? 'VIP' : orders.length > 0 ? 'Active' : 'New',
+        };
+      });
+
+      setCustomers(mapped);
+      setLoading(false);
+    };
+
+    fetchCustomers();
+  }, []);
 
   const filteredCustomers = customers.filter(customer => {
     const matchesSearch =
@@ -135,15 +134,22 @@ export function AdminCustomersPage() {
     return matchesSearch && matchesStatus;
   });
 
+  if (loading) return <LoadingSpinner />;
+
+  const customerOrders = selectedCustomer?.orders ?? [];
+
+  const avgOrder =
+    customerOrders.length > 0
+      ? customerOrders.reduce((sum, o) => sum + o.amount, 0) /
+        customerOrders.length
+      : 0;
+
   return (
     <AdminLayout>
       <div className='max-w-7xl mx-auto'>
         {/* Header */}
         <div className='mb-8'>
-          <h1
-            className="font-['Bricolage_Grotesque',_sans-serif] mb-2"
-            style={{ fontSize: '32px', fontWeight: '600' }}
-          >
+          <h1 className="font-['Bricolage_Grotesque'] text-2xl font-semibold mb-2">
             Customer Management
           </h1>
           <p className='text-gray-600'>
@@ -151,48 +157,8 @@ export function AdminCustomersPage() {
           </p>
         </div>
 
-        {/* Stats */}
-        <div className='grid grid-cols-1 md:grid-cols-4 gap-6 mb-6'>
-          <div className='bg-white rounded-lg border border-gray-200 p-6'>
-            <p className='text-sm text-gray-600 mb-1'>Total Customers</p>
-            <p
-              className="font-['Bricolage_Grotesque',_sans-serif]"
-              style={{ fontSize: '28px', fontWeight: '600' }}
-            >
-              2,847
-            </p>
-          </div>
-          <div className='bg-white rounded-lg border border-gray-200 p-6'>
-            <p className='text-sm text-gray-600 mb-1'>VIP Customers</p>
-            <p
-              className="font-['Bricolage_Grotesque',_sans-serif]"
-              style={{ fontSize: '28px', fontWeight: '600' }}
-            >
-              142
-            </p>
-          </div>
-          <div className='bg-white rounded-lg border border-gray-200 p-6'>
-            <p className='text-sm text-gray-600 mb-1'>New This Month</p>
-            <p
-              className="font-['Bricolage_Grotesque',_sans-serif]"
-              style={{ fontSize: '28px', fontWeight: '600' }}
-            >
-              87
-            </p>
-          </div>
-          <div className='bg-white rounded-lg border border-gray-200 p-6'>
-            <p className='text-sm text-gray-600 mb-1'>Avg. Order Value</p>
-            <p
-              className="font-['Bricolage_Grotesque',_sans-serif]"
-              style={{ fontSize: '28px', fontWeight: '600' }}
-            >
-              £73.95
-            </p>
-          </div>
-        </div>
-
         {/* Filters */}
-        <div className='bg-white rounded-lg border border-gray-200 p-6 mb-6'>
+        <div className='bg-white rounded-lg border p-6 mb-6'>
           <div className='flex flex-col md:flex-row gap-4'>
             <div className='flex-1 relative'>
               <Search className='absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400' />
@@ -224,178 +190,161 @@ export function AdminCustomersPage() {
           </div>
         </div>
 
-        {/* Customers Table */}
-        <div className='bg-white rounded-lg border border-gray-200 overflow-hidden'>
-          <div className='overflow-x-auto'>
-            <table className='w-full'>
-              <thead className='bg-gray-50 border-b border-gray-200'>
-                <tr>
-                  <th className='text-left px-6 py-4 text-sm text-gray-600 font-medium'>
-                    Customer
-                  </th>
-                  <th className='text-left px-6 py-4 text-sm text-gray-600 font-medium'>
-                    Contact
-                  </th>
-                  <th className='text-left px-6 py-4 text-sm text-gray-600 font-medium'>
-                    Orders
-                  </th>
-                  <th className='text-left px-6 py-4 text-sm text-gray-600 font-medium'>
-                    Total Spent
-                  </th>
-                  <th className='text-left px-6 py-4 text-sm text-gray-600 font-medium'>
-                    Last Order
-                  </th>
-                  <th className='text-left px-6 py-4 text-sm text-gray-600 font-medium'>
-                    Status
-                  </th>
-                  <th className='text-left px-6 py-4 text-sm text-gray-600 font-medium'>
-                    Actions
-                  </th>
-                </tr>
-              </thead>
-              <tbody>
-                {filteredCustomers.map(customer => (
-                  <tr
-                    key={customer.id}
-                    className='border-b border-gray-100 last:border-0 hover:bg-gray-50'
+        {/* Table */}
+        <div className='bg-white rounded-lg border overflow-hidden'>
+          <table className='w-full'>
+            <thead className='bg-gray-50 border-b'>
+              <tr>
+                {[
+                  'Customer',
+                  'Contact',
+                  'Orders',
+                  'Total Spent',
+                  'Last Order',
+                  'Status',
+                  'Actions',
+                ].map(h => (
+                  <th
+                    key={h}
+                    className='px-6 py-4 text-left text-sm text-gray-600 font-medium'
                   >
-                    <td className='px-6 py-4'>
-                      <div>
-                        <p className='text-sm font-medium'>{customer.name}</p>
-                        <p className='text-xs text-gray-600'>{customer.id}</p>
-                      </div>
-                    </td>
-                    <td className='px-6 py-4'>
-                      <div>
-                        <p className='text-sm'>{customer.email}</p>
-                        <p className='text-xs text-gray-600'>
-                          {customer.phone}
-                        </p>
-                      </div>
-                    </td>
-                    <td className='px-6 py-4 text-sm'>
-                      {customer.totalOrders}
-                    </td>
-                    <td className='px-6 py-4 text-sm font-medium text-[#f63a9e]'>
-                      {customer.totalSpent}
-                    </td>
-                    <td className='px-6 py-4 text-sm text-gray-600'>
-                      {customer.lastOrder}
-                    </td>
-                    <td className='px-6 py-4'>
-                      <span
-                        className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium ${
-                          customer.status === 'VIP'
-                            ? 'bg-purple-100 text-purple-700'
-                            : customer.status === 'Active'
-                              ? 'bg-green-100 text-green-700'
-                              : 'bg-blue-100 text-blue-700'
-                        }`}
-                      >
-                        {customer.status}
-                      </span>
-                    </td>
-                    <td className='px-6 py-4'>
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button variant='ghost' size='sm'>
-                            <MoreVertical className='w-4 h-4' />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align='end'>
-                          <DropdownMenuItem
-                            onClick={() => setSelectedCustomer(customer)}
-                          >
-                            <Eye className='w-4 h-4 mr-2' />
-                            View Details
-                          </DropdownMenuItem>
-                          <DropdownMenuItem>
-                            <Mail className='w-4 h-4 mr-2' />
-                            Send Email
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    </td>
-                  </tr>
+                    {h}
+                  </th>
                 ))}
-              </tbody>
-            </table>
-          </div>
+              </tr>
+            </thead>
+            <tbody>
+              {filteredCustomers.map(customer => (
+                <tr key={customer.id} className='border-b hover:bg-gray-50'>
+                  <td className='px-6 py-4'>
+                    <p className='font-medium'>{customer.name}</p>
+                    <p className='text-xs text-gray-500 truncate'>
+                      {customer.id}
+                    </p>
+                  </td>
+                  <td className='px-6 py-4'>
+                    <p>{customer.email}</p>
+                    <p className='text-xs text-gray-500'>{customer.phone}</p>
+                  </td>
+                  <td className='px-6 py-4'>{customer.total_orders}</td>
+                  <td className='px-6 py-4 font-medium text-[#f63a9e]'>
+                    £{customer.total_spent.toFixed(2)}
+                  </td>
+                  <td className='px-6 py-4 text-sm text-gray-600'>
+                    {customer.last_order_at
+                      ? new Date(customer.last_order_at).toLocaleDateString()
+                      : '—'}
+                  </td>
+                  <td className='px-6 py-4'>
+                    <span
+                      className={`inline-flex px-2.5 py-1 rounded-full text-xs font-medium ${
+                        customer.status === 'VIP'
+                          ? 'bg-purple-100 text-purple-700'
+                          : customer.status === 'Active'
+                            ? 'bg-green-100 text-green-700'
+                            : 'bg-blue-100 text-blue-700'
+                      }`}
+                    >
+                      {customer.status}
+                    </span>
+                  </td>
+                  <td className='px-6 py-4'>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant='ghost' size='sm'>
+                          <MoreVertical className='w-4 h-4' />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align='end'>
+                        <DropdownMenuItem
+                          onClick={() => setSelectedCustomer(customer)}
+                        >
+                          <Eye className='w-4 h-4 mr-2' />
+                          View Details
+                        </DropdownMenuItem>
+                        <DropdownMenuItem>
+                          <Mail className='w-4 h-4 mr-2' />
+                          Send Email
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         </div>
 
-        {/* Customer Detail Modal */}
+        {/* Modal */}
         <Dialog
           open={!!selectedCustomer}
           onOpenChange={() => setSelectedCustomer(null)}
         >
-          <DialogContent className="max-w-5xl max-h-[90vh] overflow-y-auto font-['Mona_Sans',_sans-serif]">
+          <DialogContent className='max-w-5xl max-h-[90vh] overflow-y-auto'>
             <DialogHeader>
-              <DialogTitle
-                className="font-['Bricolage_Grotesque',_sans-serif]"
-                style={{ fontSize: '24px', fontWeight: '600' }}
-              >
-                Customer Details
-              </DialogTitle>
+              <DialogTitle>Customer Details</DialogTitle>
             </DialogHeader>
 
             {selectedCustomer && (
-              <div className='grid grid-cols-1 md:grid-cols-2 gap-6 mt-4'>
-                {/* Customer Info */}
+              <div className='grid md:grid-cols-2 gap-6 mt-4'>
+                {/* Info + Stats */}
                 <div className='space-y-4'>
-                  <div className='bg-gray-50 rounded-lg p-4'>
+                  <div className='bg-gray-50 p-4 rounded'>
                     <h3 className='font-semibold mb-3'>Customer Information</h3>
-                    <div className='space-y-2 text-sm'>
+                    <div className='text-sm space-y-2'>
                       <div className='flex justify-between'>
-                        <span className='text-gray-600'>Name:</span>
-                        <span className='font-medium'>
-                          {selectedCustomer.name}
+                        <span>Name</span>
+                        <span>{selectedCustomer.name}</span>
+                      </div>
+                      <div className='flex flex-col'>
+                        <span>Email</span>
+                        <span className='truncate'>
+                          {selectedCustomer.email}
                         </span>
                       </div>
                       <div className='flex justify-between'>
-                        <span className='text-gray-600'>Email:</span>
-                        <span>{selectedCustomer.email}</span>
-                      </div>
-                      <div className='flex justify-between'>
-                        <span className='text-gray-600'>Phone:</span>
+                        <span>Phone</span>
                         <span>{selectedCustomer.phone}</span>
                       </div>
-                      <div className='flex justify-between'>
-                        <span className='text-gray-600'>Customer ID:</span>
-                        <span>{selectedCustomer.id}</span>
-                      </div>
-                      <div className='flex justify-between'>
-                        <span className='text-gray-600'>Joined:</span>
-                        <span>{selectedCustomer.joined}</span>
+                      <div className='flex flex-col'>
+                        <span>Customer ID</span>
+                        <span className='truncate text-xs'>
+                          {selectedCustomer.id}
+                        </span>
                       </div>
                     </div>
                   </div>
 
-                  <div className='bg-gray-50 rounded-lg p-4'>
+                  <div className='bg-gray-50 p-4 rounded'>
                     <h3 className='font-semibold mb-3'>Statistics</h3>
-                    <div className='space-y-2 text-sm'>
+                    <div className='text-sm space-y-2'>
                       <div className='flex justify-between'>
-                        <span className='text-gray-600'>Total Orders:</span>
+                        <span>Total Orders</span>
                         <span className='font-medium'>
-                          {selectedCustomer.totalOrders}
+                          {selectedCustomer.total_orders}
                         </span>
                       </div>
                       <div className='flex justify-between'>
-                        <span className='text-gray-600'>Total Spent:</span>
+                        <span>Total Spent</span>
                         <span className='font-medium text-[#f63a9e]'>
-                          {selectedCustomer.totalSpent}
+                          £{selectedCustomer.total_spent.toFixed(2)}
                         </span>
                       </div>
                       <div className='flex justify-between'>
-                        <span className='text-gray-600'>Avg. Order:</span>
-                        <span className='font-medium'>£70.17</span>
+                        <span>Avg. Order</span>
+                        <span className='font-medium'>
+                          £{avgOrder.toFixed(2)}
+                        </span>
                       </div>
                       <div className='flex justify-between'>
-                        <span className='text-gray-600'>Status:</span>
+                        <span>Status</span>
                         <span
                           className={`font-medium ${
                             selectedCustomer.status === 'VIP'
                               ? 'text-purple-600'
-                              : 'text-green-600'
+                              : selectedCustomer.status === 'Active'
+                                ? 'text-green-600'
+                                : 'text-blue-600'
                           }`}
                         >
                           {selectedCustomer.status}
@@ -405,33 +354,37 @@ export function AdminCustomersPage() {
                   </div>
                 </div>
 
-                {/* Order History */}
+                {/* Orders */}
                 <div>
                   <h3 className='font-semibold mb-3'>Order History</h3>
                   <div className='space-y-2'>
-                    {orderHistory.map(order => (
-                      <div
-                        key={order.orderId}
-                        className='bg-gray-50 rounded-lg p-3'
-                      >
-                        <div className='flex justify-between items-start mb-1'>
-                          <span className='text-sm font-medium'>
-                            {order.orderId}
-                          </span>
-                          <span className='text-sm font-medium text-[#f63a9e]'>
-                            {order.amount}
-                          </span>
+                    {customerOrders.length ? (
+                      customerOrders.map(o => (
+                        <div
+                          key={o.order_number}
+                          className='bg-gray-50 p-3 rounded'
+                        >
+                          <div className='flex justify-between mb-1'>
+                            <span className='font-medium'>
+                              {o.order_number}
+                            </span>
+                            <span className='font-medium text-[#f63a9e]'>
+                              £{o.amount.toFixed(2)}
+                            </span>
+                          </div>
+                          <div className='flex justify-between text-xs'>
+                            <span>
+                              {new Date(o.created_at).toLocaleDateString()}
+                            </span>
+                            <span className='px-2 py-1 rounded-full bg-green-100 text-green-700'>
+                              {o.status}
+                            </span>
+                          </div>
                         </div>
-                        <div className='flex justify-between items-center'>
-                          <span className='text-xs text-gray-600'>
-                            {order.date}
-                          </span>
-                          <span className='text-xs px-2 py-1 bg-green-100 text-green-700 rounded-full'>
-                            {order.status}
-                          </span>
-                        </div>
-                      </div>
-                    ))}
+                      ))
+                    ) : (
+                      <p className='text-gray-500'>No orders found</p>
+                    )}
                   </div>
                 </div>
               </div>
@@ -441,4 +394,4 @@ export function AdminCustomersPage() {
       </div>
     </AdminLayout>
   );
-}
+};
