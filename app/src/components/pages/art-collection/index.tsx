@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { Header } from '@/components/layout/header';
 import { Footer } from '@/components/layout/footer';
 import { ImageWithFallback } from '@/components/figma/image-with-fallback';
-import { Ruler, Sparkles, Wand2, Zap } from 'lucide-react';
+import { Ruler } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Helmet } from '@dr.pogodin/react-helmet';
