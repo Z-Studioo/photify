@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import { sendOrderStatusNotification } from '@/controllers/orderStatusController';
+import { adminAuth } from '@/middleware/adminAuth';
 
 const router = Router();
 
@@ -54,6 +55,6 @@ const router = Router();
  *       500:
  *         description: Failed to send notification
  */
-router.post('/:orderNumber/status-notification', sendOrderStatusNotification);
+router.post('/:orderNumber/status-notification', adminAuth, sendOrderStatusNotification);
 
 export default router;

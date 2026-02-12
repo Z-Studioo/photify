@@ -208,12 +208,22 @@ export function AdminOrderDetailPage() {
   const sendStatusNotificationEmail = async (orderNumber: string, status: string) => {
     try {
       const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+
+      // Get the current Supabase session token
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      if (!session?.access_token) {
+        console.error('No active session token found');
+        return;
+      }
+
       const response = await fetch(
         `${apiUrl}/api/orders/${orderNumber}/status-notification`,
         {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
+            'Authorization': `Bearer ${session.access_token}`,
           },
           body: JSON.stringify({ status }),
         }
