@@ -42,7 +42,7 @@ interface FormData {
 
 export function CheckoutPage() {
   const navigate = useNavigate();
-  const { cartItems } = useCart();
+  const { cartItems, deliveryMethod, shippingCost } = useCart();
   const [currentStep, setCurrentStep] = useState(1);
   const [formData, setFormData] = useState<FormData>({
     name: '',
@@ -59,14 +59,28 @@ export function CheckoutPage() {
   const [isProcessing, setIsProcessing] = useState(false);
   const [isSearchingAddress, setIsSearchingAddress] = useState(false);
 
-  // Fetch delivery fee from settings
-  const { data: shippingSetting } = useSiteSetting('shipping_flat_rate');
+  // Fetch delivery prices from settings for reference
+  const { data: standardShipping } = useSiteSetting('shipping_flat_rate');
+  const { data: expressShipping } = useSiteSetting('shipping_express_cost');
+
+  // Get estimated delivery days based on delivery method
+  const getEstimatedDays = () => {
+    const standardPrice = standardShipping?.setting_value?.value || 9.99;
+    const expressPrice = expressShipping?.setting_value?.value || 19.99;
+    
+    // Check if current shipping cost matches express delivery
+    if (Math.abs(shippingCost - expressPrice) < 0.01) {
+      return '2-3 business days';
+    }
+    // Default to standard delivery
+    return '5-7 business days';
+  };
 
   const subtotal = cartItems.reduce(
     (sum, item) => sum + item.price * item.quantity,
     0
   );
-  const deliveryFee = shippingSetting?.setting_value?.value || 9.99;
+  const deliveryFee = shippingCost;
   const total = subtotal + deliveryFee;
 
   const handleNext = () => {
@@ -1029,9 +1043,14 @@ export function CheckoutPage() {
                       <Truck className='w-3 h-3' />
                       Delivery:
                     </span>
-                    <span style={{ fontWeight: '600' }}>
-                      ${deliveryFee.toFixed(2)}
-                    </span>
+                    <div className='text-right'>
+                      <span style={{ fontWeight: '600' }}>
+                        ${deliveryFee.toFixed(2)}
+                      </span>
+                      <div className='text-xs text-gray-500 mt-0.5'>
+                        Est. {getEstimatedDays()}
+                      </div>
+                    </div>
                   </div>
                   <div className='pt-3 border-t border-gray-200'>
                     <div className='flex justify-between items-center p-4 bg-gradient-to-br from-[#f63a9e]/10 to-purple-50 rounded-xl'>

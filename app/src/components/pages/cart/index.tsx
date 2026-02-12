@@ -22,7 +22,7 @@ import {
   CreditCard,
   Loader2,
 } from 'lucide-react';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Header } from '@/components/layout/header';
 import { Footer } from '@/components/layout/footer';
@@ -31,11 +31,8 @@ import { createClient } from '@/lib/supabase/client';
 import { toast } from 'sonner';
 
 export function CartPage() {
-  const { cartItems, updateQuantity, removeFromCart } = useCart();
+  const { cartItems, updateQuantity, removeFromCart, deliveryMethod, setDeliveryMethod, setShippingCost } = useCart();
   const navigate = useNavigate();
-  const [deliveryMethod, setDeliveryMethod] = useState<'standard' | 'express'>(
-    'standard'
-  );
   const [promoCode, setPromoCode] = useState('');
   const [promoApplied, setPromoApplied] = useState(false);
   const [discount, setDiscount] = useState(0);
@@ -65,6 +62,11 @@ export function CartPage() {
   );
   const deliveryPrice = deliveryOptions[deliveryMethod].price;
   const total = subtotal + deliveryPrice - discount;
+
+  // Update shipping cost in context when delivery method or prices change
+  useEffect(() => {
+    setShippingCost(deliveryPrice);
+  }, [deliveryPrice, setShippingCost]);
 
   const handleApplyPromo = async () => {
     if (!promoCode.trim()) {

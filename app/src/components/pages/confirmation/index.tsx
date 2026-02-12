@@ -46,6 +46,8 @@ interface OrderData {
   items: OrderItem[];
   subtotal: number;
   deliveryFee: number;
+  deliveryType: string;
+  estimatedDays: string;
   total: number;
   videoPermission: boolean;
   estimatedDelivery: string;
@@ -161,6 +163,18 @@ export function ConfirmationPage() {
             ? order.shipping_address
             : order.shipping_address?.address || 'N/A';
 
+        // Calculate delivery type and estimated days based on shipping cost
+        const shippingCost = parseFloat(
+          order.shipping_cost || order.delivery_fee || 0
+        );
+        const isExpressShipping = Math.abs(shippingCost - 19.99) < 0.01;
+        const deliveryType = isExpressShipping
+          ? 'Express Shipping'
+          : 'Standard Delivery';
+        const estimatedDays = isExpressShipping
+          ? '2-3 business days'
+          : '5-7 business days';
+
         const formattedOrder: OrderData = {
           orderNumber: order.order_number,
           name: order.customer_name,
@@ -169,9 +183,9 @@ export function ConfirmationPage() {
           address: shippingAddress,
           items: order.items || [],
           subtotal: parseFloat(order.subtotal),
-          deliveryFee: parseFloat(
-            order.shipping_cost || order.delivery_fee || 0
-          ),
+          deliveryFee: shippingCost,
+          deliveryType: deliveryType,
+          estimatedDays: estimatedDays,
           total: parseFloat(order.total),
           videoPermission: order.video_permission || false,
           estimatedDelivery: order.estimated_delivery
@@ -388,9 +402,10 @@ export function ConfirmationPage() {
                   </div>
                   <div>
                     <h3 className='text-gray-900' style={{ fontWeight: '700' }}>
-                      Arrives By
+                      {orderData.deliveryType}
                     </h3>
                     <p className='text-gray-500 text-sm'>
+                      {orderData.estimatedDays} • Arrives by{' '}
                       {orderData.estimatedDelivery}
                     </p>
                   </div>
@@ -448,7 +463,7 @@ export function ConfirmationPage() {
                         {
                           icon: Truck,
                           title: 'Delivery',
-                          description: `Expected by ${orderData.estimatedDelivery}`,
+                          description: `${orderData.deliveryType} • ${orderData.estimatedDays}`,
                           status: 'upcoming',
                           badge: 'Soon',
                         },
@@ -710,9 +725,14 @@ export function ConfirmationPage() {
                           <Truck className='w-4 h-4' />
                           Delivery
                         </span>
-                        <span style={{ fontWeight: '700', fontSize: '18px' }}>
-                          ${orderData.deliveryFee.toFixed(2)}
-                        </span>
+                        <div className='text-right'>
+                          <span style={{ fontWeight: '700', fontSize: '18px' }}>
+                            ${orderData.deliveryFee.toFixed(2)}
+                          </span>
+                          <p className='text-xs text-gray-500 mt-0.5'>
+                            {orderData.deliveryType} • {orderData.estimatedDays}
+                          </p>
+                        </div>
                       </div>
 
                       <div className='h-px bg-gray-200 my-4' />

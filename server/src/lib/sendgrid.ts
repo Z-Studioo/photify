@@ -390,6 +390,24 @@ ${config.SUPPORT_EMAIL || 'support@photify.co'}
 /**
  * Order confirmation email data interface
  */
+/**
+ * Helper function to determine delivery type and estimated days based on shipping cost
+ */
+export function getDeliveryInfo(shippingCost: number): { delivery_type: string; estimated_days: string } {
+  // Check if shipping cost matches express delivery ($19.99)
+  if (Math.abs(shippingCost - 19.99) < 0.01) {
+    return {
+      delivery_type: 'Express Shipping',
+      estimated_days: '2-3 business days'
+    };
+  }
+  // Default to standard delivery ($9.99 or fallback)
+  return {
+    delivery_type: 'Standard Delivery',
+    estimated_days: '5-7 business days'
+  };
+}
+
 export interface OrderConfirmationEmailData {
   order_number: string;
   order_date: string;
@@ -537,6 +555,8 @@ export interface OrderDeliveredEmailData {
   order_number: string;
   delivery_date: string;
   delivery_address: string;
+  delivery_type: string;
+  estimated_delivery: string;
   subtotal: string;
   shipping_cost: string;
   total_amount: string;
@@ -630,6 +650,8 @@ export async function sendOrderDeliveredEmail(data: OrderDeliveredEmailData): Pr
       order_number: data.order_number,
       delivery_date: data.delivery_date,
       delivery_address: data.delivery_address,
+      delivery_type: data.delivery_type,
+      estimated_delivery: data.estimated_delivery,
       subtotal: data.subtotal,
       shipping_cost: data.shipping_cost,
       total_amount: data.total_amount,
