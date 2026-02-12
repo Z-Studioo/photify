@@ -42,7 +42,7 @@ interface FormData {
 
 export function CheckoutPage() {
   const navigate = useNavigate();
-  const { cartItems, deliveryMethod, shippingCost } = useCart();
+  const { cartItems, shippingCost } = useCart();
   const [currentStep, setCurrentStep] = useState(1);
   const [formData, setFormData] = useState<FormData>({
     name: '',
@@ -60,12 +60,12 @@ export function CheckoutPage() {
   const [isSearchingAddress, setIsSearchingAddress] = useState(false);
 
   // Fetch delivery prices from settings for reference
-  const { data: standardShipping } = useSiteSetting('shipping_flat_rate');
+  // const { data: standardShipping } = useSiteSetting('shipping_flat_rate');
   const { data: expressShipping } = useSiteSetting('shipping_express_cost');
 
   // Get estimated delivery days based on delivery method
   const getEstimatedDays = () => {
-    const standardPrice = standardShipping?.setting_value?.value || 9.99;
+    // const standardPrice = standardShipping?.setting_value?.value || 9.99;
     const expressPrice = expressShipping?.setting_value?.value || 19.99;
     
     // Check if current shipping cost matches express delivery
