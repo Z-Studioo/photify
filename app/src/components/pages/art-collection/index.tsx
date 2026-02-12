@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { Header } from '@/components/layout/header';
 import { Footer } from '@/components/layout/footer';
 import { ImageWithFallback } from '@/components/figma/image-with-fallback';
-import { Ruler, Sparkles, Wand2, Zap } from 'lucide-react';
+import { Ruler } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Helmet } from '@dr.pogodin/react-helmet';
@@ -315,12 +315,13 @@ export function ArtCollectionPage({
           {/* Product Grid */}
           <div className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6'>
             {filteredProducts.map((product: ArtProduct, index: number) => {
-              const halfwayPoint = Math.floor(filteredProducts.length / 2);
-              const shouldShowAICard = index === halfwayPoint;
+              // const halfwayPoint = Math.floor(filteredProducts.length / 2);
+              // const shouldShowAICard = index === halfwayPoint;
 
               return (
                 <React.Fragment key={`product-${product.id}-${index}`}>
-                  {shouldShowAICard && (
+                  {/* AI Card - Commented Out */}
+                  {/* {shouldShowAICard && (
                     <motion.div
                       key='ai-browse-card'
                       initial={{ opacity: 0, y: 20 }}
@@ -328,7 +329,6 @@ export function ArtCollectionPage({
                       transition={{ duration: 0.3, delay: index * 0.05 }}
                       className='bg-gradient-to-br from-[#f63a9e] to-[#e02d8d] rounded-lg overflow-hidden aspect-square flex flex-col justify-between p-6'
                     >
-                      {/* Top Section - Icons */}
                       <div className='flex gap-2'>
                         <motion.div
                           className='bg-white/20 backdrop-blur-sm rounded-lg p-2'
@@ -353,7 +353,6 @@ export function ArtCollectionPage({
                         </motion.div>
                       </div>
 
-                      {/* Middle Section - Text */}
                       <div className='flex flex-col'>
                         <h3
                           className="font-['Bricolage_Grotesque',_sans-serif] text-white mb-2"
@@ -373,7 +372,6 @@ export function ArtCollectionPage({
                         </p>
                       </div>
 
-                      {/* Bottom Section - CTA Button */}
                       <button
                         onClick={() => navigate('/ai-generate')}
                         className='bg-white text-[#f63a9e] px-5 rounded-full hover:bg-white/90 transition-all inline-flex items-center justify-center gap-2 w-full'
@@ -383,7 +381,7 @@ export function ArtCollectionPage({
                         Try it now
                       </button>
                     </motion.div>
-                  )}
+                  )} */}
 
                   <motion.div
                     key={product.id}
@@ -442,12 +440,10 @@ export function ArtCollectionPage({
             </div>
           )}
 
-          {/* AI Generation CTA */}
-          <div className='relative bg-gradient-to-br from-[#f63a9e]/10 via-purple-50 to-pink-50 rounded-3xl overflow-hidden my-16 max-h-[400px]'>
+          {/* AI Generation CTA - Commented Out */}
+          {/* <div className='relative bg-gradient-to-br from-[#f63a9e]/10 via-purple-50 to-pink-50 rounded-3xl overflow-hidden my-16 max-h-[400px]'>
             <div className='grid grid-cols-1 lg:grid-cols-2 gap-6 items-center h-[400px]'>
-              {/* Left Side - Content */}
               <div className='py-6 px-8 lg:pl-12 flex flex-col justify-center h-full'>
-                {/* Icon Features */}
                 <div className='flex gap-3 mb-6'>
                   <motion.div
                     className='bg-white rounded-xl p-3 shadow-sm'
@@ -499,18 +495,16 @@ export function ArtCollectionPage({
                 </button>
               </div>
 
-              {/* Right Side - Image */}
               <div className='relative h-[400px]'>
                 <ImageWithFallback
                   src='https://images.unsplash.com/photo-1686749115331-e117fb58b46c?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxBSSUyMHRlY2hub2xvZ3klMjBjcmVhdGl2ZXxlbnwxfHx8fDE3NjA3MDY4Mzl8MA&ixlib=rb-4.1.0&q=80&w=1080&utm_source=figma&utm_medium=referral'
                   alt='AI Art Generation'
                   className='w-full h-full object-cover rounded-r-3xl'
                 />
-                {/* Gradient Overlay */}
                 <div className='absolute inset-0 bg-gradient-to-l from-transparent via-transparent to-pink-50/80 lg:to-pink-50/50 rounded-r-3xl' />
               </div>
             </div>
-          </div>
+          </div> */}
         </div>
 
         <Footer />

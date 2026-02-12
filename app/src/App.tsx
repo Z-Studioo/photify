@@ -9,6 +9,7 @@ import { BrowserRouter, Route, Routes } from 'react-router';
 import { ToastProvider } from '@/components/shared/common/toast';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { PresetProvider } from './context/PresetContext';
+import { ScrollToTop } from '@/components/shared/ScrollToTop';
 
 const Dashboard = lazy(() => import('@/pages/dashboard/index'));
 const UploadImage = lazy(() => import('./pages/upload'));
@@ -74,6 +75,7 @@ const App: React.FC = () => {
       <ToastProvider>
         <CartProvider>
           <BrowserRouter>
+            <ScrollToTop />
             <AdminProvider>
               <UploadProvider>
                 <PresetProvider>
