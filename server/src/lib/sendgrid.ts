@@ -499,4 +499,190 @@ export async function sendAdminNewOrderEmail(data: OrderConfirmationEmailData): 
   }
 }
 
+/**
+ * Order status change email data interfaces
+ */
+export interface OrderDispatchedEmailData {
+  customer_name: string;
+  customer_email: string;
+  order_number: string;
+  order_date: string;
+  delivery_type: string;
+  estimated_delivery: string;
+  dispatch_date: string;
+  tracking_number?: string;
+  shipping_cost: string;
+  subtotal: string;
+  total_amount: string;
+  order_items: Array<{
+    name: string;
+    variant?: string;
+    quantity: number;
+    price: string;
+  }>;
+  shipping_address: {
+    name: string;
+    line1: string;
+    line2?: string;
+    city?: string;
+    state?: string;
+    postal_code?: string;
+    country?: string;
+  };
+}
+
+export interface OrderDeliveredEmailData {
+  customer_name: string;
+  customer_email: string;
+  order_number: string;
+  delivery_date: string;
+  delivery_address: string;
+  order_items: Array<{
+    name: string;
+    variant?: string | null;
+    quantity: number;
+  }>;
+}
+
+export interface OrderCancelledEmailData {
+  customer_name: string;
+  customer_email: string;
+  order_number: string;
+  order_date: string;
+  cancellation_date: string;
+  cancellation_reason: string;
+  refund_amount: string;
+  refund_method: string;
+  refund_processing_time: string;
+  subtotal: string;
+  shipping_cost: string;
+  total_amount: string;
+  order_items: Array<{
+    name: string;
+    quantity: number;
+    price: string;
+  }>;
+}
+
+/**
+ * Send order dispatched notification email to customer
+ */
+export async function sendOrderDispatchedEmail(data: OrderDispatchedEmailData): Promise<void> {
+  if (!config.SENDGRID_API_KEY) {
+    console.warn('SendGrid is not configured. Skipping order dispatched email.');
+    return;
+  }
+
+  const email = {
+    to: data.customer_email,
+    from: config.SENDGRID_FROM_EMAIL || 'noreply@photify.co',
+    subject: `Your Order ${data.order_number} Has Been Dispatched! 📦`,
+    templateId: 'd-64c380c91be649c9bd654df6acb9e811', // customer-order-dispatched template
+    dynamicTemplateData: {
+      customer_name: data.customer_name,
+      order_number: data.order_number,
+      order_date: data.order_date,
+      delivery_type: data.delivery_type,
+      estimated_delivery: data.estimated_delivery,
+      dispatch_date: data.dispatch_date,
+      tracking_number: data.tracking_number || 'N/A',
+      support_url: `${config.CLIENT_URL || 'https://photify.co'}/contact_us`,
+      shipping_cost: data.shipping_cost,
+      subtotal: data.subtotal,
+      total_amount: data.total_amount,
+      order_items: data.order_items,
+      shipping_address: data.shipping_address,
+    },
+  };
+
+  try {
+    await sgMail.send(email);
+    console.log(`Order dispatched email sent to ${data.customer_email} for order ${data.order_number}`);
+  } catch (error: any) {
+    console.error('Failed to send order dispatched email:', error);
+    if (error.response) {
+      console.error('SendGrid error response:', error.response.body);
+    }
+    throw error;
+  }
+}
+
+/**
+ * Send order delivered notification email to customer
+ */
+export async function sendOrderDeliveredEmail(data: OrderDeliveredEmailData): Promise<void> {
+  if (!config.SENDGRID_API_KEY) {
+    console.warn('SendGrid is not configured. Skipping order delivered email.');
+    return;
+  }
+
+  const email = {
+    to: data.customer_email,
+    from: config.SENDGRID_FROM_EMAIL || 'noreply@photify.co',
+    subject: `Your Order ${data.order_number} Has Been Delivered! 🎉`,
+    templateId: 'd-9fe879c616ec4371a7ebd35aed34c8c1', // customer-order-delivered template
+    dynamicTemplateData: {
+      customer_name: data.customer_name,
+      order_number: data.order_number,
+      delivery_date: data.delivery_date,
+      delivery_address: data.delivery_address,
+      order_items: data.order_items,
+    },
+  };
+
+  try {
+    await sgMail.send(email);
+    console.log(`Order delivered email sent to ${data.customer_email} for order ${data.order_number}`);
+  } catch (error: any) {
+    console.error('Failed to send order delivered email:', error);
+    if (error.response) {
+      console.error('SendGrid error response:', error.response.body);
+    }
+    throw error;
+  }
+}
+
+/**
+ * Send order cancelled notification email to customer
+ */
+export async function sendOrderCancelledEmail(data: OrderCancelledEmailData): Promise<void> {
+  if (!config.SENDGRID_API_KEY) {
+    console.warn('SendGrid is not configured. Skipping order cancelled email.');
+    return;
+  }
+
+  const email = {
+    to: data.customer_email,
+    from: config.SENDGRID_FROM_EMAIL || 'noreply@photify.co',
+    subject: `Order ${data.order_number} Cancelled - Photify`,
+    templateId: 'd-9ce9bc4cef0442509087e9b6ea10060e', // customer-order-cancelled template
+    dynamicTemplateData: {
+      customer_name: data.customer_name,
+      order_number: data.order_number,
+      order_date: data.order_date,
+      cancellation_date: data.cancellation_date,
+      cancellation_reason: data.cancellation_reason,
+      refund_amount: data.refund_amount,
+      refund_method: data.refund_method,
+      refund_processing_time: data.refund_processing_time,
+      subtotal: data.subtotal,
+      shipping_cost: data.shipping_cost,
+      total_amount: data.total_amount,
+      support_url: `${config.CLIENT_URL || 'https://photify.co'}/contact_us`,
+      order_items: data.order_items,
+    },
+  };
+
+  try {
+    await sgMail.send(email);
+    console.log(`Order cancelled email sent to ${data.customer_email} for order ${data.order_number}`);
+  } catch (error: any) {
+    console.error('Failed to send order cancelled email:', error);
+    if (error.response) {
+      console.error('SendGrid error response:', error.response.body);
+    }
+    throw error;
+  }
+}
+
 export { sgMail };

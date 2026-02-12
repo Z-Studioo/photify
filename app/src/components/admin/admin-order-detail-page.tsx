@@ -204,6 +204,33 @@ export function AdminOrderDetailPage() {
     fetchOrder();
   }, [orderId, supabase]);
 
+  // Helper function to send status change notification email
+  const sendStatusNotificationEmail = async (orderNumber: string, status: string) => {
+    try {
+      const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+      const response = await fetch(
+        `${apiUrl}/api/orders/${orderNumber}/status-notification`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ status }),
+        }
+      );
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || 'Failed to send notification');
+      }
+
+      console.log(`Status notification email sent for ${orderNumber} - ${status}`);
+    } catch (error) {
+      console.error('Failed to send status notification email:', error);
+      // Don't block the UI - just log the error
+    }
+  };
+
   const handleNextStatus = async () => {
     if (!order || order.status === 'delivered' || order.status === 'cancelled')
       return;
@@ -236,6 +263,9 @@ export function AdminOrderDetailPage() {
       }));
 
       toast.success(`Order moved to ${nextStatus}`);
+      
+      // Send email notification to customer
+      sendStatusNotificationEmail(order.id, nextStatus);
     } catch (err) {
       console.error('Error updating order:', err);
       toast.error('Failed to update order status');
@@ -309,6 +339,9 @@ export function AdminOrderDetailPage() {
 
       toast.success('Order cancelled');
       setShowCancelDialog(false);
+      
+      // Send cancellation email notification to customer
+      sendStatusNotificationEmail(order.id, 'cancelled');
     } catch (err) {
       console.error('Error cancelling order:', err);
       toast.error('Failed to cancel order');
