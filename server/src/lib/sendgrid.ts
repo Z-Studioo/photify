@@ -424,6 +424,7 @@ export async function sendOrderConfirmationEmail(data: OrderConfirmationEmailDat
   const email = {
     to: data.customer_email,
     from: config.SENDGRID_FROM_EMAIL || 'noreply@photify.co',
+    subject: `Order Confirmed! ${data.order_number} - Photify`,
     templateId: 'd-0298ed47f3264fc88d08d07d6eb459a6', // customer-new-order template
     dynamicTemplateData: {
       order_number: data.order_number,
