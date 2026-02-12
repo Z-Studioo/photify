@@ -4,6 +4,7 @@ import {
   sendOrderDispatchedEmail,
   sendOrderDeliveredEmail,
   sendOrderCancelledEmail,
+  getDeliveryInfo,
 } from '@/lib/sendgrid';
 
 /**
@@ -57,16 +58,21 @@ export async function sendOrderStatusNotification(
     switch (status.toLowerCase()) {
       case 'shipped':
       case 'processing': {
-        // Calculate estimated delivery (4 days from dispatch)
+        // Get delivery info based on shipping cost
+        const shippingCost = parseFloat(order.shipping_cost || 0);
+        const deliveryInfo = getDeliveryInfo(shippingCost);
+        
+        // Calculate estimated delivery based on delivery type
         const estimatedDelivery = new Date();
-        estimatedDelivery.setDate(estimatedDelivery.getDate() + 4);
+        const daysToAdd = deliveryInfo.delivery_type === 'Express Shipping' ? 3 : 7;
+        estimatedDelivery.setDate(estimatedDelivery.getDate() + daysToAdd);
 
         const dispatchData = {
           customer_name: order.customer_name,
           customer_email: order.customer_email,
           order_number: order.order_number,
           order_date: formatDate(order.created_at),
-          delivery_type: order.delivery_method || 'Standard Delivery',
+          delivery_type: deliveryInfo.delivery_type,
           estimated_delivery: formatDate(estimatedDelivery),
           dispatch_date: formatDate(new Date()),
           tracking_number: order.tracking_number || undefined,
@@ -99,16 +105,26 @@ export async function sendOrderStatusNotification(
       }
 
       case 'delivered': {
+        // Get delivery info based on shipping cost
+        const shippingCost = parseFloat(order.shipping_cost || 0);
+        const deliveryInfo = getDeliveryInfo(shippingCost);
+        
         const deliveredData = {
           customer_name: order.customer_name,
           customer_email: order.customer_email,
           order_number: order.order_number,
           delivery_date: formatDate(order.delivered_at || new Date()),
           delivery_address: shippingAddress,
+          delivery_type: deliveryInfo.delivery_type,
+          estimated_delivery: deliveryInfo.estimated_days,
+          subtotal: `£${parseFloat(order.subtotal).toFixed(2)}`,
+          shipping_cost: `£${parseFloat(order.shipping_cost || 0).toFixed(2)}`,
+          total_amount: `£${parseFloat(order.total).toFixed(2)}`,
           order_items: (order.items || []).map((item: any) => ({
             name: item.name,
             variant: item.size || item.variant || null,
             quantity: item.quantity || 1,
+            price: `£${parseFloat(item.price).toFixed(2)}`,
           })),
         };
 

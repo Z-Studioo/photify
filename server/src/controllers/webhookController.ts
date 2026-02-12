@@ -1,7 +1,7 @@
 import { Request, Response } from 'express';
 import { stripe } from '@/lib/stripe';
 import { supabase } from '@/lib/supabase';
-import { sendOrderConfirmationEmail, sendAdminNewOrderEmail } from '@/lib/sendgrid';
+import { sendOrderConfirmationEmail, sendAdminNewOrderEmail, getDeliveryInfo } from '@/lib/sendgrid';
 import Stripe from 'stripe';
 
 /**
@@ -9,9 +9,14 @@ import Stripe from 'stripe';
  */
 async function sendConfirmationEmailForOrder(order: any): Promise<void> {
   try {
-    // Calculate estimated delivery (7 days from now for standard shipping)
+    // Get delivery info based on shipping cost
+    const shippingCost = parseFloat(order.shipping_cost || 0);
+    const deliveryInfo = getDeliveryInfo(shippingCost);
+    
+    // Calculate estimated delivery date based on delivery type
     const estimatedDelivery = new Date();
-    estimatedDelivery.setDate(estimatedDelivery.getDate() + 7);
+    const daysToAdd = deliveryInfo.delivery_type === 'Express Shipping' ? 3 : 7;
+    estimatedDelivery.setDate(estimatedDelivery.getDate() + daysToAdd);
     
     // Format shipping address
     const shippingAddress = typeof order.shipping_address === 'string' 
@@ -26,7 +31,7 @@ async function sendConfirmationEmailForOrder(order: any): Promise<void> {
         month: 'long',
         day: 'numeric'
       }),
-      delivery_type: order.delivery_method || 'Standard Shipping',
+      delivery_type: deliveryInfo.delivery_type,
       estimated_delivery: estimatedDelivery.toLocaleDateString('en-US', {
         year: 'numeric',
         month: 'long',

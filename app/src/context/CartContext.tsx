@@ -11,6 +11,8 @@ export interface CartItem {
   quantity: number;
 }
 
+export type DeliveryMethod = 'standard' | 'express';
+
 interface CartContextType {
   cartItems: CartItem[];
   addToCart: (item: CartItem) => void;
@@ -20,6 +22,10 @@ interface CartContextType {
   isCartOpen: boolean;
   openCart: () => void;
   closeCart: () => void;
+  deliveryMethod: DeliveryMethod;
+  setDeliveryMethod: (method: DeliveryMethod) => void;
+  shippingCost: number;
+  setShippingCost: (cost: number) => void;
 }
 
 const CartContext = createContext<CartContextType | undefined>(undefined);
@@ -27,6 +33,8 @@ const CartContext = createContext<CartContextType | undefined>(undefined);
 export function CartProvider({ children }: { children: ReactNode }) {
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
   const [isCartOpen, setIsCartOpen] = useState(false);
+  const [deliveryMethod, setDeliveryMethod] = useState<DeliveryMethod>('standard');
+  const [shippingCost, setShippingCost] = useState(9.99);
 
   const addToCart = (item: CartItem) => {
     setCartItems((prev) => {
@@ -72,6 +80,10 @@ export function CartProvider({ children }: { children: ReactNode }) {
         isCartOpen,
         openCart,
         closeCart,
+        deliveryMethod,
+        setDeliveryMethod,
+        shippingCost,
+        setShippingCost,
       }}
     >
       {children}

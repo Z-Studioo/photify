@@ -35,7 +35,7 @@ import {
 } from '../ui/alert-dialog';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
-const STATUS_FLOW = ['pending', 'shipped', 'delivered'] as const;
+const STATUS_FLOW = ['pending', 'processing', 'shipped', 'delivered'] as const;
 type OrderStatus = (typeof STATUS_FLOW)[number] | 'cancelled';
 
 const getNextStatus = (current: OrderStatus): OrderStatus => {
@@ -512,9 +512,27 @@ export function AdminOrderDetailPage() {
                     </span>
                   </div>
                 </div>
-                <span className='px-3 py-1 bg-gray-100 text-gray-700 rounded-full text-sm font-medium'>
-                  Priced
-                </span>
+                <div className='flex items-center gap-3'>
+                  {/* Current Status Badge */}
+                  <div className='flex items-center gap-2'>
+                    <span className='text-xs text-gray-500 font-medium'>Current Status:</span>
+                    <span className={`px-4 py-1.5 rounded-full text-sm font-semibold ${
+                      order.status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
+                      order.status === 'processing' ? 'bg-blue-100 text-blue-800' :
+                      order.status === 'shipped' ? 'bg-purple-100 text-purple-800' :
+                      order.status === 'delivered' ? 'bg-green-100 text-green-800' :
+                      order.status === 'cancelled' ? 'bg-red-100 text-red-800' :
+                      'bg-gray-100 text-gray-700'
+                    }`}>
+                      {order.status === 'pending' ? 'Pending' :
+                       order.status === 'processing' ? 'Payment Confirmed' :
+                       order.status === 'shipped' ? 'Dispatched' :
+                       order.status === 'delivered' ? 'Delivered' :
+                       order.status === 'cancelled' ? 'Cancelled' :
+                       order.status.charAt(0).toUpperCase() + order.status.slice(1)}
+                    </span>
+                  </div>
+                </div>
               </div>
 
               {/* Order Timeline */}
@@ -536,11 +554,13 @@ export function AdminOrderDetailPage() {
                         strokeLinecap='round'
                       />
                     </svg>
-                    Order Timeline
+                    Order Status Timeline
                   </h3>
-                  <span className='text-xs text-[#f63a9e]'>
+                  <span className='text-xs text-gray-500'>
                     Est. Delivery:{' '}
-                    {order.timeline[0]?.date || 'Oct 24th - Oct 28th'}
+                    <span className='text-[#f63a9e] font-medium'>
+                      {order.timeline[0]?.date || 'Oct 24th - Oct 28th'}
+                    </span>
                   </span>
                 </div>
                 {/* Timeline Progress */}
@@ -579,11 +599,11 @@ export function AdminOrderDetailPage() {
                             className={`w-10 h-10 rounded-full flex items-center justify-center z-10 mb-2 transition-all
                             ${
                               step.cancelled
-                                ? 'bg-red-500 text-white'
+                                ? 'bg-red-500 text-white shadow-lg shadow-red-200'
                                 : step.completed
-                                  ? 'bg-[#f63a9e] text-white'
+                                  ? 'bg-[#f63a9e] text-white shadow-lg shadow-pink-200'
                                   : step.active
-                                    ? 'bg-white border-2 border-[#f63a9e] text-[#f63a9e]'
+                                    ? 'bg-white border-2 border-[#f63a9e] text-[#f63a9e] animate-pulse'
                                     : 'bg-white border-2 border-gray-200 text-gray-400'
                             }
                           `}
@@ -593,7 +613,11 @@ export function AdminOrderDetailPage() {
 
                           {/* Label + Meta */}
                           <div className='text-center'>
-                            <p className='text-xs font-medium mb-0.5'>
+                            <p className={`text-xs font-medium mb-0.5 ${
+                              step.completed ? 'text-gray-900' :
+                              step.active ? 'text-[#f63a9e] font-bold' :
+                              'text-gray-500'
+                            }`}>
                               {step.label}
                             </p>
 
@@ -624,67 +648,104 @@ export function AdminOrderDetailPage() {
                   </div>
                 </div>
 
-                <div className='flex justify-between items-center mt-6 gap-4'>
-                  {/* Cancel Order */}
-                  <Button
-                    size='lg'
-                    variant='destructive'
-                    disabled={
-                      updating ||
-                      order.status === 'delivered' ||
-                      order.status === 'cancelled'
-                    }
-                    onClick={() => setShowCancelDialog(true)}
-                  >
-                    {updating ? (
-                      <Loader2 className='mr-1 xl:mr-2 animate-spin' />
-                    ) : (
-                      <X className='mr-1 xl:mr-2' />
-                    )}
-                    <span className='hidden xl:inline'>Cancel Order</span>
-                  </Button>
-
-                  {/* Navigation */}
-                  <div className='flex gap-3'>
+                {/* Status Action Buttons */}
+                <div className='mt-8 bg-gradient-to-r from-gray-50 to-white border border-gray-200 rounded-lg p-5'>
+                  <div className='flex items-center justify-between gap-4'>
+                    {/* Cancel Order */}
                     <Button
                       size='lg'
-                      variant='outline'
-                      disabled={
-                        updating ||
-                        order.status === 'pending' ||
-                        order.status === 'cancelled'
-                      }
-                      onClick={handleBackStatus}
-                    >
-                      {updating ? (
-                        <Loader2 className='mr-1 xl:mr-2 animate-spin' />
-                      ) : (
-                        <MoveLeft className='mr-1 xl:mr-2' />
-                      )}
-                      <span className='hidden xl:inline'>
-                        {updating ? 'Updating...' : 'Back to previous status'}
-                      </span>
-                    </Button>
-
-                    <Button
-                      size='lg'
+                      variant='destructive'
                       disabled={
                         updating ||
                         order.status === 'delivered' ||
                         order.status === 'cancelled'
                       }
-                      onClick={handleNextStatus}
+                      onClick={() => setShowCancelDialog(true)}
+                      className='flex-shrink-0'
                     >
                       {updating ? (
-                        <Loader2 className='ml-1 xl:ml-2 animate-spin' />
+                        <Loader2 className='mr-2 animate-spin' />
                       ) : (
-                        <MoveRight className='ml-1 xl:ml-2' />
+                        <X className='mr-2' />
                       )}
-                      <span className='hidden xl:inline'>
-                        {updating ? 'Updating...' : 'Advance to next status'}
-                      </span>
+                      <span>Cancel Order</span>
                     </Button>
+
+                    {/* Status Info and Navigation */}
+                    <div className='flex items-center gap-3 flex-1 justify-end'>
+                      {/* Previous Status Button */}
+                      <Button
+                        size='lg'
+                        variant='outline'
+                        disabled={
+                          updating ||
+                          order.status === 'pending' ||
+                          order.status === 'cancelled'
+                        }
+                        onClick={handleBackStatus}
+                        className='min-w-[140px]'
+                      >
+                        {updating ? (
+                          <>
+                            <Loader2 className='mr-2 h-4 w-4 animate-spin' />
+                            Reverting...
+                          </>
+                        ) : (
+                          <>
+                            <MoveLeft className='mr-2' />
+                            Revert Status
+                          </>
+                        )}
+                      </Button>
+
+                      {/* Next Status Button */}
+                      <Button
+                        size='lg'
+                        disabled={
+                          updating ||
+                          order.status === 'delivered' ||
+                          order.status === 'cancelled'
+                        }
+                        onClick={handleNextStatus}
+                        className='min-w-[180px] bg-[#f63a9e] hover:bg-[#e02d8d]'
+                      >
+                        {updating ? (
+                          <>
+                            <Loader2 className='mr-2 h-4 w-4 animate-spin' />
+                            Updating...
+                          </>
+                        ) : (
+                          <>
+                            <span className='font-semibold'>
+                              {order.status === 'pending' ? 'Confirm Payment' :
+                               order.status === 'processing' ? 'Mark as Dispatched' :
+                               order.status === 'shipped' ? 'Mark as Delivered' :
+                               'Next Status'}
+                            </span>
+                            <MoveRight className='ml-2' />
+                          </>
+                        )}
+                      </Button>
+                    </div>
                   </div>
+
+                  {/* Helper Text */}
+                  {!updating && order.status !== 'delivered' && order.status !== 'cancelled' && (
+                    <div className='mt-4 flex items-start gap-2 text-xs text-gray-600 bg-blue-50 border border-blue-200 rounded p-3'>
+                      <svg className='w-4 h-4 text-blue-600 mt-0.5 flex-shrink-0' fill='none' viewBox='0 0 24 24' stroke='currentColor'>
+                        <path strokeLinecap='round' strokeLinejoin='round' strokeWidth={2} d='M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z' />
+                      </svg>
+                      <p>
+                        {order.status === 'pending' ? (
+                          <span><strong>Next action:</strong> Order will be marked as <strong className='text-blue-700'>Payment Confirmed</strong>. Customer notification already sent during checkout.</span>
+                        ) : order.status === 'processing' ? (
+                          <span><strong>Next action:</strong> Order will be marked as <strong className='text-purple-700'>Dispatched</strong> and customer will receive a dispatch notification email.</span>
+                        ) : order.status === 'shipped' ? (
+                          <span><strong>Next action:</strong> Order will be marked as <strong className='text-green-700'>Delivered</strong> and customer will receive a delivery confirmation email.</span>
+                        ) : null}
+                      </p>
+                    </div>
+                  )}
                 </div>
 
                 {order.remarks && order.remarks.length && (
