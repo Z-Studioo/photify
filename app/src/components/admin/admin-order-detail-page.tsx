@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, type JSX } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { AdminLayout } from './admin-layout';
 import { Button } from '@/components/ui/button';
@@ -14,10 +14,107 @@ import {
   Download,
   CreditCard,
   Loader2,
+  MoveLeft,
+  MoveRight,
+  XCircle,
+  X,
+  CheckCircle2Icon,
 } from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
 import { toast } from 'sonner';
 import { createClient } from '@/lib/supabase/client';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '../ui/alert-dialog';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+
+const STATUS_FLOW = ['pending', 'shipped', 'delivered'] as const;
+type OrderStatus = (typeof STATUS_FLOW)[number] | 'cancelled';
+
+const getNextStatus = (current: OrderStatus): OrderStatus => {
+  const index = STATUS_FLOW.indexOf(current as any);
+  return STATUS_FLOW[index + 1] ?? current;
+};
+
+const getPreviousStatus = (current: OrderStatus): OrderStatus => {
+  const index = STATUS_FLOW.indexOf(current as any);
+  return STATUS_FLOW[index - 1] ?? current;
+};
+
+const generateTimeline = (data: any) => {
+  const createdAt = new Date(data.created_at);
+  const paidAt = data.paid_at ? new Date(data.paid_at) : null;
+  const cancelledAt = data.cancelled_at ? new Date(data.cancelled_at) : null;
+
+  const formatDate = (date: Date) =>
+    date.toLocaleDateString('en-US', {
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric',
+    });
+  const formatTime = (date: Date) =>
+    date.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+
+  const status = data.status;
+  const isCancelled = status === 'cancelled';
+
+  return [
+    {
+      label: 'Order Placed',
+      date: formatDate(createdAt),
+      time: formatTime(createdAt),
+      completed: true,
+    },
+    {
+      label: 'Payment Confirmed',
+      date: paidAt ? formatDate(paidAt) : '',
+      time: paidAt ? formatTime(paidAt) : '',
+      completed:
+        !isCancelled && status !== 'pending' && data.payment_status === 'paid',
+    },
+    {
+      label: 'Dispatched',
+      date: '',
+      time: '',
+      completed: !isCancelled && status === 'delivered',
+      active: !isCancelled && status === 'shipped',
+      statusText:
+        !isCancelled && status === 'shipped' ? 'In Progress' : undefined,
+    },
+    {
+      label: 'Delivered',
+      date: '',
+      time: '',
+      completed: status === 'delivered',
+    },
+    ...(isCancelled
+      ? [
+          {
+            label: 'Cancelled',
+            date: cancelledAt ? formatDate(cancelledAt) : '',
+            time: cancelledAt ? formatTime(cancelledAt) : '',
+            completed: true,
+            cancelled: true,
+          },
+        ]
+      : []),
+  ];
+};
+
+const timelineIcons: Record<string, JSX.Element> = {
+  'Order Placed': <Package className='w-5 h-5' />,
+  'Payment Confirmed': <CreditCard className='w-5 h-5' />,
+  Dispatched: <Truck className='w-5 h-5' />,
+  Delivered: <CheckCircle className='w-5 h-5' />,
+  Cancelled: <XCircle className='w-5 h-5' />,
+};
 
 export function AdminOrderDetailPage() {
   const navigate = useNavigate();
@@ -25,6 +122,10 @@ export function AdminOrderDetailPage() {
   const [notes, setNotes] = useState('');
   const [order, setOrder] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const supabase = createClient();
+  const [showCancelDialog, setShowCancelDialog] = useState(false);
+  const [cancelReason, setCancelReason] = useState('');
+  const [updating, setUpdating] = useState(false);
 
   useEffect(() => {
     const fetchOrder = async () => {
@@ -32,24 +133,18 @@ export function AdminOrderDetailPage() {
         setLoading(false);
         return;
       }
-
       try {
-        const supabase = createClient();
         const { data, error } = await supabase
           .from('orders')
           .select('*')
           .eq('order_number', orderId)
           .single();
 
-        if (error) {
-          console.error('Error fetching order:', error);
-          toast.error('Failed to load order details');
-          setLoading(false);
-          return;
-        }
+        if (error) throw error;
 
         if (data) {
-          // Transform database order to component format
+          // normalize status to lowercase
+          const dbStatus = data.status?.toLowerCase() || 'pending';
           const shippingAddress =
             typeof data.shipping_address === 'string'
               ? data.shipping_address
@@ -68,9 +163,7 @@ export function AdminOrderDetailPage() {
                 0
               ) || 0,
             amount: `£${parseFloat(data.total).toFixed(2)}`,
-            status:
-              data.status?.charAt(0).toUpperCase() + data.status?.slice(1) ||
-              'Pending',
+            status: dbStatus, // lowercase
             date: new Date(data.created_at).toLocaleDateString('en-GB'),
             shipping: 'Standard Delivery',
             paymentMethod:
@@ -80,67 +173,9 @@ export function AdminOrderDetailPage() {
             subtotal: `£${parseFloat(data.subtotal).toFixed(2)}`,
             deliveryCharge: `£${parseFloat(data.shipping_cost || 0).toFixed(2)}`,
             total: `£${parseFloat(data.total).toFixed(2)}`,
-            timeline: [
-              {
-                label: 'Order',
-                date: new Date(data.created_at).toLocaleDateString('en-US', {
-                  month: 'short',
-                  day: 'numeric',
-                  year: 'numeric',
-                }),
-                time: new Date(data.created_at).toLocaleTimeString('en-US', {
-                  hour: 'numeric',
-                  minute: '2-digit',
-                }),
-                completed: true,
-              },
-              {
-                label: 'Payment',
-                date: data.paid_at
-                  ? new Date(data.paid_at).toLocaleDateString('en-US', {
-                      month: 'short',
-                      day: 'numeric',
-                      year: 'numeric',
-                    })
-                  : '',
-                time: data.paid_at
-                  ? new Date(data.paid_at).toLocaleTimeString('en-US', {
-                      hour: 'numeric',
-                      minute: '2-digit',
-                    })
-                  : '',
-                completed: !!data.paid_at,
-              },
-              {
-                label: 'Packing',
-                date:
-                  data.status === 'processing' ||
-                  data.status === 'shipped' ||
-                  data.status === 'delivered'
-                    ? 'In Progress'
-                    : '',
-                time: '',
-                completed:
-                  data.status === 'shipped' || data.status === 'delivered',
-              },
-              {
-                label: 'Shipping',
-                date: data.shipped_at
-                  ? new Date(data.shipped_at).toLocaleDateString('en-US', {
-                      month: 'short',
-                      day: 'numeric',
-                      year: 'numeric',
-                    })
-                  : '',
-                time: data.shipped_at
-                  ? new Date(data.shipped_at).toLocaleTimeString('en-US', {
-                      hour: 'numeric',
-                      minute: '2-digit',
-                    })
-                  : '',
-                completed: !!data.shipped_at,
-              },
-            ],
+            timeline: generateTimeline({ ...data, status: dbStatus }),
+            payment_status: data.payment_status,
+            paid_at: data.paid_at,
             consent: data.video_permission
               ? 'Customer has consented to video processing'
               : 'No video consent',
@@ -151,24 +186,265 @@ export function AdminOrderDetailPage() {
               image: item.image || '#',
               invoice: `#INV-${Math.random().toString(36).substr(2, 9).toUpperCase()}`,
               unitPrice: `£${parseFloat(item.price).toFixed(2)}`,
+              quantity: item.quantity || 1,
             })),
             hosted_invoice_url: data.hosted_invoice_url || '#',
+            remarks: data.remarks || '',
           };
 
           setOrder(transformedOrder);
         }
-      } catch (error) {
-        console.error('Error:', error);
-        toast.error('Failed to load order');
+      } catch (err) {
+        console.error('Error fetching order:', err);
+        toast.error('Failed to load order details');
       } finally {
         setLoading(false);
       }
     };
-
     fetchOrder();
-  }, [orderId]);
+  }, [orderId, supabase]);
 
-  if (loading) {
+  // Helper function to send status change notification email
+  const sendStatusNotificationEmail = async (orderNumber: string, status: string) => {
+    try {
+      const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+
+      // Get the current Supabase session token
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      if (!session?.access_token) {
+        console.error('No active session token found');
+        toast.error('Failed to send notification email: Not authenticated');
+        return;
+      }
+
+      const response = await fetch(
+        `${apiUrl}/api/orders/${orderNumber}/status-notification`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${session.access_token}`,
+          },
+          body: JSON.stringify({ status }),
+        }
+      );
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || 'Failed to send notification');
+      }
+
+      toast.success('Customer notification email sent');
+      console.log(`Status notification email sent for ${orderNumber} - ${status}`);
+    } catch (error) {
+      console.error('Failed to send status notification email:', error);
+      toast.error('Status updated but email notification failed');
+    }
+  };
+
+  const handleNextStatus = async () => {
+    if (!order || order.status === 'delivered' || order.status === 'cancelled' || updating)
+      return;
+
+    const nextStatus = getNextStatus(order.status);
+    if (nextStatus === order.status) return;
+
+    try {
+      setUpdating(true);
+      const payload: any = { status: nextStatus };
+
+      if (nextStatus === 'shipped')
+        payload.shipped_at = new Date().toISOString();
+      if (nextStatus === 'delivered')
+        payload.delivered_at = new Date().toISOString();
+
+      const { error } = await supabase
+        .from('orders')
+        .update(payload)
+        .eq('order_number', order.id)
+        .select();
+
+      if (error) throw error;
+
+      // Update local state
+      setOrder((prev: any) => ({
+        ...prev,
+        status: nextStatus,
+        ...payload,
+        timeline: generateTimeline({ ...prev, ...payload, status: nextStatus }),
+      }));
+
+      toast.success(`Order moved to ${nextStatus}`);
+      
+      // Send email notification to customer (await to prevent race conditions)
+      await sendStatusNotificationEmail(order.id, nextStatus);
+    } catch (err) {
+      console.error('Error updating order:', err);
+      toast.error('Failed to update order status');
+    } finally {
+      setUpdating(false);
+    }
+  };
+
+  const handleBackStatus = async () => {
+    if (!order || order.status === 'pending' || order.status === 'cancelled' || updating)
+      return;
+
+    const previousStatus = getPreviousStatus(order.status);
+    if (previousStatus === order.status) return;
+
+    try {
+      setUpdating(true);
+      const payload: any = { status: previousStatus };
+
+      if (order.status === 'shipped') payload.shipped_at = null;
+      if (order.status === 'delivered') payload.delivered_at = null;
+
+      const { error } = await supabase
+        .from('orders')
+        .update(payload)
+        .eq('order_number', order.id)
+        .select();
+
+      if (error) throw error;
+
+      // Update local state
+      setOrder((prev: any) => ({
+        ...prev,
+        status: previousStatus,
+        ...payload,
+        timeline: generateTimeline({
+          ...prev,
+          ...payload,
+          status: previousStatus,
+        }),
+      }));
+
+      toast.success(`Order reverted to ${previousStatus}`);
+    } catch (err) {
+      console.error('Error updating order:', err);
+      toast.error('Failed to update order status');
+    } finally {
+      setUpdating(false);
+    }
+  };
+
+  const handleCancelOrder = async () => {
+    if (updating) return;
+
+    try {
+      setUpdating(true);
+      const payload = {
+        status: 'cancelled',
+        remarks: cancelReason,
+        cancelled_at: new Date().toISOString(),
+      };
+
+      const { error } = await supabase
+        .from('orders')
+        .update(payload)
+        .eq('order_number', order.id)
+        .select();
+
+      if (error) throw error;
+
+      // Update local state
+      setOrder((prev: any) => ({
+        ...prev,
+        ...payload,
+        timeline: generateTimeline({
+          ...prev,
+          ...payload,
+        }),
+      }));
+
+      toast.success('Order cancelled');
+      setShowCancelDialog(false);
+      
+      // Send cancellation email notification to customer (await to prevent race conditions)
+      await sendStatusNotificationEmail(order.id, 'cancelled');
+    } catch (err) {
+      console.error('Error cancelling order:', err);
+      toast.error('Failed to cancel order');
+    } finally {
+      setUpdating(false);
+    }
+  };
+
+  const handlePrintInvoice = () => {
+    if (!order) return;
+
+    const invoiceHtml = `
+    <html>
+      <head>
+        <title>Invoice #${order.id}</title>
+        <style>
+          body { font-family: Arial, sans-serif; padding: 20px; }
+          h1 { color: #f63a9e; }
+          table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+          th, td { border: 1px solid #ccc; padding: 8px; text-align: left; }
+        </style>
+      </head>
+      <body>
+        <h1>Invoice #${order.id}</h1>
+        <p><strong>Customer:</strong> ${order.customer}</p>
+        <p><strong>Email:</strong> ${order.email}</p>
+        <p><strong>Phone:</strong> ${order.phone}</p>
+        <table>
+          <thead>
+            <tr>
+              <th>Product</th>
+              <th>Size</th>
+              <th>Unit Price</th>
+              <th>Quantity</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${order.items
+              .map(
+                (item: any) =>
+                  `<tr>
+                    <td>${item.product}</td>
+                    <td>${item.size}</td>
+                    <td>${item.unitPrice}</td>
+                    <td>1</td>
+                  </tr>`
+              )
+              .join('')}
+          </tbody>
+        </table>
+        <h3>Total: ${order.total}</h3>
+      </body>
+    </html>
+  `;
+
+    const printWindow = window.open('', '_blank');
+    if (printWindow) {
+      printWindow.document.write(invoiceHtml);
+      printWindow.document.close();
+      printWindow.focus();
+      printWindow.print();
+    }
+
+    toast.success('Invoice opened in print window');
+  };
+
+  const handleDownloadLabel = () => {
+    toast.success('Shipping label downloaded');
+  };
+  const handleAddNote = () => {
+    if (notes.trim()) {
+      toast.success('Note added successfully');
+      setNotes('');
+    }
+  };
+
+  useEffect(() => {
+    console.log('Order data:', order);
+  }, [order]);
+
+  if (loading)
     return (
       <AdminLayout>
         <div className='max-w-7xl mx-auto flex items-center justify-center py-20'>
@@ -176,9 +452,8 @@ export function AdminOrderDetailPage() {
         </div>
       </AdminLayout>
     );
-  }
 
-  if (!order) {
+  if (!order)
     return (
       <AdminLayout>
         <div className='max-w-7xl mx-auto text-center py-20'>
@@ -189,24 +464,6 @@ export function AdminOrderDetailPage() {
         </div>
       </AdminLayout>
     );
-  }
-
-  const handlePrintInvoice = () => {
-    window.open(order.hosted_invoice_url, '_blank', 'noopener,noreferrer');
-    toast.success('Invoice sent to printer');
-  };
-
-  const handleDownloadLabel = () => {
-    toast.success('Shipping label downloaded');
-  };
-
-  const handleAddNote = () => {
-    if (notes.trim()) {
-      toast.success('Note added successfully');
-      setNotes('');
-    }
-  };
-
   return (
     <AdminLayout>
       <div className='max-w-7xl mx-auto'>
@@ -286,66 +543,157 @@ export function AdminOrderDetailPage() {
                     {order.timeline[0]?.date || 'Oct 24th - Oct 28th'}
                   </span>
                 </div>
-
                 {/* Timeline Progress */}
                 <div className='relative'>
                   <div className='flex justify-between items-start'>
-                    {order.timeline.map((step: any, index: number) => (
-                      <div
-                        key={index}
-                        className='flex flex-col items-center relative'
-                        style={{ flex: 1 }}
-                      >
-                        {/* Connector Line */}
-                        {index < order.timeline.length - 1 && (
-                          <div
-                            className='absolute top-5 left-1/2 h-0.5 bg-gray-200'
-                            style={{
-                              width: 'calc(100% + 20px)',
-                              transform: 'translateX(-50%)',
-                            }}
-                          >
-                            <div
-                              className='h-full bg-[#f63a9e] transition-all'
-                              style={{ width: step.completed ? '100%' : '0%' }}
-                            />
-                          </div>
-                        )}
+                    {order.timeline.map((step: any, index: number) => {
+                      const isNextCompleted =
+                        !step.cancelled && order.timeline[index + 1]?.completed;
 
-                        {/* Icon */}
+                      return (
                         <div
-                          className={`w-10 h-10 rounded-full flex items-center justify-center z-10 mb-2 ${
-                            step.completed
-                              ? 'bg-[#f63a9e] text-white'
-                              : 'bg-white border-2 border-gray-200 text-gray-400'
-                          }`}
+                          key={index}
+                          className='flex flex-col items-center relative'
+                          style={{ flex: 1 }}
                         >
-                          {index === 0 && <Package className='w-5 h-5' />}
-                          {index === 1 && <CreditCard className='w-5 h-5' />}
-                          {index === 2 && <Package className='w-5 h-5' />}
-                          {index === 3 && <Truck className='w-5 h-5' />}
-                        </div>
+                          {/* Connector Line */}
+                          {index < order.timeline.length - 1 && (
+                            <div
+                              className='absolute top-5 right-0 h-0.5 bg-gray-200'
+                              style={{
+                                width: '100%',
+                                transform: 'translateX(50%)',
+                              }}
+                            >
+                              <div
+                                className='h-full bg-[#f63a9e] transition-all duration-500'
+                                style={{
+                                  width: isNextCompleted ? '100%' : '0%',
+                                }}
+                              />
+                            </div>
+                          )}
 
-                        {/* Label */}
-                        <div className='text-center'>
-                          <p className='text-xs font-medium mb-0.5'>
-                            {step.label}
-                          </p>
-                          {step.date && (
-                            <>
+                          {/* Icon */}
+                          <div
+                            className={`w-10 h-10 rounded-full flex items-center justify-center z-10 mb-2 transition-all
+                            ${
+                              step.cancelled
+                                ? 'bg-red-500 text-white'
+                                : step.completed
+                                  ? 'bg-[#f63a9e] text-white'
+                                  : step.active
+                                    ? 'bg-white border-2 border-[#f63a9e] text-[#f63a9e]'
+                                    : 'bg-white border-2 border-gray-200 text-gray-400'
+                            }
+                          `}
+                          >
+                            {timelineIcons[step.label]}
+                          </div>
+
+                          {/* Label + Meta */}
+                          <div className='text-center'>
+                            <p className='text-xs font-medium mb-0.5'>
+                              {step.label}
+                            </p>
+
+                            {/* Date */}
+                            {step.date && (
                               <p className='text-xs text-gray-600'>
                                 {step.date}
                               </p>
+                            )}
+
+                            {/* Time */}
+                            {step.time && (
                               <p className='text-xs text-gray-500'>
                                 {step.time}
                               </p>
-                            </>
-                          )}
+                            )}
+
+                            {/* Status Text (In Progress) */}
+                            {step.statusText && (
+                              <p className='text-xs text-[#f63a9e] font-medium'>
+                                {step.statusText}
+                              </p>
+                            )}
+                          </div>
                         </div>
-                      </div>
-                    ))}
+                      );
+                    })}
                   </div>
                 </div>
+
+                <div className='flex justify-between items-center mt-6 gap-4'>
+                  {/* Cancel Order */}
+                  <Button
+                    size='lg'
+                    variant='destructive'
+                    disabled={
+                      updating ||
+                      order.status === 'delivered' ||
+                      order.status === 'cancelled'
+                    }
+                    onClick={() => setShowCancelDialog(true)}
+                  >
+                    {updating ? (
+                      <Loader2 className='mr-1 xl:mr-2 animate-spin' />
+                    ) : (
+                      <X className='mr-1 xl:mr-2' />
+                    )}
+                    <span className='hidden xl:inline'>Cancel Order</span>
+                  </Button>
+
+                  {/* Navigation */}
+                  <div className='flex gap-3'>
+                    <Button
+                      size='lg'
+                      variant='outline'
+                      disabled={
+                        updating ||
+                        order.status === 'pending' ||
+                        order.status === 'cancelled'
+                      }
+                      onClick={handleBackStatus}
+                    >
+                      {updating ? (
+                        <Loader2 className='mr-1 xl:mr-2 animate-spin' />
+                      ) : (
+                        <MoveLeft className='mr-1 xl:mr-2' />
+                      )}
+                      <span className='hidden xl:inline'>
+                        {updating ? 'Updating...' : 'Back to previous status'}
+                      </span>
+                    </Button>
+
+                    <Button
+                      size='lg'
+                      disabled={
+                        updating ||
+                        order.status === 'delivered' ||
+                        order.status === 'cancelled'
+                      }
+                      onClick={handleNextStatus}
+                    >
+                      {updating ? (
+                        <Loader2 className='ml-1 xl:ml-2 animate-spin' />
+                      ) : (
+                        <MoveRight className='ml-1 xl:ml-2' />
+                      )}
+                      <span className='hidden xl:inline'>
+                        {updating ? 'Updating...' : 'Advance to next status'}
+                      </span>
+                    </Button>
+                  </div>
+                </div>
+
+                {order.remarks && order.remarks.length && (
+                  <Alert className='max-w-full mt-4 border border-[#f63a9e]'>
+                    <CheckCircle2Icon color='#f63a9e' />
+                    <AlertTitle>Remarks</AlertTitle>
+                    <AlertDescription>{order.remarks}</AlertDescription>
+                  </Alert>
+                )}
               </div>
             </div>
 
@@ -491,6 +839,9 @@ export function AdminOrderDetailPage() {
                         Sizes
                       </th>
                       <th className='text-left py-3 px-2 text-xs font-medium text-gray-600'>
+                        Qty.
+                      </th>
+                      <th className='text-left py-3 px-2 text-xs font-medium text-gray-600'>
                         Category
                       </th>
                       <th className='text-left py-3 px-2 text-xs font-medium text-gray-600'>
@@ -512,6 +863,7 @@ export function AdminOrderDetailPage() {
                       >
                         <td className='py-4 px-2 text-sm'>{item.product}</td>
                         <td className='py-4 px-2 text-sm'>{item.size}</td>
+                        <td className='py-4 px-2 text-sm'>{item.quantity}</td>
                         <td className='py-4 px-2 text-sm'>{item.category}</td>
                         <td className='py-4 px-2'>
                           <a
@@ -646,6 +998,42 @@ export function AdminOrderDetailPage() {
           </div>
         </div>
       </div>
+      <AlertDialog open={showCancelDialog} onOpenChange={setShowCancelDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Cancel this order?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This action cannot be undone. The order will be permanently
+              cancelled and cannot be advanced further.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+
+          {/* Optional reason */}
+          <Textarea
+            placeholder='Reason for cancellation (optional)'
+            value={cancelReason}
+            onChange={e => setCancelReason(e.target.value)}
+          />
+
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={updating}>Keep Order</AlertDialogCancel>
+            <AlertDialogAction
+              className='bg-red-600 hover:bg-red-700'
+              onClick={handleCancelOrder}
+              disabled={updating}
+            >
+              {updating ? (
+                <>
+                  <Loader2 className='mr-2 h-4 w-4 animate-spin' />
+                  Cancelling...
+                </>
+              ) : (
+                'Yes, cancel order'
+              )}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </AdminLayout>
   );
 }

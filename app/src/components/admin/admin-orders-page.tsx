@@ -44,6 +44,18 @@ export function AdminOrdersPage() {
     fetchOrders();
   }, []);
 
+  // Map database status to display status
+  const getDisplayStatus = (dbStatus: string): string => {
+    const statusMap: Record<string, string> = {
+      pending: 'Pending',
+      processing: 'Processing',
+      shipped: 'Dispatched',
+      delivered: 'Delivered',
+      cancelled: 'Cancelled',
+    };
+    return statusMap[dbStatus?.toLowerCase()] || 'Pending';
+  };
+
   // Transform database orders to display format
   const orders = dbOrders.map(order => ({
     id: order.order_number,
@@ -54,9 +66,7 @@ export function AdminOrdersPage() {
       order.items?.reduce((sum: number, item: any) => sum + item.quantity, 0) ||
       0,
     amount: `£${parseFloat(order.total).toFixed(2)}`,
-    status:
-      order.status?.charAt(0).toUpperCase() + order.status?.slice(1) ||
-      'Pending',
+    status: getDisplayStatus(order.status),
     date: new Date(order.created_at).toLocaleDateString('en-GB'),
     shipping: 'Standard Delivery',
   }));
@@ -80,7 +90,7 @@ export function AdminOrdersPage() {
       product: 'Parallel Triplet',
       quantity: 1,
       amount: '£69.00',
-      status: 'Shipped',
+      status: 'Dispatched',
       date: '2025-10-20',
       shipping: 'Express Delivery',
     },
@@ -213,7 +223,7 @@ export function AdminOrdersPage() {
                 <SelectItem value='all'>All Status</SelectItem>
                 <SelectItem value='pending'>Pending</SelectItem>
                 <SelectItem value='processing'>Processing</SelectItem>
-                <SelectItem value='shipped'>Shipped</SelectItem>
+                <SelectItem value='shipped'>Dispatched</SelectItem>
                 <SelectItem value='delivered'>Delivered</SelectItem>
               </SelectContent>
             </Select>
@@ -284,7 +294,7 @@ export function AdminOrdersPage() {
                         className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium ${
                           order.status === 'Delivered'
                             ? 'bg-green-100 text-green-700'
-                            : order.status === 'Shipped'
+                            : order.status === 'Dispatched'
                               ? 'bg-blue-100 text-blue-700'
                               : order.status === 'Processing'
                                 ? 'bg-yellow-100 text-yellow-700'

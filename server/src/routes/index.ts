@@ -4,6 +4,7 @@ import checkoutRoutes from './checkout';
 import searchRoutes from './search';
 import embeddingsRoutes from './embeddings';
 import contactRoutes from './contact';
+import ordersRoutes from './orders';
 
 const router = Router();
 
@@ -78,6 +79,7 @@ router.get('/', (_req: Request, res: Response) => {
       search: 'GET /api/search/semantic',
       embeddings: 'POST /api/embeddings/generate',
       contact: 'POST /api/contact',
+      orderNotification: 'POST /api/orders/:orderNumber/status-notification',
     },
   });
 });
@@ -88,5 +90,6 @@ router.use('/checkout', checkoutRoutes);
 router.use('/search', searchRoutes);
 router.use('/embeddings', embeddingsRoutes);
 router.use('/contact', contactRoutes);
+router.use('/orders', ordersRoutes);
 
 export default router;
