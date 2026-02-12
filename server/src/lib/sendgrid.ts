@@ -387,4 +387,69 @@ ${config.SUPPORT_EMAIL || 'support@photify.co'}
   }
 }
 
+/**
+ * Order confirmation email data interface
+ */
+export interface OrderConfirmationEmailData {
+  order_number: string;
+  order_date: string;
+  delivery_type: string;
+  estimated_delivery: string;
+  customer_name: string;
+  customer_email: string;
+  subtotal: string;
+  shipping_cost: string;
+  total_amount: string;
+  order_items: Array<{
+    name: string;
+    variant?: string;
+    quantity: number;
+    price: string;
+  }>;
+  shipping_address: {
+    name: string;
+    line1: string;
+  };
+}
+
+/**
+ * Send order confirmation email using SendGrid dynamic template
+ */
+export async function sendOrderConfirmationEmail(data: OrderConfirmationEmailData): Promise<void> {
+  if (!config.SENDGRID_API_KEY) {
+    console.warn('SendGrid is not configured. Skipping order confirmation email.');
+    return;
+  }
+
+  const email = {
+    to: data.customer_email,
+    from: config.SENDGRID_FROM_EMAIL || 'noreply@photify.co',
+    templateId: 'd-0298ed47f3264fc88d08d07d6eb459a6', // customer-new-order template
+    dynamicTemplateData: {
+      order_number: data.order_number,
+      order_date: data.order_date,
+      delivery_type: data.delivery_type,
+      estimated_delivery: data.estimated_delivery,
+      customer_name: data.customer_name,
+      subtotal: data.subtotal,
+      shipping_cost: data.shipping_cost,
+      total_amount: data.total_amount,
+      support_url: `${config.CLIENT_URL || 'https://photify.co'}/contact_us`,
+      order_items: data.order_items,
+      shipping_address: data.shipping_address,
+    },
+  };
+
+  try {
+    await sgMail.send(email);
+    console.log(`Order confirmation email sent to ${data.customer_email} for order ${data.order_number}`);
+  } catch (error: any) {
+    console.error('Failed to send order confirmation email:', error);
+    if (error.response) {
+      console.error('SendGrid error response:', error.response.body);
+    }
+    // Don't throw - email failure shouldn't block order processing
+  }
+}
+
 export { sgMail };
