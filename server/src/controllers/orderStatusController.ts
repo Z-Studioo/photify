@@ -105,10 +105,14 @@ export async function sendOrderStatusNotification(
           order_number: order.order_number,
           delivery_date: formatDate(order.delivered_at || new Date()),
           delivery_address: shippingAddress,
+          subtotal: `£${parseFloat(order.subtotal).toFixed(2)}`,
+          shipping_cost: `£${parseFloat(order.shipping_cost || 0).toFixed(2)}`,
+          total_amount: `£${parseFloat(order.total).toFixed(2)}`,
           order_items: (order.items || []).map((item: any) => ({
             name: item.name,
             variant: item.size || item.variant || null,
             quantity: item.quantity || 1,
+            price: `£${parseFloat(item.price).toFixed(2)}`,
           })),
         };
 

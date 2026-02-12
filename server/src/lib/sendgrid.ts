@@ -537,10 +537,14 @@ export interface OrderDeliveredEmailData {
   order_number: string;
   delivery_date: string;
   delivery_address: string;
+  subtotal: string;
+  shipping_cost: string;
+  total_amount: string;
   order_items: Array<{
     name: string;
-    variant?: string | null;
+    variant: string | null;
     quantity: number;
+    price: string;
   }>;
 }
 
@@ -626,6 +630,9 @@ export async function sendOrderDeliveredEmail(data: OrderDeliveredEmailData): Pr
       order_number: data.order_number,
       delivery_date: data.delivery_date,
       delivery_address: data.delivery_address,
+      subtotal: data.subtotal,
+      shipping_cost: data.shipping_cost,
+      total_amount: data.total_amount,
       order_items: data.order_items,
     },
   };
