@@ -217,16 +217,9 @@ export function ProductDetailPage({
     );
   };
 
-  // const handleCustomize = () => {
-  //   if (!productData?.config?.configurerType) return;
-  //   navigate(
-  //     `/customize/${productData.config.configurerType}?productId=${productData.id}`
-  //   );
-  // };
-
   const handleOpenCollageCreator = () => {
     if (!isCollageProduct) return;
-    navigate('/customize/photo-collage-creator');
+    navigate(`/customize/${productData.config.configurerType}?productId=${productData.id}`);
   };
 
   const handleShare = async () => {
