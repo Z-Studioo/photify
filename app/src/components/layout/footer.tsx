@@ -31,10 +31,10 @@ export function Footer() {
             <ul className='space-y-2'>
               <li>
                 <Link
-                  to='/'
+                  to='/products'
                   className='text-gray-400 hover:text-[#f63a9e] transition-colors'
                 >
-                  Products
+                  All Products
                 </Link>
               </li>
               <li>
@@ -58,7 +58,7 @@ export function Footer() {
                   to='/art-collections'
                   className='text-gray-400 hover:text-[#f63a9e] transition-colors'
                 >
-                  Art Collection
+                  Art Collections
                 </Link>
               </li>
             </ul>
