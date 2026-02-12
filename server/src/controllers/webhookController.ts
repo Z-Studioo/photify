@@ -1,7 +1,7 @@
 import { Request, Response } from 'express';
 import { stripe } from '@/lib/stripe';
 import { supabase } from '@/lib/supabase';
-import { sendOrderConfirmationEmail } from '@/lib/sendgrid';
+import { sendOrderConfirmationEmail, sendAdminNewOrderEmail } from '@/lib/sendgrid';
 import Stripe from 'stripe';
 
 /**
@@ -49,7 +49,11 @@ async function sendConfirmationEmailForOrder(order: any): Promise<void> {
       },
     };
 
+    // Send email to customer
     await sendOrderConfirmationEmail(emailData);
+    
+    // Send email to admin
+    await sendAdminNewOrderEmail(emailData);
   } catch (emailError) {
     console.error('Failed to send order confirmation email:', emailError);
     // Don't throw - email failure shouldn't block webhook processing

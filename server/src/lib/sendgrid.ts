@@ -453,4 +453,50 @@ export async function sendOrderConfirmationEmail(data: OrderConfirmationEmailDat
   }
 }
 
+/**
+ * Send new order notification email to admin using SendGrid dynamic template
+ */
+export async function sendAdminNewOrderEmail(data: OrderConfirmationEmailData): Promise<void> {
+  if (!config.SENDGRID_API_KEY) {
+    console.warn('SendGrid is not configured. Skipping admin order notification email.');
+    return;
+  }
+
+  if (!config.ADMIN_EMAIL) {
+    console.warn('ADMIN_EMAIL is not configured. Skipping admin order notification email.');
+    return;
+  }
+
+  const email = {
+    to: config.ADMIN_EMAIL,
+    from: config.SENDGRID_FROM_EMAIL || 'noreply@photify.co',
+    subject: `New Order Received: ${data.order_number}`,
+    templateId: 'd-ca90ec611b284c8ca5c7121a1be2b4ad', // admin-new-order template
+    dynamicTemplateData: {
+      order_number: data.order_number,
+      order_date: data.order_date,
+      delivery_type: data.delivery_type,
+      estimated_delivery: data.estimated_delivery,
+      customer_name: data.customer_name,
+      subtotal: data.subtotal,
+      shipping_cost: data.shipping_cost,
+      total_amount: data.total_amount,
+      support_url: `${config.CLIENT_URL || 'https://photify.co'}/contact_us`,
+      order_items: data.order_items,
+      shipping_address: data.shipping_address,
+    },
+  };
+
+  try {
+    await sgMail.send(email);
+    console.log(`Admin order notification sent to ${config.ADMIN_EMAIL} for order ${data.order_number}`);
+  } catch (error: any) {
+    console.error('Failed to send admin order notification email:', error);
+    if (error.response) {
+      console.error('SendGrid error response:', error.response.body);
+    }
+    // Don't throw - email failure shouldn't block order processing
+  }
+}
+
 export { sgMail };
