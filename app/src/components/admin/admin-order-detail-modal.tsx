@@ -218,7 +218,7 @@ export function AdminOrderDetailModal({
                     <SelectContent>
                       <SelectItem value='Pending'>Pending</SelectItem>
                       <SelectItem value='Processing'>Processing</SelectItem>
-                      <SelectItem value='Shipped'>Shipped</SelectItem>
+                      <SelectItem value='Shipped'>Dispatched</SelectItem>
                       <SelectItem value='Delivered'>Delivered</SelectItem>
                       <SelectItem value='Cancelled'>Cancelled</SelectItem>
                     </SelectContent>

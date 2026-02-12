@@ -80,23 +80,13 @@ const generateTimeline = (data: any) => {
         !isCancelled && status !== 'pending' && data.payment_status === 'paid',
     },
     {
-      label: 'Packing',
-      date: '',
-      time: '',
-      completed:
-        !isCancelled && (status === 'shipped' || status === 'delivered'),
-      active: !isCancelled && status === 'processing',
-      statusText:
-        !isCancelled && status === 'processing' ? 'In Progress' : undefined,
-    },
-    {
-      label: 'Shipped',
+      label: 'Dispatched',
       date: '',
       time: '',
       completed: !isCancelled && status === 'delivered',
-      active: !isCancelled && status === 'shipped',
+      active: !isCancelled && (status === 'processing' || status === 'shipped'),
       statusText:
-        !isCancelled && status === 'shipped' ? 'In Progress' : undefined,
+        !isCancelled && (status === 'processing' || status === 'shipped') ? 'In Progress' : undefined,
     },
     {
       label: 'Delivered',
@@ -121,8 +111,7 @@ const generateTimeline = (data: any) => {
 const timelineIcons: Record<string, JSX.Element> = {
   'Order Placed': <Package className='w-5 h-5' />,
   'Payment Confirmed': <CreditCard className='w-5 h-5' />,
-  Packing: <Package className='w-5 h-5' />,
-  Shipped: <Truck className='w-5 h-5' />,
+  Dispatched: <Truck className='w-5 h-5' />,
   Delivered: <CheckCircle className='w-5 h-5' />,
   Cancelled: <XCircle className='w-5 h-5' />,
 };
