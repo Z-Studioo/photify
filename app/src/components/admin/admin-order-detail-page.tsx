@@ -35,7 +35,7 @@ import {
 } from '../ui/alert-dialog';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
-const STATUS_FLOW = ['pending', 'processing', 'shipped', 'delivered'] as const;
+const STATUS_FLOW = ['pending', 'shipped', 'delivered'] as const;
 type OrderStatus = (typeof STATUS_FLOW)[number] | 'cancelled';
 
 const getNextStatus = (current: OrderStatus): OrderStatus => {
@@ -84,9 +84,9 @@ const generateTimeline = (data: any) => {
       date: '',
       time: '',
       completed: !isCancelled && status === 'delivered',
-      active: !isCancelled && (status === 'processing' || status === 'shipped'),
+      active: !isCancelled && status === 'shipped',
       statusText:
-        !isCancelled && (status === 'processing' || status === 'shipped') ? 'In Progress' : undefined,
+        !isCancelled && status === 'shipped' ? 'In Progress' : undefined,
     },
     {
       label: 'Delivered',
@@ -214,6 +214,7 @@ export function AdminOrderDetailPage() {
       
       if (!session?.access_token) {
         console.error('No active session token found');
+        toast.error('Failed to send notification email: Not authenticated');
         return;
       }
 
@@ -234,15 +235,16 @@ export function AdminOrderDetailPage() {
         throw new Error(error.message || 'Failed to send notification');
       }
 
+      toast.success('Customer notification email sent');
       console.log(`Status notification email sent for ${orderNumber} - ${status}`);
     } catch (error) {
       console.error('Failed to send status notification email:', error);
-      // Don't block the UI - just log the error
+      toast.error('Status updated but email notification failed');
     }
   };
 
   const handleNextStatus = async () => {
-    if (!order || order.status === 'delivered' || order.status === 'cancelled')
+    if (!order || order.status === 'delivered' || order.status === 'cancelled' || updating)
       return;
 
     const nextStatus = getNextStatus(order.status);
@@ -265,6 +267,7 @@ export function AdminOrderDetailPage() {
 
       if (error) throw error;
 
+      // Update local state
       setOrder((prev: any) => ({
         ...prev,
         status: nextStatus,
@@ -274,8 +277,8 @@ export function AdminOrderDetailPage() {
 
       toast.success(`Order moved to ${nextStatus}`);
       
-      // Send email notification to customer
-      sendStatusNotificationEmail(order.id, nextStatus);
+      // Send email notification to customer (await to prevent race conditions)
+      await sendStatusNotificationEmail(order.id, nextStatus);
     } catch (err) {
       console.error('Error updating order:', err);
       toast.error('Failed to update order status');
@@ -285,7 +288,7 @@ export function AdminOrderDetailPage() {
   };
 
   const handleBackStatus = async () => {
-    if (!order || order.status === 'pending' || order.status === 'cancelled')
+    if (!order || order.status === 'pending' || order.status === 'cancelled' || updating)
       return;
 
     const previousStatus = getPreviousStatus(order.status);
@@ -306,6 +309,7 @@ export function AdminOrderDetailPage() {
 
       if (error) throw error;
 
+      // Update local state
       setOrder((prev: any) => ({
         ...prev,
         status: previousStatus,
@@ -327,34 +331,44 @@ export function AdminOrderDetailPage() {
   };
 
   const handleCancelOrder = async () => {
-    try {
-      await supabase
-        .from('orders')
-        .update({
-          status: 'cancelled',
-          remarks: cancelReason,
-        })
-        .eq('order_number', order.id);
+    if (updating) return;
 
-      setOrder((prev: any) => ({
-        ...prev,
+    try {
+      setUpdating(true);
+      const payload = {
         status: 'cancelled',
         remarks: cancelReason,
+        cancelled_at: new Date().toISOString(),
+      };
+
+      const { error } = await supabase
+        .from('orders')
+        .update(payload)
+        .eq('order_number', order.id)
+        .select();
+
+      if (error) throw error;
+
+      // Update local state
+      setOrder((prev: any) => ({
+        ...prev,
+        ...payload,
         timeline: generateTimeline({
           ...prev,
-          status: 'cancelled',
-          remarks: cancelReason,
+          ...payload,
         }),
       }));
 
       toast.success('Order cancelled');
       setShowCancelDialog(false);
       
-      // Send cancellation email notification to customer
-      sendStatusNotificationEmail(order.id, 'cancelled');
+      // Send cancellation email notification to customer (await to prevent race conditions)
+      await sendStatusNotificationEmail(order.id, 'cancelled');
     } catch (err) {
       console.error('Error cancelling order:', err);
       toast.error('Failed to cancel order');
+    } finally {
+      setUpdating(false);
     }
   };
 
@@ -622,7 +636,11 @@ export function AdminOrderDetailPage() {
                     }
                     onClick={() => setShowCancelDialog(true)}
                   >
-                    <X className='mr-1 xl:mr-2' />
+                    {updating ? (
+                      <Loader2 className='mr-1 xl:mr-2 animate-spin' />
+                    ) : (
+                      <X className='mr-1 xl:mr-2' />
+                    )}
                     <span className='hidden xl:inline'>Cancel Order</span>
                   </Button>
 
@@ -638,9 +656,13 @@ export function AdminOrderDetailPage() {
                       }
                       onClick={handleBackStatus}
                     >
-                      <MoveLeft className='mr-1 xl:mr-2' />
+                      {updating ? (
+                        <Loader2 className='mr-1 xl:mr-2 animate-spin' />
+                      ) : (
+                        <MoveLeft className='mr-1 xl:mr-2' />
+                      )}
                       <span className='hidden xl:inline'>
-                        Back to previous status
+                        {updating ? 'Updating...' : 'Back to previous status'}
                       </span>
                     </Button>
 
@@ -653,9 +675,13 @@ export function AdminOrderDetailPage() {
                       }
                       onClick={handleNextStatus}
                     >
-                      <MoveRight className='ml-1 xl:ml-2' />
+                      {updating ? (
+                        <Loader2 className='ml-1 xl:ml-2 animate-spin' />
+                      ) : (
+                        <MoveRight className='ml-1 xl:ml-2' />
+                      )}
                       <span className='hidden xl:inline'>
-                        Advance to next status
+                        {updating ? 'Updating...' : 'Advance to next status'}
                       </span>
                     </Button>
                   </div>
@@ -990,12 +1016,20 @@ export function AdminOrderDetailPage() {
           />
 
           <AlertDialogFooter>
-            <AlertDialogCancel>Keep Order</AlertDialogCancel>
+            <AlertDialogCancel disabled={updating}>Keep Order</AlertDialogCancel>
             <AlertDialogAction
               className='bg-red-600 hover:bg-red-700'
               onClick={handleCancelOrder}
+              disabled={updating}
             >
-              Yes, cancel order
+              {updating ? (
+                <>
+                  <Loader2 className='mr-2 h-4 w-4 animate-spin' />
+                  Cancelling...
+                </>
+              ) : (
+                'Yes, cancel order'
+              )}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
