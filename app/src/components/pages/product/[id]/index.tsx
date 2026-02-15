@@ -198,6 +198,7 @@ export function ProductDetailPage({
     configurerType === 'photo-collage-creator' ||
     configurerType === '1PhotoCollageCreator' ||
     configurerType === 'poster-collage' ||
+    configurerType === 'multi-canvas-wall' ||
     productSlug === 'photo-collage-creator' ||
     productSlug === '1PhotoCollageCreator';
 
@@ -219,7 +220,13 @@ export function ProductDetailPage({
 
   const handleOpenCollageCreator = () => {
     if (!isCollageProduct) return;
-    navigate(`/customize/${productData.config.configurerType}?productId=${productData.id}`);
+    if (productData.config?.configurerType === 'multi-canvas-wall') {
+      navigate(`/customize/${productData.config.configurerType}`);
+    } else {
+      navigate(
+        `/customize/${productData.config.configurerType}?productId=${productData.id}`
+      );
+    }
   };
 
   const handleShare = async () => {
