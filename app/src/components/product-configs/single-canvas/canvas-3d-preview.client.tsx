@@ -234,7 +234,7 @@ export default function Canvas3DPreview({
   return (
     <div className='w-full h-full bg-gradient-to-b from-slate-100 to-slate-200 overflow-hidden'>
       <Canvas shadows camera={{ position: phase1StartPosition, fov: 50 }}>
-        <ambientLight intensity={0.15} />
+         <ambientLight intensity={1.8} />
 
         <directionalLight
           position={[-2, 8, 3]}

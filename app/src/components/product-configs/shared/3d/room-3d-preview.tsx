@@ -50,7 +50,7 @@ export function Room3DPreview({
       style={{ background: '#f5f5f5' }}
     >
       {/* Lighting */}
-      <ambientLight intensity={1.2} />
+      <ambientLight intensity={2} />
       <directionalLight
         position={[10, 10, 5]}
         intensity={2.5}
