@@ -195,9 +195,9 @@ export function SearchModal({ isOpen, onClose }: SearchModalProps) {
           animate={{ opacity: 1, scale: 1, y: 0 }}
           exit={{ opacity: 0, scale: 0.95, y: -20 }}
           transition={{ duration: 0.3, ease: 'easeOut' }}
-          className='relative w-full max-w-4xl max-h-[90vh] bg-white rounded-2xl shadow-2xl overflow-hidden'
+          className='relative w-full max-w-4xl max-h-[85vh] bg-white rounded-2xl shadow-2xl'
         >
-          <div className='h-full flex flex-col'>
+          <div className='max-h-[85vh] overflow-scroll flex flex-col rounded-2xl shadow-lg'>
             {/* Header */}
 
             <div className='flex-shrink-0 border-b border-gray-100 bg-gradient-to-b from-white to-gray-50/50'>
