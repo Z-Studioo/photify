@@ -408,7 +408,7 @@ export default function PosterEaselPreview({
         }}
       >
         {/* Ambient light - soft overall illumination */}
-        <ambientLight intensity={0.4} color='#fff8f0' />
+        <ambientLight intensity={1.8} color='#fff8f0' />
 
         {/* Main directional light (window light from left) */}
         <directionalLight
