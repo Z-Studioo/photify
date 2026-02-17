@@ -390,16 +390,44 @@ export function HomePage({
                       >
                         {product.name}
                       </h3>
-                      <p className='text-[#f63a9e]'>
-                        From{' '}
-                        <span>
-                          £
-                          {typeof product.price === 'number'
-                            ? product.price.toFixed(2)
-                            : product.price}
-                          /sq in
-                        </span>
-                      </p>
+                      <div className={`flex items-center justify-between`}>
+                        <div className='flex flex-col'>
+                          <span className='text-gray-500 text-xs font-semibold uppercase tracking-wider mb-1'>
+                            Starting At
+                          </span>
+
+                          <div className='flex items-start'>
+                            <div className='flex items-start text-[#f63a9e]'>
+                              <span className='font-bold text-lg mt-2 mr-0.5'>
+                                £
+                              </span>
+
+                              <span className='font-extrabold text-4xl tracking-tighter leading-none font-bricolage'>
+                                {typeof product.price === 'number'
+                                  ? Math.floor(product.price)
+                                  : product.price}
+                              </span>
+
+                              <span className='font-bold text-xl mt-2'>
+                                .
+                                {typeof product.price === 'number'
+                                  ? product.price.toFixed(2).split('.')[1]
+                                  : '00'}
+                              </span>
+                            </div>
+
+                            <div className='ml-3 flex flex-col justify-center border-l border-gray-200 pl-3'>
+                              <span className='text-gray-400 text-[10px] font-bold uppercase tracking-widest leading-none'>
+                                Per
+                              </span>
+
+                              <span className='text-gray-600 text-sm font-bold leading-tight whitespace-nowrap'>
+                                sq in
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
                     </div>
                   </motion.div>
                 ))}

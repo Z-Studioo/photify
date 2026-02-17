@@ -100,15 +100,41 @@ export function ProductCard({
           </div>
         )}
 
-        <div className='flex items-center justify-between'>
-          <div className='flex gap-2'>
-            <p className='text-[#f63a9e] font-bold text-2xl'>
-              £{typeof price === 'number' ? price.toFixed(2) : price}
-            </p>
-            <p className='text-gray-500'>per sq in</p>
-          </div>
+        <div className={`flex items-center justify-between`}>
+          <div className='flex flex-col'>
+            <span className='text-gray-500 text-xs font-semibold uppercase tracking-wider mb-1'>
+              Starting At
+            </span>
 
-          <div className='w-10 h-10 bg-[#f63a9e] text-white rounded-full flex items-center justify-center group-hover:bg-[#e02d8d] transition-colors shadow-md'>
+            <div className='flex items-start'>
+              {/* Price */}
+              <div className='flex items-start text-[#f63a9e]'>
+                <span className='font-bold text-lg mt-2 mr-0.5'>£</span>
+
+                <span className='font-extrabold text-4xl tracking-tighter leading-none font-bricolage'>
+                  {typeof price === 'number' ? Math.floor(price) : price}
+                </span>
+
+                <span className='font-bold text-xl mt-2'>
+                  .
+                  {typeof price === 'number'
+                    ? price.toFixed(2).split('.')[1]
+                    : '00'}
+                </span>
+              </div>
+
+              <div className='ml-3 flex flex-col justify-center border-l border-gray-200 pl-3'>
+                <span className='text-gray-400 text-[10px] font-bold uppercase tracking-widest leading-none'>
+                  Per
+                </span>
+
+                <span className='text-gray-600 text-sm font-bold leading-tight whitespace-nowrap'>
+                  sq in
+                </span>
+              </div>
+            </div>
+          </div>
+          <div className='w-10 h-10 bg-[#f63a9e] text-white rounded-full flex items-center justify-center hover:bg-[#e02d8d] transition-colors shadow-md'>
             <span className='text-lg font-bold'>→</span>
           </div>
         </div>

@@ -33,7 +33,6 @@ import { getConfigurerById } from '@/lib/configures/registry';
 import { createClient } from '@/lib/supabase/client';
 import { Helmet } from '@dr.pogodin/react-helmet';
 
-// Mock reviews data
 const mockReviews = [
   {
     id: 1,
@@ -67,7 +66,6 @@ const mockReviews = [
   },
 ];
 
-// Room backgrounds for visualization
 const roomBackgrounds = [
   {
     id: 'living',
@@ -106,20 +104,15 @@ export function ProductDetailPage({
 }: ProductDetailPageProps) {
   const navigate = useNavigate();
   const supabase = createClient();
-
-  // State
   const [mainImage, setMainImage] = useState(0);
   const [isWishlisted, setIsWishlisted] = useState(false);
   const [showStickyBar, setShowStickyBar] = useState(false);
   const [selectedRoom, setSelectedRoom] = useState('living');
   const [relatedProducts, setRelatedProducts] = useState<any[]>([]);
   const [viewersCount] = useState(() => Math.floor(Math.random() * 20) + 15);
-
-  // Refs
   const heroRef = useRef<HTMLDivElement>(null);
   const ctaRef = useRef<HTMLDivElement>(null);
 
-  // Scroll tracking for sticky bar
   useEffect(() => {
     const handleScroll = () => {
       if (ctaRef.current) {
@@ -127,29 +120,24 @@ export function ProductDetailPage({
         setShowStickyBar(ctaRect.bottom < 0);
       }
     };
-
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
-  // Fetch related products
   useEffect(() => {
     async function fetchRelated() {
       if (!initialProduct?.id) return;
-
       const { data } = await supabase
         .from('products')
-        .select('id, name, slug, images, price, is_featured config')
+        .select('id,name,slug,images,price,is_featured')
         .neq('id', initialProduct.id)
         .eq('active', true)
         .limit(4);
-
       if (data) setRelatedProducts(data);
     }
     fetchRelated();
   }, [initialProduct?.id]);
 
-  // Product data
   const productData = initialProduct;
   const product = {
     id: initialProduct.id,
@@ -191,7 +179,6 @@ export function ProductDetailPage({
     reviewCount: 128,
   };
 
-  // Check if product has configurator
   const hasConfigurer = productData?.config?.configurerType;
   const configurerType = productData?.config?.configurerType;
   const isCollageProduct =
@@ -202,22 +189,18 @@ export function ProductDetailPage({
     productSlug === 'photo-collage-creator' ||
     productSlug === '1PhotoCollageCreator';
 
-  // Handlers
   const handlePrevImage = () => {
     setMainImage(prev => (prev === 0 ? product.images.length - 1 : prev - 1));
   };
-
   const handleNextImage = () => {
     setMainImage(prev => (prev === product.images.length - 1 ? 0 : prev + 1));
   };
-
   const handleCustomize = () => {
     if (!productData?.config?.configurerType) return;
     navigate(
       `/upload?productId=${productData.id}&configurerType=${productData.config.configurerType}`
     );
   };
-
   const handleOpenCollageCreator = () => {
     if (!isCollageProduct) return;
     if (productData.config?.configurerType === 'multi-canvas-wall') {
@@ -228,7 +211,6 @@ export function ProductDetailPage({
       );
     }
   };
-
   const handleShare = async () => {
     if (navigator.share) {
       await navigator.share({
@@ -253,7 +235,6 @@ export function ProductDetailPage({
       </Helmet>
       <div className="min-h-screen font-['Mona_Sans',_sans-serif] bg-white">
         <Header />
-
         {/* Sticky Purchase Bar */}
         <AnimatePresence>
           {showStickyBar && (
@@ -321,6 +302,7 @@ export function ProductDetailPage({
           className='bg-gradient-to-br from-[#FFF5FB] via-white to-pink-50/30'
         >
           {/* Back Button Row */}
+
           <div className='max-w-[1400px] mx-auto px-4 sm:px-6 pt-4 sm:pt-6'>
             <div className='flex items-center justify-between'>
               <motion.button
@@ -1073,13 +1055,47 @@ export function ProductDetailPage({
                         />
                       </div>
 
-                      <div className='p-4'>
-                        <h3 className='font-semibold text-gray-900 mb-2 line-clamp-2 group-hover:text-[#f63a9e] transition-colors'>
-                          {relProduct.name}
-                        </h3>
-                        <p className='text-[#f63a9e] font-bold'>
-                          £{relProduct.price}
-                        </p>
+                      <div className={`flex items-center justify-between p-4`}>
+                        <div className='flex flex-col'>
+                          <span className='text-gray-500 text-xs font-semibold uppercase tracking-wider mb-1'>
+                            Starting At
+                          </span>
+
+                          <div className='flex items-start'>
+                            <div className='flex items-start text-[#f63a9e]'>
+                              <span className='font-bold text-lg mt-2 mr-0.5'>
+                                £
+                              </span>
+
+                              <span className='font-extrabold text-4xl tracking-tighter leading-none font-bricolage'>
+                                {typeof relProduct.price === 'number'
+                                  ? Math.floor(relProduct.price)
+                                  : relProduct.price}
+                              </span>
+
+                              <span className='font-bold text-xl mt-2'>
+                                .
+                                {typeof relProduct.price === 'number'
+                                  ? relProduct.price.toFixed(2).split('.')[1]
+                                  : '00'}
+                              </span>
+                            </div>
+
+                            <div className='ml-3 flex flex-col justify-center border-l border-gray-200 pl-3'>
+                              <span className='text-gray-400 text-[10px] font-bold uppercase tracking-widest leading-none'>
+                                Per
+                              </span>
+
+                              <span className='text-gray-600 text-sm font-bold leading-tight whitespace-nowrap'>
+                                sq in
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+
+                        <div className='w-10 h-10 bg-[#f63a9e] text-white rounded-full flex items-center justify-center hover:bg-[#e02d8d] transition-colors shadow-md'>
+                          <span className='text-lg font-bold'>→</span>
+                        </div>
                       </div>
                     </div>
                   </motion.div>
