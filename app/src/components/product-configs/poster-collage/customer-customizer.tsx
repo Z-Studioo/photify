@@ -289,7 +289,7 @@ export function PosterCollageCustomizer() {
                 <motion.div
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
-                  className='w-full h-full bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center'
+                  className='w-full h-full bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center p-4'
                 >
                   <div className='text-center max-w-md px-4'>
                     <div className='w-32 h-32 bg-white rounded-2xl shadow-xl flex items-center justify-center mb-6 border-2 border-dashed border-gray-300 mx-auto'>
