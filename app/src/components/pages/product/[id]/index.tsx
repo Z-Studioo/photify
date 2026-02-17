@@ -139,7 +139,7 @@ export function ProductDetailPage({
 
       const { data } = await supabase
         .from('products')
-        .select('id, name, slug, images, price, is_featured')
+        .select('id, name, slug, images, price, is_featured config')
         .neq('id', initialProduct.id)
         .eq('active', true)
         .limit(4);
