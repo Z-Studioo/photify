@@ -138,7 +138,6 @@ export function MultiCanvasWallCustomizer() {
       try {
         // If we have a productId from URL, fetch that product's room backgrounds
         if (productId) {
-
           const { data, error } = await supabase
             .from('products')
             .select('config')
@@ -152,11 +151,9 @@ export function MultiCanvasWallCustomizer() {
             data?.config?.roomBackgrounds &&
             Array.isArray(data.config.roomBackgrounds)
           ) {
-
             // Filter active rooms and transform to Room interface
             const activeRooms: Room[] = data.config.roomBackgrounds
               .filter((room: any) => {
-              
                 return room.isActive !== false;
               })
               .map((room: any) => ({
@@ -176,11 +173,9 @@ export function MultiCanvasWallCustomizer() {
                 }));
               }
             } else {
-      
               setRooms(MULTI_CANVAS_WALL_PRODUCT.config.rooms || []);
             }
           } else {
-         
             setRooms(MULTI_CANVAS_WALL_PRODUCT.config.rooms || []);
           }
         } else {
@@ -368,19 +363,6 @@ export function MultiCanvasWallCustomizer() {
 
   return (
     <div className='min-h-screen md:h-screen bg-gradient-to-br from-gray-50 via-pink-50/30 to-purple-50/30 flex flex-col md:flex-row overflow-hidden'>
-      {/* Debug Info - Only in development */}
-      {process.env.NODE_ENV === 'development' && !productId && (
-        <div className='absolute top-4 right-4 z-50 bg-yellow-100 border-2 border-yellow-400 rounded-lg p-3 max-w-sm'>
-          <p className='text-xs font-semibold text-yellow-800 mb-1'>
-            ⚠️ Development Notice
-          </p>
-          <p className='text-xs text-yellow-700'>
-            No productId in URL. Using default rooms. Access via product page
-            for custom rooms.
-          </p>
-        </div>
-      )}
-
       {/* Main Content Area */}
       <div className='flex-1 flex items-stretch'>
         <div
@@ -607,7 +589,20 @@ export function MultiCanvasWallCustomizer() {
       </div>
 
       {/* Right Sidebar - Responsive */}
-      <div className='w-full md:w-[420px] bg-white border-t md:border-t-0 md:border-l border-gray-200 flex flex-col shadow-xl max-h-[40vh] md:max-h-none md:h-screen'>
+      <div className='w-full md:w-[420px] bg-white border-t md:border-t-0 md:border-l border-gray-200 flex flex-col shadow-xl md:max-h-none md:h-screen'>
+        {/* Debug Info - Only in development */}
+        {process.env.NODE_ENV === 'development' && !productId && (
+          <div className='bg-yellow-100 border-2 border-yellow-400 rounded-lg p-3 max-w-sm m-3'>
+            <p className='text-xs font-semibold text-yellow-800 mb-1'>
+              ⚠️ Development Notice
+            </p>
+            <p className='text-xs text-yellow-700'>
+              No productId in URL. Using default rooms. Access via product page
+              for custom rooms.
+            </p>
+          </div>
+        )}
+
         {/* Sidebar Header */}
         <div className='px-4 py-4 md:px-8 md:py-8 border-b border-gray-200 bg-gradient-to-br from-gray-50 to-white'>
           <h2

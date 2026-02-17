@@ -500,45 +500,100 @@ export function Product3DView({
               )}
             </Suspense>
 
-            {/* Bottom Toolbar - Overlay inside 3D view - Mobile Responsive */}
+            {/* Bottom Toolbar - Overlay inside 3D view - Mobile Optimized */}
             {currentWidth && currentHeight && (
               <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
-                className='absolute bottom-4 md:bottom-8 left-1/2 transform -translate-x-1/2 z-10'
+                className='
+  absolute
+  bottom-4 md:bottom-8
+  right-4 md:right-auto
+  md:left-1/2
+  md:-translate-x-1/2
+  z-10
+'
               >
-                <div className='bg-white/95 backdrop-blur-md rounded-xl md:rounded-2xl shadow-2xl px-4 py-3 md:px-6 md:py-4 flex items-center gap-2 border border-gray-200'>
-                  {/* Crop Button - Only for single canvas */}
+                <div
+                  className='
+        bg-white/95 backdrop-blur-md
+        rounded-xl md:rounded-2xl
+        shadow-2xl
+        px-2 py-1.5 md:px-6 md:py-4
+        flex items-center gap-2 md:gap-3
+        border border-gray-200
+        w-fit
+      '
+                >
+                  {/* Crop Button */}
                   {enableImageEditor && (
                     <button
-                      className={`flex flex-col items-center gap-1 md:gap-1.5 px-3 py-1.5 md:px-4 md:py-2 hover:bg-gray-50 rounded-lg md:rounded-xl transition-colors group ${
-                        showImageEditor ? 'bg-[#f63a9e]/10' : ''
-                      }`}
                       onClick={() => setShowImageEditor(!showImageEditor)}
+                      className={`
+            flex items-center justify-center
+            md:flex-col md:gap-1.5
+            w-8 h-8 md:w-auto md:h-auto
+            md:px-4 md:py-2
+            rounded-md md:rounded-xl
+            transition-colors hover:bg-gray-50
+            group
+            ${showImageEditor ? 'bg-[#f63a9e]/10' : ''}
+          `}
                     >
                       <Crop
-                        className={`w-5 h-5 md:w-6 md:h-6 ${showImageEditor ? 'text-[#f63a9e]' : 'text-gray-700 group-hover:text-[#f63a9e]'}`}
+                        className={`
+              w-4 h-4 md:w-6 md:h-6
+              ${
+                showImageEditor
+                  ? 'text-[#f63a9e]'
+                  : 'text-gray-700 group-hover:text-[#f63a9e]'
+              }
+            `}
                       />
+
                       <span
-                        className={`text-[10px] md:text-xs font-medium ${showImageEditor ? 'text-[#f63a9e]' : 'text-gray-600'}`}
+                        className={`
+              hidden md:block text-xs font-medium
+              ${showImageEditor ? 'text-[#f63a9e]' : 'text-gray-600'}
+            `}
                       >
                         Crop
                       </span>
                     </button>
                   )}
 
-                  {/* 3D Room View Toggle */}
+                  {/* 3D Room Toggle */}
                   <button
-                    className={`flex flex-col items-center gap-1 md:gap-1.5 px-3 py-1.5 md:px-4 md:py-2 hover:bg-gray-50 rounded-lg md:rounded-xl transition-colors group ${
-                      viewMode === 'room' ? 'bg-[#f63a9e]/10' : ''
-                    }`}
-                    onClick={() => setViewMode(viewMode === 'canvas' ? 'room' : 'canvas')}
+                    onClick={() =>
+                      setViewMode(viewMode === 'canvas' ? 'room' : 'canvas')
+                    }
+                    className={`
+          flex items-center justify-center
+          md:flex-col md:gap-1.5
+          w-8 h-8 md:w-auto md:h-auto
+          md:px-4 md:py-2
+          rounded-md md:rounded-xl
+          transition-colors hover:bg-gray-50
+          group
+          ${viewMode === 'room' ? 'bg-[#f63a9e]/10' : ''}
+        `}
                   >
                     <Box
-                      className={`w-5 h-5 md:w-6 md:h-6 ${viewMode === 'room' ? 'text-[#f63a9e]' : 'text-gray-700 group-hover:text-[#f63a9e]'}`}
+                      className={`
+            w-4 h-4 md:w-6 md:h-6
+            ${
+              viewMode === 'room'
+                ? 'text-[#f63a9e]'
+                : 'text-gray-700 group-hover:text-[#f63a9e]'
+            }
+          `}
                     />
+
                     <span
-                      className={`text-[10px] md:text-xs font-medium ${viewMode === 'room' ? 'text-[#f63a9e]' : 'text-gray-600'}`}
+                      className={`
+            hidden md:block text-xs font-medium
+            ${viewMode === 'room' ? 'text-[#f63a9e]' : 'text-gray-600'}
+          `}
                     >
                       {viewMode === 'room' ? 'Canvas' : '3D Room'}
                     </span>
@@ -546,16 +601,34 @@ export function Product3DView({
 
                   {/* Ruler Toggle */}
                   <button
-                    className={`flex flex-col items-center gap-1 md:gap-1.5 px-3 py-1.5 md:px-4 md:py-2 hover:bg-gray-50 rounded-lg md:rounded-xl transition-colors group ${
-                      showRuler ? 'bg-[#f63a9e]/10' : ''
-                    }`}
                     onClick={() => setShowRuler(!showRuler)}
+                    className={`
+          flex items-center justify-center
+          md:flex-col md:gap-1.5
+          w-8 h-8 md:w-auto md:h-auto
+          md:px-4 md:py-2
+          rounded-md md:rounded-xl
+          transition-colors hover:bg-gray-50
+          group
+          ${showRuler ? 'bg-[#f63a9e]/10' : ''}
+        `}
                   >
                     <Ruler
-                      className={`w-5 h-5 md:w-6 md:h-6 ${showRuler ? 'text-[#f63a9e]' : 'text-gray-700 group-hover:text-[#f63a9e]'}`}
+                      className={`
+            w-4 h-4 md:w-6 md:h-6
+            ${
+              showRuler
+                ? 'text-[#f63a9e]'
+                : 'text-gray-700 group-hover:text-[#f63a9e]'
+            }
+          `}
                     />
+
                     <span
-                      className={`text-[10px] md:text-xs font-medium ${showRuler ? 'text-[#f63a9e]' : 'text-gray-600'}`}
+                      className={`
+            hidden md:block text-xs font-medium
+            ${showRuler ? 'text-[#f63a9e]' : 'text-gray-600'}
+          `}
                     >
                       Ruler
                     </span>

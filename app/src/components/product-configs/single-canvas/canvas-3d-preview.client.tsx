@@ -232,9 +232,9 @@ export default function Canvas3DPreview({
   const phase2EndPosition: [number, number, number] = [3.26, 1.92, -0.47];
 
   return (
-    <div className='w-full h-full bg-gradient-to-b from-slate-100 to-slate-200 overflow-hidden'>
+    <div className='w-full h-[50vh] md:h-full bg-gradient-to-b from-slate-100 to-slate-200 overflow-hidden'>
       <Canvas shadows camera={{ position: phase1StartPosition, fov: 50 }}>
-         <ambientLight intensity={1.8} />
+        <ambientLight intensity={1.8} />
 
         <directionalLight
           position={[-2, 8, 3]}
