@@ -141,15 +141,18 @@ export function HomePage({
   // Use server-fetched data if available, otherwise use mock data
   const featuredProducts =
     initialFeaturedProducts.length > 0
-      ? initialFeaturedProducts.map((product: any) => ({
-          images: product.images || [],
-          name: product.name,
-          price: product.price,
-          oldPrice: product.old_price,
-          productId: product.slug || product.id,
-          productType: product.product_type || 'canvas',
-          active: product.active !== false,
-        }))
+      ? initialFeaturedProducts
+          .map((product: any) => ({
+            images: product.images || [],
+            name: product.name,
+            price: product.price,
+            oldPrice: product.old_price,
+            productId: product.slug || product.id,
+            productType: product.product_type || 'canvas',
+            active: product.active !== false,
+            isVisible: !!product.config?.configurerType,
+          }))
+          .filter(product => product.active && product.isVisible)
       : mockFeaturedProducts;
 
   const roomInspirations =
