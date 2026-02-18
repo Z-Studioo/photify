@@ -242,10 +242,11 @@ export function ArtCollectionPage({
   const [selectedCategory, setSelectedCategory] = useState<string>('All');
 
   // Use server-fetched data if available, otherwise use mock data
+  // If initialCategories only has 'All', use fallback categories
   const categories =
-    initialCategories.length > 0
+    initialCategories.length > 1
       ? initialCategories
-      : ['All', 'Religion', 'Abstract', 'Animals', 'Nepal'];
+      : ['All', 'Abstract', 'Religion', 'Animals', 'Nepal', 'Nature', 'Modern'];
   const artProducts =
     initialArtProducts.length > 0
       ? initialArtProducts.map((art: any) => ({

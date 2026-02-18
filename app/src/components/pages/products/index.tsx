@@ -141,6 +141,9 @@ export function ProductsPage({
   const filteredProducts = useMemo(() => {
     let filtered = [...products];
 
+    // Exclude "Dual Metal Harmony" product
+    filtered = filtered.filter(p => p.name !== 'Dual Metal Harmony');
+
     if (searchQuery) {
       filtered = filtered.filter(p =>
         p.name.toLowerCase().includes(searchQuery.toLowerCase())
