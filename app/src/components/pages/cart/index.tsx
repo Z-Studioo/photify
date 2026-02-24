@@ -31,12 +31,9 @@ import { createClient } from '@/lib/supabase/client';
 import { toast } from 'sonner';
 
 export function CartPage() {
-  const { cartItems, updateQuantity, removeFromCart, deliveryMethod, setDeliveryMethod, setShippingCost } = useCart();
+  const { cartItems, updateQuantity, removeFromCart, deliveryMethod, setDeliveryMethod, setShippingCost, discount, setDiscount, appliedPromoCode, setAppliedPromoCode, promoApplied, setPromoApplied } = useCart();
   const navigate = useNavigate();
   const [promoCode, setPromoCode] = useState('');
-  const [promoApplied, setPromoApplied] = useState(false);
-  const [discount, setDiscount] = useState(0);
-  const [appliedPromoCode, setAppliedPromoCode] = useState('');
   const [validatingPromo, setValidatingPromo] = useState(false);
   const [featuredPromotion, setFeaturedPromotion] = useState<any>(null);
 

@@ -23,6 +23,7 @@ import {
   Lock,
   Star,
   Truck,
+  Tag,
   Zap,
   Loader2,
 } from 'lucide-react';
@@ -42,7 +43,7 @@ interface FormData {
 
 export function CheckoutPage() {
   const navigate = useNavigate();
-  const { cartItems, shippingCost } = useCart();
+  const { cartItems, shippingCost, discount, appliedPromoCode } = useCart();
   const [currentStep, setCurrentStep] = useState(1);
   const [formData, setFormData] = useState<FormData>({
     name: '',
@@ -144,7 +145,7 @@ export function CheckoutPage() {
     0
   );
   const deliveryFee = shippingCost;
-  const total = subtotal + deliveryFee;
+  const total = Math.max(0, subtotal + deliveryFee - discount);
 
   const handleNext = () => {
     // Validate Step 1 (Personal Information)
@@ -352,6 +353,8 @@ export function CheckoutPage() {
           videoPermission: formData.videoPermission,
           subtotal,
           deliveryFee,
+          discount,
+          promoCode: appliedPromoCode || undefined,
           total,
         }),
       });
@@ -1162,6 +1165,15 @@ export function CheckoutPage() {
                       </div>
                     </div>
                   </div>
+                  {discount > 0 && (
+                    <div className='flex justify-between items-center text-green-600 text-sm'>
+                      <span className='flex items-center gap-1'>
+                        <Tag className='w-3 h-3' />
+                        Promo{appliedPromoCode ? ` (${appliedPromoCode})` : ''}:
+                      </span>
+                      <span style={{ fontWeight: '600' }}>-${discount.toFixed(2)}</span>
+                    </div>
+                  )}
                   <div className='pt-3 border-t border-gray-200'>
                     <div className='flex justify-between items-center p-4 bg-gradient-to-br from-[#f63a9e]/10 to-purple-50 rounded-xl'>
                       <span

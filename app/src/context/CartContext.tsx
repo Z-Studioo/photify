@@ -26,6 +26,14 @@ interface CartContextType {
   setDeliveryMethod: (method: DeliveryMethod) => void;
   shippingCost: number;
   setShippingCost: (cost: number) => void;
+  // Promo / discount
+  discount: number;
+  setDiscount: (amount: number) => void;
+  appliedPromoCode: string;
+  setAppliedPromoCode: (code: string) => void;
+  promoApplied: boolean;
+  setPromoApplied: (applied: boolean) => void;
+  clearPromo: () => void;
 }
 
 const CartContext = createContext<CartContextType | undefined>(undefined);
@@ -35,6 +43,15 @@ export function CartProvider({ children }: { children: ReactNode }) {
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [deliveryMethod, setDeliveryMethod] = useState<DeliveryMethod>('standard');
   const [shippingCost, setShippingCost] = useState(9.99);
+  const [discount, setDiscount] = useState(0);
+  const [appliedPromoCode, setAppliedPromoCode] = useState('');
+  const [promoApplied, setPromoApplied] = useState(false);
+
+  const clearPromo = () => {
+    setDiscount(0);
+    setAppliedPromoCode('');
+    setPromoApplied(false);
+  };
 
   const addToCart = (item: CartItem) => {
     setCartItems((prev) => {
@@ -84,6 +101,13 @@ export function CartProvider({ children }: { children: ReactNode }) {
         setDeliveryMethod,
         shippingCost,
         setShippingCost,
+        discount,
+        setDiscount,
+        appliedPromoCode,
+        setAppliedPromoCode,
+        promoApplied,
+        setPromoApplied,
+        clearPromo,
       }}
     >
       {children}
