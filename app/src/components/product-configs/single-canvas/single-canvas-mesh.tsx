@@ -12,6 +12,7 @@ interface SingleCanvasMeshProps {
   wrapImage?: boolean; // If false, use solid color sides instead of wrapping
   sideColor?: string; // Color for canvas sides when wrapImage is false (default: white)
   mirrorEdges?: boolean; // If true and wrapImage is true, mirror edges instead of wrapping
+  position?: [number, number, number]; // Optional position (default: wall position for room view)
 }
 
 export function SingleCanvasMesh({
@@ -22,6 +23,7 @@ export function SingleCanvasMesh({
   zoom,
   wrapImage = true,
   sideColor = '#ffffff',
+  position = [0, 2.2, -4.9645], // Default: on wall for room view
 }: SingleCanvasMeshProps) {
   const meshRef = useRef<THREE.Mesh>(null);
 
@@ -190,7 +192,7 @@ export function SingleCanvasMesh({
   if (!wrapImage && sideColor && imageTexture) {
     return (
       <group
-        position={[0, 2.2, -4.9645]}
+        position={position}
         rotation={[0, 0, (rotation * Math.PI) / 180]}
         scale={zoom}
       >
@@ -221,7 +223,7 @@ export function SingleCanvasMesh({
   // For wrapped images, use the standard approach
   return (
     <group
-      position={[0, 2.2, -4.9645]}
+      position={position}
       rotation={[0, 0, (rotation * Math.PI) / 180]}
       scale={zoom}
     >

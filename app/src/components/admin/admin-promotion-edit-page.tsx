@@ -48,6 +48,7 @@ export function AdminPromotionEditPage() {
     endDate: '',
     active: true,
     firstOrderOnly: false,
+    isFeatured: false,
     categories: ['all'],
   });
 
@@ -68,6 +69,7 @@ export function AdminPromotionEditPage() {
         endDate: existingPromo.end_date || '',
         active: existingPromo.is_active,
         firstOrderOnly: existingPromo.first_order_only || false,
+        isFeatured: existingPromo.is_featured || false,
         categories: existingPromo.categories || ['all'],
       });
     }
@@ -108,6 +110,7 @@ export function AdminPromotionEditPage() {
         end_date: formData.endDate,
         is_active: formData.active,
         first_order_only: formData.firstOrderOnly,
+        is_featured: formData.isFeatured,
         categories: formData.categories,
       };
 
@@ -468,20 +471,40 @@ export function AdminPromotionEditPage() {
                 Status
               </h3>
 
-              <div className='flex items-center justify-between'>
-                <div>
-                  <Label htmlFor='active'>Active</Label>
-                  <p className='text-xs text-gray-600 mt-1'>
-                    Enable this promotion
-                  </p>
+              <div className='space-y-4'>
+                <div className='flex items-center justify-between'>
+                  <div>
+                    <Label htmlFor='active'>Active</Label>
+                    <p className='text-xs text-gray-600 mt-1'>
+                      Enable this promotion
+                    </p>
+                  </div>
+                  <Switch
+                    id='active'
+                    checked={formData.active}
+                    onCheckedChange={checked =>
+                      setFormData({ ...formData, active: checked })
+                    }
+                  />
                 </div>
-                <Switch
-                  id='active'
-                  checked={formData.active}
-                  onCheckedChange={checked =>
-                    setFormData({ ...formData, active: checked })
-                  }
-                />
+
+                <Separator />
+
+                <div className='flex items-center justify-between'>
+                  <div>
+                    <Label htmlFor='isFeatured'>Featured</Label>
+                    <p className='text-xs text-gray-600 mt-1'>
+                      Show in cart as suggested promo
+                    </p>
+                  </div>
+                  <Switch
+                    id='isFeatured'
+                    checked={formData.isFeatured}
+                    onCheckedChange={checked =>
+                      setFormData({ ...formData, isFeatured: checked })
+                    }
+                  />
+                </div>
               </div>
             </div>
 

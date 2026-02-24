@@ -26,6 +26,7 @@ CREATE TABLE IF NOT EXISTS promotions (
     first_order_only BOOLEAN DEFAULT FALSE,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+    is_featured BOOLEAN DEFAULT FALSE -- For highlighting certain promotions in the UI
 );
 
 -- ============================================

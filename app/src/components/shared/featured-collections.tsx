@@ -82,7 +82,7 @@ export function FeaturedCollections() {
           badge: 'Featured',
           badgeColor: 'bg-[#f63a9e]',
           title: product.name,
-          price: `From £${product.price}`,
+          price: `£${product.price}`,
           productId: product.slug || product.id,
           isVisible: !!product.config?.configurerType,
         }));
@@ -159,9 +159,12 @@ export function FeaturedCollections() {
             >
               {displayCollections[0].title}
             </h3>
-            <p className='text-xl mb-3 text-left' style={{ fontWeight: '700' }}>
-              From {displayCollections[0].price}
-            </p>
+            <div className='flex items-baseline gap-2 mb-3'>
+              <p className='text-xl text-left' style={{ fontWeight: '700' }}>
+                From {displayCollections[0].price}
+              </p>
+              <span className='text-sm opacity-80'>/sq in</span>
+            </div>
             <ArrowRight className='w-6 h-6' />
           </div>
         </button>
@@ -198,12 +201,15 @@ export function FeaturedCollections() {
                   >
                     {collection.title}
                   </h3>
-                  <p
-                    className='mb-2 text-left'
-                    style={{ fontSize: '14px', fontWeight: '700' }}
-                  >
-                    From {collection.price}
-                  </p>
+                  <div className='flex items-baseline gap-2 mb-2'>
+                    <p
+                      className='text-left'
+                      style={{ fontSize: '14px', fontWeight: '700' }}
+                    >
+                      From {collection.price}
+                    </p>
+                    <span className='text-xs opacity-80'>/sq in</span>
+                  </div>
                   <ArrowRight className='w-4 h-4 md:w-5 md:h-5' />
                 </div>
               </button>
@@ -239,12 +245,15 @@ export function FeaturedCollections() {
               >
                 {displayCollections[3].title}
               </h3>
-              <p
-                className='mb-2 text-left'
-                style={{ fontSize: '16px', fontWeight: '700' }}
-              >
-                From {displayCollections[3].price}
-              </p>
+              <div className='flex items-baseline gap-2 mb-2'>
+                <p
+                  className='text-left'
+                  style={{ fontSize: '16px', fontWeight: '700' }}
+                >
+                  From {displayCollections[3].price}
+                </p>
+                <span className='text-xs opacity-80'>/sq in</span>
+              </div>
               <ArrowRight className='w-5 h-5' />
             </div>
           </button>

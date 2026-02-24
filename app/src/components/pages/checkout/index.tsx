@@ -58,6 +58,69 @@ export function CheckoutPage() {
   const [completedSteps, setCompletedSteps] = useState<number[]>([]);
   const [isProcessing, setIsProcessing] = useState(false);
   const [isSearchingAddress, setIsSearchingAddress] = useState(false);
+  const [errors, setErrors] = useState<Partial<FormData>>({});
+
+  // Validation functions
+  const validateName = (name: string): boolean => {
+    if (!name.trim()) {
+      setErrors(prev => ({ ...prev, name: 'Name is required' }));
+      return false;
+    }
+    if (name.trim().length < 2) {
+      setErrors(prev => ({ ...prev, name: 'Name must be at least 2 characters' }));
+      return false;
+    }
+    if (!/^[a-zA-Z\s'-]+$/.test(name)) {
+      setErrors(prev => ({ ...prev, name: 'Name can only contain letters, spaces, hyphens, and apostrophes' }));
+      return false;
+    }
+    setErrors(prev => ({ ...prev, name: undefined }));
+    return true;
+  };
+
+  const validateEmail = (email: string): boolean => {
+    if (!email.trim()) {
+      setErrors(prev => ({ ...prev, email: 'Email is required' }));
+      return false;
+    }
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      setErrors(prev => ({ ...prev, email: 'Please enter a valid email address' }));
+      return false;
+    }
+    setErrors(prev => ({ ...prev, email: undefined }));
+    return true;
+  };
+
+  const validateUKPhone = (phone: string): boolean => {
+    if (!phone.trim()) {
+      setErrors(prev => ({ ...prev, phone: 'Phone number is required' }));
+      return false;
+    }
+    // Remove all spaces, hyphens, and parentheses for validation
+    const cleanPhone = phone.replace(/[\s\-()]/g, '');
+    
+    // UK phone patterns:
+    // - Mobile: 07xxx xxxxxx (11 digits starting with 07)
+    // - Landline: 01xxx/02xxx/03xxx (10-11 digits)
+    // - International format: +44 7xxx or +44 1xxx/2xxx/3xxx
+    const ukPhoneRegex = /^(?:(?:\+44\s?|0)(?:7\d{3}|1\d{3,4}|2\d{1,2}|3\d{2,3})\s?\d{3,4}\s?\d{3,4}|(?:\+44|0)7\d{9})$/;
+    const cleanPhoneRegex = /^(?:\+44|0)(?:7\d{9}|[123]\d{8,9})$/;
+    
+    if (!ukPhoneRegex.test(phone) && !cleanPhoneRegex.test(cleanPhone)) {
+      setErrors(prev => ({ ...prev, phone: 'Please enter a valid UK phone number (e.g., 07123 456789 or 020 1234 5678)' }));
+      return false;
+    }
+    setErrors(prev => ({ ...prev, phone: undefined }));
+    return true;
+  };
+
+  const validateStep1 = (): boolean => {
+    const nameValid = validateName(formData.name);
+    const emailValid = validateEmail(formData.email);
+    const phoneValid = validateUKPhone(formData.phone);
+    return nameValid && emailValid && phoneValid;
+  };
 
   // Fetch delivery prices from settings for reference
   // const { data: standardShipping } = useSiteSetting('shipping_flat_rate');
@@ -84,6 +147,22 @@ export function CheckoutPage() {
   const total = subtotal + deliveryFee;
 
   const handleNext = () => {
+    // Validate Step 1 (Personal Information)
+    if (currentStep === 1) {
+      if (!validateStep1()) {
+        toast.error('Please correct the errors before continuing');
+        return;
+      }
+    }
+    
+    // Validate Step 2 (Address)
+    if (currentStep === 2) {
+      if (!formData.postcode.trim() || !formData.address.trim()) {
+        toast.error('Please enter your postcode and select an address');
+        return;
+      }
+    }
+
     if (currentStep < 4) {
       setCompletedSteps([...completedSteps, currentStep]);
       setCurrentStep(currentStep + 1);
@@ -231,6 +310,19 @@ export function CheckoutPage() {
   const handleCheckout = async () => {
     if (isProcessing) return;
 
+    // Final validation before checkout
+    if (!validateStep1()) {
+      toast.error('Please correct the errors in your personal information');
+      setCurrentStep(1);
+      return;
+    }
+
+    if (!formData.postcode.trim() || !formData.address.trim()) {
+      toast.error('Please complete your address information');
+      setCurrentStep(2);
+      return;
+    }
+
     try {
       setIsProcessing(true);
 
@@ -288,7 +380,7 @@ export function CheckoutPage() {
     }
   };
 
-  const isStep1Valid = formData.name && formData.phone && formData.email;
+  const isStep1Valid = formData.name && formData.phone && formData.email && !errors.name && !errors.phone && !errors.email;
   const isStep2Valid = formData.postcode && formData.address;
 
   return (
@@ -387,7 +479,7 @@ export function CheckoutPage() {
                         label: 'Phone Number',
                         icon: Phone,
                         type: 'tel',
-                        placeholder: '+1 (555) 000-0000',
+                        placeholder: '07123 456789 or 020 1234 5678',
                         value: formData.phone,
                       },
                       {
@@ -399,6 +491,7 @@ export function CheckoutPage() {
                         value: formData.email,
                       },
                     ].map((field, index) => {
+                      const hasError = errors[field.id as keyof FormData];
                       return (
                         <motion.div
                           key={field.id}
@@ -426,16 +519,24 @@ export function CheckoutPage() {
                                 })
                               }
                               onFocus={() => setFieldFocus(field.id)}
-                              onBlur={() => setFieldFocus(null)}
+                              onBlur={() => {
+                                setFieldFocus(null);
+                                // Validate on blur
+                                if (field.id === 'name') validateName(field.value);
+                                if (field.id === 'email') validateEmail(field.value);
+                                if (field.id === 'phone') validateUKPhone(field.value);
+                              }}
                               className={cn(
                                 'h-12 sm:h-14 lg:h-16 border-2 rounded-xl sm:rounded-2xl text-sm sm:text-base pl-4 sm:pl-6 pr-12 sm:pr-14 transition-all bg-gray-50 focus:bg-white',
-                                fieldFocus === field.id
+                                hasError
+                                  ? 'border-red-500 ring-4 ring-red-500/10'
+                                  : fieldFocus === field.id
                                   ? 'border-[#f63a9e] ring-4 ring-[#f63a9e]/10 shadow-lg'
                                   : 'border-gray-200'
                               )}
                             />
                             <AnimatePresence>
-                              {field.value && (
+                              {field.value && !hasError && (
                                 <motion.div
                                   initial={{ scale: 0, rotate: -180 }}
                                   animate={{ scale: 1, rotate: 0 }}
@@ -449,6 +550,15 @@ export function CheckoutPage() {
                               )}
                             </AnimatePresence>
                           </div>
+                          {hasError && (
+                            <motion.p
+                              initial={{ opacity: 0, y: -10 }}
+                              animate={{ opacity: 1, y: 0 }}
+                              className='text-red-500 text-xs sm:text-sm mt-2 flex items-center gap-1'
+                            >
+                              <span className='font-semibold'>⚠</span> {hasError}
+                            </motion.p>
+                          )}
                         </motion.div>
                       );
                     })}

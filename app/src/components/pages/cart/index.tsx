@@ -38,6 +38,34 @@ export function CartPage() {
   const [discount, setDiscount] = useState(0);
   const [appliedPromoCode, setAppliedPromoCode] = useState('');
   const [validatingPromo, setValidatingPromo] = useState(false);
+  const [featuredPromotion, setFeaturedPromotion] = useState<any>(null);
+
+  // Fetch featured promotion
+  useEffect(() => {
+    const fetchFeaturedPromotion = async () => {
+      try {
+        const supabase = createClient();
+        const { data, error } = await supabase
+          .from('promotions')
+          .select('*')
+          .eq('is_featured', true)
+          .eq('is_active', true)
+          .gte('end_date', new Date().toISOString().split('T')[0])
+          .lte('start_date', new Date().toISOString().split('T')[0])
+          .order('created_at', { ascending: false })
+          .limit(1)
+          .single();
+
+        if (!error && data) {
+          setFeaturedPromotion(data);
+        }
+      } catch (error) {
+        console.error('Error fetching featured promotion:', error);
+      }
+    };
+
+    fetchFeaturedPromotion();
+  }, []);
 
   // Fetch delivery prices from settings
   const { data: standardShipping } = useSiteSetting('shipping_flat_rate');
@@ -670,27 +698,54 @@ export function CartPage() {
                         </div>
                       </div>
                     </div>
-                  ) : (
+                  ) : featuredPromotion ? (
                     <div className='p-4 bg-[#FFF5FB] border-2 border-[#f63a9e]/30 rounded-xl shadow-sm'>
                       <div className='flex items-start gap-3'>
                         <div className='w-8 h-8 rounded-lg bg-[#f63a9e] flex items-center justify-center flex-shrink-0 shadow-md'>
                           <Sparkles className='w-4 h-4 text-white' />
                         </div>
-                        <div>
+                        <div className='flex-1'>
                           <p
                             className='text-gray-800 text-sm'
                             style={{ fontWeight: '600' }}
                           >
                             Try code:{' '}
-                            <span
-                              className='text-[#f63a9e]'
+                            <button
+                              onClick={() => {
+                                setPromoCode(featuredPromotion.code);
+                              }}
+                              className='text-[#f63a9e] hover:text-[#e02d8d] transition-colors'
                               style={{ fontWeight: '700' }}
                             >
-                              PHOTIFY10
-                            </span>
+                              {featuredPromotion.code}
+                            </button>
                           </p>
                           <p className='text-gray-600 text-xs mt-1'>
-                            Get 10% off your entire order
+                            {featuredPromotion.description || 
+                              `Get ${featuredPromotion.type === 'percentage' 
+                                ? `${featuredPromotion.value}% off` 
+                                : featuredPromotion.type === 'fixed_amount'
+                                ? `£${featuredPromotion.value} off`
+                                : 'free shipping on'} your order`}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className='p-4 bg-gray-50 border-2 border-gray-200 rounded-xl shadow-sm'>
+                      <div className='flex items-start gap-3'>
+                        <div className='w-8 h-8 rounded-lg bg-gray-300 flex items-center justify-center flex-shrink-0'>
+                          <Tag className='w-4 h-4 text-gray-600' />
+                        </div>
+                        <div>
+                          <p
+                            className='text-gray-700 text-sm'
+                            style={{ fontWeight: '600' }}
+                          >
+                            Have a promo code?
+                          </p>
+                          <p className='text-gray-500 text-xs mt-1'>
+                            Enter your code above to apply discount
                           </p>
                         </div>
                       </div>
