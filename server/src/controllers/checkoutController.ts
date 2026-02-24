@@ -25,6 +25,8 @@ interface CheckoutRequestBody {
   videoPermission?: boolean;
   subtotal: number;
   deliveryFee: number;
+  discount?: number;
+  promoCode?: string;
   total: number;
 }
 
@@ -44,6 +46,8 @@ export async function createCheckoutSession(
       videoPermission,
       subtotal,
       deliveryFee,
+      discount = 0,
+      promoCode,
       total,
     } = req.body;
 
@@ -123,16 +127,27 @@ export async function createCheckoutSession(
       return;
     }
 
+    // Apply promo discount proportionally across item prices so Stripe totals match
+    const itemsSubtotal = cartItems.reduce(
+      (sum, item) => sum + item.price * item.quantity,
+      0
+    );
+    const discountRatio =
+      discount > 0 && itemsSubtotal > 0
+        ? Math.min(discount / itemsSubtotal, 1)
+        : 0;
+
     // Create line items for Stripe
     const lineItems = cartItems.map(item => {
       const productData: any = {
         name: item.name,
       };
 
-      // Only add description if it exists and is not empty
-      if (item.size && item.size.trim()) {
-        productData.description = item.size;
-      }
+      // Build description: include size and promo info
+      const descParts: string[] = [];
+      if (item.size && item.size.trim()) descParts.push(item.size);
+      if (promoCode && discountRatio > 0) descParts.push(`Promo: ${promoCode}`);
+      if (descParts.length > 0) productData.description = descParts.join(' · ');
 
       // Only add images if they are publicly accessible https:// URLs
       // (blob: and data: URLs are not valid for Stripe)
@@ -140,11 +155,14 @@ export async function createCheckoutSession(
         productData.images = [item.image];
       }
 
+      // Discount applied proportionally; ensure minimum 1 cent per item
+      const discountedPrice = item.price * (1 - discountRatio);
+
       return {
         price_data: {
           currency: 'usd',
           product_data: productData,
-          unit_amount: Math.round(item.price * 100), // Convert to cents
+          unit_amount: Math.max(1, Math.round(discountedPrice * 100)),
         },
         quantity: item.quantity,
       };
