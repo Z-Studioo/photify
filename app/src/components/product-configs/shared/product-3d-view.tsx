@@ -685,11 +685,6 @@ export function Product3DView({
                 <span className='text-[#f63a9e] text-2xl md:text-3xl font-bold'>
                   £{selectedSizeId ? calculatePrice() : '10.99'}
                 </span>
-                {selectedSizeId && (
-                  <button className='text-xs md:text-sm text-gray-600 underline hover:text-gray-900'>
-                    Price details
-                  </button>
-                )}
               </div>
 
               {/* Add to Basket Button - Mobile Responsive */}

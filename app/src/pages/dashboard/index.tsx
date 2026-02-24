@@ -213,7 +213,7 @@ const Dashboard: React.FC = () => {
     relative 
     overflow-hidden 
     w-full 
-    ${isEditingView ? 'h-full' : 'h-64 md:h-full'} 
+    ${isEditingView ? 'h-full' : 'h-96 md:h-full'} 
    md:w-3/4
   `}
         >

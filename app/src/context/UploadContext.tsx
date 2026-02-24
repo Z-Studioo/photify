@@ -168,7 +168,7 @@ export const UploadProvider = ({ children }: { children: React.ReactNode }) => {
     () => getStoredMetadata().quality || [70]
   );
   const [cornerStyle, setCornerStyle] = useState<CornerStyle>(
-    () => getStoredMetadata().cornerStyle || 'rounded'
+    () => getStoredMetadata().cornerStyle || 'sharp'
   );
   const [pendingCornerStyle, setPendingCornerStyle] = useState<CornerStyle | null>(null);
 
