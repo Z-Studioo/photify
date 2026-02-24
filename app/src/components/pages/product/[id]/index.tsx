@@ -36,32 +36,32 @@ import { Helmet } from '@dr.pogodin/react-helmet';
 const mockReviews = [
   {
     id: 1,
-    name: 'Sarah Mitchell',
+    name: 'Charlotte Henderson',
     rating: 5,
     date: '2 weeks ago',
-    text: 'Absolutely stunning quality! The colors are so vibrant and the canvas feels premium. My living room looks amazing now.',
+    text: 'I was honestly blown away by the print quality. The colors are incredibly sharp and the canvas feels thick and premium. I ordered the 3 Canvas Collage Set for our hallway and it completely transformed the space. Worth every penny.',
     image:
-      'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100&h=100&fit=crop',
+      'https://ui-avatars.com/api/?name=Charlotte+Henderson&background=f63a9e&color=fff&size=100&bold=true',
     verified: true,
   },
   {
     id: 2,
-    name: 'James Wilson',
+    name: 'Oliver Chambers',
     rating: 5,
-    date: '1 month ago',
-    text: 'Perfect gift for my parents anniversary. They loved it! Delivery was super fast too.',
+    date: '3 weeks ago',
+    text: 'I\'ve tried other canvas print companies before, but Photify\'s quality stands out. The frames are sturdy, the wrapping is clean, and the photos look exactly like the previews. Delivery arrived within 4 days. Highly recommend!',
     image:
-      'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&h=100&fit=crop',
+      'https://ui-avatars.com/api/?name=Oliver+Chambers&background=6366f1&color=fff&size=100&bold=true',
     verified: true,
   },
   {
     id: 3,
-    name: 'Emma Thompson',
+    name: 'Amelia Whitmore',
     rating: 5,
-    date: '3 weeks ago',
-    text: 'Third canvas I have ordered and each one has been flawless. The gallery wrap edges are beautifully done.',
+    date: '1 month ago',
+    text: 'Ordered this as a housewarming gift and it was a huge hit. The collage layout made the photos look like a professional gallery wall. Packaging was secure and everything arrived in perfect condition.',
     image:
-      'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=100&h=100&fit=crop',
+      'https://ui-avatars.com/api/?name=Amelia+Whitmore&background=ec4899&color=fff&size=100&bold=true',
     verified: true,
   },
 ];
@@ -679,8 +679,8 @@ export function ProductDetailPage({
           </div>
         </div>
 
-        {/* Room Visualization Section */}
-        <div className='py-8 sm:py-12 lg:py-16 bg-gradient-to-br from-gray-50 to-white'>
+        {/* Room Visualization Section - TEMPORARILY COMMENTED OUT */}
+        {/* <div className='py-8 sm:py-12 lg:py-16 bg-gradient-to-br from-gray-50 to-white'>
           <div className='max-w-[1400px] mx-auto px-4 sm:px-6'>
             <motion.div
               initial={{ opacity: 0, y: 20 }}
@@ -699,7 +699,6 @@ export function ProductDetailPage({
               </p>
             </motion.div>
 
-            {/* Room Preview */}
             <motion.div
               initial={{ opacity: 0, scale: 0.98 }}
               whileInView={{ opacity: 1, scale: 1 }}
@@ -715,7 +714,6 @@ export function ProductDetailPage({
                   alt='Room preview'
                   className='w-full h-full object-cover'
                 />
-                {/* Canvas Overlay */}
                 <div className='absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[25%] aspect-square shadow-2xl'>
                   <ImageWithFallback
                     src={product.images[0]}
@@ -726,7 +724,6 @@ export function ProductDetailPage({
               </div>
             </motion.div>
 
-            {/* Room Selector */}
             <div className='flex justify-center gap-2 sm:gap-3 flex-wrap'>
               {roomBackgrounds.map(room => (
                 <motion.button
@@ -745,7 +742,7 @@ export function ProductDetailPage({
               ))}
             </div>
           </div>
-        </div>
+        </div> */}
 
         {/* Accordion Specs Section */}
         <div className='py-8 sm:py-12 lg:py-16 bg-white'>

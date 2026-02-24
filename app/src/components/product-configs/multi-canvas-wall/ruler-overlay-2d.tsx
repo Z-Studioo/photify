@@ -7,9 +7,11 @@ interface RulerOverlay2DProps {
   canvasPositions: Array<{ x: number; y: number }>;
   canvasDims: { width: number; height: number };
   customSpacing: number;
-  scale: number; // Viewport scale factor
-  canvasWidth: number; // Canvas width in inches
-  canvasHeight: number; // Canvas height in inches
+  scale: number;
+  canvasWidth: number;
+  canvasHeight: number;
+  offsetX?: number;
+  offsetY?: number;
 }
 
 export function RulerOverlay2D({ 
@@ -19,7 +21,9 @@ export function RulerOverlay2D({
   customSpacing,
   scale,
   canvasWidth,
-  canvasHeight
+  canvasHeight,
+  offsetX = 0,
+  offsetY = 0,
 }: RulerOverlay2DProps) {
 
   // Calculate ruler positions for all canvases
@@ -36,8 +40,8 @@ export function RulerOverlay2D({
     // Top horizontal rulers (one for EACH canvas width)
     const topRulers = canvasPositions.map((canvas) => {
       const scaledCanvas = {
-        x: canvas.x * scale,
-        y: canvas.y * scale
+        x: canvas.x * scale + offsetX,
+        y: canvas.y * scale + offsetY
       };
       
       return {
@@ -51,8 +55,8 @@ export function RulerOverlay2D({
 
     // Right vertical ruler (for canvas height)
     const scaledLastCanvas = {
-      x: lastCanvas.x * scale,
-      y: lastCanvas.y * scale
+      x: lastCanvas.x * scale + offsetX,
+      y: lastCanvas.y * scale + offsetY
     };
     
     const rightRuler = {
@@ -65,8 +69,8 @@ export function RulerOverlay2D({
 
     // Bottom horizontal ruler (total width including all canvases + spacing)
     const scaledFirstCanvas = {
-      x: firstCanvas.x * scale,
-      y: firstCanvas.y * scale
+      x: firstCanvas.x * scale + offsetX,
+      y: firstCanvas.y * scale + offsetY
     };
     
     const totalWidth = (canvasWidth * canvasPositions.length) + (customSpacing * (canvasPositions.length - 1));
@@ -79,7 +83,7 @@ export function RulerOverlay2D({
     };
 
     return { topRulers, rightRuler, bottomRuler };
-  }, [showRulers, canvasPositions, canvasDims, scale, canvasWidth, canvasHeight, customSpacing]);
+  }, [showRulers, canvasPositions, canvasDims, scale, canvasWidth, canvasHeight, customSpacing, offsetX, offsetY]);
 
   if (!showRulers || !rulers) return null;
 

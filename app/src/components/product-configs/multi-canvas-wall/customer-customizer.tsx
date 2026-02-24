@@ -256,14 +256,37 @@ export function MultiCanvasWallCustomizer() {
   const scale = useMemo(() => {
     if (containerSize.width === 0 || containerSize.height === 0) return 1;
 
-    const wallDims = getWallDimensionsPx();
-    const padding = 100; // padding around wall
+    const isMobile = window.innerWidth < 640; // sm breakpoint
+    const layoutScale = MULTI_CANVAS_WALL_PRODUCT.config.layout.scale; // 40 px/inch
 
-    const scaleX = (containerSize.width - padding) / wallDims.width;
-    const scaleY = (containerSize.height - padding) / wallDims.height;
+    if (isMobile) {
+      // On mobile: scale so the 3 canvases (not the full wall) fill the available width
+      // Total canvas content width in px = (3 × canvasWidth + 2 × spacing) × layoutScale
+      const totalContentWidthPx = (canvasWidth * 3 + state.customSpacing * 2) * layoutScale;
+      const contentHeightPx = canvasHeight * layoutScale;
+
+      const rulerPaddingH = 80;  // left + right ruler space
+      const rulerPaddingV = 90;  // top + bottom ruler space
+      const extraH = 16;         // small breathing room on sides
+      const extraV = 16;
+
+      const scaleX = (containerSize.width - rulerPaddingH - extraH) / totalContentWidthPx;
+      const scaleY = (containerSize.height - rulerPaddingV - extraV) / contentHeightPx;
+
+      return Math.min(scaleX, scaleY);
+    }
+
+    // Desktop: fit entire wall
+    const wallDims = getWallDimensionsPx();
+    const rulerPadding = 120;
+    const rulerPaddingVertical = 140;
+    const extraPadding = 100;
+
+    const scaleX = (containerSize.width - rulerPadding - extraPadding) / wallDims.width;
+    const scaleY = (containerSize.height - rulerPaddingVertical - extraPadding) / wallDims.height;
 
     return Math.min(scaleX, scaleY, 1); // Never scale up, only down
-  }, [containerSize]);
+  }, [containerSize, canvasWidth, canvasHeight, state.customSpacing]);
 
   // Handle canvas click
   const handleCanvasClick = (canvasId: number) => {
@@ -381,7 +404,7 @@ export function MultiCanvasWallCustomizer() {
   // Calculate dynamic canvas positions based on custom spacing and selected size
   const canvasPositions = useMemo(() => {
     const { scale } = MULTI_CANVAS_WALL_PRODUCT.config.layout;
-    const baseY = 20; // vertical position (inches)
+    const baseY = 20; // vertical position (inches) — used only on desktop
     const startX =
       (MULTI_CANVAS_WALL_PRODUCT.config.wall.width -
         (canvasWidth * 3 + state.customSpacing * 2)) /
@@ -400,6 +423,48 @@ export function MultiCanvasWallCustomizer() {
     ];
   }, [state.customSpacing, canvasWidth]);
 
+  // On mobile, display only the canvas content area (not the full wall).
+  // Compute width/height of the display frame and the x/y offset to shift canvases to start at 0.
+  const displayArea = useMemo(() => {
+    const isMobile = window.innerWidth < 640;
+    const layoutScale = MULTI_CANVAS_WALL_PRODUCT.config.layout.scale;
+
+    if (isMobile) {
+      const contentWidthPx = (canvasWidth * 3 + state.customSpacing * 2) * layoutScale;
+      const contentHeightPx = canvasHeight * layoutScale;
+      // canvasPositions[0].x is the left edge of the first canvas in wall-px
+      const originX = canvasPositions[0]?.x ?? 0;
+      const originY = canvasPositions[0]?.y ?? 0;
+      return {
+        width: contentWidthPx,
+        height: contentHeightPx,
+        offsetX: -originX, // shift so first canvas starts at x=0
+        offsetY: -originY, // shift so canvases start at y=0
+      };
+    }
+
+    return {
+      width: wallDims.width,
+      height: wallDims.height,
+      offsetX: 0,
+      offsetY: 0,
+    };
+  }, [canvasPositions, canvasWidth, canvasHeight, state.customSpacing, wallDims]);
+
+  // Responsive padding for ruler space
+  const rulerPadding = useMemo(() => {
+    const isMobile = window.innerWidth < 640;
+    return {
+      horizontal: isMobile ? 40 : 60, // Left/right padding
+      top: isMobile ? 40 : 60,        // Top padding
+      bottom: isMobile ? 50 : 80,     // Bottom padding (needs more space for bottom ruler)
+      total: {
+        width: isMobile ? 80 : 120,
+        height: isMobile ? 90 : 140,
+      }
+    };
+  }, [containerSize]); // Re-calculate on resize
+
   // Get current room (from database or fallback to hardcoded)
   const currentRoom = rooms.find(r => r.id === state.selectedRoom) || rooms[0];
 
@@ -409,11 +474,11 @@ export function MultiCanvasWallCustomizer() {
       <div className='flex-1 flex items-stretch'>
         <div
           ref={containerRef}
-          className='relative w-full h-[60vh] md:h-full overflow-hidden'
+          className='relative w-full h-[62vh] sm:h-[68vh] md:h-full overflow-visible'
         >
           {/* Room Background */}
           <div
-            className='absolute inset-0'
+            className='absolute inset-0 overflow-hidden'
             style={{
               backgroundColor: MULTI_CANVAS_WALL_PRODUCT.config.wall.color,
               backgroundImage: currentRoom
@@ -425,38 +490,38 @@ export function MultiCanvasWallCustomizer() {
             }}
           >
             {/* Top Left - Back Button */}
-            <div className='absolute top-4 left-4 md:top-6 md:left-6 z-20'>
+            <div className='absolute top-2 left-2 sm:top-4 sm:left-4 md:top-6 md:left-6 z-20'>
               <motion.button
                 initial={{ opacity: 0, x: -20 }}
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ delay: 0.3 }}
                 onClick={() => navigate(-1)}
-                className='flex items-center gap-2 px-4 py-2.5 md:px-5 md:py-3 bg-white/95 backdrop-blur-md hover:bg-white rounded-xl md:rounded-2xl shadow-lg border-2 border-gray-200 hover:border-gray-300 transition-all group'
+                className='flex items-center gap-1.5 sm:gap-2 px-3 py-2 sm:px-4 sm:py-2.5 md:px-5 md:py-3 bg-white/95 backdrop-blur-md hover:bg-white rounded-lg sm:rounded-xl md:rounded-2xl shadow-lg border-2 border-gray-200 hover:border-gray-300 transition-all group'
               >
-                <ArrowLeft className='w-5 h-5 md:w-6 md:h-6 text-gray-700 group-hover:text-[#f63a9e] transition-colors' />
-                <span className='text-sm md:text-base font-semibold text-gray-700 group-hover:text-[#f63a9e] transition-colors'>
+                <ArrowLeft className='w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-6 text-gray-700 group-hover:text-[#f63a9e] transition-colors' />
+                <span className='text-xs sm:text-sm md:text-base font-semibold text-gray-700 group-hover:text-[#f63a9e] transition-colors'>
                   Back
                 </span>
               </motion.button>
             </div>
 
             {/* Top Right - Ruler Toggle */}
-            <div className='absolute top-4 right-4 md:top-6 md:right-6 z-20'>
+            <div className='absolute top-2 right-2 sm:top-4 sm:right-4 md:top-6 md:right-6 z-20'>
               <motion.button
                 initial={{ opacity: 0, x: 20 }}
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ delay: 0.3 }}
                 onClick={toggleRulers}
-                className={`flex items-center gap-2 px-4 py-2.5 md:px-5 md:py-3 backdrop-blur-md rounded-xl md:rounded-2xl shadow-lg border-2 transition-all ${
+                className={`flex items-center gap-1.5 sm:gap-2 px-3 py-2 sm:px-4 sm:py-2.5 md:px-5 md:py-3 backdrop-blur-md rounded-lg sm:rounded-xl md:rounded-2xl shadow-lg border-2 transition-all ${
                   state.showRulers
                     ? 'bg-[#f63a9e] border-[#f63a9e] text-white hover:bg-[#e02d8d] hover:border-[#e02d8d]'
                     : 'bg-white/95 border-gray-200 text-gray-700 hover:bg-white hover:border-gray-300'
                 }`}
               >
                 <Ruler
-                  className={`w-5 h-5 md:w-6 md:h-6 ${state.showRulers ? 'text-white' : 'text-gray-700'}`}
+                  className={`w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-6 ${state.showRulers ? 'text-white' : 'text-gray-700'}`}
                 />
-                <span className='text-sm md:text-base font-semibold'>
+                <span className='hidden sm:inline text-xs sm:text-sm md:text-base font-semibold'>
                   {state.showRulers ? 'Hide Rulers' : 'Show Rulers'}
                 </span>
               </motion.button>
@@ -464,12 +529,16 @@ export function MultiCanvasWallCustomizer() {
 
             {/* Canvas Container */}
             <div className='absolute inset-0 flex items-center justify-center'>
-              {/* Canvas Placeholders */}
+              {/* Canvas Placeholders - with padding for rulers */}
               <div
                 className='relative'
                 style={{
-                  width: wallDims.width * scale,
-                  height: wallDims.height * scale,
+                  width: displayArea.width * scale + rulerPadding.total.width,
+                  height: displayArea.height * scale + rulerPadding.total.height,
+                  paddingTop: rulerPadding.top,
+                  paddingRight: rulerPadding.horizontal,
+                  paddingBottom: rulerPadding.bottom,
+                  paddingLeft: rulerPadding.horizontal,
                 }}
               >
                 {state.canvases.map((canvas, index) => {
@@ -484,8 +553,8 @@ export function MultiCanvasWallCustomizer() {
                       transition={{ delay: index * 0.15 }}
                       className='absolute group'
                       style={{
-                        left: position.x * scale,
-                        top: position.y * scale,
+                        left: (position.x + displayArea.offsetX) * scale + rulerPadding.horizontal,
+                        top: (position.y + displayArea.offsetY) * scale + rulerPadding.top,
                         width: canvasDims.width * scale,
                         height: canvasDims.height * scale,
                       }}
@@ -528,15 +597,15 @@ export function MultiCanvasWallCustomizer() {
                         ) : (
                           // Empty Placeholder with Primary Color
                           <div className='w-full h-full flex items-center justify-center bg-gradient-to-br from-[#f63a9e] to-[#e02d8d] backdrop-blur-sm'>
-                            <div className='text-white text-center'>
+                            <div className='text-white text-center px-1 sm:px-2'>
                               <Upload
-                                className='w-8 h-8 md:w-12 md:h-12 lg:w-16 lg:h-16 mx-auto mb-1 md:mb-2 lg:mb-3'
+                                className='w-6 h-6 sm:w-8 sm:h-8 md:w-12 md:h-12 lg:w-16 lg:h-16 mx-auto mb-0.5 sm:mb-1 md:mb-2 lg:mb-3'
                                 strokeWidth={2}
                               />
-                              <p className='text-[10px] md:text-xs lg:text-sm font-semibold'>
+                              <p className='text-[8px] sm:text-[10px] md:text-xs lg:text-sm font-semibold leading-tight'>
                                 Upload Image
                               </p>
-                              <p className='text-[8px] md:text-[10px] lg:text-xs mt-0.5 md:mt-1 opacity-80'>
+                              <p className='text-[6px] sm:text-[8px] md:text-[10px] lg:text-xs mt-0 sm:mt-0.5 md:mt-1 opacity-80 leading-tight'>
                                 Canvas {canvas.id + 1}
                               </p>
                             </div>
@@ -573,36 +642,41 @@ export function MultiCanvasWallCustomizer() {
                 {/* Ruler Overlay */}
                 <RulerOverlay2D
                   showRulers={state.showRulers}
-                  containerWidth={wallDims.width * scale}
-                  containerHeight={wallDims.height * scale}
-                  canvasPositions={canvasPositions}
+                  containerWidth={displayArea.width * scale}
+                  containerHeight={displayArea.height * scale}
+                  canvasPositions={canvasPositions.map(p => ({
+                    x: p.x + displayArea.offsetX,
+                    y: p.y + displayArea.offsetY,
+                  }))}
                   canvasDims={canvasDims}
                   customSpacing={state.customSpacing}
                   scale={scale}
                   canvasWidth={canvasWidth}
                   canvasHeight={canvasHeight}
+                  offsetX={rulerPadding.horizontal}
+                  offsetY={rulerPadding.top}
                 />
               </div>
             </div>
           </div>
 
           {/* Room Selector - Floating at Bottom (Outside zoom area) */}
-          <div className='absolute bottom-4 md:bottom-8 left-1/2 transform -translate-x-1/2 z-20 w-[calc(100%-2rem)] md:w-auto max-w-full'>
+          <div className='absolute bottom-2 sm:bottom-4 md:bottom-8 left-1/2 transform -translate-x-1/2 z-20 w-[calc(100%-1rem)] sm:w-[calc(100%-2rem)] md:w-auto max-w-full'>
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.5 }}
-              className='bg-white/95 backdrop-blur-md rounded-xl md:rounded-2xl shadow-2xl px-3 py-3 md:px-6 md:py-4 border-2 border-gray-200'
+              className='bg-white/95 backdrop-blur-md rounded-lg sm:rounded-xl md:rounded-2xl shadow-2xl px-2 py-2 sm:px-3 sm:py-3 md:px-6 md:py-4 border-2 border-gray-200'
             >
-              <div className='flex items-center gap-2 md:gap-3 overflow-x-auto scrollbar-hide'>
+              <div className='flex items-center gap-1.5 sm:gap-2 md:gap-3 overflow-x-auto scrollbar-hide'>
                 {rooms.map(room => (
                   <button
                     key={room.id}
                     onClick={() => handleRoomChange(room.id)}
-                    className={`relative w-24 h-16 md:w-32 md:h-20 rounded-lg md:rounded-xl overflow-hidden transition-all flex-shrink-0 ${
+                    className={`relative w-20 h-14 sm:w-24 sm:h-16 md:w-32 md:h-20 rounded-md sm:rounded-lg md:rounded-xl overflow-hidden transition-all flex-shrink-0 ${
                       state.selectedRoom === room.id
-                        ? 'ring-3 md:ring-4 ring-[#f63a9e] shadow-lg scale-105'
-                        : 'ring-2 ring-gray-300 hover:ring-gray-400 hover:scale-102'
+                        ? 'ring-2 sm:ring-3 md:ring-4 ring-[#f63a9e] shadow-lg scale-105'
+                        : 'ring-1 sm:ring-2 ring-gray-300 hover:ring-gray-400 hover:scale-102'
                     }`}
                   >
                     <img
@@ -612,13 +686,13 @@ export function MultiCanvasWallCustomizer() {
                     />
                     {state.selectedRoom === room.id && (
                       <div className='absolute inset-0 bg-[#f63a9e]/20 flex items-center justify-center'>
-                        <div className='w-5 h-5 md:w-6 md:h-6 rounded-full bg-[#f63a9e] flex items-center justify-center shadow-lg'>
-                          <CheckCircle2 className='w-3 h-3 md:w-4 md:h-4 text-white' />
+                        <div className='w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-6 rounded-full bg-[#f63a9e] flex items-center justify-center shadow-lg'>
+                          <CheckCircle2 className='w-2.5 h-2.5 sm:w-3 sm:h-3 md:w-4 md:h-4 text-white' />
                         </div>
                       </div>
                     )}
-                    <div className='absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-1.5 md:p-2'>
-                      <p className='text-white text-[10px] md:text-xs font-semibold text-center'>
+                    <div className='absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/90 via-black/60 to-transparent pt-2 sm:pt-3 md:pt-4 pb-0.5 sm:pb-1 md:pb-1.5 px-0.5 sm:px-1'>
+                      <p className='text-white text-[8px] sm:text-[9px] md:text-xs font-semibold text-center truncate leading-tight'>
                         {room.name}
                       </p>
                     </div>
@@ -631,7 +705,7 @@ export function MultiCanvasWallCustomizer() {
       </div>
 
       {/* Right Sidebar - Responsive */}
-      <div className='w-full md:w-[420px] bg-white border-t md:border-t-0 md:border-l border-gray-200 flex flex-col shadow-xl md:max-h-none md:h-screen'>
+      <div className='w-full md:w-[420px] lg:w-[460px] bg-white border-t md:border-t-0 md:border-l border-gray-200 flex flex-col shadow-xl md:max-h-none md:h-screen'>
         {/* Debug Info - Only in development */}
         {process.env.NODE_ENV === 'development' && !productId && (
           <div className='bg-yellow-100 border-2 border-yellow-400 rounded-lg p-3 max-w-sm m-3'>
@@ -646,28 +720,28 @@ export function MultiCanvasWallCustomizer() {
         )}
 
         {/* Sidebar Header */}
-        <div className='px-4 py-4 md:px-8 md:py-8 border-b border-gray-200 bg-gradient-to-br from-gray-50 to-white'>
+        <div className='px-4 py-3 sm:px-6 sm:py-4 md:px-8 md:py-6 lg:py-8 border-b border-gray-200 bg-gradient-to-br from-gray-50 to-white'>
           <h2
-            className="font-['Bricolage_Grotesque',_sans-serif] text-gray-900 mb-1 md:mb-2 text-lg md:text-2xl"
+            className="font-['Bricolage_Grotesque',_sans-serif] text-gray-900 mb-1 text-base sm:text-lg md:text-xl lg:text-2xl"
             style={{ fontWeight: '700', lineHeight: '1.2' }}
           >
             Gallery Wall
           </h2>
-          <p className='text-sm md:text-base text-gray-600'>
+          <p className='text-xs sm:text-sm md:text-base text-gray-600'>
             Configure your 3-canvas layout
           </p>
         </div>
 
         {/* Sidebar Content */}
-        <div className='flex-1 overflow-y-auto p-4 md:p-8 space-y-4 md:space-y-8'>
+        <div className='flex-1 overflow-y-auto p-4 sm:p-6 md:p-8 space-y-4 sm:space-y-5 md:space-y-6 lg:space-y-8'>
           {/* Size Selection */}
           <div>
-            <h3 className='font-semibold text-gray-900 mb-3 md:mb-4 text-sm md:text-base'>
+            <h3 className='font-semibold text-gray-900 mb-2 sm:mb-3 md:mb-4 text-xs sm:text-sm md:text-base'>
               Select Canvas Size
             </h3>
 
             {/* Size List */}
-            <div className='space-y-2'>
+            <div className='space-y-2 sm:space-y-2.5'>
               {sizes.map(size => {
                 // Calculate price for 3 canvases (3 × area × price per sq inch)
                 const totalPrice = (size.area_in2 * productPrice * 3).toFixed(
@@ -682,27 +756,26 @@ export function MultiCanvasWallCustomizer() {
                       setCanvasWidth(size.width_in);
                       setCanvasHeight(size.height_in);
                     }}
-                    className={`w-full flex items-center justify-between p-3 md:p-4 rounded-lg md:rounded-xl border-2 transition-all ${
+                    className={`w-full flex items-center justify-between p-2.5 sm:p-3 md:p-4 rounded-lg md:rounded-xl border-2 transition-all ${
                       selectedSizeId === size.id
                         ? 'border-[#f63a9e] bg-pink-50 shadow-md'
                         : 'border-gray-200 bg-white hover:border-gray-300 hover:shadow-sm'
                     }`}
                   >
                     <div className='flex-1 text-left'>
-                      <div className='text-sm md:text-base font-bold text-gray-900'>
+                      <div className='text-xs sm:text-sm md:text-base font-bold text-gray-900'>
                         {size.display_label}
                       </div>
-                      <div className='text-[10px] md:text-xs text-gray-500 mt-0.5'>
+                      <div className='text-[10px] sm:text-xs md:text-sm text-gray-500 mt-0.5'>
                         {size.width_in}&quot; × {size.height_in}&quot; each
-                        canvas
                       </div>
                     </div>
-                    <div className='text-right ml-3'>
-                      <div className='text-base md:text-lg font-bold text-[#f63a9e]'>
+                    <div className='text-right ml-2 sm:ml-3'>
+                      <div className='text-sm sm:text-base md:text-lg font-bold text-[#f63a9e]'>
                         ${totalPrice}
                       </div>
-                      <div className='text-[10px] md:text-xs text-gray-500'>
-                        for 3 canvases
+                      <div className='text-[9px] sm:text-[10px] md:text-xs text-gray-500'>
+                        3 canvases
                       </div>
                     </div>
                   </button>
@@ -712,8 +785,8 @@ export function MultiCanvasWallCustomizer() {
 
             {/* Support Text */}
             {selectedSizeId && (
-              <div className='mt-3 p-3 bg-blue-50 border border-blue-200 rounded-lg'>
-                <p className='text-xs md:text-sm text-blue-700 flex items-start gap-2'>
+              <div className='mt-2 sm:mt-3 p-2 sm:p-2.5 md:p-3 bg-blue-50 border border-blue-200 rounded-lg'>
+                <p className='text-[10px] sm:text-xs md:text-sm text-blue-700 flex items-start gap-1.5 sm:gap-2'>
                   <span className='text-blue-500 flex-shrink-0 mt-0.5'>ℹ️</span>
                   <span>
                     All 3 canvases will be{' '}
@@ -734,16 +807,16 @@ export function MultiCanvasWallCustomizer() {
 
           {/* Spacing Slider */}
           <div>
-            <h3 className='font-semibold text-gray-900 mb-3 md:mb-4 text-sm md:text-base'>
+            <h3 className='font-semibold text-gray-900 mb-2 sm:mb-3 md:mb-4 text-xs sm:text-sm md:text-base'>
               Canvas Spacing
             </h3>
-            <div className='space-y-3 md:space-y-4'>
+            <div className='space-y-2 sm:space-y-3 md:space-y-4'>
               <div className='flex items-center justify-between'>
-                <span className='text-xs md:text-sm text-gray-600'>
+                <span className='text-[10px] sm:text-xs md:text-sm text-gray-600'>
                   Horizontal Gap
                 </span>
-                <span className='text-xs md:text-sm font-semibold text-[#f63a9e]'>
-                  {state.customSpacing}&quot; inches
+                <span className='text-[10px] sm:text-xs md:text-sm font-semibold text-[#f63a9e]'>
+                  {state.customSpacing}&quot;
                 </span>
               </div>
               <input
@@ -772,17 +845,17 @@ export function MultiCanvasWallCustomizer() {
           </div>
 
           {/* Add to Cart Button */}
-          <div className='pt-4 border-t border-gray-200'>
+          <div className='pt-3 sm:pt-4 border-t border-gray-200'>
             <Button
               onClick={handleAddToCart}
               disabled={!allUploaded || !selectedSizeId}
-              className={`w-full h-[52px] md:h-[56px] rounded-xl text-base md:text-lg font-semibold shadow-lg transition-all ${
+              className={`w-full h-11 sm:h-12 md:h-[52px] lg:h-[56px] rounded-lg sm:rounded-xl text-sm sm:text-base md:text-lg font-semibold shadow-lg transition-all ${
                 !allUploaded || !selectedSizeId
                   ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
                   : 'bg-[#f63a9e] hover:bg-[#e02d8d] text-white'
               }`}
             >
-              <ShoppingCart className='w-5 h-5 mr-2' />
+              <ShoppingCart className='w-4 h-4 sm:w-5 sm:h-5 mr-1.5 sm:mr-2' />
               {!allUploaded
                 ? `Add Images (${uploadCount}/3)`
                 : selectedSizeId
@@ -792,8 +865,8 @@ export function MultiCanvasWallCustomizer() {
 
             {/* Upload Progress Info */}
             {!allUploaded && (
-              <div className='mt-3 p-3 bg-amber-50 border border-amber-200 rounded-lg'>
-                <p className='text-xs md:text-sm text-amber-700 flex items-start gap-2'>
+              <div className='mt-2 sm:mt-3 p-2 sm:p-2.5 md:p-3 bg-amber-50 border border-amber-200 rounded-lg'>
+                <p className='text-[10px] sm:text-xs md:text-sm text-amber-700 flex items-start gap-1.5 sm:gap-2'>
                   <span className='text-amber-500 flex-shrink-0 mt-0.5'>
                     ⚠️
                   </span>
@@ -808,8 +881,8 @@ export function MultiCanvasWallCustomizer() {
 
             {/* Ready Status */}
             {allUploaded && selectedSizeId && (
-              <div className='mt-3 p-3 bg-green-50 border border-green-200 rounded-lg'>
-                <p className='text-xs md:text-sm text-green-700 flex items-start gap-2'>
+              <div className='mt-2 sm:mt-3 p-2 sm:p-2.5 md:p-3 bg-green-50 border border-green-200 rounded-lg'>
+                <p className='text-[10px] sm:text-xs md:text-sm text-green-700 flex items-start gap-1.5 sm:gap-2'>
                   <span className='text-green-500 flex-shrink-0 mt-0.5'>✓</span>
                   <span>Your gallery wall is ready! Click to add to cart.</span>
                 </p>

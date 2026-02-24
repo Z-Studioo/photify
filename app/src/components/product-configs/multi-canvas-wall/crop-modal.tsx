@@ -99,11 +99,20 @@ export function CropModal({
         throw new Error('Failed to get canvas context');
       }
 
-      // Set canvas size to match crop dimensions
-      canvas.width = completedCrop.width;
-      canvas.height = completedCrop.height;
+      // Use a fixed output size with the exact aspect ratio
+      // For 16:32 ratio (0.5), we'll use 800x1600
+      const OUTPUT_WIDTH = 800;
+      const OUTPUT_HEIGHT = Math.round(OUTPUT_WIDTH / aspectRatio);
 
-      // Draw cropped image
+      // Set canvas to the standardized output dimensions
+      canvas.width = OUTPUT_WIDTH;
+      canvas.height = OUTPUT_HEIGHT;
+
+      // Enable high-quality image smoothing
+      ctx.imageSmoothingEnabled = true;
+      ctx.imageSmoothingQuality = 'high';
+
+      // Draw cropped and scaled image
       ctx.drawImage(
         image,
         completedCrop.x,
@@ -112,8 +121,8 @@ export function CropModal({
         completedCrop.height,
         0,
         0,
-        completedCrop.width,
-        completedCrop.height
+        OUTPUT_WIDTH,
+        OUTPUT_HEIGHT
       );
 
       // Convert to blob and create URL
@@ -208,6 +217,9 @@ export function CropModal({
                       onChange={c => setCrop(c)}
                       onComplete={c => setCompletedCrop(c)}
                       aspect={aspectRatio}
+                      minWidth={50}
+                      minHeight={50}
+                      keepSelection={true}
                       className='max-w-full max-h-full'
                     >
                       <img
