@@ -86,10 +86,16 @@ export function MultiCanvasWallCustomizer() {
       try {
         const effectiveProductId = productId || MULTI_CANVAS_WALL_PRODUCT.id;
 
+        // Check if it's a UUID or slug
+        const isUUID =
+          /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
+            effectiveProductId
+          );
+
         const { data: productData, error: productError } = await supabase
           .from('products')
           .select('config, price')
-          .eq('id', effectiveProductId)
+          .eq(isUUID ? 'id' : 'slug', effectiveProductId)
           .single();
 
         if (productError) {
@@ -102,24 +108,54 @@ export function MultiCanvasWallCustomizer() {
           setProductPrice(productData.price);
         }
 
-        // Fetch sizes (no aspect ratios needed - single ratio per product)
-        if (productData?.config?.allowedSizes) {
-          const { data: sizesData } = await supabase
+        console.log('Product data:', productData);
+        console.log('Product config:', productData?.config);
+        console.log('Allowed sizes:', productData?.config?.allowedSizes);
+
+        // Fetch sizes
+        // If product has allowedSizes in config, use those
+        // Otherwise, fetch all active sizes as fallback
+        let sizesQuery;
+
+        if (
+          productData?.config?.allowedSizes &&
+          productData.config.allowedSizes.length > 0
+        ) {
+          console.log('Using allowedSizes from config');
+          // Fetch specific sizes from config
+          sizesQuery = supabase
             .from('sizes')
             .select('*')
             .in('id', productData.config.allowedSizes)
             .eq('active', true)
             .order('area_in2');
+        } else {
+          console.log('No allowedSizes in config, fetching all active sizes');
+          // Fallback: fetch all active sizes
+          sizesQuery = supabase
+            .from('sizes')
+            .select('*')
+            .eq('active', true)
+            .order('area_in2')
+            .limit(20);
+        }
 
-          if (sizesData && sizesData.length > 0) {
-            setSizes(sizesData);
+        const { data: sizesData, error: sizesError } = await sizesQuery;
 
-            // Auto-select first size
-            const firstSize = sizesData[0];
-            setSelectedSizeId(firstSize.id);
-            setCanvasWidth(firstSize.width_in);
-            setCanvasHeight(firstSize.height_in);
-          }
+        console.log('Sizes query result:', sizesData);
+        console.log('Sizes query error:', sizesError);
+
+        if (sizesData && sizesData.length > 0) {
+          setSizes(sizesData);
+
+          // Auto-select first size
+          const firstSize = sizesData[0];
+          setSelectedSizeId(firstSize.id);
+          setCanvasWidth(firstSize.width_in);
+          setCanvasHeight(firstSize.height_in);
+          console.log('Selected first size:', firstSize);
+        } else {
+          console.warn('No sizes available. SizesData:', sizesData);
         }
       } catch (error) {
         console.error('Error fetching product configuration:', error);
@@ -138,10 +174,16 @@ export function MultiCanvasWallCustomizer() {
       try {
         // If we have a productId from URL, fetch that product's room backgrounds
         if (productId) {
+          // Check if it's a UUID or slug
+          const isUUID =
+            /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
+              productId
+            );
+
           const { data, error } = await supabase
             .from('products')
             .select('config')
-            .eq('id', productId)
+            .eq(isUUID ? 'id' : 'slug', productId)
             .single();
 
           if (error) {
@@ -230,7 +272,7 @@ export function MultiCanvasWallCustomizer() {
   };
 
   // Handle image upload - show crop modal first
-  const handleUpload = (canvasId: number, imageUrl: string) => {
+  const handleUpload = (canvasId: number, file: File, imageUrl: string) => {
     setTempImageForCrop({ canvasId, imageUrl });
     setIsUploadModalOpen(false);
     setIsCropModalOpen(true);
