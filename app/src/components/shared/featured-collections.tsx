@@ -115,9 +115,9 @@ export function FeaturedCollections() {
 
   if (loading) {
     return (
-      <section className='max-w-[1400px] mx-auto px-4 py-6'>
-        <div className='flex items-center justify-center h-[450px] bg-gray-50 rounded-lg'>
-          <Loader2 className='w-8 h-8 animate-spin text-[#f63a9e]' />
+      <section className='max-w-[1400px] mx-auto px-3 xs:px-4 py-3 xs:py-4 sm:py-5 md:py-6'>
+        <div className='flex items-center justify-center h-[300px] xs:h-[350px] sm:h-[400px] md:h-[450px] bg-gray-50 rounded-lg'>
+          <Loader2 className='w-6 h-6 xs:w-7 xs:h-7 sm:w-8 sm:h-8 animate-spin text-[#f63a9e]' />
         </div>
       </section>
     );
@@ -132,14 +132,14 @@ export function FeaturedCollections() {
   // }
 
   return (
-    <section className='max-w-[1400px] mx-auto px-4 py-6'>
-      <div className='grid grid-cols-1 lg:grid-cols-2 gap-3 h-[450px]'>
+    <section className='max-w-[1400px] mx-auto px-3 xs:px-4 py-3 xs:py-4 sm:py-5 md:py-6'>
+      <div className='grid grid-cols-1 lg:grid-cols-2 gap-2 xs:gap-2.5 sm:gap-3 h-auto min-h-[280px] xs:min-h-[320px] sm:min-h-[380px] md:min-h-[420px] lg:h-[450px]'>
         {/* Large featured item - left */}
         <button
           onClick={() =>
             navigate(`/product/${displayCollections[0].productId}`)
           }
-          className='relative overflow-hidden rounded-sm group h-full cursor-pointer border-0 p-0'
+          className='relative overflow-hidden rounded-sm group h-[280px] xs:h-[320px] sm:h-[380px] md:h-[420px] lg:h-full cursor-pointer border-0 p-0'
         >
           <ImageWithFallback
             src={displayCollections[0].image}
@@ -147,37 +147,37 @@ export function FeaturedCollections() {
             className='absolute inset-0 w-full h-full object-cover transition-transform duration-300 group-hover:scale-105'
           />
           <div className='absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent' />
-          <div className='absolute bottom-0 left-0 p-6 text-white text-left'>
+          <div className='absolute bottom-0 left-0 p-3 xs:p-4 sm:p-5 md:p-6 text-white text-left'>
             <span
-              className={`inline-block ${displayCollections[0].badgeColor} text-white text-sm px-3 py-1 rounded-sm mb-3`}
+              className={`inline-block ${displayCollections[0].badgeColor} text-white text-[10px] xs:text-xs sm:text-sm px-2 xs:px-2.5 sm:px-3 py-0.5 xs:py-0.5 sm:py-1 rounded-sm mb-1.5 xs:mb-2 sm:mb-2.5 md:mb-3`}
             >
               {displayCollections[0].badge}
             </span>
             <h3
-              className="font-['Bricolage_Grotesque',_sans-serif] mb-3 max-w-md text-left"
-              style={{ fontSize: '28px', lineHeight: '1.2', fontWeight: '600' }}
+              className="font-['Bricolage_Grotesque',_sans-serif] mb-1.5 xs:mb-2 sm:mb-2.5 md:mb-3 max-w-md text-left text-lg xs:text-xl sm:text-2xl md:text-[28px]"
+              style={{ lineHeight: '1.2', fontWeight: '600' }}
             >
               {displayCollections[0].title}
             </h3>
-            <div className='flex items-baseline gap-2 mb-3'>
-              <p className='text-xl text-left' style={{ fontWeight: '700' }}>
+            <div className='flex items-baseline gap-1 xs:gap-1.5 sm:gap-2 mb-1.5 xs:mb-2 sm:mb-2.5 md:mb-3'>
+              <p className='text-sm xs:text-base sm:text-lg md:text-xl text-left' style={{ fontWeight: '700' }}>
                 From {displayCollections[0].price}
               </p>
-              <span className='text-sm opacity-80'>/sq in</span>
+              <span className='text-[10px] xs:text-xs sm:text-sm opacity-80'>/sq in</span>
             </div>
-            <ArrowRight className='w-6 h-6' />
+            <ArrowRight className='w-4 h-4 xs:w-5 xs:h-5 sm:w-5.5 sm:h-5.5 md:w-6 md:h-6' />
           </div>
         </button>
 
         {/* Grid of 3 items - right */}
-        <div className='grid grid-rows-2 gap-3 h-full'>
+        <div className='grid grid-rows-2 gap-2 xs:gap-2.5 sm:gap-3 h-auto lg:h-full'>
           {/* Top row - 2 items */}
-          <div className='grid grid-cols-2 gap-3'>
+          <div className='grid grid-cols-2 gap-2 xs:gap-2.5 sm:gap-3'>
             {displayCollections.slice(1, 3).map((collection, index) => (
               <button
                 key={index}
                 onClick={() => navigate(`/product/${collection.productId}`)}
-                className='relative overflow-hidden rounded-sm group h-full cursor-pointer border-0 p-0'
+                className='relative overflow-hidden rounded-sm group h-[135px] xs:h-[155px] sm:h-[185px] md:h-[205px] lg:h-full cursor-pointer border-0 p-0'
               >
                 <ImageWithFallback
                   src={collection.image}
@@ -185,32 +185,31 @@ export function FeaturedCollections() {
                   className='absolute inset-0 w-full h-full object-cover transition-transform duration-300 group-hover:scale-105'
                 />
                 <div className='absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent' />
-                <div className='absolute bottom-0 left-0 p-3 md:p-4 text-white text-left'>
+                <div className='absolute bottom-0 left-0 p-2 xs:p-2.5 sm:p-3 md:p-4 text-white text-left'>
                   <span
-                    className={`inline-block ${collection.badgeColor} text-white text-xs px-2 py-1 rounded-sm mb-2`}
+                    className={`inline-block ${collection.badgeColor} text-white text-[8px] xs:text-[9px] sm:text-[10px] md:text-xs px-1.5 xs:px-2 py-0.5 xs:py-0.5 sm:py-1 rounded-sm mb-1 xs:mb-1.5 sm:mb-2`}
                   >
                     {collection.badge}
                   </span>
                   <h3
-                    className="font-['Bricolage_Grotesque',_sans-serif] mb-2 line-clamp-2 text-left"
+                    className="font-['Bricolage_Grotesque',_sans-serif] mb-1 xs:mb-1.5 sm:mb-2 line-clamp-2 text-left text-xs xs:text-sm sm:text-[15px] md:text-[16px]"
                     style={{
-                      fontSize: '16px',
                       lineHeight: '1.3',
                       fontWeight: '600',
                     }}
                   >
                     {collection.title}
                   </h3>
-                  <div className='flex items-baseline gap-2 mb-2'>
+                  <div className='flex items-baseline gap-1 xs:gap-1.5 sm:gap-2 mb-1 xs:mb-1.5 sm:mb-2'>
                     <p
-                      className='text-left'
-                      style={{ fontSize: '14px', fontWeight: '700' }}
+                      className='text-left text-[11px] xs:text-xs sm:text-[13px] md:text-[14px]'
+                      style={{ fontWeight: '700' }}
                     >
                       From {collection.price}
                     </p>
-                    <span className='text-xs opacity-80'>/sq in</span>
+                    <span className='text-[8px] xs:text-[9px] sm:text-[10px] md:text-xs opacity-80'>/sq in</span>
                   </div>
-                  <ArrowRight className='w-4 h-4 md:w-5 md:h-5' />
+                  <ArrowRight className='w-3 h-3 xs:w-3.5 xs:h-3.5 sm:w-4 sm:h-4 md:w-5 md:h-5' />
                 </div>
               </button>
             ))}
@@ -221,7 +220,7 @@ export function FeaturedCollections() {
             onClick={() =>
               navigate(`/product/${displayCollections[3].productId}`)
             }
-            className='relative overflow-hidden rounded-sm group h-full cursor-pointer border-0 p-0'
+            className='relative overflow-hidden rounded-sm group h-[135px] xs:h-[155px] sm:h-[185px] md:h-[205px] lg:h-full cursor-pointer border-0 p-0'
           >
             <ImageWithFallback
               src={displayCollections[3].image}
@@ -229,32 +228,31 @@ export function FeaturedCollections() {
               className='absolute inset-0 w-full h-full object-cover transition-transform duration-300 group-hover:scale-105'
             />
             <div className='absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent' />
-            <div className='absolute bottom-0 left-0 p-4 text-white text-left'>
+            <div className='absolute bottom-0 left-0 p-2.5 xs:p-3 sm:p-3.5 md:p-4 text-white text-left'>
               <span
-                className={`inline-block ${displayCollections[3].badgeColor} text-white text-xs px-2 py-1 rounded-sm mb-2`}
+                className={`inline-block ${displayCollections[3].badgeColor} text-white text-[9px] xs:text-[10px] sm:text-xs px-1.5 xs:px-2 py-0.5 xs:py-0.5 sm:py-1 rounded-sm mb-1 xs:mb-1.5 sm:mb-2`}
               >
                 {displayCollections[3].badge}
               </span>
               <h3
-                className="font-['Bricolage_Grotesque',_sans-serif] mb-2 text-left"
+                className="font-['Bricolage_Grotesque',_sans-serif] mb-1 xs:mb-1.5 sm:mb-2 text-left text-sm xs:text-base sm:text-[17px] md:text-[18px]"
                 style={{
-                  fontSize: '18px',
                   lineHeight: '1.3',
                   fontWeight: '600',
                 }}
               >
                 {displayCollections[3].title}
               </h3>
-              <div className='flex items-baseline gap-2 mb-2'>
+              <div className='flex items-baseline gap-1 xs:gap-1.5 sm:gap-2 mb-1 xs:mb-1.5 sm:mb-2'>
                 <p
-                  className='text-left'
-                  style={{ fontSize: '16px', fontWeight: '700' }}
+                  className='text-left text-xs xs:text-sm sm:text-[15px] md:text-[16px]'
+                  style={{ fontWeight: '700' }}
                 >
                   From {displayCollections[3].price}
                 </p>
-                <span className='text-xs opacity-80'>/sq in</span>
+                <span className='text-[9px] xs:text-[10px] sm:text-xs opacity-80'>/sq in</span>
               </div>
-              <ArrowRight className='w-5 h-5' />
+              <ArrowRight className='w-3.5 h-3.5 xs:w-4 xs:h-4 sm:w-4.5 sm:h-4.5 md:w-5 md:h-5' />
             </div>
           </button>
         </div>

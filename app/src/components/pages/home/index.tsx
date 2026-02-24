@@ -184,19 +184,19 @@ export function HomePage({
       <CategoryNav />
 
       {/* Our Best Sellers Section */}
-      <section className='pt-8 pb-3'>
-        <div className='max-w-[1400px] mx-auto px-4'>
+      <section className='pt-4 xs:pt-5 sm:pt-6 md:pt-8 pb-2 xs:pb-2.5 sm:pb-3'>
+        <div className='max-w-[1400px] mx-auto px-3 xs:px-4'>
           <motion.h2
             initial={{ opacity: 0, x: -20 }}
             whileInView={{ opacity: 1, x: 0 }}
             viewport={{ once: true }}
             transition={{ duration: 0.5 }}
-            className="font-['Bricolage_Grotesque',_sans-serif] text-left"
-            style={{ fontSize: '24px', lineHeight: '1.2', fontWeight: '600' }}
+            className="font-['Bricolage_Grotesque',_sans-serif] text-left text-lg xs:text-xl sm:text-2xl md:text-3xl lg:text-[24px]"
+            style={{ lineHeight: '1.2', fontWeight: '600' }}
           >
             Our Best Sellers
           </motion.h2>
-          <p className='text-gray-600 text-lg mt-3'>
+          <p className='text-gray-600 text-xs xs:text-sm sm:text-base md:text-lg mt-1.5 xs:mt-2 sm:mt-2.5 md:mt-3'>
             Discover our most-loved designs, handpicked by customers just like
             you
           </p>

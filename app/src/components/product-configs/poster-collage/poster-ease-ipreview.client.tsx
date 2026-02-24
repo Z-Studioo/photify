@@ -1,6 +1,6 @@
 import { useRef, useMemo, useState, useEffect } from 'react';
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
-import { OrbitControls } from '@react-three/drei';
+import { OrbitControls, Text } from '@react-three/drei';
 import * as THREE from 'three';
 import { RoundedBoxGeometry } from 'three/examples/jsm/geometries/RoundedBoxGeometry.js';
 
@@ -349,6 +349,17 @@ function RulerOverlay({
           <boxGeometry args={[0.01, 0.1, 0.01]} />
           <meshBasicMaterial color='#f63a9e' />
         </mesh>
+        {/* Width measurement text */}
+        <Text
+          position={[0, -0.15, 0]}
+          fontSize={0.12}
+          color='#f63a9e'
+          anchorX='center'
+          anchorY='top'
+          fontWeight='bold'
+        >
+          {posterWidth}″
+        </Text>
       </group>
 
       {/* Vertical ruler (height) */}
@@ -372,6 +383,18 @@ function RulerOverlay({
           <boxGeometry args={[0.1, 0.01, 0.01]} />
           <meshBasicMaterial color='#f63a9e' />
         </mesh>
+        {/* Height measurement text */}
+        <Text
+          position={[0.15, 0, 0]}
+          fontSize={0.12}
+          color='#f63a9e'
+          anchorX='left'
+          anchorY='middle'
+          fontWeight='bold'
+          rotation={[0, 0, 0]}
+        >
+          {posterHeight}″
+        </Text>
       </group>
     </group>
   );
