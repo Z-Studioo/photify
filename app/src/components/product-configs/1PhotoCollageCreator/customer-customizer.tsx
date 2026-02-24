@@ -965,11 +965,11 @@ export function CollageCustomizer() {
               animate={{ x: 0, opacity: 1 }}
               exit={{ x: -300, opacity: 0 }}
               transition={{ duration: 0.2 }}
-              className='w-[85vw] max-w-sm md:w-80 bg-white border-r border-gray-200 overflow-y-auto shrink-0 fixed md:relative z-40 md:z-20 h-full left-0 top-14 md:top-0 shadow-2xl md:shadow-none'
+              className='w-[90vw] max-w-[340px] xs:w-[85vw] xs:max-w-sm md:w-80 bg-white border-r border-gray-200 overflow-y-auto shrink-0 fixed md:relative z-40 md:z-20 left-0 top-0 md:top-0 bottom-0 md:h-full shadow-2xl md:shadow-none'
             >
               {/* Mobile close button */}
-              <div className='md:hidden sticky top-0 bg-white border-b border-gray-200 px-4 py-3 flex items-center justify-between z-10'>
-                <h2 className='font-semibold text-gray-900'>
+              <div className='md:hidden sticky top-0 bg-white border-b border-gray-200 px-3 xs:px-4 py-2 xs:py-3 flex items-center justify-between z-10'>
+                <h2 className='font-semibold text-gray-900 text-sm xs:text-base'>
                   {activeTab === 'templates' && 'Templates'}
                   {activeTab === 'photos' && 'Your Photos'}
                   {activeTab === 'background' && 'Settings'}
@@ -978,21 +978,21 @@ export function CollageCustomizer() {
                   variant='ghost'
                   size='sm'
                   onClick={() => setShowMobilePanel(false)}
-                  className='h-8 w-8 p-0'
+                  className='h-7 w-7 xs:h-8 xs:w-8 p-0'
                 >
-                  <X className='w-5 h-5' />
+                  <X className='w-4 h-4 xs:w-5 xs:h-5' />
                 </Button>
               </div>
 
-              <div className='p-4 md:p-6'>
+              <div className='p-3 xs:p-4 md:p-6'>
                 {/* Templates Tab */}
                 {activeTab === 'templates' && (
-                  <div className='space-y-4'>
+                  <div className='space-y-3 xs:space-y-4'>
                     <div>
-                      <h2 className='text-lg font-semibold text-gray-900 mb-1'>
+                      <h2 className='text-base xs:text-lg font-semibold text-gray-900 mb-1'>
                         Change Template
                       </h2>
-                      <p className='text-sm text-gray-600'>
+                      <p className='text-xs xs:text-sm text-gray-600'>
                         Select a different layout
                       </p>
                     </div>
@@ -1005,12 +1005,12 @@ export function CollageCustomizer() {
 
                 {/* Photos Tab */}
                 {activeTab === 'photos' && (
-                  <div className='space-y-4'>
+                  <div className='space-y-3 xs:space-y-4'>
                     <div>
-                      <h2 className='text-lg font-semibold text-gray-900 mb-1'>
+                      <h2 className='text-base xs:text-lg font-semibold text-gray-900 mb-1'>
                         Your Photos
                       </h2>
-                      <p className='text-sm text-gray-600'>
+                      <p className='text-xs xs:text-sm text-gray-600'>
                         Upload and manage your photos
                       </p>
                     </div>
@@ -1018,9 +1018,9 @@ export function CollageCustomizer() {
                     {/* Upload Button */}
                     <Button
                       onClick={() => fileInputRef.current?.click()}
-                      className='w-full bg-[#f63a9e] hover:bg-[#e02d8d] text-white'
+                      className='w-full bg-[#f63a9e] hover:bg-[#e02d8d] text-white h-9 xs:h-10 text-sm xs:text-base'
                     >
-                      <Upload className='w-4 h-4 mr-2' />
+                      <Upload className='w-3.5 h-3.5 xs:w-4 xs:h-4 mr-1.5 xs:mr-2' />
                       Upload Photos
                     </Button>
 
@@ -1125,23 +1125,23 @@ export function CollageCustomizer() {
 
                 {/* Background Tab */}
                 {activeTab === 'background' && (
-                  <div className='space-y-4'>
+                  <div className='space-y-3 xs:space-y-4'>
                     <div>
-                      <h2 className='text-lg font-semibold text-gray-900 mb-1'>
+                      <h2 className='text-base xs:text-lg font-semibold text-gray-900 mb-1'>
                         Background Color
                       </h2>
-                      <p className='text-sm text-gray-600'>
+                      <p className='text-xs xs:text-sm text-gray-600'>
                         Customize your collage background
                       </p>
                     </div>
 
-                    <div className='space-y-4'>
+                    <div className='space-y-3 xs:space-y-4'>
                       {/* Document Colors */}
                       <div>
-                        <Label className='text-xs md:text-sm font-medium text-gray-700 mb-3 block'>
+                        <Label className='text-xs font-medium text-gray-700 mb-2 xs:mb-3 block'>
                           Document colors
                         </Label>
-                        <div className='flex items-center gap-2 flex-wrap'>
+                        <div className='flex items-center gap-1.5 xs:gap-2 flex-wrap'>
                           {/* Color Picker Button */}
                           <button
                             onClick={() => {
@@ -1190,7 +1190,7 @@ export function CollageCustomizer() {
                               }
                               setShowColorPicker(!showColorPicker);
                             }}
-                            className={`w-10 h-10 rounded-full border-3 shadow-md hover:shadow-lg flex items-center justify-center relative overflow-hidden transition-all hover:scale-105 ${
+                            className={`w-9 h-9 xs:w-10 xs:h-10 rounded-full border-3 shadow-md hover:shadow-lg flex items-center justify-center relative overflow-hidden transition-all hover:scale-105 ${
                               showColorPicker
                                 ? 'border-[#f63a9e] scale-110'
                                 : 'border-white'
@@ -1281,7 +1281,7 @@ export function CollageCustomizer() {
                                 setColorHSL(hexToHSL(bg.value));
                                 setShowColorPicker(false);
                               }}
-                              className={`w-10 h-10 rounded-full border-3 transition-all ${
+                              className={`w-9 h-9 xs:w-10 xs:h-10 rounded-full border-3 transition-all ${
                                 selection.backgroundId === bg.id &&
                                 selection.backgroundColor === bg.value &&
                                 !showColorPicker
@@ -1309,7 +1309,7 @@ export function CollageCustomizer() {
                                     customHexColor
                                   )
                                 }
-                                className='w-10 h-10 rounded-full border-3 border-[#f63a9e] scale-110 shadow-lg'
+                                className='w-9 h-9 xs:w-10 xs:h-10 rounded-full border-3 border-[#f63a9e] scale-110 shadow-lg'
                                 style={{ backgroundColor: customHexColor }}
                                 title={customHexColor}
                               />
@@ -1319,7 +1319,7 @@ export function CollageCustomizer() {
 
                       {/* Inline Color Picker - Single Zone with All Colors */}
                       {showColorPicker && (
-                        <div className='space-y-3 pt-2 animate-in fade-in slide-in-from-top-2 duration-200'>
+                        <div className='space-y-2.5 xs:space-y-3 pt-1.5 xs:pt-2 animate-in fade-in slide-in-from-top-2 duration-200'>
                           {/* Full Spectrum Color Picker */}
                           <div
                             onMouseDown={e => {
@@ -1432,7 +1432,7 @@ export function CollageCustomizer() {
                                 handleMouseUp
                               );
                             }}
-                            className='relative w-full h-48 rounded-xl cursor-crosshair overflow-hidden shadow-md border-2 border-white'
+                            className='relative w-full h-40 xs:h-44 sm:h-48 rounded-lg xs:rounded-xl cursor-crosshair overflow-hidden shadow-md border-2 border-white'
                             style={{
                               background: `
                                 linear-gradient(to bottom, 
@@ -1454,7 +1454,7 @@ export function CollageCustomizer() {
                             }}
                           >
                             <div
-                              className='absolute w-6 h-6 rounded-full border-[3px] border-white shadow-lg cursor-grab active:cursor-grabbing'
+                              className='absolute w-5 h-5 xs:w-6 xs:h-6 rounded-full border-[3px] border-white shadow-lg cursor-grab active:cursor-grabbing'
                               style={{
                                 left: `${(colorHSL.h / 360) * 100}%`,
                                 top: `${100 - colorHSL.l}%`,
@@ -1588,7 +1588,7 @@ export function CollageCustomizer() {
 
                           {/* Opacity Slider */}
                           <div className='relative'>
-                            <Label className='text-xs font-medium text-gray-700 block mb-2'>
+                            <Label className='text-xs font-medium text-gray-700 block mb-1.5 xs:mb-2'>
                               Opacity: {opacity}%
                             </Label>
                             <div
@@ -1649,7 +1649,7 @@ export function CollageCustomizer() {
                                   handleMouseUp
                                 );
                               }}
-                              className='relative w-full h-7 rounded-full cursor-pointer border-2 border-white shadow-md overflow-hidden'
+                              className='relative w-full h-6 xs:h-7 rounded-full cursor-pointer border-2 border-white shadow-md overflow-hidden'
                               style={{
                                 background: `
                                   linear-gradient(to right, 
@@ -1661,7 +1661,7 @@ export function CollageCustomizer() {
                               }}
                             >
                               <div
-                                className='absolute top-1/2 w-6 h-6 rounded-full border-[3px] border-white shadow-lg cursor-grab active:cursor-grabbing'
+                                className='absolute top-1/2 w-5 h-5 xs:w-6 xs:h-6 rounded-full border-[3px] border-white shadow-lg cursor-grab active:cursor-grabbing'
                                 style={{
                                   left: `${opacity}%`,
                                   transform: 'translate(-50%, -50%)',
@@ -1741,9 +1741,9 @@ export function CollageCustomizer() {
                           </div>
 
                           {/* Hex Input */}
-                          <div className='flex items-center gap-2'>
+                          <div className='flex items-center gap-1.5 xs:gap-2'>
                             <div
-                              className='w-10 h-10 rounded-full border-2 border-white shadow-md shrink-0'
+                              className='w-9 h-9 xs:w-10 xs:h-10 rounded-full border-2 border-white shadow-md shrink-0'
                               style={{ backgroundColor: customHexColor }}
                             />
                             <input
@@ -1811,7 +1811,7 @@ export function CollageCustomizer() {
                                   setColorHSL(hexToHSL(value));
                                 }
                               }}
-                              className='flex-1 px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#f63a9e] focus:border-transparent font-mono bg-blue-50'
+                              className='flex-1 px-2.5 xs:px-3 py-1.5 xs:py-2 text-xs xs:text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#f63a9e] focus:border-transparent font-mono bg-blue-50'
                               maxLength={7}
                               placeholder='#FFFFFF'
                             />
@@ -1976,20 +1976,20 @@ export function CollageCustomizer() {
         {/* Mobile Bottom Navigation - Only show when template is selected */}
         {hasSelectedTemplate && (
           <nav className='md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 z-30 safe-area-pb'>
-            <div className='grid grid-cols-3 gap-1 px-2 py-2'>
+            <div className='grid grid-cols-3 gap-0.5 xs:gap-1 px-1 xs:px-2 py-1.5 xs:py-2'>
               <button
                 onClick={() => {
                   setActiveTab('templates');
                   setShowMobilePanel(true);
                 }}
-                className={`flex flex-col items-center justify-center gap-1 py-2 rounded-lg transition-colors ${
+                className={`flex flex-col items-center justify-center gap-0.5 xs:gap-1 py-1.5 xs:py-2 rounded-md xs:rounded-lg transition-colors ${
                   activeTab === 'templates'
                     ? 'bg-[#f63a9e]/10 text-[#f63a9e]'
                     : 'text-gray-600'
                 }`}
               >
-                <LayoutGrid className='w-5 h-5' />
-                <span className='text-xs font-medium'>Template</span>
+                <LayoutGrid className='w-4 h-4 xs:w-5 xs:h-5' />
+                <span className='text-[10px] xs:text-xs font-medium'>Template</span>
               </button>
 
               <button
@@ -1997,14 +1997,14 @@ export function CollageCustomizer() {
                   setActiveTab('photos');
                   setShowMobilePanel(true);
                 }}
-                className={`flex flex-col items-center justify-center gap-1 py-2 rounded-lg transition-colors ${
+                className={`flex flex-col items-center justify-center gap-0.5 xs:gap-1 py-1.5 xs:py-2 rounded-md xs:rounded-lg transition-colors ${
                   activeTab === 'photos'
                     ? 'bg-[#f63a9e]/10 text-[#f63a9e]'
                     : 'text-gray-600'
                 }`}
               >
-                <ImageIcon className='w-5 h-5' />
-                <span className='text-xs font-medium'>Photos</span>
+                <ImageIcon className='w-4 h-4 xs:w-5 xs:h-5' />
+                <span className='text-[10px] xs:text-xs font-medium'>Photos</span>
               </button>
 
               <button
@@ -2012,14 +2012,14 @@ export function CollageCustomizer() {
                   setActiveTab('background');
                   setShowMobilePanel(true);
                 }}
-                className={`flex flex-col items-center justify-center gap-1 py-2 rounded-lg transition-colors ${
+                className={`flex flex-col items-center justify-center gap-0.5 xs:gap-1 py-1.5 xs:py-2 rounded-md xs:rounded-lg transition-colors ${
                   activeTab === 'background'
                     ? 'bg-[#f63a9e]/10 text-[#f63a9e]'
                     : 'text-gray-600'
                 }`}
               >
-                <Palette className='w-5 h-5' />
-                <span className='text-xs font-medium'>Settings</span>
+                <Palette className='w-4 h-4 xs:w-5 xs:h-5' />
+                <span className='text-[10px] xs:text-xs font-medium'>Settings</span>
               </button>
             </div>
           </nav>
