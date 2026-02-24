@@ -1,8 +1,8 @@
 // Multi-Canvas Wall Configurer - Configuration Constants
 
 export const MULTI_CANVAS_WALL_PRODUCT = {
-  id: 'multi-canvas-wall',
-  slug: 'multi-canvas-wall',
+  id: 'parallel-triplet-canvas',
+  slug: 'parallel-triplet-canvas',
   name: 'Multi-Canvas Wall',
   type: 'canvas' as const,
   description: 'Create a stunning gallery wall with 4 custom canvases',
