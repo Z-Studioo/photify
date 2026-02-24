@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, Suspense } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { createClient } from '@/lib/supabase/client';
@@ -28,6 +28,10 @@ import PosterEaselPreview from './poster-ease-ipreview.client';
 
 export function PosterCollageCustomizer() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const artImageUrl = searchParams.get('artImageUrl')
+    ? decodeURIComponent(searchParams.get('artImageUrl')!)
+    : null;
   const supabase = createClient();
   const { addToCart } = useCart();
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -38,7 +42,7 @@ export function PosterCollageCustomizer() {
   const [productPrice, setProductPrice] = useState(0.5); // Default price per sq inch
 
   const [state, setState] = useState<PosterUploadState>({
-    imageUrl: null,
+    imageUrl: artImageUrl ?? null,
     imageFile: null,
     selectedSizeId: null,
     posterWidth: DEFAULT_POSTER_SIZE.width,

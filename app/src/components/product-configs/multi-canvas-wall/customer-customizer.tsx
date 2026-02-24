@@ -38,8 +38,11 @@ export function MultiCanvasWallCustomizer() {
   const containerRef = useRef<HTMLDivElement>(null);
   const [containerSize, setContainerSize] = useState({ width: 0, height: 0 });
 
-  // Get productId from URL if available
+  // Get productId and artImageUrl from URL if available
   const productId = searchParams.get('productId');
+  const artImageUrl = searchParams.get('artImageUrl')
+    ? decodeURIComponent(searchParams.get('artImageUrl')!)
+    : null;
 
   // Size selection state
   const [sizes, setSizes] = useState<Size[]>([]);
@@ -52,13 +55,13 @@ export function MultiCanvasWallCustomizer() {
   );
   const [productPrice, setProductPrice] = useState<number>(0); // Price per square inch
 
-  // State
+  // State — if artImageUrl provided, pre-fill all 3 canvases
   const [state, setState] = useState<MultiCanvasWallState>({
     canvases: Array.from({ length: 3 }, (_, i) => ({
       id: i,
-      imageUrl: null,
+      imageUrl: artImageUrl ?? null,
       imageFile: null,
-      uploaded: false,
+      uploaded: artImageUrl ? true : false,
     })),
     showRulers: true,
     selectedCanvasId: null,

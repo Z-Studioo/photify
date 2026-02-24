@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useParams, Navigate } from 'react-router-dom';
-import { ProductDetailPage } from '@/components/pages/product/[id]';
+import { ArtDetailPage } from '@/components/pages/art/detail';
 import { createClient } from '@/lib/supabase/client';
 import { Helmet } from '@dr.pogodin/react-helmet';
 
@@ -80,7 +80,7 @@ export default function ArtPage() {
         />
         <meta name="robots" content="index,follow" />
       </Helmet>
-      <ProductDetailPage initialProduct={product} productSlug={id} />
+      <ArtDetailPage artProduct={product!} />
     </>
 );
 }
