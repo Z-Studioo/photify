@@ -111,10 +111,6 @@ export function MultiCanvasWallCustomizer() {
           setProductPrice(productData.price);
         }
 
-        console.log('Product data:', productData);
-        console.log('Product config:', productData?.config);
-        console.log('Allowed sizes:', productData?.config?.allowedSizes);
-
         // Fetch sizes
         // If product has allowedSizes in config, use those
         // Otherwise, fetch all active sizes as fallback
@@ -124,7 +120,6 @@ export function MultiCanvasWallCustomizer() {
           productData?.config?.allowedSizes &&
           productData.config.allowedSizes.length > 0
         ) {
-          console.log('Using allowedSizes from config');
           // Fetch specific sizes from config
           sizesQuery = supabase
             .from('sizes')
@@ -133,7 +128,6 @@ export function MultiCanvasWallCustomizer() {
             .eq('active', true)
             .order('area_in2');
         } else {
-          console.log('No allowedSizes in config, fetching all active sizes');
           // Fallback: fetch all active sizes
           sizesQuery = supabase
             .from('sizes')
@@ -143,10 +137,7 @@ export function MultiCanvasWallCustomizer() {
             .limit(20);
         }
 
-        const { data: sizesData, error: sizesError } = await sizesQuery;
-
-        console.log('Sizes query result:', sizesData);
-        console.log('Sizes query error:', sizesError);
+        const { data: sizesData } = await sizesQuery;
 
         if (sizesData && sizesData.length > 0) {
           setSizes(sizesData);
@@ -156,9 +147,8 @@ export function MultiCanvasWallCustomizer() {
           setSelectedSizeId(firstSize.id);
           setCanvasWidth(firstSize.width_in);
           setCanvasHeight(firstSize.height_in);
-          console.log('Selected first size:', firstSize);
         } else {
-          console.warn('No sizes available. SizesData:', sizesData);
+          // left intentionally
         }
       } catch (error) {
         console.error('Error fetching product configuration:', error);

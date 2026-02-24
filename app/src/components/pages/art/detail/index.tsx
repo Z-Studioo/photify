@@ -16,6 +16,7 @@ import {
   Frame,
   Check,
   X,
+  Sparkles,
 } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 
@@ -31,6 +32,16 @@ interface Product {
   description: string;
   images: string[];
   config: { configurerType?: string };
+}
+
+interface SimilarArt {
+  id: string;
+  slug: string;
+  name: string;
+  image: string;
+  images: string[];
+  price: string;
+  category: string;
 }
 
 const PRODUCT_TYPE_OPTIONS = [
@@ -68,6 +79,8 @@ export function ArtDetailPage({ artProduct }: ArtDetailPageProps) {
   const [showProductSelector, setShowProductSelector] = useState(false);
   const [products, setProducts] = useState<Product[]>([]);
   const [loadingProducts, setLoadingProducts] = useState(false);
+  const [similarProducts, setSimilarProducts] = useState<SimilarArt[]>([]);
+  const [loadingSimilar, setLoadingSimilar] = useState(true);
 
   const images: string[] =
     artProduct.images?.length > 0
@@ -94,6 +107,50 @@ export function ArtDetailPage({ artProduct }: ArtDetailPageProps) {
     fetch();
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [showProductSelector, supabase]);
+
+  // Fetch similar art products based on shared tags
+  useEffect(() => {
+    const fetchSimilar = async () => {
+      setLoadingSimilar(true);
+      try {
+        // Extract tag IDs from current product's junction records
+        const tagIds: string[] = ((artProduct.art_product_tags || []) as { tag_id: string }[]).map((apt) => apt.tag_id).filter(Boolean);
+
+        if (tagIds.length === 0) {
+          setSimilarProducts([]);
+          setLoadingSimilar(false);
+          return;
+        }
+
+        // Find other art products sharing any of these tags
+        const { data: junctions } = await supabase
+          .from('art_product_tags')
+          .select('art_product_id')
+          .in('tag_id', tagIds)
+          .neq('art_product_id', artProduct.id as string);
+
+        const similarIds = [...new Set((junctions || []).map((j: { art_product_id: string }) => j.art_product_id))].slice(0, 6);
+
+        if (similarIds.length === 0) {
+          setSimilarProducts([]);
+          setLoadingSimilar(false);
+          return;
+        }
+
+        const { data: similarData } = await supabase
+          .from('art_products')
+          .select('id, slug, name, image, images, price, category')
+          .in('id', similarIds)
+          .eq('status', 'active');
+
+        setSimilarProducts((similarData || []) as SimilarArt[]);
+      } finally {
+        setLoadingSimilar(false);
+      }
+    };
+    fetchSimilar();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [artProduct.id]);
 
   const artImageUrl = images[0]; // Primary art image to pre-feed
 
@@ -248,6 +305,52 @@ export function ArtDetailPage({ artProduct }: ArtDetailPageProps) {
           </div>
         </div>
       </div>
+
+      {/* Similar Products Section */}
+      {!loadingSimilar && similarProducts.length > 0 && (
+        <section className='border-t border-gray-100 py-12'>
+          <div className='max-w-[1400px] mx-auto px-4 sm:px-6'>
+            <div className='flex items-center gap-2 mb-6'>
+              <Sparkles className='w-5 h-5 text-[#f63a9e]' />
+              <h2
+                className="font-['Bricolage_Grotesque',_sans-serif] text-2xl text-gray-900"
+                style={{ fontWeight: '700' }}
+              >
+                You Might Also Like
+              </h2>
+            </div>
+            <div className='grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-4'>
+              {similarProducts.map((product) => {
+                const thumb =
+                  (Array.isArray(product.images) && product.images.length > 0
+                    ? product.images[0]
+                    : null) || product.image || '';
+                return (
+                  <motion.div
+                    key={product.id}
+                    whileHover={{ y: -4 }}
+                    transition={{ duration: 0.2 }}
+                    className='group cursor-pointer'
+                    onClick={() => navigate(`/art/${product.slug || product.id}`)}
+                  >
+                    <div className='aspect-square rounded-xl overflow-hidden bg-gray-50 mb-2'>
+                      <ImageWithFallback
+                        src={thumb}
+                        alt={product.name}
+                        className='w-full h-full object-cover transition-transform duration-300 group-hover:scale-105'
+                      />
+                    </div>
+                    <p className='text-sm font-semibold text-gray-900 truncate'>{product.name}</p>
+                    {product.price && (
+                      <p className='text-sm text-[#f63a9e] font-medium mt-0.5'>{product.price}</p>
+                    )}
+                  </motion.div>
+                );
+              })}
+            </div>
+          </div>
+        </section>
+      )}
 
       {/* Product Type Selector Modal */}
       <AnimatePresence>

@@ -109,7 +109,6 @@ const QuantityControl: React.FC<QuantityControlProps> = ({
     if (!imageUrl) {
       return toast.error('No image selected to add to cart.');
     }
-    console.log('Final confirm clicked',preview);
     setLocalConfirming(true);
     try {
       await onConfirm();

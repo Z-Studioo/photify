@@ -38,7 +38,6 @@ const Page = () => {
   };
 
   const handleContinue = () => {
-    console.log('Continuing with file:', _file, 'and preview:', preview);
     if (_file && preview) {
       navigate('/crop');
     }

@@ -29,7 +29,7 @@ export default function ArtPage() {
       // Fetch from art_products table
       const { data, error } = await supabase
         .from('art_products')
-        .select('*')
+        .select('*, art_product_tags(tag_id, tags(id, name, slug))')
         .or(isUUID ? `id.eq.${id}` : `slug.eq.${id}`)
         .single();
 
