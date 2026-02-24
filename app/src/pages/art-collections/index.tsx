@@ -49,7 +49,17 @@ export default function ArtCollections() {
           if (t?.name) tagSet.set(t.name, t.name);
         });
       });
-      const tagNames = [...tagSet.values()].sort();
+
+      // Also fetch all available tags from the tags table
+      const { data: allTagsData } = await supabase
+        .from('tags')
+        .select('name')
+        .order('name', { ascending: true });
+
+      // Use all tags from tags table; fall back to tags from products
+      const tagNames = allTagsData && allTagsData.length > 0
+        ? allTagsData.map((t: { name: string }) => t.name)
+        : [...tagSet.values()].sort();
 
       setArtProducts((productsData as unknown as RawArtProduct[]) || []);
       setCategories(['All', ...tagNames]);

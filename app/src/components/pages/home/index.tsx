@@ -13,12 +13,14 @@ interface HomePageProps {
   initialFeaturedProducts: any[];
   initialRooms: any[];
   initialArtProducts: any[];
+  initialArtTags?: string[];
 }
 
 export function HomePage({
   initialFeaturedProducts,
   initialRooms,
   initialArtProducts,
+  initialArtTags = [],
 }: HomePageProps) {
   const navigate = useNavigate();
 
@@ -331,30 +333,18 @@ export function HomePage({
             >
               All
             </button>
-            <button
-              onClick={() => navigate('/art-collections?category=Religion')}
-              className='px-8 py-3 rounded-full bg-gray-100 text-gray-500 hover:bg-gray-200 transition-colors'
-            >
-              Religion
-            </button>
-            <button
-              onClick={() => navigate('/art-collections?category=Abstract')}
-              className='px-8 py-3 rounded-full bg-gray-100 text-gray-500 hover:bg-gray-200 transition-colors'
-            >
-              Abstract
-            </button>
-            <button
-              onClick={() => navigate('/art-collections?category=Animals')}
-              className='px-8 py-3 rounded-full bg-gray-100 text-gray-500 hover:bg-gray-200 transition-colors'
-            >
-              Animals
-            </button>
-            <button
-              onClick={() => navigate('/art-collections?category=Nepal')}
-              className='px-8 py-3 rounded-full bg-gray-100 text-gray-500 hover:bg-gray-200 transition-colors'
-            >
-              Nepal
-            </button>
+            {(initialArtTags.length > 0
+              ? initialArtTags
+              : ['Best Seller', 'New', 'Popular', 'Limited Edition', 'Eco-Friendly']
+            ).map(tag => (
+              <button
+                key={tag}
+                onClick={() => navigate(`/art-collections?category=${encodeURIComponent(tag)}`)}
+                className='px-8 py-3 rounded-full bg-gray-100 text-gray-500 hover:bg-gray-200 transition-colors'
+              >
+                {tag}
+              </button>
+            ))}
           </div>
 
           <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4'>
