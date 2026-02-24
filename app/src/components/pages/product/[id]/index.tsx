@@ -66,33 +66,6 @@ const mockReviews = [
   },
 ];
 
-const roomBackgrounds = [
-  {
-    id: 'living',
-    name: 'Living Room',
-    image:
-      'https://images.unsplash.com/photo-1586023492125-27b2c045efd7?w=1200&h=800&fit=crop',
-  },
-  {
-    id: 'bedroom',
-    name: 'Bedroom',
-    image:
-      'https://images.unsplash.com/photo-1616594039964-ae9021a400a0?w=1200&h=800&fit=crop',
-  },
-  {
-    id: 'office',
-    name: 'Office',
-    image:
-      'https://images.unsplash.com/photo-1497366216548-37526070297c?w=1200&h=800&fit=crop',
-  },
-  {
-    id: 'dining',
-    name: 'Dining',
-    image:
-      'https://images.unsplash.com/photo-1617806118233-18e1de247200?w=1200&h=800&fit=crop',
-  },
-];
-
 interface ProductDetailPageProps {
   initialProduct: any;
   productSlug: string;
@@ -107,7 +80,6 @@ export function ProductDetailPage({
   const [mainImage, setMainImage] = useState(0);
   const [isWishlisted, setIsWishlisted] = useState(false);
   const [showStickyBar, setShowStickyBar] = useState(false);
-  const [selectedRoom, setSelectedRoom] = useState('living');
   const [relatedProducts, setRelatedProducts] = useState<any[]>([]);
   const [viewersCount] = useState(() => Math.floor(Math.random() * 20) + 15);
   const heroRef = useRef<HTMLDivElement>(null);

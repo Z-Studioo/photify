@@ -134,8 +134,9 @@ export async function createCheckoutSession(
         productData.description = item.size;
       }
 
-      // Only add images if they exist
-      if (item.image) {
+      // Only add images if they are publicly accessible https:// URLs
+      // (blob: and data: URLs are not valid for Stripe)
+      if (item.image && item.image.startsWith('https://')) {
         productData.images = [item.image];
       }
 

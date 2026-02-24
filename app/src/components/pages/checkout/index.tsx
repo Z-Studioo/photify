@@ -17,7 +17,6 @@ import {
   Search,
   Check,
   CreditCard,
-  Video,
   ShoppingBag,
   Shield,
   Lock,
@@ -68,11 +67,17 @@ export function CheckoutPage() {
       return false;
     }
     if (name.trim().length < 2) {
-      setErrors(prev => ({ ...prev, name: 'Name must be at least 2 characters' }));
+      setErrors(prev => ({
+        ...prev,
+        name: 'Name must be at least 2 characters',
+      }));
       return false;
     }
     if (!/^[a-zA-Z\s'-]+$/.test(name)) {
-      setErrors(prev => ({ ...prev, name: 'Name can only contain letters, spaces, hyphens, and apostrophes' }));
+      setErrors(prev => ({
+        ...prev,
+        name: 'Name can only contain letters, spaces, hyphens, and apostrophes',
+      }));
       return false;
     }
     setErrors(prev => ({ ...prev, name: undefined }));
@@ -86,7 +91,10 @@ export function CheckoutPage() {
     }
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(email)) {
-      setErrors(prev => ({ ...prev, email: 'Please enter a valid email address' }));
+      setErrors(prev => ({
+        ...prev,
+        email: 'Please enter a valid email address',
+      }));
       return false;
     }
     setErrors(prev => ({ ...prev, email: undefined }));
@@ -100,16 +108,21 @@ export function CheckoutPage() {
     }
     // Remove all spaces, hyphens, and parentheses for validation
     const cleanPhone = phone.replace(/[\s\-()]/g, '');
-    
+
     // UK phone patterns:
     // - Mobile: 07xxx xxxxxx (11 digits starting with 07)
     // - Landline: 01xxx/02xxx/03xxx (10-11 digits)
     // - International format: +44 7xxx or +44 1xxx/2xxx/3xxx
-    const ukPhoneRegex = /^(?:(?:\+44\s?|0)(?:7\d{3}|1\d{3,4}|2\d{1,2}|3\d{2,3})\s?\d{3,4}\s?\d{3,4}|(?:\+44|0)7\d{9})$/;
+    const ukPhoneRegex =
+      /^(?:(?:\+44\s?|0)(?:7\d{3}|1\d{3,4}|2\d{1,2}|3\d{2,3})\s?\d{3,4}\s?\d{3,4}|(?:\+44|0)7\d{9})$/;
     const cleanPhoneRegex = /^(?:\+44|0)(?:7\d{9}|[123]\d{8,9})$/;
-    
+
     if (!ukPhoneRegex.test(phone) && !cleanPhoneRegex.test(cleanPhone)) {
-      setErrors(prev => ({ ...prev, phone: 'Please enter a valid UK phone number (e.g., 07123 456789 or 020 1234 5678)' }));
+      setErrors(prev => ({
+        ...prev,
+        phone:
+          'Please enter a valid UK phone number (e.g., 07123 456789 or 020 1234 5678)',
+      }));
       return false;
     }
     setErrors(prev => ({ ...prev, phone: undefined }));
@@ -131,7 +144,7 @@ export function CheckoutPage() {
   const getEstimatedDays = () => {
     // const standardPrice = standardShipping?.setting_value?.value || 9.99;
     const expressPrice = expressShipping?.setting_value?.value || 19.99;
-    
+
     // Check if current shipping cost matches express delivery
     if (Math.abs(shippingCost - expressPrice) < 0.01) {
       return '2-3 business days';
@@ -155,7 +168,7 @@ export function CheckoutPage() {
         return;
       }
     }
-    
+
     // Validate Step 2 (Address)
     if (currentStep === 2) {
       if (!formData.postcode.trim() || !formData.address.trim()) {
@@ -184,16 +197,16 @@ export function CheckoutPage() {
 
     setIsSearchingAddress(true);
     setSearchedAddresses([]);
-    
+
     try {
       // Normalize postcode: remove extra spaces, convert to uppercase
       let postcode = formData.postcode.trim().toUpperCase().replace(/\s+/g, '');
-      
+
       // Add space before last 3 characters if not present (standard UK format)
       if (postcode.length >= 5 && !postcode.includes(' ')) {
         postcode = postcode.slice(0, -3) + ' ' + postcode.slice(-3);
       }
-      
+
       // Try exact postcode first
       let response = await fetch(
         `https://api.postcodes.io/postcodes/${encodeURIComponent(postcode)}`
@@ -205,16 +218,20 @@ export function CheckoutPage() {
         const autocompleteResponse = await fetch(
           `https://api.postcodes.io/postcodes/${encodeURIComponent(partialPostcode)}/autocomplete`
         );
-        
+
         if (autocompleteResponse.ok) {
           const autocompleteData = await autocompleteResponse.json();
-          if (autocompleteData.status === 200 && autocompleteData.result && autocompleteData.result.length > 0) {
+          if (
+            autocompleteData.status === 200 &&
+            autocompleteData.result &&
+            autocompleteData.result.length > 0
+          ) {
             // Use the first suggested postcode
             const suggestedPostcode = autocompleteData.result[0];
             response = await fetch(
               `https://api.postcodes.io/postcodes/${encodeURIComponent(suggestedPostcode)}`
             );
-            
+
             if (response.ok) {
               toast.info(`Using closest match: ${suggestedPostcode}`);
             }
@@ -236,22 +253,22 @@ export function CheckoutPage() {
 
       if (data.status === 200 && data.result) {
         const result = data.result;
-        
+
         // Build comprehensive address list
         const addresses: string[] = [];
-        
+
         // Primary address
         addresses.push(
           `${result.postcode}, ${result.admin_district || result.parish || ''}, ${result.region}, ${result.country}`
         );
-        
+
         // Add ward/parish if available
         if (result.parish && result.parish !== result.admin_district) {
           addresses.push(
             `${result.postcode}, ${result.parish}, ${result.admin_district}, ${result.region}`
           );
         }
-        
+
         // Add specific locality if available
         if (result.admin_ward) {
           addresses.push(
@@ -264,7 +281,7 @@ export function CheckoutPage() {
           const nearbyResponse = await fetch(
             `https://api.postcodes.io/postcodes?lon=${result.longitude}&lat=${result.latitude}&radius=500&limit=5`
           );
-          
+
           if (nearbyResponse.ok) {
             const nearbyData = await nearbyResponse.json();
             if (nearbyData.status === 200 && nearbyData.result) {
@@ -284,10 +301,12 @@ export function CheckoutPage() {
 
         // Remove duplicates
         const uniqueAddresses = [...new Set(addresses)];
-        
+
         setSearchedAddresses(uniqueAddresses);
         setShowAddresses(true);
-        toast.success(`Found ${uniqueAddresses.length} address${uniqueAddresses.length > 1 ? 'es' : ''}`);
+        toast.success(
+          `Found ${uniqueAddresses.length} address${uniqueAddresses.length > 1 ? 'es' : ''}`
+        );
       } else {
         toast.error('No address found for this postcode');
         setSearchedAddresses([]);
@@ -334,30 +353,33 @@ export function CheckoutPage() {
       }
 
       // Create checkout session
-      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/checkout`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          cartItems,
-          customerInfo: {
-            name: formData.name,
-            email: formData.email,
-            phone: formData.phone,
+      const response = await fetch(
+        `${import.meta.env.VITE_API_URL}/api/checkout`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
           },
-          shippingAddress: {
-            address: formData.address,
-            postcode: formData.postcode,
-          },
-          videoPermission: formData.videoPermission,
-          subtotal,
-          deliveryFee,
-          discount,
-          promoCode: appliedPromoCode || undefined,
-          total,
-        }),
-      });
+          body: JSON.stringify({
+            cartItems,
+            customerInfo: {
+              name: formData.name,
+              email: formData.email,
+              phone: formData.phone,
+            },
+            shippingAddress: {
+              address: formData.address,
+              postcode: formData.postcode,
+            },
+            videoPermission: formData.videoPermission,
+            subtotal,
+            deliveryFee,
+            discount,
+            promoCode: appliedPromoCode || undefined,
+            total,
+          }),
+        }
+      );
 
       const data = await response.json();
 
@@ -383,7 +405,13 @@ export function CheckoutPage() {
     }
   };
 
-  const isStep1Valid = formData.name && formData.phone && formData.email && !errors.name && !errors.phone && !errors.email;
+  const isStep1Valid =
+    formData.name &&
+    formData.phone &&
+    formData.email &&
+    !errors.name &&
+    !errors.phone &&
+    !errors.email;
   const isStep2Valid = formData.postcode && formData.address;
 
   return (
@@ -525,17 +553,20 @@ export function CheckoutPage() {
                               onBlur={() => {
                                 setFieldFocus(null);
                                 // Validate on blur
-                                if (field.id === 'name') validateName(field.value);
-                                if (field.id === 'email') validateEmail(field.value);
-                                if (field.id === 'phone') validateUKPhone(field.value);
+                                if (field.id === 'name')
+                                  validateName(field.value);
+                                if (field.id === 'email')
+                                  validateEmail(field.value);
+                                if (field.id === 'phone')
+                                  validateUKPhone(field.value);
                               }}
                               className={cn(
                                 'h-12 sm:h-14 lg:h-16 border-2 rounded-xl sm:rounded-2xl text-sm sm:text-base pl-4 sm:pl-6 pr-12 sm:pr-14 transition-all bg-gray-50 focus:bg-white',
                                 hasError
                                   ? 'border-red-500 ring-4 ring-red-500/10'
                                   : fieldFocus === field.id
-                                  ? 'border-[#f63a9e] ring-4 ring-[#f63a9e]/10 shadow-lg'
-                                  : 'border-gray-200'
+                                    ? 'border-[#f63a9e] ring-4 ring-[#f63a9e]/10 shadow-lg'
+                                    : 'border-gray-200'
                               )}
                             />
                             <AnimatePresence>
@@ -559,7 +590,8 @@ export function CheckoutPage() {
                               animate={{ opacity: 1, y: 0 }}
                               className='text-red-500 text-xs sm:text-sm mt-2 flex items-center gap-1'
                             >
-                              <span className='font-semibold'>⚠</span> {hasError}
+                              <span className='font-semibold'>⚠</span>{' '}
+                              {hasError}
                             </motion.p>
                           )}
                         </motion.div>
@@ -693,23 +725,26 @@ export function CheckoutPage() {
                         </motion.div>
                       )}
 
-                      {showAddresses && searchedAddresses.length === 0 && !isSearchingAddress && (
-                        <motion.div
-                          initial={{ opacity: 0, scale: 0.9 }}
-                          animate={{ opacity: 1, scale: 1 }}
-                          className='p-4 sm:p-6 bg-red-50 border-2 border-red-200 rounded-xl sm:rounded-2xl text-center'
-                        >
-                          <p
-                            className='text-red-700 text-sm sm:text-base'
-                            style={{ fontWeight: '600' }}
+                      {showAddresses &&
+                        searchedAddresses.length === 0 &&
+                        !isSearchingAddress && (
+                          <motion.div
+                            initial={{ opacity: 0, scale: 0.9 }}
+                            animate={{ opacity: 1, scale: 1 }}
+                            className='p-4 sm:p-6 bg-red-50 border-2 border-red-200 rounded-xl sm:rounded-2xl text-center'
                           >
-                            No addresses found for this postcode. Please check and try again.
-                          </p>
-                          <p className='text-red-600 text-xs sm:text-sm mt-2'>
-                            Example UK postcodes: SW1A 1AA, EC1A 1BB, M1 1AE
-                          </p>
-                        </motion.div>
-                      )}
+                            <p
+                              className='text-red-700 text-sm sm:text-base'
+                              style={{ fontWeight: '600' }}
+                            >
+                              No addresses found for this postcode. Please check
+                              and try again.
+                            </p>
+                            <p className='text-red-600 text-xs sm:text-sm mt-2'>
+                              Example UK postcodes: SW1A 1AA, EC1A 1BB, M1 1AE
+                            </p>
+                          </motion.div>
+                        )}
 
                       {formData.address && (
                         <motion.div
@@ -829,69 +864,6 @@ export function CheckoutPage() {
                           >
                             {formData.address}
                           </p>
-                        </div>
-                      </div>
-                    </motion.div>
-
-                    {/* Video Consent - Compact */}
-                    <motion.div
-                      className='p-3 sm:p-4 lg:p-5 bg-gradient-to-br from-orange-50 to-rose-50 rounded-lg sm:rounded-xl border-2 border-orange-100'
-                      initial={{ opacity: 0, y: 20 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ delay: 0.3 }}
-                    >
-                      <div className='flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-4'>
-                        <div className='flex items-center gap-2 sm:gap-3 flex-1 min-w-0'>
-                          <div className='w-8 h-8 sm:w-10 sm:h-10 rounded-lg sm:rounded-xl bg-gradient-to-br from-orange-500 to-rose-600 flex items-center justify-center flex-shrink-0'>
-                            <Video className='w-4 h-4 sm:w-5 sm:h-5 text-white' />
-                          </div>
-                          <div className='min-w-0'>
-                            <h4
-                              className='text-gray-900 text-xs sm:text-sm'
-                              style={{ fontWeight: '700' }}
-                            >
-                              Order Preparation Video
-                            </h4>
-                            <p className='text-gray-600 text-xs'>
-                              Get a behind-the-scenes video
-                            </p>
-                          </div>
-                        </div>
-                        <div className='flex items-center gap-2 w-full sm:w-auto'>
-                          <button
-                            onClick={() =>
-                              setFormData({
-                                ...formData,
-                                videoPermission: true,
-                              })
-                            }
-                            className={cn(
-                              'flex-1 sm:flex-none px-3 sm:px-4 py-2 rounded-lg transition-all text-xs sm:text-sm',
-                              formData.videoPermission
-                                ? 'bg-[#f63a9e] text-white shadow-md'
-                                : 'bg-white text-gray-600 border border-gray-200 hover:border-[#f63a9e]/50'
-                            )}
-                            style={{ fontWeight: '600' }}
-                          >
-                            Yes
-                          </button>
-                          <button
-                            onClick={() =>
-                              setFormData({
-                                ...formData,
-                                videoPermission: false,
-                              })
-                            }
-                            className={cn(
-                              'flex-1 sm:flex-none px-3 sm:px-4 py-2 rounded-lg transition-all text-xs sm:text-sm',
-                              !formData.videoPermission
-                                ? 'bg-gray-700 text-white shadow-md'
-                                : 'bg-white text-gray-600 border border-gray-200 hover:border-gray-300'
-                            )}
-                            style={{ fontWeight: '600' }}
-                          >
-                            No
-                          </button>
                         </div>
                       </div>
                     </motion.div>
@@ -1171,7 +1143,9 @@ export function CheckoutPage() {
                         <Tag className='w-3 h-3' />
                         Promo{appliedPromoCode ? ` (${appliedPromoCode})` : ''}:
                       </span>
-                      <span style={{ fontWeight: '600' }}>-${discount.toFixed(2)}</span>
+                      <span style={{ fontWeight: '600' }}>
+                        -${discount.toFixed(2)}
+                      </span>
                     </div>
                   )}
                   <div className='pt-3 border-t border-gray-200'>
