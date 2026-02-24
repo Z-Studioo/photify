@@ -272,7 +272,7 @@ export function MultiCanvasWallCustomizer() {
   };
 
   // Handle image upload - show crop modal first
-  const handleUpload = (canvasId: number, file: File, imageUrl: string) => {
+  const handleUpload = (canvasId: number, _file: File, imageUrl: string) => {
     setTempImageForCrop({ canvasId, imageUrl });
     setIsUploadModalOpen(false);
     setIsCropModalOpen(true);
@@ -827,7 +827,6 @@ export function MultiCanvasWallCustomizer() {
           setIsUploadModalOpen(false);
           setSelectedCanvasForUpload(null);
         }}
-        // @ts-expect-error file types issue
         onUpload={handleUpload}
       />
 

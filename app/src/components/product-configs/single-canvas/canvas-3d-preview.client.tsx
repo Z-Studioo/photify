@@ -2,7 +2,6 @@ import { useRef, useState, useEffect } from 'react';
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
 import { OrbitControls } from '@react-three/drei';
 import * as THREE from 'three';
-import { RoomEnvironment } from './room-environment';
 import { RulerOverlay } from './ruler-overlay';
 import { SingleCanvasMesh } from './single-canvas-mesh';
 
@@ -207,7 +206,6 @@ export default function Canvas3DPreview({
   sideColor,
   mirrorEdges = false,
   showRuler = false,
-  wallColor = '#d4e4d4',
 }: Canvas3DPreviewProps) {
   const canvasWidth = width / 10;
   const canvasHeight = height / 10;
