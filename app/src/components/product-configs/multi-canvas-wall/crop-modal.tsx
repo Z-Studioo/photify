@@ -99,8 +99,18 @@ export function CropModal({
         throw new Error('Failed to get canvas context');
       }
 
+      // completedCrop is in CSS/display pixels (the image is scaled by max-h CSS).
+      // We must convert to natural image pixels using the scale ratio.
+      const scaleX = image.naturalWidth / image.width;
+      const scaleY = image.naturalHeight / image.height;
+
+      const srcX = completedCrop.x * scaleX;
+      const srcY = completedCrop.y * scaleY;
+      const srcW = completedCrop.width * scaleX;
+      const srcH = completedCrop.height * scaleY;
+
       // Use a fixed output size with the exact aspect ratio
-      // For 16:32 ratio (0.5), we'll use 800x1600
+      // For 16:32 ratio (0.5), output is 800×1600
       const OUTPUT_WIDTH = 800;
       const OUTPUT_HEIGHT = Math.round(OUTPUT_WIDTH / aspectRatio);
 
@@ -112,13 +122,13 @@ export function CropModal({
       ctx.imageSmoothingEnabled = true;
       ctx.imageSmoothingQuality = 'high';
 
-      // Draw cropped and scaled image
+      // Draw cropped region (in natural pixels) scaled to the output size
       ctx.drawImage(
         image,
-        completedCrop.x,
-        completedCrop.y,
-        completedCrop.width,
-        completedCrop.height,
+        srcX,
+        srcY,
+        srcW,
+        srcH,
         0,
         0,
         OUTPUT_WIDTH,

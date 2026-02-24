@@ -615,23 +615,23 @@ export function MultiCanvasWallCustomizer() {
 
                       {/* Action Buttons - Show on hover/touch when uploaded */}
                       {uploaded && canvas.imageUrl && (
-                        <div className='absolute top-2 right-2 md:top-3 md:right-3 md:opacity-0 md:group-hover:opacity-100 transition-opacity duration-200 flex gap-2 z-10'>
+                        <div className='absolute top-1 right-1 sm:top-2 sm:right-2 md:top-3 md:right-3 md:opacity-0 md:group-hover:opacity-100 transition-opacity duration-200 flex gap-1 sm:gap-2 z-10'>
                           <button
                             onClick={() => handleCanvasClick(canvas.id)}
-                            className='w-9 h-9 md:w-10 md:h-10 rounded-full bg-white/90 backdrop-blur-sm hover:bg-white shadow-lg flex items-center justify-center transition-all hover:scale-110'
+                            className='w-6 h-6 sm:w-9 sm:h-9 md:w-10 md:h-10 rounded-full bg-white/90 backdrop-blur-sm hover:bg-white shadow-lg flex items-center justify-center transition-all hover:scale-110'
                             title='Replace image'
                           >
-                            <Upload className='w-4 h-4 md:w-5 md:h-5 text-gray-700' />
+                            <Upload className='w-3 h-3 sm:w-4 sm:h-4 md:w-5 md:h-5 text-gray-700' />
                           </button>
                           <button
                             onClick={e => {
                               e.stopPropagation();
                               handleRemoveImage(canvas.id);
                             }}
-                            className='w-9 h-9 md:w-10 md:h-10 rounded-full bg-red-500/90 backdrop-blur-sm hover:bg-red-600 shadow-lg flex items-center justify-center transition-all hover:scale-110'
+                            className='w-6 h-6 sm:w-9 sm:h-9 md:w-10 md:h-10 rounded-full bg-red-500/90 backdrop-blur-sm hover:bg-red-600 shadow-lg flex items-center justify-center transition-all hover:scale-110'
                             title='Remove image'
                           >
-                            <X className='w-4 h-4 md:w-5 md:h-5 text-white' />
+                            <X className='w-3 h-3 sm:w-4 sm:h-4 md:w-5 md:h-5 text-white' />
                           </button>
                         </div>
                       )}
