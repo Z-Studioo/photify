@@ -17,6 +17,11 @@ import {
   Check,
   X,
   Sparkles,
+  Shield,
+  Truck,
+  RefreshCw,
+  Palette,
+  Tag,
 } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 
@@ -177,140 +182,236 @@ export function ArtDetailPage({ artProduct }: ArtDetailPageProps) {
     <div className="min-h-screen font-['Mona_Sans',_sans-serif] bg-white">
       <Header />
 
-      <div className='max-w-[1400px] mx-auto px-4 sm:px-6 py-6 sm:py-10'>
-        {/* Back */}
-        <button
-          onClick={() => navigate(-1)}
-          className='flex items-center gap-2 text-gray-500 hover:text-[#f63a9e] transition-colors mb-6 group'
-        >
-          <ArrowLeft className='w-4 h-4 group-hover:-translate-x-1 transition-transform' />
-          <span className='text-sm font-medium'>Back</span>
-        </button>
+      {/* Hero — blurred art backdrop */}
+      <div className='relative overflow-hidden'>
+        {/* Blurred background */}
+        <div
+          className='absolute inset-0 scale-110 blur-3xl opacity-20 pointer-events-none'
+          style={{
+            backgroundImage: `url(${images[0]})`,
+            backgroundSize: 'cover',
+            backgroundPosition: 'center',
+          }}
+        />
+        <div className='absolute inset-0 bg-gradient-to-b from-white/60 via-white/80 to-white pointer-events-none' />
 
-        <div className='grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-16'>
-          {/* Images */}
-          <div className='space-y-4'>
-            {/* Main image */}
-            <div className='relative rounded-2xl overflow-hidden bg-gray-50 aspect-square'>
-              <AnimatePresence mode='wait'>
-                <motion.div
-                  key={mainImage}
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  exit={{ opacity: 0 }}
-                  transition={{ duration: 0.25 }}
-                  className='w-full h-full'
-                >
-                  <ImageWithFallback
-                    src={images[mainImage]}
-                    alt={artProduct.name || 'Artwork'}
-                    className='w-full h-full object-contain'
-                  />
-                </motion.div>
-              </AnimatePresence>
+        <div className='relative max-w-[1400px] mx-auto px-4 sm:px-6 pt-6 pb-10'>
+          {/* Back */}
+          <motion.button
+            initial={{ opacity: 0, x: -8 }}
+            animate={{ opacity: 1, x: 0 }}
+            onClick={() => navigate(-1)}
+            className='flex items-center gap-2 text-gray-500 hover:text-[#f63a9e] transition-colors mb-8 group'
+          >
+            <ArrowLeft className='w-4 h-4 group-hover:-translate-x-1 transition-transform' />
+            <span className='text-sm font-medium'>Back to collection</span>
+          </motion.button>
 
-              {images.length > 1 && (
-                <>
-                  <button
-                    onClick={() => setMainImage(i => (i === 0 ? images.length - 1 : i - 1))}
-                    className='absolute left-3 top-1/2 -translate-y-1/2 w-9 h-9 rounded-full bg-white/90 shadow flex items-center justify-center hover:bg-white transition-colors'
-                  >
-                    <ChevronLeft className='w-4 h-4 text-gray-700' />
-                  </button>
-                  <button
-                    onClick={() => setMainImage(i => (i === images.length - 1 ? 0 : i + 1))}
-                    className='absolute right-3 top-1/2 -translate-y-1/2 w-9 h-9 rounded-full bg-white/90 shadow flex items-center justify-center hover:bg-white transition-colors'
-                  >
-                    <ChevronRight className='w-4 h-4 text-gray-700' />
-                  </button>
-                </>
-              )}
-            </div>
+          <div className='grid grid-cols-1 lg:grid-cols-2 gap-10 lg:gap-20 items-start'>
 
-            {/* Thumbnails */}
-            {images.length > 1 && (
-              <div className='flex gap-2 overflow-x-auto pb-1'>
-                {images.map((img, i) => (
-                  <button
-                    key={img}
-                    onClick={() => setMainImage(i)}
-                    className={`flex-shrink-0 w-16 h-16 rounded-lg overflow-hidden border-2 transition-all ${
-                      mainImage === i ? 'border-[#f63a9e] shadow-md' : 'border-transparent hover:border-gray-300'
-                    }`}
-                  >
-                    <img src={img} alt='' className='w-full h-full object-cover' />
-                  </button>
-                ))}
-              </div>
-            )}
-          </div>
-
-          {/* Info */}
-          <div className='flex flex-col'>
-            {artProduct.collection_name && (
-              <p className='text-sm font-semibold text-[#f63a9e] uppercase tracking-wide mb-2'>
-                {artProduct.collection_name}
-              </p>
-            )}
-
-            <h1
-              className="font-['Bricolage_Grotesque',_sans-serif] text-3xl sm:text-4xl text-gray-900 mb-3"
-              style={{ fontWeight: '700' }}
+            {/* ── LEFT: Image gallery ── */}
+            <motion.div
+              initial={{ opacity: 0, y: 24 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5 }}
+              className='space-y-3'
             >
-              {artProduct.name}
-            </h1>
-
-            {/* Rating */}
-            <div className='flex items-center gap-2 mb-4'>
-              <div className='flex text-amber-400'>
-                {[...Array(5)].map((_, i) => (
-                  // eslint-disable-next-line react/no-array-index-key
-                  <Star key={`star-${i}`} className='w-4 h-4 fill-current' />
-                ))}
-              </div>
-              <span className='text-sm text-gray-500'>4.9 · 128 reviews</span>
-            </div>
-
-            {artProduct.description && (
-              <p className='text-gray-600 leading-relaxed mb-6'>{artProduct.description}</p>
-            )}
-
-            {/* Tags */}
-            {artProduct.tags?.length > 0 && (
-              <div className='flex flex-wrap gap-2 mb-6'>
-                {artProduct.tags.map((tag: string) => (
-                  <span
-                    key={tag}
-                    className='px-3 py-1 bg-gray-100 text-gray-600 rounded-full text-xs font-medium'
+              {/* Main image */}
+              <div className='relative rounded-3xl overflow-hidden bg-gray-50 shadow-2xl shadow-gray-200/60 aspect-square'>
+                <AnimatePresence mode='wait'>
+                  <motion.div
+                    key={mainImage}
+                    initial={{ opacity: 0, scale: 1.03 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    exit={{ opacity: 0, scale: 0.97 }}
+                    transition={{ duration: 0.3 }}
+                    className='w-full h-full'
                   >
-                    {tag}
+                    <ImageWithFallback
+                      src={images[mainImage]}
+                      alt={artProduct.name || 'Artwork'}
+                      className='w-full h-full object-contain'
+                    />
+                  </motion.div>
+                </AnimatePresence>
+
+                {images.length > 1 && (
+                  <>
+                    <button
+                      onClick={() => setMainImage(i => (i === 0 ? images.length - 1 : i - 1))}
+                      className='absolute left-3 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-white/95 shadow-lg flex items-center justify-center hover:bg-white transition-all hover:scale-110'
+                    >
+                      <ChevronLeft className='w-5 h-5 text-gray-700' />
+                    </button>
+                    <button
+                      onClick={() => setMainImage(i => (i === images.length - 1 ? 0 : i + 1))}
+                      className='absolute right-3 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-white/95 shadow-lg flex items-center justify-center hover:bg-white transition-all hover:scale-110'
+                    >
+                      <ChevronRight className='w-5 h-5 text-gray-700' />
+                    </button>
+                  </>
+                )}
+
+                {/* Image count badge */}
+                {images.length > 1 && (
+                  <div className='absolute bottom-3 right-3 bg-black/50 text-white text-xs px-2.5 py-1 rounded-full backdrop-blur-sm'>
+                    {mainImage + 1} / {images.length}
+                  </div>
+                )}
+              </div>
+
+              {/* Thumbnails */}
+              {images.length > 1 && (
+                <div className='flex gap-2 overflow-x-auto pb-1'>
+                  {images.map((img, i) => (
+                    <motion.button
+                      key={img}
+                      whileHover={{ scale: 1.05 }}
+                      onClick={() => setMainImage(i)}
+                      className={`flex-shrink-0 w-16 h-16 rounded-xl overflow-hidden border-2 transition-all ${
+                        mainImage === i
+                          ? 'border-[#f63a9e] shadow-md shadow-pink-200/60'
+                          : 'border-transparent hover:border-gray-300'
+                      }`}
+                    >
+                      <img src={img} alt='' className='w-full h-full object-cover' />
+                    </motion.button>
+                  ))}
+                </div>
+              )}
+            </motion.div>
+
+            {/* ── RIGHT: Info panel ── */}
+            <motion.div
+              initial={{ opacity: 0, y: 24 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, delay: 0.1 }}
+              className='flex flex-col gap-5 lg:pt-2'
+            >
+              {/* Category / collection badge */}
+              <div className='flex flex-wrap items-center gap-2'>
+                {artProduct.category && (
+                  <span className='inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-pink-50 text-[#f63a9e] text-xs font-semibold uppercase tracking-wide border border-pink-100'>
+                    <Palette className='w-3 h-3' />
+                    {artProduct.category}
                   </span>
+                )}
+                {artProduct.collection_name && (
+                  <span className='inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-purple-50 text-purple-600 text-xs font-semibold border border-purple-100'>
+                    {artProduct.collection_name}
+                  </span>
+                )}
+              </div>
+
+              {/* Title */}
+              <h1
+                className="font-['Bricolage_Grotesque',_sans-serif] text-3xl sm:text-4xl lg:text-5xl text-gray-900 leading-tight"
+                style={{ fontWeight: '800' }}
+              >
+                {artProduct.name}
+              </h1>
+
+              {/* Rating row */}
+              <div className='flex items-center gap-3'>
+                <div className='flex text-amber-400'>
+                  {[...Array(5)].map((_, i) => (
+                    // eslint-disable-next-line react/no-array-index-key
+                    <Star key={`star-${i}`} className='w-4 h-4 fill-current' />
+                  ))}
+                </div>
+                <span className='text-sm font-semibold text-gray-700'>4.9</span>
+                <span className='text-sm text-gray-400'>· 128 reviews</span>
+              </div>
+
+              {/* Price */}
+              {artProduct.price && (
+                <div className='flex items-baseline gap-2'>
+                  <span className='text-xs text-gray-400 uppercase tracking-wider font-semibold'>Starting at</span>
+                  <span className='text-3xl font-extrabold text-[#f63a9e] tracking-tight'>
+                    {String(artProduct.price).startsWith('£') ? artProduct.price : `£${artProduct.price}`}
+                  </span>
+                </div>
+              )}
+
+              {/* Description — or a stylised placeholder */}
+              {artProduct.description ? (
+                <p className='text-gray-600 leading-relaxed text-base'>{artProduct.description}</p>
+              ) : (
+                <div className='grid grid-cols-2 gap-3'>
+                  {[
+                    { label: 'Museum-quality print', icon: '🖼️' },
+                    { label: 'Fade-resistant inks', icon: '✨' },
+                    { label: 'Ready to hang', icon: '🪝' },
+                    { label: 'Premium canvas', icon: '🎨' },
+                  ].map(f => (
+                    <div key={f.label} className='flex items-center gap-2.5 p-3 rounded-xl bg-gray-50 border border-gray-100'>
+                      <span className='text-lg'>{f.icon}</span>
+                      <span className='text-xs font-medium text-gray-700'>{f.label}</span>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {/* Tags */}
+              {artProduct.art_product_tags?.length > 0 && (
+                <div className='flex flex-wrap gap-2'>
+                  {(artProduct.art_product_tags as { tags: { name: string } | null }[]).map(apt => {
+                    const t = apt.tags;
+                    if (!t?.name) return null;
+                    return (
+                      <span
+                        key={t.name}
+                        className='inline-flex items-center gap-1 px-3 py-1 bg-gradient-to-r from-pink-50 to-purple-50 text-gray-600 rounded-full text-xs font-medium border border-gray-100'
+                      >
+                        <Tag className='w-2.5 h-2.5 text-[#f63a9e]' />
+                        {t.name}
+                      </span>
+                    );
+                  })}
+                </div>
+              )}
+
+              {/* Trust badges */}
+              <div className='grid grid-cols-3 gap-3 py-4 border-y border-gray-100'>
+                {[
+                  { icon: Truck, label: 'Free shipping', sub: 'On all orders' },
+                  { icon: RefreshCw, label: '30-day returns', sub: 'Hassle-free' },
+                  { icon: Shield, label: 'Secure checkout', sub: '100% protected' },
+                ].map(({ icon: Icon, label, sub }) => (
+                  <div key={label} className='flex flex-col items-center text-center gap-1'>
+                    <div className='w-9 h-9 rounded-full bg-pink-50 flex items-center justify-center'>
+                      <Icon className='w-4 h-4 text-[#f63a9e]' />
+                    </div>
+                    <span className='text-xs font-semibold text-gray-800'>{label}</span>
+                    <span className='text-[10px] text-gray-400'>{sub}</span>
+                  </div>
                 ))}
               </div>
-            )}
 
-            <div className='mt-auto pt-6 border-t border-gray-100 space-y-3'>
-              <Button
-                onClick={() => setShowProductSelector(true)}
-                className='w-full h-14 bg-[#f63a9e] hover:bg-[#e02d8d] text-white rounded-xl text-base'
-                style={{ fontWeight: '700' }}
-              >
-                Use This Artwork
-                <ArrowRight className='ml-2 w-5 h-5' />
-              </Button>
-              <p className='text-center text-xs text-gray-400'>
-                Choose a product type on the next step
-              </p>
-            </div>
+              {/* CTA */}
+              <div className='space-y-2'>
+                <Button
+                  onClick={() => setShowProductSelector(true)}
+                  className='w-full h-14 bg-[#f63a9e] hover:bg-[#e02d8d] text-white rounded-2xl text-base shadow-lg shadow-pink-200/50 transition-all hover:shadow-xl hover:shadow-pink-200/60'
+                  style={{ fontWeight: '700' }}
+                >
+                  Use This Artwork
+                  <ArrowRight className='ml-2 w-5 h-5' />
+                </Button>
+                <p className='text-center text-xs text-gray-400'>
+                  Choose canvas, gallery wall, or poster print on the next step
+                </p>
+              </div>
+            </motion.div>
           </div>
         </div>
       </div>
 
       {/* Similar Products Section */}
       {!loadingSimilar && similarProducts.length > 0 && (
-        <section className='border-t border-gray-100 py-12'>
+        <section className='bg-gray-50 py-14'>
           <div className='max-w-[1400px] mx-auto px-4 sm:px-6'>
-            <div className='flex items-center gap-2 mb-6'>
+            <div className='flex items-center gap-2 mb-8'>
               <Sparkles className='w-5 h-5 text-[#f63a9e]' />
               <h2
                 className="font-['Bricolage_Grotesque',_sans-serif] text-2xl text-gray-900"
@@ -328,22 +429,24 @@ export function ArtDetailPage({ artProduct }: ArtDetailPageProps) {
                 return (
                   <motion.div
                     key={product.id}
-                    whileHover={{ y: -4 }}
+                    whileHover={{ y: -5 }}
                     transition={{ duration: 0.2 }}
-                    className='group cursor-pointer'
+                    className='group cursor-pointer bg-white rounded-2xl overflow-hidden shadow-sm hover:shadow-md transition-shadow'
                     onClick={() => navigate(`/art/${product.slug || product.id}`)}
                   >
-                    <div className='aspect-square rounded-xl overflow-hidden bg-gray-50 mb-2'>
+                    <div className='aspect-square overflow-hidden bg-gray-100'>
                       <ImageWithFallback
                         src={thumb}
                         alt={product.name}
-                        className='w-full h-full object-cover transition-transform duration-300 group-hover:scale-105'
+                        className='w-full h-full object-cover transition-transform duration-300 group-hover:scale-108'
                       />
                     </div>
-                    <p className='text-sm font-semibold text-gray-900 truncate'>{product.name}</p>
-                    {product.price && (
-                      <p className='text-sm text-[#f63a9e] font-medium mt-0.5'>{product.price}</p>
-                    )}
+                    <div className='p-3'>
+                      <p className='text-sm font-semibold text-gray-900 truncate'>{product.name}</p>
+                      {product.price && (
+                        <p className='text-sm text-[#f63a9e] font-medium mt-0.5'>{product.price}</p>
+                      )}
+                    </div>
                   </motion.div>
                 );
               })}
