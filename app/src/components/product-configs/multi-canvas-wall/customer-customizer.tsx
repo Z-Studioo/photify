@@ -38,8 +38,11 @@ export function MultiCanvasWallCustomizer() {
   const containerRef = useRef<HTMLDivElement>(null);
   const [containerSize, setContainerSize] = useState({ width: 0, height: 0 });
 
-  // Get productId from URL if available
+  // Get productId and artImageUrl from URL if available
   const productId = searchParams.get('productId');
+  const artImageUrl = searchParams.get('artImageUrl')
+    ? decodeURIComponent(searchParams.get('artImageUrl')!)
+    : null;
 
   // Size selection state
   const [sizes, setSizes] = useState<Size[]>([]);
@@ -52,13 +55,13 @@ export function MultiCanvasWallCustomizer() {
   );
   const [productPrice, setProductPrice] = useState<number>(0); // Price per square inch
 
-  // State
+  // State — if artImageUrl provided, pre-fill all 3 canvases
   const [state, setState] = useState<MultiCanvasWallState>({
     canvases: Array.from({ length: 3 }, (_, i) => ({
       id: i,
-      imageUrl: null,
+      imageUrl: artImageUrl ?? null,
       imageFile: null,
-      uploaded: false,
+      uploaded: artImageUrl ? true : false,
     })),
     showRulers: true,
     selectedCanvasId: null,
@@ -108,10 +111,6 @@ export function MultiCanvasWallCustomizer() {
           setProductPrice(productData.price);
         }
 
-        console.log('Product data:', productData);
-        console.log('Product config:', productData?.config);
-        console.log('Allowed sizes:', productData?.config?.allowedSizes);
-
         // Fetch sizes
         // If product has allowedSizes in config, use those
         // Otherwise, fetch all active sizes as fallback
@@ -121,7 +120,6 @@ export function MultiCanvasWallCustomizer() {
           productData?.config?.allowedSizes &&
           productData.config.allowedSizes.length > 0
         ) {
-          console.log('Using allowedSizes from config');
           // Fetch specific sizes from config
           sizesQuery = supabase
             .from('sizes')
@@ -130,7 +128,6 @@ export function MultiCanvasWallCustomizer() {
             .eq('active', true)
             .order('area_in2');
         } else {
-          console.log('No allowedSizes in config, fetching all active sizes');
           // Fallback: fetch all active sizes
           sizesQuery = supabase
             .from('sizes')
@@ -140,10 +137,7 @@ export function MultiCanvasWallCustomizer() {
             .limit(20);
         }
 
-        const { data: sizesData, error: sizesError } = await sizesQuery;
-
-        console.log('Sizes query result:', sizesData);
-        console.log('Sizes query error:', sizesError);
+        const { data: sizesData } = await sizesQuery;
 
         if (sizesData && sizesData.length > 0) {
           setSizes(sizesData);
@@ -153,9 +147,8 @@ export function MultiCanvasWallCustomizer() {
           setSelectedSizeId(firstSize.id);
           setCanvasWidth(firstSize.width_in);
           setCanvasHeight(firstSize.height_in);
-          console.log('Selected first size:', firstSize);
         } else {
-          console.warn('No sizes available. SizesData:', sizesData);
+          // left intentionally
         }
       } catch (error) {
         console.error('Error fetching product configuration:', error);

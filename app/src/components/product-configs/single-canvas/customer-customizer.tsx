@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { createClient } from '@/lib/supabase/client';
 import { 
@@ -32,8 +32,14 @@ interface Size {
 
 export function SingleCanvasCustomizer() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const supabase = createClient();
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // If an art image URL was passed in query params, use it instead of requiring upload
+  const artImageUrl = searchParams.get('artImageUrl')
+    ? decodeURIComponent(searchParams.get('artImageUrl')!)
+    : null;
 
   // State
   const [aspectRatios, setAspectRatios] = useState<AspectRatio[]>([]);
@@ -77,6 +83,24 @@ export function SingleCanvasCustomizer() {
 
           if (sizesError) throw sizesError;
           setSizes(sizesData || []);
+
+          // If an art image URL was passed, auto-navigate to 3D viewer using the best-fit size
+          if (artImageUrl && sizesData && sizesData.length > 0 && ratiosData && ratiosData.length > 0) {
+            const bestRatio = ratiosData[0];
+            const bestSize = sizesData[0];
+            const params = new URLSearchParams({
+              image: encodeURIComponent(artImageUrl),
+              width: bestSize.width_in.toString(),
+              height: bestSize.height_in.toString(),
+              productId: SINGLE_CANVAS_PRODUCT.id,
+              productName: encodeURIComponent(SINGLE_CANVAS_PRODUCT.name),
+              aspectRatioId: bestRatio.id,
+              wrapImage: 'true',
+              enableImageEditor: 'true',
+            });
+            navigate(`/customize/product-3d-view?${params.toString()}`, { replace: true });
+            return;
+          }
         }
       } catch (error: any) {
         console.error('Error fetching configuration:', error);

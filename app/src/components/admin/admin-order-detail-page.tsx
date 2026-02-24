@@ -236,7 +236,6 @@ export function AdminOrderDetailPage() {
       }
 
       toast.success('Customer notification email sent');
-      console.log(`Status notification email sent for ${orderNumber} - ${status}`);
     } catch (error) {
       console.error('Failed to send status notification email:', error);
       toast.error('Status updated but email notification failed');
@@ -439,10 +438,6 @@ export function AdminOrderDetailPage() {
       setNotes('');
     }
   };
-
-  useEffect(() => {
-    console.log('Order data:', order);
-  }, [order]);
 
   if (loading)
     return (

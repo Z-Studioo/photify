@@ -8,6 +8,7 @@ export default function Home() {
   const [featuredProducts, setFeaturedProducts] = useState<any[]>([]);
   const [rooms, setRooms] = useState<any[]>([]);
   const [artProducts, setArtProducts] = useState<any[]>([]);
+  const [artTags, setArtTags] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -38,10 +39,17 @@ export default function Home() {
         .eq('status', 'active')
         .order('created_at', { ascending: false })
         .limit(8);
+
+      // Fetch art tags for filter buttons
+      const { data: tagsData } = await supabase
+        .from('tags')
+        .select('name')
+        .order('name', { ascending: true });
       
       setFeaturedProducts(productsData || []);
       setRooms(roomsData || []);
       setArtProducts(artData || []);
+      setArtTags((tagsData || []).map((t: { name: string }) => t.name));
       setLoading(false);
     };
 
@@ -57,6 +65,7 @@ export default function Home() {
       initialFeaturedProducts={featuredProducts} 
       initialRooms={rooms} 
       initialArtProducts={artProducts}
+      initialArtTags={artTags}
     />
   );
 }

@@ -10,12 +10,14 @@ import { Helmet } from '@dr.pogodin/react-helmet';
 
 interface ArtProduct {
   id: string;
+  slug?: string;
   name: string;
   image: string;
   size: string;
   price: string;
   isBestSeller: boolean;
   category: string;
+  tags?: string[];
 }
 
 interface ArtCollectionPageProps {
@@ -251,12 +253,17 @@ export function ArtCollectionPage({
     initialArtProducts.length > 0
       ? initialArtProducts.map((art: any) => ({
           id: art.id,
+          slug: art.slug,
           name: art.name,
-          image: art.image,
-          size: art.size,
-          price: art.price,
-          isBestSeller: art.is_bestseller || art.is_featured,
-          category: art.category,
+          image: (Array.isArray(art.images) && art.images.length > 0 ? art.images[0] : null) || art.image || '',
+          size: art.size || '',
+          price: art.price || '',
+          isBestSeller: art.is_bestseller || false,
+          category: art.category || '',
+          tags: (art.art_product_tags || []).map((apt: any) => {
+            const t = Array.isArray(apt.tags) ? apt.tags[0] : apt.tags;
+            return t?.name ?? null;
+          }).filter(Boolean),
         }))
       : mockArtProducts;
 
@@ -271,7 +278,11 @@ export function ArtCollectionPage({
   const filteredProducts =
     selectedCategory === 'All'
       ? artProducts
-      : artProducts.filter(p => p.category === selectedCategory);
+      : artProducts.filter(p =>
+          p.tags && p.tags.length > 0
+            ? p.tags.includes(selectedCategory)
+            : p.category === selectedCategory
+        );
 
   return (
     <>
@@ -390,7 +401,7 @@ export function ArtCollectionPage({
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.3, delay: index * 0.05 }}
                     className='group cursor-pointer'
-                    onClick={() => navigate(`/art/${product.id}`)}
+                    onClick={() => navigate(`/art/${product.slug ?? product.id}`)}
                   >
                     {/* Product Image */}
                     <div className='relative aspect-square mb-3 overflow-hidden rounded-lg'>

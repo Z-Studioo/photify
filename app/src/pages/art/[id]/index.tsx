@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useParams, Navigate } from 'react-router-dom';
-import { ProductDetailPage } from '@/components/pages/product/[id]';
+import { ArtDetailPage } from '@/components/pages/art/detail';
 import { createClient } from '@/lib/supabase/client';
 import { Helmet } from '@dr.pogodin/react-helmet';
 
@@ -29,7 +29,7 @@ export default function ArtPage() {
       // Fetch from art_products table
       const { data, error } = await supabase
         .from('art_products')
-        .select('*')
+        .select('*, art_product_tags(tag_id, tags(id, name, slug))')
         .or(isUUID ? `id.eq.${id}` : `slug.eq.${id}`)
         .single();
 
@@ -80,7 +80,7 @@ export default function ArtPage() {
         />
         <meta name="robots" content="index,follow" />
       </Helmet>
-      <ProductDetailPage initialProduct={product} productSlug={id} />
+      <ArtDetailPage artProduct={product!} />
     </>
 );
 }
