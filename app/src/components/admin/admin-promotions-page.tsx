@@ -71,6 +71,7 @@ export function AdminPromotionsPage() {
       used: normalizeNumber(promo.used_count),
       startDate: promo.start_date,
       endDate: promo.end_date,
+      isFeatured: promo.is_featured || false,
       status,
     };
   });
@@ -259,6 +260,11 @@ export function AdminPromotionsPage() {
                         <code className='bg-gray-100 px-2 py-1 rounded text-sm font-mono font-semibold'>
                           {promo.code}
                         </code>
+                        {promo.isFeatured && (
+                          <span className='inline-flex items-center px-2 py-0.5 bg-gradient-to-r from-[#f63a9e] to-[#e02d8d] text-white rounded text-xs font-semibold'>
+                            ⭐ Featured
+                          </span>
+                        )}
                         <button
                           onClick={() => handleCopyCode(promo.code)}
                           className='p-1 hover:bg-gray-200 rounded'

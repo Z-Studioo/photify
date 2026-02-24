@@ -458,7 +458,7 @@ export function Product3DView({
                       wrapImage={wrapImage}
                       sideColor={sideColor}
                       mirrorEdges={mirrorEdges}
-                      showRuler={showRuler}
+                      showRuler={false}
                       wallColor={wallColor}
                     />
                   ) : (
@@ -564,9 +564,14 @@ export function Product3DView({
 
                   {/* 3D Room Toggle */}
                   <button
-                    onClick={() =>
-                      setViewMode(viewMode === 'canvas' ? 'room' : 'canvas')
-                    }
+                    onClick={() => {
+                      const newMode = viewMode === 'canvas' ? 'room' : 'canvas';
+                      setViewMode(newMode);
+                      // Hide ruler when switching to canvas view
+                      if (newMode === 'canvas') {
+                        setShowRuler(false);
+                      }
+                    }}
                     className={`
           flex items-center justify-center
           md:flex-col md:gap-1.5
@@ -599,10 +604,11 @@ export function Product3DView({
                     </span>
                   </button>
 
-                  {/* Ruler Toggle */}
-                  <button
-                    onClick={() => setShowRuler(!showRuler)}
-                    className={`
+                  {/* Ruler Toggle - Only in Room View */}
+                  {viewMode === 'room' && (
+                    <button
+                      onClick={() => setShowRuler(!showRuler)}
+                      className={`
           flex items-center justify-center
           md:flex-col md:gap-1.5
           w-8 h-8 md:w-auto md:h-auto
@@ -612,9 +618,9 @@ export function Product3DView({
           group
           ${showRuler ? 'bg-[#f63a9e]/10' : ''}
         `}
-                  >
-                    <Ruler
-                      className={`
+                    >
+                      <Ruler
+                        className={`
             w-4 h-4 md:w-6 md:h-6
             ${
               showRuler
@@ -622,17 +628,18 @@ export function Product3DView({
                 : 'text-gray-700 group-hover:text-[#f63a9e]'
             }
           `}
-                    />
+                      />
 
-                    <span
-                      className={`
+                      <span
+                        className={`
             hidden md:block text-xs font-medium
             ${showRuler ? 'text-[#f63a9e]' : 'text-gray-600'}
           `}
-                    >
-                      Ruler
-                    </span>
-                  </button>
+                      >
+                        Ruler
+                      </span>
+                    </button>
+                  )}
                 </div>
               </motion.div>
             )}
@@ -678,11 +685,6 @@ export function Product3DView({
                 <span className='text-[#f63a9e] text-2xl md:text-3xl font-bold'>
                   £{selectedSizeId ? calculatePrice() : '10.99'}
                 </span>
-                {selectedSizeId && (
-                  <button className='text-xs md:text-sm text-gray-600 underline hover:text-gray-900'>
-                    Price details
-                  </button>
-                )}
               </div>
 
               {/* Add to Basket Button - Mobile Responsive */}

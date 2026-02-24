@@ -2,7 +2,6 @@ import { useRef, useState, useEffect } from 'react';
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
 import { OrbitControls } from '@react-three/drei';
 import * as THREE from 'three';
-import { RoomEnvironment } from './room-environment';
 import { RulerOverlay } from './ruler-overlay';
 import { SingleCanvasMesh } from './single-canvas-mesh';
 
@@ -207,7 +206,6 @@ export default function Canvas3DPreview({
   sideColor,
   mirrorEdges = false,
   showRuler = false,
-  wallColor = '#d4e4d4',
 }: Canvas3DPreviewProps) {
   const canvasWidth = width / 10;
   const canvasHeight = height / 10;
@@ -218,27 +216,28 @@ export default function Canvas3DPreview({
   const minDistance = Math.max(0.8, minDistanceForFullCanvas * 0.4);
   const maxDistance = Math.max(12, minDistanceForFullCanvas * 2);
 
-  const canvasTarget: [number, number, number] = [0, 2.2, -4.9645];
+  // Canvas mode: Center the canvas at origin for product view (not on wall)
+  const canvasTarget: [number, number, number] = [0, 0, 0];
 
   // Animation state
   const [animationComplete, setAnimationComplete] = useState(false);
 
-  // Camera positions for intro animation (user-specified positions)
-  // Phase 1: Zoom in from far away (3.5 seconds)
-  const phase1StartPosition: [number, number, number] = [-6.33, 2.05, 5.23];
-  const phase1EndPosition: [number, number, number] = [-2.93, 2.13, -0.24];
+  // Camera positions for canvas-only product view (centered at origin)
+  // Phase 1: Zoom in from far away 
+  const phase1StartPosition: [number, number, number] = [-4, 2, 6];
+  const phase1EndPosition: [number, number, number] = [-2, 1, 3];
 
-  // Phase 2: Move to final orbital position (1.5 seconds)
-  const phase2EndPosition: [number, number, number] = [3.26, 1.92, -0.47];
+  // Phase 2: Move to final orbital position
+  const phase2EndPosition: [number, number, number] = [2.5, 1.5, 3];
 
   return (
     <div className='w-full h-[50vh] md:h-full bg-gradient-to-b from-slate-100 to-slate-200 overflow-hidden'>
       <Canvas shadows camera={{ position: phase1StartPosition, fov: 50 }}>
-        <ambientLight intensity={1.8} />
+        <ambientLight intensity={2.5} />
 
         <directionalLight
           position={[-2, 8, 3]}
-          intensity={2.2}
+          intensity={3.0}
           color='#ffffff'
           castShadow
           shadow-mapSize-width={4096}
@@ -251,11 +250,10 @@ export default function Canvas3DPreview({
         />
 
         <spotLight
-          position={[0, 6, -1]}
-          target-position={[0, 2.2, -4.9645]}
+          position={[0, 6, 2]}
           angle={0.5}
           penumbra={0.5}
-          intensity={3.5}
+          intensity={4.0}
           color='#ffffff'
           castShadow
           shadow-mapSize-width={2048}
@@ -264,11 +262,10 @@ export default function Canvas3DPreview({
         />
 
         <spotLight
-          position={[-1, 5, 0]}
-          target-position={[0, 2.2, -4.9645]}
+          position={[-3, 5, 2]}
           angle={0.4}
           penumbra={0.6}
-          intensity={2.5}
+          intensity={3.0}
           color='#ffffff'
           castShadow
           shadow-mapSize-width={2048}
@@ -277,56 +274,20 @@ export default function Canvas3DPreview({
         />
 
         <directionalLight
-          position={[1, 3.5, 4]}
-          target-position={[0, 2.2, -5]}
+          position={[4, 4, 4]}
+          intensity={2.0}
+          color='#ffffff'
+        />
+
+        <pointLight
+          position={[0, 0, 5]}
           intensity={1.5}
-          color='#ffffff'
-          castShadow
-          shadow-mapSize-width={4096}
-          shadow-mapSize-height={4096}
-          shadow-camera-left={-8}
-          shadow-camera-right={8}
-          shadow-camera-top={8}
-          shadow-camera-bottom={-8}
-          shadow-camera-near={0.5}
-          shadow-camera-far={20}
-          shadow-bias={-0.001}
-        />
-
-        <directionalLight
-          position={[4, 7, 2]}
-          intensity={0.3}
-          color='#fff8f0'
-        />
-
-        <pointLight
-          position={[0, 1, 2]}
-          intensity={0.2}
-          distance={8}
+          distance={10}
           color='#ffffff'
           decay={2}
         />
 
-        <pointLight
-          position={[-3.4, 3.3, -3.8]}
-          intensity={2.5}
-          distance={12}
-          color='#ffcc80'
-          decay={1.5}
-          castShadow
-          shadow-mapSize-width={1024}
-          shadow-mapSize-height={1024}
-        />
-
-        <pointLight
-          position={[-3.4, 2.5, -3.8]}
-          intensity={1.2}
-          distance={6}
-          color='#ffe4b3'
-          decay={2}
-        />
-
-        <RoomEnvironment wallColor={wallColor} />
+        {/* Removed RoomEnvironment - Canvas mode shows product only, not in a room */}
 
         <SingleCanvasMesh
           imageUrl={imageUrl}
@@ -337,6 +298,7 @@ export default function Canvas3DPreview({
           wrapImage={wrapImage}
           sideColor={sideColor}
           mirrorEdges={mirrorEdges}
+          position={[0, 0, 0]} // Center at origin for product view (not on wall)
         />
 
         <RulerOverlay

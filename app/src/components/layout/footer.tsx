@@ -144,22 +144,22 @@ export function Footer() {
           </p>
           <div className='flex flex-col items-center md:items-end gap-2'>
             <p className='text-xs text-gray-500'>Secure payments with</p>
-            <div className='flex items-center gap-3'>
-              <div className='bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 hover:border-[#f63a9e] transition-colors'>
-                <span className='text-sm font-bold text-white tracking-wider'>VISA</span>
+            <div className='flex flex-wrap items-center justify-center md:justify-end gap-1.5 xs:gap-2 sm:gap-2.5 md:gap-3 max-w-[320px] xs:max-w-[360px] sm:max-w-none'>
+              <div className='bg-gray-800 border border-gray-700 rounded-md sm:rounded-lg px-2 py-1.5 xs:px-2.5 xs:py-1.5 sm:px-3 sm:py-2 hover:border-[#f63a9e] transition-colors'>
+                <span className='text-[10px] xs:text-xs sm:text-sm font-bold text-white tracking-wider'>VISA</span>
               </div>
-              <div className='bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 hover:border-[#f63a9e] transition-colors'>
-                <span className='text-sm font-bold text-white tracking-wider'>Mastercard</span>
+              <div className='bg-gray-800 border border-gray-700 rounded-md sm:rounded-lg px-2 py-1.5 xs:px-2.5 xs:py-1.5 sm:px-3 sm:py-2 hover:border-[#f63a9e] transition-colors'>
+                <span className='text-[10px] xs:text-xs sm:text-sm font-bold text-white tracking-wider'>Mastercard</span>
               </div>
-              <div className='bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 hover:border-[#f63a9e] transition-colors'>
-                <span className='text-sm font-bold text-white tracking-wider'>AMEX</span>
+              <div className='bg-gray-800 border border-gray-700 rounded-md sm:rounded-lg px-2 py-1.5 xs:px-2.5 xs:py-1.5 sm:px-3 sm:py-2 hover:border-[#f63a9e] transition-colors'>
+                <span className='text-[10px] xs:text-xs sm:text-sm font-bold text-white tracking-wider'>AMEX</span>
               </div>
-              <div className='bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 hover:border-[#f63a9e] transition-colors'>
-                <span className='text-sm font-bold text-[#0070ba]'>Pay</span>
-                <span className='text-sm font-bold text-[#00a3e0]'>Pal</span>
+              <div className='bg-gray-800 border border-gray-700 rounded-md sm:rounded-lg px-2 py-1.5 xs:px-2.5 xs:py-1.5 sm:px-3 sm:py-2 hover:border-[#f63a9e] transition-colors'>
+                <span className='text-[10px] xs:text-xs sm:text-sm font-bold text-[#0070ba]'>Pay</span>
+                <span className='text-[10px] xs:text-xs sm:text-sm font-bold text-[#00a3e0]'>Pal</span>
               </div>
-              <div className='bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 hover:border-[#f63a9e] transition-colors'>
-                <span className='text-sm font-bold text-[#635bff]'>Stripe</span>
+              <div className='bg-gray-800 border border-gray-700 rounded-md sm:rounded-lg px-2 py-1.5 xs:px-2.5 xs:py-1.5 sm:px-3 sm:py-2 hover:border-[#f63a9e] transition-colors'>
+                <span className='text-[10px] xs:text-xs sm:text-sm font-bold text-[#635bff]'>Stripe</span>
               </div>
             </div>
           </div>

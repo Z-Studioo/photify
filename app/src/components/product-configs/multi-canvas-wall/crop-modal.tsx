@@ -30,9 +30,14 @@ export function CropModal({
   const [crop, setCrop] = useState<CropType>();
   const [completedCrop, setCompletedCrop] = useState<PixelCrop>();
   const [processing, setProcessing] = useState(false);
+  const [imageLoaded, setImageLoaded] = useState(false);
+  const [imageError, setImageError] = useState(false);
 
   // Initialize crop when image loads
   const onImageLoad = (e: React.SyntheticEvent<HTMLImageElement>) => {
+    setImageLoaded(true);
+    setImageError(false);
+    
     const { width, height } = e.currentTarget;
 
     // Center crop with correct aspect ratio
@@ -51,7 +56,18 @@ export function CropModal({
     const x = (width - finalWidth) / 2;
     const y = (height - finalHeight) / 2;
 
-    setCrop({
+    const initialCrop: CropType = {
+      unit: 'px',
+      x,
+      y,
+      width: finalWidth,
+      height: finalHeight,
+    };
+
+    setCrop(initialCrop);
+    
+    // Initialize completedCrop so the crop can be applied immediately without user interaction
+    setCompletedCrop({
       unit: 'px',
       x,
       y,
@@ -66,6 +82,12 @@ export function CropModal({
       return;
     }
 
+    // Validate crop dimensions
+    if (completedCrop.width <= 0 || completedCrop.height <= 0) {
+      toast.error('Invalid crop dimensions');
+      return;
+    }
+
     setProcessing(true);
 
     try {
@@ -77,21 +99,40 @@ export function CropModal({
         throw new Error('Failed to get canvas context');
       }
 
-      // Set canvas size to match crop dimensions
-      canvas.width = completedCrop.width;
-      canvas.height = completedCrop.height;
+      // completedCrop is in CSS/display pixels (the image is scaled by max-h CSS).
+      // We must convert to natural image pixels using the scale ratio.
+      const scaleX = image.naturalWidth / image.width;
+      const scaleY = image.naturalHeight / image.height;
 
-      // Draw cropped image
+      const srcX = completedCrop.x * scaleX;
+      const srcY = completedCrop.y * scaleY;
+      const srcW = completedCrop.width * scaleX;
+      const srcH = completedCrop.height * scaleY;
+
+      // Use a fixed output size with the exact aspect ratio
+      // For 16:32 ratio (0.5), output is 800×1600
+      const OUTPUT_WIDTH = 800;
+      const OUTPUT_HEIGHT = Math.round(OUTPUT_WIDTH / aspectRatio);
+
+      // Set canvas to the standardized output dimensions
+      canvas.width = OUTPUT_WIDTH;
+      canvas.height = OUTPUT_HEIGHT;
+
+      // Enable high-quality image smoothing
+      ctx.imageSmoothingEnabled = true;
+      ctx.imageSmoothingQuality = 'high';
+
+      // Draw cropped region (in natural pixels) scaled to the output size
       ctx.drawImage(
         image,
-        completedCrop.x,
-        completedCrop.y,
-        completedCrop.width,
-        completedCrop.height,
+        srcX,
+        srcY,
+        srcW,
+        srcH,
         0,
         0,
-        completedCrop.width,
-        completedCrop.height
+        OUTPUT_WIDTH,
+        OUTPUT_HEIGHT
       );
 
       // Convert to blob and create URL
@@ -106,15 +147,15 @@ export function CropModal({
           const croppedUrl = URL.createObjectURL(blob);
           onCropComplete(canvasId, croppedUrl);
           toast.success('Image cropped successfully');
-          onClose();
           setProcessing(false);
+          onClose();
         },
         'image/jpeg',
         0.95
       );
     } catch (error) {
       console.error('Crop error:', error);
-      toast.error('Failed to crop image');
+      toast.error(error instanceof Error ? error.message : 'Failed to crop image');
       setProcessing(false);
     }
   };
@@ -163,22 +204,49 @@ export function CropModal({
 
               {/* Crop Area */}
               <div className='flex-1 overflow-auto p-8 bg-gray-50 flex items-center justify-center'>
-                <ReactCrop
-                  crop={crop}
-                  onChange={c => setCrop(c)}
-                  onComplete={c => setCompletedCrop(c)}
-                  aspect={aspectRatio}
-                  className='max-w-full max-h-full'
-                >
-                  <img
-                    ref={imgRef}
-                    src={imageUrl}
-                    alt='Crop preview'
-                    onLoad={onImageLoad}
-                    crossOrigin='anonymous'
-                    className='max-w-full max-h-[60vh]'
-                  />
-                </ReactCrop>
+                {imageError ? (
+                  <div className='text-center'>
+                    <p className='text-red-600 mb-2'>Failed to load image</p>
+                    <p className='text-sm text-gray-600'>Please try uploading the image again</p>
+                  </div>
+                ) : (
+                  <div className='relative w-full h-full flex items-center justify-center'>
+                    {/* Loading Overlay */}
+                    {!imageLoaded && (
+                      <div className='absolute inset-0 flex items-center justify-center bg-gray-50 z-10'>
+                        <div className='flex items-center gap-2 text-gray-600'>
+                          <Loader2 className='w-5 h-5 animate-spin' />
+                          <span>Loading image...</span>
+                        </div>
+                      </div>
+                    )}
+                    
+                    {/* Image Crop - Always render so onLoad can fire */}
+                    <ReactCrop
+                      crop={crop}
+                      onChange={c => setCrop(c)}
+                      onComplete={c => setCompletedCrop(c)}
+                      aspect={aspectRatio}
+                      minWidth={50}
+                      minHeight={50}
+                      keepSelection={true}
+                      className='max-w-full max-h-full'
+                    >
+                      <img
+                        ref={imgRef}
+                        src={imageUrl}
+                        alt='Crop preview'
+                        onLoad={onImageLoad}
+                        onError={() => {
+                          setImageError(true);
+                          setImageLoaded(false);
+                          toast.error('Failed to load image for cropping');
+                        }}
+                        className='max-w-full max-h-[60vh]'
+                      />
+                    </ReactCrop>
+                  </div>
+                )}
               </div>
 
               {/* Footer */}
@@ -193,7 +261,7 @@ export function CropModal({
                 </Button>
                 <Button
                   onClick={handleApplyCrop}
-                  disabled={processing || !completedCrop}
+                  disabled={processing || !completedCrop || !imageLoaded || imageError}
                   className='bg-[#f63a9e] hover:bg-[#e02d8d] text-white h-12 px-8 rounded-xl disabled:opacity-50'
                   style={{ fontWeight: '700' }}
                 >

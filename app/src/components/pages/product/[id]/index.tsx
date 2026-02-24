@@ -36,60 +36,33 @@ import { Helmet } from '@dr.pogodin/react-helmet';
 const mockReviews = [
   {
     id: 1,
-    name: 'Sarah Mitchell',
+    name: 'Charlotte Henderson',
     rating: 5,
     date: '2 weeks ago',
-    text: 'Absolutely stunning quality! The colors are so vibrant and the canvas feels premium. My living room looks amazing now.',
+    text: 'I was honestly blown away by the print quality. The colors are incredibly sharp and the canvas feels thick and premium. I ordered the 3 Canvas Collage Set for our hallway and it completely transformed the space. Worth every penny.',
     image:
-      'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100&h=100&fit=crop',
+      'https://ui-avatars.com/api/?name=Charlotte+Henderson&background=f63a9e&color=fff&size=100&bold=true',
     verified: true,
   },
   {
     id: 2,
-    name: 'James Wilson',
+    name: 'Oliver Chambers',
     rating: 5,
-    date: '1 month ago',
-    text: 'Perfect gift for my parents anniversary. They loved it! Delivery was super fast too.',
+    date: '3 weeks ago',
+    text: 'I\'ve tried other canvas print companies before, but Photify\'s quality stands out. The frames are sturdy, the wrapping is clean, and the photos look exactly like the previews. Delivery arrived within 4 days. Highly recommend!',
     image:
-      'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&h=100&fit=crop',
+      'https://ui-avatars.com/api/?name=Oliver+Chambers&background=6366f1&color=fff&size=100&bold=true',
     verified: true,
   },
   {
     id: 3,
-    name: 'Emma Thompson',
+    name: 'Amelia Whitmore',
     rating: 5,
-    date: '3 weeks ago',
-    text: 'Third canvas I have ordered and each one has been flawless. The gallery wrap edges are beautifully done.',
+    date: '1 month ago',
+    text: 'Ordered this as a housewarming gift and it was a huge hit. The collage layout made the photos look like a professional gallery wall. Packaging was secure and everything arrived in perfect condition.',
     image:
-      'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=100&h=100&fit=crop',
+      'https://ui-avatars.com/api/?name=Amelia+Whitmore&background=ec4899&color=fff&size=100&bold=true',
     verified: true,
-  },
-];
-
-const roomBackgrounds = [
-  {
-    id: 'living',
-    name: 'Living Room',
-    image:
-      'https://images.unsplash.com/photo-1586023492125-27b2c045efd7?w=1200&h=800&fit=crop',
-  },
-  {
-    id: 'bedroom',
-    name: 'Bedroom',
-    image:
-      'https://images.unsplash.com/photo-1616594039964-ae9021a400a0?w=1200&h=800&fit=crop',
-  },
-  {
-    id: 'office',
-    name: 'Office',
-    image:
-      'https://images.unsplash.com/photo-1497366216548-37526070297c?w=1200&h=800&fit=crop',
-  },
-  {
-    id: 'dining',
-    name: 'Dining',
-    image:
-      'https://images.unsplash.com/photo-1617806118233-18e1de247200?w=1200&h=800&fit=crop',
   },
 ];
 
@@ -107,7 +80,6 @@ export function ProductDetailPage({
   const [mainImage, setMainImage] = useState(0);
   const [isWishlisted, setIsWishlisted] = useState(false);
   const [showStickyBar, setShowStickyBar] = useState(false);
-  const [selectedRoom, setSelectedRoom] = useState('living');
   const [relatedProducts, setRelatedProducts] = useState<any[]>([]);
   const [viewersCount] = useState(() => Math.floor(Math.random() * 20) + 15);
   const heroRef = useRef<HTMLDivElement>(null);
@@ -679,8 +651,8 @@ export function ProductDetailPage({
           </div>
         </div>
 
-        {/* Room Visualization Section */}
-        <div className='py-8 sm:py-12 lg:py-16 bg-gradient-to-br from-gray-50 to-white'>
+        {/* Room Visualization Section - TEMPORARILY COMMENTED OUT */}
+        {/* <div className='py-8 sm:py-12 lg:py-16 bg-gradient-to-br from-gray-50 to-white'>
           <div className='max-w-[1400px] mx-auto px-4 sm:px-6'>
             <motion.div
               initial={{ opacity: 0, y: 20 }}
@@ -699,7 +671,6 @@ export function ProductDetailPage({
               </p>
             </motion.div>
 
-            {/* Room Preview */}
             <motion.div
               initial={{ opacity: 0, scale: 0.98 }}
               whileInView={{ opacity: 1, scale: 1 }}
@@ -715,7 +686,6 @@ export function ProductDetailPage({
                   alt='Room preview'
                   className='w-full h-full object-cover'
                 />
-                {/* Canvas Overlay */}
                 <div className='absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[25%] aspect-square shadow-2xl'>
                   <ImageWithFallback
                     src={product.images[0]}
@@ -726,7 +696,6 @@ export function ProductDetailPage({
               </div>
             </motion.div>
 
-            {/* Room Selector */}
             <div className='flex justify-center gap-2 sm:gap-3 flex-wrap'>
               {roomBackgrounds.map(room => (
                 <motion.button
@@ -745,7 +714,7 @@ export function ProductDetailPage({
               ))}
             </div>
           </div>
-        </div>
+        </div> */}
 
         {/* Accordion Specs Section */}
         <div className='py-8 sm:py-12 lg:py-16 bg-white'>
@@ -999,16 +968,16 @@ export function ProductDetailPage({
 
         {/* Related Products Section */}
         {relatedProducts.length > 0 && (
-          <div className='py-8 sm:py-12 lg:py-16 bg-white'>
-            <div className='max-w-[1400px] mx-auto px-4 sm:px-6'>
+          <div className='py-6 xs:py-7 sm:py-10 md:py-12 lg:py-16 bg-white'>
+            <div className='max-w-[1400px] mx-auto px-3 xs:px-4 sm:px-6'>
               <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
-                className='flex flex-col sm:flex-row items-start sm:items-center justify-between mb-6 sm:mb-8 gap-3 sm:gap-0'
+                className='flex flex-col sm:flex-row items-start sm:items-center justify-between mb-4 xs:mb-5 sm:mb-6 md:mb-8 gap-2 xs:gap-3 sm:gap-0'
               >
                 <h2
-                  className="font-['Bricolage_Grotesque',_sans-serif] text-gray-900 text-2xl sm:text-3xl"
+                  className="font-['Bricolage_Grotesque',_sans-serif] text-gray-900 text-lg xs:text-xl sm:text-2xl md:text-3xl"
                   style={{ fontWeight: '700' }}
                 >
                   You Might Also Like
@@ -1016,13 +985,13 @@ export function ProductDetailPage({
                 <Button
                   variant='outline'
                   onClick={() => navigate('/products')}
-                  className='border-2 border-gray-200 hover:border-[#f63a9e] hover:text-[#f63a9e] rounded-full px-4 sm:px-6 text-sm sm:text-base'
+                  className='border-2 border-gray-200 hover:border-[#f63a9e] hover:text-[#f63a9e] rounded-full px-3 xs:px-4 sm:px-6 text-xs xs:text-sm sm:text-base h-8 xs:h-9 sm:h-10'
                 >
                   View All Products
                 </Button>
               </motion.div>
 
-              <div className='grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-6'>
+              <div className='grid grid-cols-2 md:grid-cols-4 gap-2 xs:gap-2.5 sm:gap-4 md:gap-6'>
                 {relatedProducts.map((relProduct, index) => (
                   <motion.div
                     key={relProduct.id}
@@ -1036,10 +1005,10 @@ export function ProductDetailPage({
                     }
                     className='group cursor-pointer'
                   >
-                    <div className='relative bg-white rounded-2xl overflow-hidden shadow-sm hover:shadow-xl transition-all border border-gray-100'>
+                    <div className='relative bg-white rounded-lg xs:rounded-xl sm:rounded-2xl overflow-hidden shadow-sm hover:shadow-xl transition-all border border-gray-100'>
                       {relProduct.is_featured && (
-                        <div className='absolute top-3 left-3 z-10'>
-                          <div className='px-2 py-1 bg-gradient-to-r from-[#f63a9e] to-[#e02d8d] text-white rounded-full text-xs font-bold'>
+                        <div className='absolute top-1.5 left-1.5 xs:top-2 xs:left-2 sm:top-3 sm:left-3 z-10'>
+                          <div className='px-1.5 py-0.5 xs:px-2 xs:py-1 bg-gradient-to-r from-[#f63a9e] to-[#e02d8d] text-white rounded-full text-[8px] xs:text-[9px] sm:text-xs font-bold'>
                             ⭐ BESTSELLER
                           </div>
                         </div>
@@ -1055,25 +1024,25 @@ export function ProductDetailPage({
                         />
                       </div>
 
-                      <div className={`flex items-center justify-between p-4`}>
+                      <div className={`flex items-center justify-between p-2 xs:p-2.5 sm:p-3 md:p-4`}>
                         <div className='flex flex-col'>
-                          <span className='text-gray-500 text-xs font-semibold uppercase tracking-wider mb-1'>
+                          <span className='text-gray-500 text-[8px] xs:text-[9px] sm:text-[10px] md:text-xs font-semibold uppercase tracking-wider mb-0.5 xs:mb-1'>
                             Starting At
                           </span>
 
                           <div className='flex items-start'>
                             <div className='flex items-start text-[#f63a9e]'>
-                              <span className='font-bold text-lg mt-2 mr-0.5'>
+                              <span className='font-bold text-xs xs:text-sm sm:text-base md:text-lg mt-1 xs:mt-1.5 sm:mt-2 mr-0.5'>
                                 £
                               </span>
 
-                              <span className='font-extrabold text-4xl tracking-tighter leading-none font-bricolage'>
+                              <span className='font-extrabold text-xl xs:text-2xl sm:text-3xl md:text-4xl tracking-tighter leading-none font-bricolage'>
                                 {typeof relProduct.price === 'number'
                                   ? Math.floor(relProduct.price)
                                   : relProduct.price}
                               </span>
 
-                              <span className='font-bold text-xl mt-2'>
+                              <span className='font-bold text-sm xs:text-base sm:text-lg md:text-xl mt-1 xs:mt-1.5 sm:mt-2'>
                                 .
                                 {typeof relProduct.price === 'number'
                                   ? relProduct.price.toFixed(2).split('.')[1]
@@ -1081,20 +1050,20 @@ export function ProductDetailPage({
                               </span>
                             </div>
 
-                            <div className='ml-3 flex flex-col justify-center border-l border-gray-200 pl-3'>
-                              <span className='text-gray-400 text-[10px] font-bold uppercase tracking-widest leading-none'>
+                            <div className='ml-1.5 xs:ml-2 sm:ml-2.5 md:ml-3 flex flex-col justify-center border-l border-gray-200 pl-1.5 xs:pl-2 sm:pl-2.5 md:pl-3'>
+                              <span className='text-gray-400 text-[7px] xs:text-[8px] sm:text-[9px] md:text-[10px] font-bold uppercase tracking-widest leading-none'>
                                 Per
                               </span>
 
-                              <span className='text-gray-600 text-sm font-bold leading-tight whitespace-nowrap'>
+                              <span className='text-gray-600 text-[10px] xs:text-xs sm:text-sm font-bold leading-tight whitespace-nowrap'>
                                 sq in
                               </span>
                             </div>
                           </div>
                         </div>
 
-                        <div className='w-10 h-10 bg-[#f63a9e] text-white rounded-full flex items-center justify-center hover:bg-[#e02d8d] transition-colors shadow-md'>
-                          <span className='text-lg font-bold'>→</span>
+                        <div className='w-7 h-7 xs:w-8 xs:h-8 sm:w-9 sm:h-9 md:w-10 md:h-10 bg-[#f63a9e] text-white rounded-full flex items-center justify-center hover:bg-[#e02d8d] transition-colors shadow-md flex-shrink-0'>
+                          <span className='text-sm xs:text-base sm:text-lg font-bold'>→</span>
                         </div>
                       </div>
                     </div>

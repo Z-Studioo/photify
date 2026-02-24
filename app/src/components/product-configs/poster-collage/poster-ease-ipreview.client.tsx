@@ -1,6 +1,6 @@
 import { useRef, useMemo, useState, useEffect } from 'react';
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
-import { OrbitControls } from '@react-three/drei';
+import { OrbitControls, Text } from '@react-three/drei';
 import * as THREE from 'three';
 import { RoundedBoxGeometry } from 'three/examples/jsm/geometries/RoundedBoxGeometry.js';
 
@@ -58,8 +58,16 @@ function PosterCanvasMesh({
   // Position: On easel, resting on the ledge
   // Ledge is at Y=1.15, support pegs at Z=-0.08
   // Calculate poster center position dynamically based on height
-  const LEDGE_HEIGHT = 1.15;
+  const BASE_LEDGE_HEIGHT = 1.15;
   const TILT_OFFSET = 0.05; // Small offset to account for backward tilt
+  
+  // For larger posters, raise the ledge height to keep poster higher up
+  // This keeps the stand base visible in frame
+  const REFERENCE_HEIGHT_FOR_LIFT = 24; // inches
+  const heightRatio = height / REFERENCE_HEIGHT_FOR_LIFT;
+  const ledgeHeightAdjustment = heightRatio > 1 ? (heightRatio - 1) * 0.8 : 0; // Raise ledge for posters taller than 24"
+  const LEDGE_HEIGHT = BASE_LEDGE_HEIGHT + ledgeHeightAdjustment;
+  
   const posterCenterY = LEDGE_HEIGHT + canvasHeight / 2 + TILT_OFFSET;
   const posterPosition: [number, number, number] = [0, posterCenterY, -0.1]; // Resting on ledge, aligned with support
   const posterRotation: [number, number, number] = [-0.15, 0, 0]; // Tilt BACKWARD (negative = lean back)
@@ -251,10 +259,14 @@ function StudioRoomEnvironment({ wallColor }: { wallColor: string }) {
 
 // Camera Animation
 function CameraAnimator({
-  posterCenterY,
+  orbitTargetY,
+  startPosition,
+  endPosition,
   onComplete,
 }: {
-  posterCenterY: number;
+  orbitTargetY: number;
+  startPosition: [number, number, number];
+  endPosition: [number, number, number];
   onComplete?: () => void;
 }) {
   const { camera } = useThree();
@@ -263,9 +275,7 @@ function CameraAnimator({
   const hasStarted = useRef(false);
 
   const duration = 4; // seconds
-  const startPosition: [number, number, number] = [-2.5, 2, 3.5];
-  const endPosition: [number, number, number] = [0.8, 1.8, 3];
-  const lookAtTarget: [number, number, number] = [0, posterCenterY, -0.1]; // Look at poster center (dynamic)
+  const lookAtTarget: [number, number, number] = [0, orbitTargetY, -0.1]; // Look at orbit target (dynamic)
 
   useEffect(() => {
     camera.position.set(...startPosition);
@@ -349,6 +359,17 @@ function RulerOverlay({
           <boxGeometry args={[0.01, 0.1, 0.01]} />
           <meshBasicMaterial color='#f63a9e' />
         </mesh>
+        {/* Width measurement text */}
+        <Text
+          position={[0, -0.15, 0]}
+          fontSize={0.12}
+          color='#f63a9e'
+          anchorX='center'
+          anchorY='top'
+          fontWeight='bold'
+        >
+          {posterWidth}″
+        </Text>
       </group>
 
       {/* Vertical ruler (height) */}
@@ -372,6 +393,18 @@ function RulerOverlay({
           <boxGeometry args={[0.1, 0.01, 0.01]} />
           <meshBasicMaterial color='#f63a9e' />
         </mesh>
+        {/* Height measurement text */}
+        <Text
+          position={[0.15, 0, 0]}
+          fontSize={0.12}
+          color='#f63a9e'
+          anchorX='left'
+          anchorY='middle'
+          fontWeight='bold'
+          rotation={[0, 0, 0]}
+        >
+          {posterHeight}″
+        </Text>
       </group>
     </group>
   );
@@ -388,18 +421,68 @@ export default function PosterEaselPreview({
 
   // Calculate dynamic poster center Y position (same as in PosterCanvasMesh)
   const INCHES_TO_UNITS = 0.1;
-  const LEDGE_HEIGHT = 1.15;
+  const BASE_LEDGE_HEIGHT = 1.15;
   const TILT_OFFSET = 0.05;
+  
+  // For larger posters, raise the ledge height to keep poster higher up
+  const REFERENCE_HEIGHT_FOR_LIFT = 24; // inches
+  const heightRatio = height / REFERENCE_HEIGHT_FOR_LIFT;
+  const ledgeHeightAdjustment = heightRatio > 1 ? (heightRatio - 1) * 0.8 : 0;
+  const LEDGE_HEIGHT = BASE_LEDGE_HEIGHT + ledgeHeightAdjustment;
+  
   const canvasHeight = height * INCHES_TO_UNITS;
   const posterCenterY = LEDGE_HEIGHT + canvasHeight / 2 + TILT_OFFSET;
+
+  // ===== REFERENCE SIZE: 18x24 (works perfectly) =====
+  const REFERENCE_WIDTH = 18;
+  const REFERENCE_HEIGHT = 24;
+  const REFERENCE_MAX = Math.max(REFERENCE_WIDTH, REFERENCE_HEIGHT); // 24
+  
+  // Calculate scale ratio compared to reference size
+  const maxDimension = Math.max(width, height);
+  const scaleRatio = maxDimension / REFERENCE_MAX;
+  
+  // ===== CAMERA POSITIONS (from 18x24 perfect setup) =====
+  // These are the perfect values for 18x24
+  const REF_START_POS: [number, number, number] = [-2.5, 2, 3.5];
+  const REF_END_POS: [number, number, number] = [0.8, 1.8, 3];
+  
+  // Scale camera positions proportionally
+  const startCameraPosition: [number, number, number] = [
+    REF_START_POS[0] * scaleRatio * 1.2, // Further to the side
+    REF_START_POS[1] + (scaleRatio - 1) * 3.5, // MUCH higher camera for larger posters
+    REF_START_POS[2] * scaleRatio * 1.8, // VERY far back
+  ];
+  const endCameraPosition: [number, number, number] = [
+    REF_END_POS[0],
+    REF_END_POS[1] + (scaleRatio - 1) * 2.5, // MUCH higher end position
+    REF_END_POS[2] * scaleRatio * 2.0, // EXTREMELY far back for end position
+  ];
+
+  // ===== FOV (from 18x24 perfect setup) =====
+  const REF_FOV = 50;
+  const dynamicFOV = Math.min(85, REF_FOV + (scaleRatio - 1) * 20); // VERY wide FOV for larger posters
+
+  // ===== ORBIT CONTROLS (from 18x24 perfect setup) =====
+  const REF_MIN_DISTANCE = 2.5;
+  const REF_MAX_DISTANCE = 6;
+  const dynamicMinDistance = REF_MIN_DISTANCE * scaleRatio * 0.7;
+  const dynamicMaxDistance = REF_MAX_DISTANCE * scaleRatio * 2.5; // Allow zooming out MUCH more
+
+  // ===== ORBIT TARGET (from 18x24 perfect setup) =====
+  // Now that we're lifting the poster for larger sizes, we can target closer to center
+  // but still keep it conservative to ensure stand visibility
+  const orbitTargetY = scaleRatio <= 1.0
+    ? posterCenterY // Smaller than or equal to reference
+    : posterCenterY * 0.75; // For larger posters, focus on lower 3/4 of poster (since poster is now lifted higher)
 
   return (
     <div className='w-full h-full'>
       <Canvas
         shadows
         camera={{
-          position: [-2.5, 2, 3.5],
-          fov: 50,
+          position: startCameraPosition,
+          fov: dynamicFOV,
         }}
         gl={{
           antialias: true,
@@ -466,7 +549,9 @@ export default function PosterEaselPreview({
         {/* Camera Animation */}
         {!animationComplete && (
           <CameraAnimator
-            posterCenterY={posterCenterY}
+            orbitTargetY={orbitTargetY}
+            startPosition={startCameraPosition}
+            endPosition={endCameraPosition}
             onComplete={() => setAnimationComplete(true)}
           />
         )}
@@ -474,9 +559,9 @@ export default function PosterEaselPreview({
         {/* Orbit Controls */}
         <OrbitControls
           enabled={animationComplete}
-          target={[0, posterCenterY, -0.1]}
-          minDistance={2.5}
-          maxDistance={6}
+          target={[0, orbitTargetY, -0.1]}
+          minDistance={dynamicMinDistance}
+          maxDistance={dynamicMaxDistance}
           minPolarAngle={Math.PI / 6}
           maxPolarAngle={Math.PI / 2.1}
           enablePan={true}

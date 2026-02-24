@@ -233,7 +233,7 @@ export function PosterCollageCustomizer() {
   }
 
   return (
-    <div className='min-h-screen bg-white'>
+    <div className='min-h-screen bg-gradient-to-br from-gray-50 via-pink-50/30 to-purple-50/30'>
       <input
         ref={fileInputRef}
         type='file'
@@ -245,24 +245,45 @@ export function PosterCollageCustomizer() {
         }}
       />
 
-      {/* Back Button */}
-      <div className='absolute top-4 left-4 md:top-6 md:left-6 z-20'>
-        <Button
-          variant='outline'
-          size='sm'
-          className='bg-white/90 backdrop-blur-md hover:bg-white h-9 md:h-10 px-3 md:px-4'
-          onClick={() => navigate(-1)}
-        >
-          <ArrowLeft className='w-3.5 h-3.5 md:w-4 md:h-4 md:mr-2' />
-          <span className='hidden md:inline'>Back</span>
-        </Button>
+      {/* Header Section */}
+      <div className='bg-white border-b border-gray-200 sticky top-0 z-30 shadow-sm'>
+        <div className='max-w-7xl mx-auto px-3 sm:px-4 md:px-6 lg:px-8 py-3 md:py-4'>
+          <div className='flex items-center justify-between gap-2'>
+            {/* Back Button */}
+            <Button
+              variant='outline'
+              size='sm'
+              className='flex-shrink-0 bg-white hover:bg-gray-50 h-8 sm:h-9 md:h-10 px-2 sm:px-3 md:px-4 border-2 border-gray-200 rounded-lg'
+              onClick={() => navigate(-1)}
+            >
+              <ArrowLeft className='w-4 h-4 md:w-4 md:h-4' />
+              <span className='hidden sm:inline ml-1 md:ml-2 text-sm'>Back</span>
+            </Button>
+
+            {/* Title */}
+            <div className='flex-1 text-center px-2 sm:px-4'>
+              <h1
+                className="font-['Bricolage_Grotesque',_sans-serif] text-gray-900 text-base sm:text-lg md:text-2xl lg:text-3xl"
+                style={{ fontWeight: '700', lineHeight: '1.2' }}
+              >
+                {POSTER_COLLAGE_PRODUCT.name}
+              </h1>
+              <p className='text-[10px] sm:text-xs md:text-sm text-gray-600 mt-0.5 md:mt-1 hidden xs:block'>
+                Create custom poster
+              </p>
+            </div>
+
+            {/* Spacer for alignment */}
+            <div className='w-8 sm:w-[68px] md:w-[84px] flex-shrink-0' />
+          </div>
+        </div>
       </div>
 
       {/* Main Content - Split Layout */}
-      <div className='w-full min-h-screen md:h-screen flex'>
-        <div className='flex flex-col lg:flex-row w-full h-full'>
+      <div className='w-full flex flex-col lg:flex-row'>
+        <div className='w-full flex flex-col lg:flex-row lg:h-[calc(100vh-73px)]'>
           {/* LEFT SIDE - 3D Canvas Preview */}
-          <div className='flex-[2] relative h-[50vh] md:h-full lg:h-full'>
+          <div className='flex-1 lg:flex-[2] relative h-[40vh] xs:h-[42vh] sm:h-[45vh] md:h-[50vh] lg:h-full bg-gradient-to-br from-gray-50 to-gray-100 order-1 lg:order-1'>
             <Suspense
               fallback={
                 <div className='w-full h-full bg-gray-100 flex items-center justify-center'>
@@ -275,7 +296,7 @@ export function PosterCollageCustomizer() {
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.5 }}
-                  className='w-full h-full'
+                  className='w-full h-[350px] sm:h-[400px] md:h-[450px] lg:h-full bg-gradient-to-br from-gray-50 to-gray-100 flex items-center justify-center p-3 sm:p-4'
                 >
                   <PosterEaselPreview
                     imageUrl={state.imageUrl}
@@ -289,31 +310,31 @@ export function PosterCollageCustomizer() {
                 <motion.div
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
-                  className='w-full h-full bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center p-4'
+                  className='w-full h-full bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center p-3 sm:p-4'
                 >
-                  <div className='text-center max-w-md px-4'>
-                    <div className='w-32 h-32 bg-white rounded-2xl shadow-xl flex items-center justify-center mb-6 border-2 border-dashed border-gray-300 mx-auto'>
-                      <Eye className='w-16 h-16 text-gray-300' />
+                  <div className='text-center max-w-md px-3 sm:px-4'>
+                    <div className='w-20 h-20 xs:w-24 xs:h-24 sm:w-28 sm:h-28 md:w-32 md:h-32 bg-white rounded-xl sm:rounded-2xl shadow-xl flex items-center justify-center mb-3 sm:mb-4 md:mb-6 border-2 border-dashed border-gray-300 mx-auto'>
+                      <Eye className='w-10 h-10 xs:w-12 xs:h-12 sm:w-14 sm:h-14 md:w-16 md:h-16 text-gray-300' />
                     </div>
-                    <h3 className='text-2xl font-bold text-gray-900 mb-2'>
+                    <h3 className='text-base xs:text-lg sm:text-xl md:text-2xl font-bold text-gray-900 mb-1.5 sm:mb-2'>
                       Upload Your Poster
                     </h3>
-                    <p className='text-gray-600 mb-6'>
-                      Upload your design to see it in 3D preview
+                    <p className='text-xs xs:text-sm sm:text-base text-gray-600 mb-3 sm:mb-4 md:mb-6'>
+                      See your design in 3D preview
                     </p>
                     <Button
                       onClick={() => fileInputRef.current?.click()}
                       disabled={state.isUploading}
-                      className='bg-[#f63a9e] hover:bg-[#e02d8d] text-white h-12 px-8 rounded-xl text-base font-semibold'
+                      className='bg-[#f63a9e] hover:bg-[#e02d8d] text-white h-9 xs:h-10 sm:h-11 md:h-12 px-4 xs:px-5 sm:px-6 md:px-8 rounded-lg sm:rounded-xl text-xs xs:text-sm sm:text-base font-semibold shadow-lg transition-all active:scale-[0.98]'
                     >
                       {state.isUploading ? (
                         <>
-                          <Loader2 className='w-5 h-5 mr-2 animate-spin' />
+                          <Loader2 className='w-3.5 h-3.5 xs:w-4 xs:h-4 sm:w-5 sm:h-5 mr-1.5 sm:mr-2 animate-spin' />
                           Uploading...
                         </>
                       ) : (
                         <>
-                          <Upload className='w-5 h-5 mr-2' />
+                          <Upload className='w-3.5 h-3.5 xs:w-4 xs:h-4 sm:w-5 sm:h-5 mr-1.5 sm:mr-2' />
                           Choose Poster
                         </>
                       )}
@@ -328,20 +349,20 @@ export function PosterCollageCustomizer() {
               <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
-                className='absolute bottom-4 md:bottom-8 left-1/2 transform -translate-x-1/2 z-10'
+                className='absolute bottom-2 xs:bottom-3 sm:bottom-4 md:bottom-6 lg:bottom-8 left-1/2 transform -translate-x-1/2 z-10'
               >
-                <div className='bg-white/95 backdrop-blur-md rounded-xl md:rounded-2xl shadow-2xl px-4 py-3 md:px-6 md:py-4 flex items-center gap-2 border border-gray-200'>
+                <div className='bg-white/95 backdrop-blur-md rounded-lg sm:rounded-xl md:rounded-2xl shadow-lg sm:shadow-xl md:shadow-2xl px-2.5 py-1.5 xs:px-3 xs:py-2 sm:px-4 sm:py-2.5 md:px-6 md:py-3 lg:py-4 flex items-center gap-2 border border-gray-200'>
                   <button
-                    className={`flex flex-col items-center gap-1 md:gap-1.5 px-3 py-1.5 md:px-4 md:py-2 hover:bg-gray-50 rounded-lg md:rounded-xl transition-colors group ${
+                    className={`flex flex-col items-center gap-0.5 xs:gap-1 md:gap-1.5 px-1.5 py-1 xs:px-2 xs:py-1 sm:px-3 sm:py-1.5 md:px-4 md:py-2 hover:bg-gray-50 rounded-md sm:rounded-lg md:rounded-xl transition-colors group ${
                       showRuler ? 'bg-[#f63a9e]/10' : ''
                     }`}
                     onClick={() => setShowRuler(!showRuler)}
                   >
                     <Ruler
-                      className={`w-5 h-5 md:w-6 md:h-6 ${showRuler ? 'text-[#f63a9e]' : 'text-gray-700 group-hover:text-[#f63a9e]'}`}
+                      className={`w-3.5 h-3.5 xs:w-4 xs:h-4 sm:w-5 sm:h-5 md:w-6 md:h-6 ${showRuler ? 'text-[#f63a9e]' : 'text-gray-700 group-hover:text-[#f63a9e]'}`}
                     />
                     <span
-                      className={`text-[10px] md:text-xs font-medium ${showRuler ? 'text-[#f63a9e]' : 'text-gray-600'}`}
+                      className={`text-[8px] xs:text-[9px] sm:text-[10px] md:text-xs font-medium ${showRuler ? 'text-[#f63a9e]' : 'text-gray-600'}`}
                     >
                       Ruler
                     </span>
@@ -352,90 +373,89 @@ export function PosterCollageCustomizer() {
           </div>
 
           {/* RIGHT SIDE - Configuration Panel */}
-          <div className='w-full lg:w-[420px] h-auto lg:h-full overflow-y-auto bg-white py-6 px-4 md:py-8 md:px-8 space-y-6 md:space-y-8'>
-            {/* Title */}
-            <div>
-              <h2
-                className="font-['Bricolage_Grotesque',_sans-serif] text-gray-900 mb-2 text-xl md:text-2xl"
-                style={{ fontWeight: '600' }}
-              >
-                {POSTER_COLLAGE_PRODUCT.name}
-              </h2>
-              <p className='text-gray-600 text-sm'>
-                Upload your custom poster design for weddings, birthdays, and
-                special events
-              </p>
-              <div className='flex items-baseline gap-2 mt-4'>
-                <span className='text-[#f63a9e] text-2xl md:text-3xl font-bold'>
-                  £{state.imageUrl ? calculatePrice() : '21.60'}
-                </span>
-                <span className='text-sm text-gray-600'>
-                  ({state.posterWidth}&quot; × {state.posterHeight}&quot;)
-                </span>
-              </div>
+          <div className='w-full lg:w-[400px] xl:w-[450px] 2xl:w-[480px] h-auto lg:h-full overflow-y-auto bg-white border-t lg:border-t-0 lg:border-l border-gray-200 shadow-lg lg:shadow-xl order-2 lg:order-2'>
+            <div className='py-3 px-3 sm:py-4 sm:px-4 md:py-6 md:px-6 lg:py-8 lg:px-8 space-y-3 sm:space-y-4 md:space-y-6'>
+              {/* Title */}
+              <div>
+                <h2
+                  className="font-['Bricolage_Grotesque',_sans-serif] text-gray-900 mb-1.5 sm:mb-2 text-base sm:text-lg md:text-xl lg:text-2xl"
+                  style={{ fontWeight: '600' }}
+                >
+                  Configure Poster
+                </h2>
+                <p className='text-gray-600 text-[11px] xs:text-xs sm:text-sm leading-snug'>
+                  Upload your custom design for special events
+                </p>
+                <div className='flex items-baseline gap-1.5 sm:gap-2 mt-2 sm:mt-3'>
+                  <span className='text-[#f63a9e] text-lg xs:text-xl sm:text-2xl md:text-3xl font-bold'>
+                    £{state.imageUrl ? calculatePrice() : '21.60'}
+                  </span>
+                  <span className='text-[10px] xs:text-xs sm:text-sm text-gray-600'>
+                    ({state.posterWidth}&quot; × {state.posterHeight}&quot;)
+                  </span>
+                </div>
 
-              {/* Add to Cart Button */}
-              <Button
-                className='w-full mt-4 md:mt-6 h-[48px] md:h-[56px] bg-teal-600 hover:bg-teal-700 text-white rounded-xl text-base md:text-lg font-semibold'
-                onClick={handleAddToCart}
-                disabled={!state.imageUrl}
-              >
-                <ShoppingCart className='w-4 h-4 md:w-5 md:h-5 mr-2' />
-                Add to basket
-              </Button>
-            </div>
+                {/* Add to Cart Button */}
+                <Button
+                  className='w-full mt-2.5 sm:mt-3 md:mt-4 h-[42px] xs:h-[44px] sm:h-[48px] md:h-[52px] lg:h-[56px] bg-teal-600 hover:bg-teal-700 text-white rounded-lg sm:rounded-xl text-xs xs:text-sm sm:text-base md:text-lg font-semibold shadow-lg transition-all active:scale-[0.98]'
+                  onClick={handleAddToCart}
+                  disabled={!state.imageUrl}
+                >
+                  <ShoppingCart className='w-3.5 h-3.5 xs:w-4 xs:h-4 sm:w-4 sm:h-4 md:w-5 md:h-5 mr-1.5 sm:mr-2' />
+                  Add to basket
+                </Button>
+              </div>
 
             {/* Upload Section */}
             {!state.imageUrl && (
               <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
-                className='border-t border-gray-200 pt-6'
+                className='border-t border-gray-200 pt-3 sm:pt-4 md:pt-6'
               >
-                <h3 className='font-semibold text-gray-900 mb-4 text-base md:text-lg'>
-                  Upload Your Design
+                <h3 className='font-semibold text-gray-900 mb-2.5 sm:mb-3 md:mb-4 text-xs xs:text-sm sm:text-base md:text-lg'>
+                  Upload Design
                 </h3>
 
                 <div
                   onDragOver={handleDragOver}
                   onDragLeave={handleDragLeave}
                   onDrop={handleDrop}
-                  className={`relative border-2 border-dashed rounded-xl p-8 text-center transition-all cursor-pointer ${
+                  className={`relative border-2 border-dashed rounded-lg sm:rounded-xl p-4 xs:p-5 sm:p-6 md:p-8 text-center transition-all cursor-pointer ${
                     isDragging
                       ? 'border-[#f63a9e] bg-pink-50'
                       : 'border-gray-300 bg-gray-50 hover:border-[#f63a9e] hover:bg-pink-50'
                   }`}
                   onClick={() => fileInputRef.current?.click()}
                 >
-                  <Upload className='w-12 h-12 text-[#f63a9e] mx-auto mb-3' />
-                  <p className='text-sm font-medium text-gray-900 mb-1'>
+                  <Upload className='w-8 h-8 xs:w-10 xs:h-10 sm:w-12 sm:h-12 text-[#f63a9e] mx-auto mb-2 sm:mb-3' />
+                  <p className='text-xs xs:text-xs sm:text-sm font-medium text-gray-900 mb-1'>
                     {isDragging
                       ? 'Drop your poster here'
                       : 'Click or drag to upload'}
                   </p>
-                  <p className='text-xs text-gray-500'>
+                  <p className='text-[10px] xs:text-[10px] sm:text-xs text-gray-500'>
                     JPG, PNG, PDF (Max 25MB)
                   </p>
                 </div>
 
                 {/* WhatsApp Design Service */}
-                <div className='mt-6 p-4 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl border-2 border-blue-200'>
-                  <div className='flex items-start gap-3'>
-                    <MessageCircle className='w-6 h-6 text-blue-600 flex-shrink-0 mt-0.5' />
+                <div className='mt-3 sm:mt-4 md:mt-6 p-2.5 xs:p-3 sm:p-4 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg sm:rounded-xl border-2 border-blue-200'>
+                  <div className='flex items-start gap-2 sm:gap-3'>
+                    <MessageCircle className='w-4 h-4 xs:w-5 xs:h-5 sm:w-6 sm:h-6 text-blue-600 flex-shrink-0 mt-0.5' />
                     <div className='flex-1'>
-                      <h4 className='font-semibold text-gray-900 mb-1 text-sm'>
+                      <h4 className='font-semibold text-gray-900 mb-0.5 sm:mb-1 text-[11px] xs:text-xs sm:text-sm'>
                         Need Design Help?
                       </h4>
-                      <p className='text-xs text-gray-600 mb-3'>
-                        Our design team can create a beautiful custom poster for
-                        your event
+                      <p className='text-[10px] xs:text-[10px] sm:text-xs text-gray-600 mb-1.5 sm:mb-2 md:mb-3 leading-snug'>
+                        Our team can create a custom poster
                       </p>
                       <Button
                         onClick={handleWhatsAppDesign}
                         size='sm'
-                        className='bg-[#25D366] hover:bg-[#20BA5A] text-white text-xs h-8'
+                        className='bg-[#25D366] hover:bg-[#20BA5A] text-white text-[10px] xs:text-[10px] sm:text-xs h-6 xs:h-7 sm:h-8 px-2 xs:px-2.5 sm:px-3 rounded-md'
                       >
-                        <MessageCircle className='w-3.5 h-3.5 mr-1.5' />
+                        <MessageCircle className='w-3 h-3 xs:w-3 xs:h-3 sm:w-3.5 sm:h-3.5 mr-1 sm:mr-1.5' />
                         WhatsApp Us
                       </Button>
                     </div>
@@ -449,10 +469,10 @@ export function PosterCollageCustomizer() {
               <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
-                className='border-t border-gray-200 pt-6'
+                className='border-t border-gray-200 pt-3 sm:pt-4 md:pt-6'
               >
-                <div className='flex items-center justify-between mb-4'>
-                  <h3 className='font-semibold text-gray-900 text-base md:text-lg'>
+                <div className='flex items-center justify-between mb-2.5 sm:mb-3 md:mb-4'>
+                  <h3 className='font-semibold text-gray-900 text-xs xs:text-sm sm:text-base md:text-lg'>
                     Poster Size
                   </h3>
                   <Button
@@ -465,16 +485,16 @@ export function PosterCollageCustomizer() {
                         imageFile: null,
                       }))
                     }
-                    className='text-xs'
+                    className='text-[10px] xs:text-[10px] sm:text-xs h-6 xs:h-7 sm:h-8 px-1.5 xs:px-2 sm:px-3 border rounded-md'
                   >
-                    Change Poster
+                    Change
                   </Button>
                 </div>
 
-                <Label className='text-xs md:text-sm font-medium text-gray-700 mb-3 block'>
+                <Label className='text-[10px] xs:text-xs sm:text-sm font-medium text-gray-700 mb-2 sm:mb-2.5 md:mb-3 block'>
                   Select Size
                 </Label>
-                <div className='space-y-2'>
+                <div className='space-y-1.5 sm:space-y-2'>
                   {POSTER_SIZES.map(size => {
                     const area = size.width * size.height;
                     const price = (area * productPrice).toFixed(2);
@@ -486,28 +506,28 @@ export function PosterCollageCustomizer() {
                       <button
                         key={size.label}
                         onClick={() => handleSizeSelect(size)}
-                        className={`w-full text-left p-3 md:p-4 rounded-xl border-2 transition-all ${
+                        className={`w-full text-left p-2 xs:p-2.5 sm:p-3 md:p-4 rounded-lg sm:rounded-xl border-2 transition-all ${
                           isSelected
-                            ? 'border-[#f63a9e] bg-pink-50'
+                            ? 'border-[#f63a9e] bg-pink-50 shadow-md'
                             : 'border-gray-200 hover:border-[#f63a9e] hover:bg-pink-50'
                         }`}
                       >
-                        <div className='flex items-center justify-between mb-1'>
-                          <div className='flex items-center gap-2'>
-                            <h4 className='font-bold text-gray-900 text-sm md:text-base'>
+                        <div className='flex items-center justify-between mb-0.5 sm:mb-1'>
+                          <div className='flex items-center gap-1.5 sm:gap-2'>
+                            <h4 className='font-bold text-gray-900 text-[11px] xs:text-xs sm:text-sm md:text-base'>
                               {size.label}
                             </h4>
                             {size.recommended && (
-                              <span className='px-2 py-0.5 bg-[#f63a9e] text-white text-[10px] rounded-full font-medium'>
+                              <span className='px-1 xs:px-1.5 sm:px-2 py-0.5 bg-[#f63a9e] text-white text-[8px] xs:text-[9px] sm:text-[10px] rounded-full font-medium'>
                                 Popular
                               </span>
                             )}
                           </div>
-                          <span className='text-[#f63a9e] font-semibold text-sm md:text-base'>
+                          <span className='text-[#f63a9e] font-semibold text-[11px] xs:text-xs sm:text-sm md:text-base'>
                             £{price}
                           </span>
                         </div>
-                        <p className='text-xs text-gray-600'>
+                        <p className='text-[10px] xs:text-[10px] sm:text-xs text-gray-600 leading-snug'>
                           {size.description}
                         </p>
                       </button>
@@ -516,17 +536,17 @@ export function PosterCollageCustomizer() {
                 </div>
 
                 {/* Info Banner */}
-                <div className='mt-4 p-3 bg-green-50 rounded-lg border border-green-200'>
-                  <div className='flex items-start gap-2 text-xs text-green-800'>
-                    <Info className='w-4 h-4 flex-shrink-0 mt-0.5' />
+                <div className='mt-2.5 sm:mt-3 md:mt-4 p-2 xs:p-2.5 sm:p-3 bg-green-50 rounded-lg sm:rounded-lg border border-green-200'>
+                  <div className='flex items-start gap-1 xs:gap-1.5 sm:gap-2 text-[10px] xs:text-[10px] sm:text-xs text-green-800 leading-snug'>
+                    <Info className='w-3 h-3 xs:w-3.5 xs:h-3.5 sm:w-4 sm:h-4 flex-shrink-0 mt-0.5' />
                     <p>
-                      Your poster will be printed on premium canvas with white
-                      sides, perfect for easel display at events
+                      Premium canvas with white sides, perfect for easel display
                     </p>
                   </div>
                 </div>
               </motion.div>
             )}
+            </div>
           </div>
         </div>
       </div>

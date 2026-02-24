@@ -24,10 +24,17 @@ export function RulerOverlay({
   const widthInches = canvasWidth.toFixed(1);
   const heightInches = canvasHeight.toFixed(1);
 
+  // Dynamic offset that scales with canvas size (10% of dimension, min 0.2, max 0.6)
+  const verticalOffset = Math.max(0.2, Math.min(0.6, heightInUnits * 0.1));
+  const horizontalOffset = Math.max(0.2, Math.min(0.6, widthInUnits * 0.1));
+
+  // Dynamic end cap sizes (proportional to canvas size)
+  const endCapSize = Math.max(0.15, Math.min(0.25, Math.min(widthInUnits, heightInUnits) * 0.08));
+
   return (
     <group>
       {/* Top width ruler - positioned ABOVE canvas */}
-      <group position={[canvasX, canvasY + heightInUnits / 2 + 0.5, canvasZ]}>
+      <group position={[canvasX, canvasY + heightInUnits / 2 + verticalOffset, canvasZ]}>
         {/* Horizontal line - Half thickness */}
         <mesh position={[0, 0, 0]}>
           <boxGeometry args={[widthInUnits, 0.015, 0.015]} />
@@ -36,18 +43,18 @@ export function RulerOverlay({
 
         {/* Left end cap */}
         <mesh position={[-widthInUnits / 2, 0, 0]}>
-          <boxGeometry args={[0.015, 0.2, 0.015]} />
+          <boxGeometry args={[0.015, endCapSize, 0.015]} />
           <meshBasicMaterial color='#f63a9e' />
         </mesh>
 
         {/* Right end cap */}
         <mesh position={[widthInUnits / 2, 0, 0]}>
-          <boxGeometry args={[0.015, 0.2, 0.015]} />
+          <boxGeometry args={[0.015, endCapSize, 0.015]} />
           <meshBasicMaterial color='#f63a9e' />
         </mesh>
 
         {/* Width label */}
-        <Html center position={[0, 0.3, 0]} style={{ pointerEvents: 'none' }}>
+        <Html center position={[0, verticalOffset * 0.6, 0]} style={{ pointerEvents: 'none' }}>
           <div
             style={{
               background: 'rgba(255, 255, 255, 0.95)',
@@ -67,7 +74,7 @@ export function RulerOverlay({
       </group>
 
       {/* Right height ruler - positioned RIGHT of canvas */}
-      <group position={[canvasX + widthInUnits / 2 + 0.5, canvasY, canvasZ]}>
+      <group position={[canvasX + widthInUnits / 2 + horizontalOffset, canvasY, canvasZ]}>
         {/* Vertical line - Half thickness */}
         <mesh position={[0, 0, 0]}>
           <boxGeometry args={[0.015, heightInUnits, 0.015]} />
@@ -76,18 +83,18 @@ export function RulerOverlay({
 
         {/* Top end cap */}
         <mesh position={[0, heightInUnits / 2, 0]}>
-          <boxGeometry args={[0.2, 0.015, 0.015]} />
+          <boxGeometry args={[endCapSize, 0.015, 0.015]} />
           <meshBasicMaterial color='#f63a9e' />
         </mesh>
 
         {/* Bottom end cap */}
         <mesh position={[0, -heightInUnits / 2, 0]}>
-          <boxGeometry args={[0.2, 0.015, 0.015]} />
+          <boxGeometry args={[endCapSize, 0.015, 0.015]} />
           <meshBasicMaterial color='#f63a9e' />
         </mesh>
 
         {/* Height label */}
-        <Html center position={[0.4, 0, 0]} style={{ pointerEvents: 'none' }}>
+        <Html center position={[horizontalOffset * 0.8, 0, 0]} style={{ pointerEvents: 'none' }}>
           <div
             style={{
               background: 'rgba(255, 255, 255, 0.95)',
