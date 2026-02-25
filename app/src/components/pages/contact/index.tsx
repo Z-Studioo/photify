@@ -19,9 +19,7 @@ import {
   Headphones,
   MessageCircle,
   Instagram,
-  Facebook,
-  Twitter,
-  Youtube
+  Facebook
 } from 'lucide-react';
 
 export function ContactPage() {
@@ -91,39 +89,52 @@ export function ContactPage() {
     {
       icon: Phone,
       title: 'Call Us',
-      detail: '+44 7585 630176',
-      description: 'Mon-Fri from 8am to 6pm',
-      link: 'tel:+447585630176'
+      detail: '07438 940960',
+      description: 'Also available on WhatsApp · Mon-Fri 8am–6pm GMT',
+      link: 'https://wa.me/447438940960'
     },
     {
       icon: MapPin,
-      title: 'Visit Us',
-      detail: '123 Photography Lane',
-      description: 'New York, NY 10001',
-      link: 'https://maps.google.com'
+      title: 'Our Location',
+      detail: 'London, United Kingdom',
+      description: 'Photify Limited · Company No: 16119644',
+      link: 'https://maps.google.com/?q=London,UK'
     }
   ];
 
   const faqs = [
     {
-      question: 'What is your response time?',
-      answer: 'We typically respond within 24 hours during business days.'
+      question: 'How do I place an order for photo prints?',
+      answer: 'Click on "Create Yours", which will take you to our editor where you can upload your image, preview a mockup, and confirm your design. Once you\'re satisfied, simply add the item to your cart and proceed to checkout.'
     },
     {
-      question: 'Do you offer phone support?',
-      answer: 'Yes! Call us Mon-Fri from 8am to 6pm EST.'
+      question: 'Which file formats do you accept for uploads?',
+      answer: 'We currently accept PNG, JPEG, and HEIC files.'
     },
     {
-      question: 'Can I track my order?',
-      answer: 'Absolutely! Use our order tracking page with your order number.'
+      question: 'What sizes and customization options do you offer?',
+      answer: 'Some of our products allow for customizable sizes. When you upload your image and view the mockup, you\'ll see which size options are available for that specific product.'
+    },
+    {
+      question: 'How long does shipping take, and do you offer express delivery?',
+      answer: 'Our standard delivery time is 6 working days. If you need your prints sooner, we offer an express delivery option that takes 3 working days — you can select this at checkout.'
+    },
+    {
+      question: 'What if my print arrives damaged or doesn\'t match my design?',
+      answer: 'We do not accept returns, but we will offer a free reprint if your print is damaged or if it differs from the design you created.'
     }
   ];
 
+  const TikTokIcon = () => (
+    <svg className='w-6 h-6' fill='currentColor' viewBox='0 0 24 24'>
+      <path d='M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-5.2 1.74 2.89 2.89 0 0 1 2.31-4.64 2.93 2.93 0 0 1 .88.13V9.4a6.84 6.84 0 0 0-1-.05A6.33 6.33 0 0 0 5 20.1a6.34 6.34 0 0 0 10.86-4.43v-7a8.16 8.16 0 0 0 4.77 1.52v-3.4a4.85 4.85 0 0 1-1-.1z' />
+    </svg>
+  );
+
   const socialLinks = [
-    { icon: Instagram, label: 'Instagram', link: '#', color: 'hover:text-pink-600' },
-    { icon: Facebook, label: 'Facebook', link: '#', color: 'hover:text-blue-600' },
-    { icon: Twitter, label: 'Twitter', link: '#', color: 'hover:text-sky-500' },
-    { icon: Youtube, label: 'YouTube', link: '#', color: 'hover:text-red-600' }
+    { icon: Instagram, label: 'Instagram', link: 'https://www.instagram.com/photify.co', color: 'hover:text-pink-600' },
+    { icon: Facebook, label: 'Facebook', link: 'https://www.facebook.com/@photifyprints', color: 'hover:text-blue-600' },
+    { icon: TikTokIcon, label: 'TikTok', link: 'https://www.tiktok.com/@photify.co', color: 'hover:text-gray-900' }
   ];
 
   return (
@@ -492,6 +503,8 @@ export function ContactPage() {
                     <motion.a
                       key={index}
                       href={social.link}
+                      target="_blank"
+                      rel="noopener noreferrer"
                       whileHover={{ scale: 1.1, y: -5 }}
                       whileTap={{ scale: 0.95 }}
                       className={`w-14 h-14 rounded-xl bg-white flex items-center justify-center shadow-lg transition-colors ${social.color}`}

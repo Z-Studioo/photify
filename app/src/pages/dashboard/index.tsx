@@ -1,6 +1,6 @@
 import type React from 'react';
 import { useState, useRef, useEffect } from 'react';
-import { ChevronRight, RefreshCw, Package } from 'lucide-react';
+import { ChevronRight } from 'lucide-react';
 import { motion, AnimatePresence, type Variants } from 'motion/react';
 import { useMutation } from '@tanstack/react-query';
 import Wall from '@/assets/images/wall.jpg';
@@ -206,7 +206,7 @@ const Dashboard: React.FC = () => {
 
   return (
     <div className='h-[calc(var(--vh,1vh)*100)] flex flex-col overflow-hidden'>
-      <Navbar />
+      <Navbar onReset={() => mutateAsync()} isResetting={isPending} />
       <div className='flex-1 w-full flex flex-col md:flex-row-reverse gap-0 overflow-hidden'>
         <div
           className={`
@@ -320,32 +320,6 @@ const Dashboard: React.FC = () => {
                     >
                       Photo Print Under Acrylic Glass
                     </motion.h2>
-                    <motion.div
-                      initial={{ opacity: 0 }}
-                      animate={{ opacity: 1 }}
-                      transition={{ delay: 0.2, duration: 0.3 }}
-                      className='mt-2 flex items-center gap-2 text-sm'
-                    >
-                      <Button
-                        size='sm'
-                        className='flex items-center gap-1 p-1 text-primary border-primary'
-                        variant='outline'
-                      >
-                        <Package className='w-4 h-4' />
-                        Change Product
-                      </Button>
-
-                      <Button
-                        size='sm'
-                        variant='outline'
-                        className='border-gray-300 text-gray-700 hover:bg-gray-100 flex items-center gap-1 p-1'
-                        onClick={() => mutateAsync()}
-                        disabled={isPending}
-                      >
-                        <RefreshCw className='w-4 h-4' />
-                        {isPending ? 'Resetting...' : 'Reset All'}
-                      </Button>
-                    </motion.div>
                   </div>
                 </motion.div>
               )}

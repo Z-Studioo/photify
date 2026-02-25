@@ -16,6 +16,9 @@ const UploadImage = lazy(() => import('./pages/upload'));
 const HomePage = lazy(() => import('@/pages'));
 const CropPage = lazy(() => import('@/pages/crop'));
 const ContactPage = lazy(() => import('@/pages/contact'));
+const PrivacyPolicyPage = lazy(() => import('@/pages/privacy-policy'));
+const TermsOfUsePage = lazy(() => import('@/pages/terms-of-use'));
+const RefundReturnPolicyPage = lazy(() => import('@/pages/refund-return-policy'));
 const TrackOrderPage = lazy(() => import('@/pages/track-order'));
 const RoomPage = lazy(() => import('@/pages/room/[id]'));
 const NotFoundPage = lazy(() => import('@/pages/not-found'));
@@ -104,6 +107,9 @@ const App: React.FC = () => {
                         }
                       />
                       <Route path='/contact' element={<ContactPage />} />
+                      <Route path='/privacy-policy' element={<PrivacyPolicyPage />} />
+                      <Route path='/terms-of-use' element={<TermsOfUsePage />} />
+                      <Route path='/refund-return-policy' element={<RefundReturnPolicyPage />} />
                       <Route path='/track-order' element={<TrackOrderPage />} />
                       <Route path='/room/:id' element={<RoomPage />} />
                       <Route path='/products' element={<ProductsPage />} />
