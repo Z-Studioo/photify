@@ -37,14 +37,7 @@ export function Footer() {
                   All Products
                 </Link>
               </li>
-              <li>
-                <Link
-                  to='/category/custom-frames'
-                  className='text-gray-400 hover:text-[#f63a9e] transition-colors'
-                >
-                  Custom Frames
-                </Link>
-              </li>
+
               <li>
                 <Link
                   to='/category/gallery-walls'
@@ -78,12 +71,29 @@ export function Footer() {
               </li>
               <li>
                 <Link
-                  to='/contact'
-                  className='text-gray-400 hover:text-[#f63a9e]'
+                  to='/privacy-policy'
+                  className='text-gray-400 hover:text-[#f63a9e] transition-colors'
                 >
-                  Return policy
+                  Privacy Policy
                 </Link>
               </li>
+              <li>
+                <Link
+                  to='/terms-of-use'
+                  className='text-gray-400 hover:text-[#f63a9e] transition-colors'
+                >
+                  Terms of Use
+                </Link>
+              </li>
+              <li>
+                <Link
+                  to='/refund-return-policy'
+                  className='text-gray-400 hover:text-[#f63a9e] transition-colors'
+                >
+                  Refund &amp; Returns
+                </Link>
+              </li>
+             
               <li>
                 <Link
                   to='/track-order'
@@ -129,7 +139,11 @@ export function Footer() {
                 rel='noopener noreferrer'
                 className='w-10 h-10 bg-gray-800 rounded-full flex items-center justify-center hover:bg-[#f63a9e] transition-colors'
               >
-                <svg className='w-5 h-5' fill='currentColor' viewBox='0 0 24 24'>
+                <svg
+                  className='w-5 h-5'
+                  fill='currentColor'
+                  viewBox='0 0 24 24'
+                >
                   <path d='M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-5.2 1.74 2.89 2.89 0 0 1 2.31-4.64 2.93 2.93 0 0 1 .88.13V9.4a6.84 6.84 0 0 0-1-.05A6.33 6.33 0 0 0 5 20.1a6.34 6.34 0 0 0 10.86-4.43v-7a8.16 8.16 0 0 0 4.77 1.52v-3.4a4.85 4.85 0 0 1-1-.1z' />
                 </svg>
               </a>
@@ -146,20 +160,32 @@ export function Footer() {
             <p className='text-xs text-gray-500'>Secure payments with</p>
             <div className='flex flex-wrap items-center justify-center md:justify-end gap-1.5 xs:gap-2 sm:gap-2.5 md:gap-3 max-w-[320px] xs:max-w-[360px] sm:max-w-none'>
               <div className='bg-gray-800 border border-gray-700 rounded-md sm:rounded-lg px-2 py-1.5 xs:px-2.5 xs:py-1.5 sm:px-3 sm:py-2 hover:border-[#f63a9e] transition-colors'>
-                <span className='text-[10px] xs:text-xs sm:text-sm font-bold text-white tracking-wider'>VISA</span>
+                <span className='text-[10px] xs:text-xs sm:text-sm font-bold text-white tracking-wider'>
+                  VISA
+                </span>
               </div>
               <div className='bg-gray-800 border border-gray-700 rounded-md sm:rounded-lg px-2 py-1.5 xs:px-2.5 xs:py-1.5 sm:px-3 sm:py-2 hover:border-[#f63a9e] transition-colors'>
-                <span className='text-[10px] xs:text-xs sm:text-sm font-bold text-white tracking-wider'>Mastercard</span>
+                <span className='text-[10px] xs:text-xs sm:text-sm font-bold text-white tracking-wider'>
+                  Mastercard
+                </span>
               </div>
               <div className='bg-gray-800 border border-gray-700 rounded-md sm:rounded-lg px-2 py-1.5 xs:px-2.5 xs:py-1.5 sm:px-3 sm:py-2 hover:border-[#f63a9e] transition-colors'>
-                <span className='text-[10px] xs:text-xs sm:text-sm font-bold text-white tracking-wider'>AMEX</span>
+                <span className='text-[10px] xs:text-xs sm:text-sm font-bold text-white tracking-wider'>
+                  AMEX
+                </span>
               </div>
               <div className='bg-gray-800 border border-gray-700 rounded-md sm:rounded-lg px-2 py-1.5 xs:px-2.5 xs:py-1.5 sm:px-3 sm:py-2 hover:border-[#f63a9e] transition-colors'>
-                <span className='text-[10px] xs:text-xs sm:text-sm font-bold text-[#0070ba]'>Pay</span>
-                <span className='text-[10px] xs:text-xs sm:text-sm font-bold text-[#00a3e0]'>Pal</span>
+                <span className='text-[10px] xs:text-xs sm:text-sm font-bold text-[#0070ba]'>
+                  Pay
+                </span>
+                <span className='text-[10px] xs:text-xs sm:text-sm font-bold text-[#00a3e0]'>
+                  Pal
+                </span>
               </div>
               <div className='bg-gray-800 border border-gray-700 rounded-md sm:rounded-lg px-2 py-1.5 xs:px-2.5 xs:py-1.5 sm:px-3 sm:py-2 hover:border-[#f63a9e] transition-colors'>
-                <span className='text-[10px] xs:text-xs sm:text-sm font-bold text-[#635bff]'>Stripe</span>
+                <span className='text-[10px] xs:text-xs sm:text-sm font-bold text-[#635bff]'>
+                  Stripe
+                </span>
               </div>
             </div>
           </div>
