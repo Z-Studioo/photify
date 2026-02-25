@@ -471,24 +471,22 @@ export function ProductDetailPage({
                 </p>
 
                 {/* Quick Trust Signals */}
-                <div className='grid grid-cols-2 gap-2 sm:gap-3 mb-4 sm:mb-6'>
+                <div className='flex flex-wrap gap-2 mb-4 sm:mb-6'>
                   {[
-                    { icon: Truck, text: 'Free UK Shipping' },
-                    { icon: RotateCcw, text: '30-Day Returns' },
-                    { icon: Shield, text: 'Quality Guarantee' },
-                    { icon: Clock, text: 'Ships in 3-5 Days' },
+                    { icon: Truck, text: 'Free UK Shipping', bg: 'bg-blue-50', border: 'border-blue-200', color: 'text-blue-700' },
+                    { icon: RotateCcw, text: '7-Day Returns', bg: 'bg-emerald-50', border: 'border-emerald-200', color: 'text-emerald-700' },
+                    { icon: Shield, text: 'Quality Guarantee', bg: 'bg-violet-50', border: 'border-violet-200', color: 'text-violet-700' },
+                    { icon: Clock, text: 'Ships in 3-6 Days', bg: 'bg-amber-50', border: 'border-amber-200', color: 'text-amber-700' },
                   ].map((item, index) => (
                     <motion.div
                       key={index}
-                      initial={{ opacity: 0, y: 10 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ delay: 0.4 + index * 0.1 }}
-                      className='flex items-center gap-2 text-gray-700'
+                      initial={{ opacity: 0, scale: 0.9 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      transition={{ delay: 0.35 + index * 0.08 }}
+                      className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full border text-xs font-semibold ${item.bg} ${item.border} ${item.color}`}
                     >
-                      <div className='w-8 h-8 rounded-full bg-green-50 flex items-center justify-center'>
-                        <item.icon className='w-4 h-4 text-green-600' />
-                      </div>
-                      <span className='text-sm font-medium'>{item.text}</span>
+                      <item.icon className='w-3.5 h-3.5' />
+                      {item.text}
                     </motion.div>
                   ))}
                 </div>
@@ -528,26 +526,27 @@ export function ProductDetailPage({
                   )}
                 </div>
 
-                {/* Live Viewers */}
+                {/* Urgency & Social Proof */}
                 <motion.div
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
+                  initial={{ opacity: 0, y: 8 }}
+                  animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: 0.6 }}
-                  className='flex items-center gap-2 text-gray-600'
+                  className='flex flex-col gap-2'
                 >
-                  <div className='flex items-center gap-1'>
-                    <span className='relative flex h-3 w-3'>
-                      <span className='animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75' />
-                      <span className='relative inline-flex rounded-full h-3 w-3 bg-green-500' />
+                  <div className='flex items-center gap-2.5 px-4 py-3 bg-green-50 border border-green-200 rounded-xl'>
+                    <Check className='w-4 h-4 text-green-600 flex-shrink-0' />
+                    <span className='text-sm text-green-800 font-semibold'>In stock — ready to customise &amp; ship</span>
+                  </div>
+                  <div className='flex items-center gap-2.5 px-4 py-3 bg-[#FFF5FB] border border-[#f63a9e]/25 rounded-xl'>
+                    <span className='relative flex h-3 w-3 flex-shrink-0'>
+                      <span className='animate-ping absolute inline-flex h-full w-full rounded-full bg-[#f63a9e] opacity-60' />
+                      <span className='relative inline-flex rounded-full h-3 w-3 bg-[#f63a9e]' />
+                    </span>
+                    <Eye className='w-4 h-4 text-[#f63a9e] flex-shrink-0' />
+                    <span className='text-sm text-gray-700'>
+                      <strong className='text-gray-900'>{viewersCount} people</strong> are viewing this right now
                     </span>
                   </div>
-                  <Eye className='w-4 h-4' />
-                  <span className='text-sm'>
-                    <strong className='text-gray-900'>
-                      {viewersCount} people
-                    </strong>{' '}
-                    are viewing this right now
-                  </span>
                 </motion.div>
               </motion.div>
             </div>
@@ -560,8 +559,8 @@ export function ProductDetailPage({
             <div className='flex flex-wrap justify-center md:justify-between items-center gap-3 sm:gap-6 md:gap-8'>
               {[
                 { icon: Truck, text: 'Free UK Shipping Over £50' },
-                { icon: Clock, text: 'Fast 3-5 Day Production' },
-                { icon: RotateCcw, text: '30-Day Easy Returns' },
+                { icon: Clock, text: 'Express: 3 Working Days' },
+                { icon: RotateCcw, text: '7-Day Easy Returns' },
                 { icon: Users, text: '10,000+ Happy Customers' },
                 { icon: Star, text: '4.9 Average Rating' },
               ].map((item, index) => (
@@ -581,8 +580,56 @@ export function ProductDetailPage({
           </div>
         </div>
 
+        {/* How It Works */}
+        <div className='py-12 sm:py-16 bg-gray-950'>
+          <div className='max-w-[1400px] mx-auto px-4 sm:px-6'>
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              className='text-center mb-10 sm:mb-14'
+            >
+              <span className='inline-block px-4 py-1.5 rounded-full bg-[#f63a9e]/15 text-[#f63a9e] text-xs font-bold tracking-widest uppercase mb-4'>Simple Process</span>
+              <h2 className="font-['Bricolage_Grotesque',_sans-serif] text-white mb-3 text-2xl sm:text-3xl" style={{ fontWeight: '700' }}>
+                From Photo to Wall in 3 Steps
+              </h2>
+              <p className='text-gray-400 text-base sm:text-lg max-w-xl mx-auto'>Upload, customise, and we handle the rest — delivered straight to your door.</p>
+            </motion.div>
+
+            <div className='grid grid-cols-1 md:grid-cols-3 gap-6 sm:gap-8 relative'>
+              {/* Connector line */}
+              <div className='hidden md:block absolute top-10 left-[calc(16.67%+16px)] right-[calc(16.67%+16px)] h-px bg-gradient-to-r from-[#f63a9e]/0 via-[#f63a9e]/40 to-[#f63a9e]/0' />
+              {[
+                { num: '01', emoji: '📸', title: 'Upload Your Photo', desc: 'Choose your favourite photo — we accept PNG, JPEG, or HEIC formats.' },
+                { num: '02', emoji: '🎨', title: 'Customise Your Print', desc: 'Pick your size, preview a live mockup, and perfect your layout.' },
+                { num: '03', emoji: '📦', title: 'We Print & Deliver', desc: 'Printed to museum quality and delivered straight to your door.' },
+              ].map((step, i) => (
+                <motion.div
+                  key={i}
+                  initial={{ opacity: 0, y: 30 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true }}
+                  transition={{ delay: i * 0.15 }}
+                  className='relative text-center group'
+                >
+                  <div className='relative inline-flex mb-5'>
+                    <div className='w-20 h-20 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center text-3xl group-hover:border-[#f63a9e]/50 group-hover:bg-[#f63a9e]/10 transition-all duration-300'>
+                      {step.emoji}
+                    </div>
+                    <div className='absolute -top-2.5 -right-2.5 w-7 h-7 rounded-full bg-[#f63a9e] text-white text-xs font-bold flex items-center justify-center shadow-lg shadow-pink-500/40'>
+                      {step.num}
+                    </div>
+                  </div>
+                  <h3 className='font-bold text-white text-lg mb-2'>{step.title}</h3>
+                  <p className='text-gray-400 text-sm leading-relaxed max-w-xs mx-auto'>{step.desc}</p>
+                </motion.div>
+              ))}
+            </div>
+          </div>
+        </div>
+
         {/* Feature Cards Section */}
-        <div className='py-8 sm:py-12 lg:py-16 bg-white'>
+        <div className='py-8 sm:py-12 lg:py-16 bg-gradient-to-b from-gray-50 to-white'>
           <div className='max-w-[1400px] mx-auto px-4 sm:px-6'>
             <motion.div
               initial={{ opacity: 0, y: 20 }}
@@ -590,6 +637,7 @@ export function ProductDetailPage({
               viewport={{ once: true }}
               className='text-center mb-8 sm:mb-12'
             >
+              <span className='inline-block px-4 py-1.5 rounded-full bg-[#f63a9e]/10 text-[#f63a9e] text-xs font-bold tracking-widest uppercase mb-4'>Craftsmanship</span>
               <h2
                 className="font-['Bricolage_Grotesque',_sans-serif] text-gray-900 mb-3 sm:mb-4 text-2xl sm:text-3xl"
                 style={{ fontWeight: '700' }}
@@ -791,20 +839,17 @@ export function ProductDetailPage({
                       on orders over £50
                     </p>
                     <p>
-                      Production time:{' '}
+                      Standard delivery:{' '}
                       <strong className='text-gray-900'>
-                        3-5 business days
+                        6 working days
                       </strong>
                     </p>
                     <p>
-                      Standard delivery:{' '}
+                      Express delivery:{' '}
                       <strong className='text-gray-900'>
-                        3-5 business days
+                        3 working days
                       </strong>{' '}
-                      after production
-                    </p>
-                    <p>
-                      Express delivery available at checkout for faster arrival
+                      — select at checkout
                     </p>
                   </div>
                 </AccordionContent>
@@ -864,12 +909,12 @@ export function ProductDetailPage({
                   <div className='space-y-4 text-gray-600'>
                     <p>
                       <strong className='text-gray-900'>
-                        30-Day Satisfaction Guarantee
+                        7-Day Satisfaction Guarantee
                       </strong>
                     </p>
                     <p>
-                      Not completely satisfied? Return your canvas within 30
-                      days for a full refund or replacement.
+                      Not completely satisfied? Report your issue within 7 days
+                      and we'll arrange a replacement or refund.
                     </p>
                     <p>
                       If your canvas arrives damaged, we&apos;ll send a
@@ -925,41 +970,41 @@ export function ProductDetailPage({
                   whileInView={{ opacity: 1, y: 0 }}
                   viewport={{ once: true }}
                   transition={{ delay: index * 0.1 }}
-                  className='bg-white rounded-2xl p-4 sm:p-6 shadow-lg border border-gray-100 hover:shadow-xl transition-shadow'
+                  whileHover={{ y: -4 }}
+                  className='relative bg-white rounded-3xl p-6 sm:p-7 shadow-md border border-gray-100 hover:shadow-2xl hover:border-[#f63a9e]/20 transition-all duration-300 overflow-hidden group'
                 >
-                  <div className='flex items-center gap-4 mb-4'>
+                  {/* Decorative quote */}
+                  <div className='absolute top-4 right-5 text-7xl font-serif text-[#f63a9e]/8 leading-none select-none group-hover:text-[#f63a9e]/15 transition-colors'>&ldquo;</div>
+
+                  {/* Stars */}
+                  <div className='flex items-center gap-0.5 mb-4'>
+                    {[...Array(review.rating)].map((_, i) => (
+                      <Star key={i} className='w-4 h-4 text-amber-400 fill-current' />
+                    ))}
+                    <span className='ml-2 text-xs text-gray-500 font-medium'>{review.date}</span>
+                  </div>
+
+                  {/* Review text */}
+                  <p className='text-gray-600 leading-relaxed text-sm sm:text-base mb-5 relative z-10'>{review.text}</p>
+
+                  {/* Author */}
+                  <div className='flex items-center gap-3 pt-4 border-t border-gray-100'>
                     <img
                       src={review.image}
                       alt={review.name}
-                      className='w-12 h-12 rounded-full object-cover'
+                      className='w-10 h-10 rounded-full object-cover ring-2 ring-[#f63a9e]/20'
                     />
                     <div>
                       <div className='flex items-center gap-2'>
-                        <span className='font-semibold text-gray-900'>
-                          {review.name}
-                        </span>
+                        <span className='font-semibold text-gray-900 text-sm'>{review.name}</span>
                         {review.verified && (
-                          <span className='px-2 py-0.5 bg-green-100 text-green-700 text-xs font-medium rounded-full'>
-                            Verified
+                          <span className='flex items-center gap-1 px-2 py-0.5 bg-green-50 border border-green-200 text-green-700 text-[10px] font-semibold rounded-full'>
+                            <Check className='w-2.5 h-2.5' /> Verified
                           </span>
                         )}
                       </div>
-                      <span className='text-sm text-gray-500'>
-                        {review.date}
-                      </span>
                     </div>
                   </div>
-
-                  <div className='flex items-center gap-1 mb-3'>
-                    {[...Array(review.rating)].map((_, i) => (
-                      <Star
-                        key={i}
-                        className='w-4 h-4 text-amber-400 fill-current'
-                      />
-                    ))}
-                  </div>
-
-                  <p className='text-gray-600 leading-relaxed'>{review.text}</p>
                 </motion.div>
               ))}
             </div>

@@ -61,14 +61,6 @@ export function Footer() {
             <ul className='space-y-2'>
               <li>
                 <Link
-                  to='/contact'
-                  className='text-gray-400 hover:text-[#f63a9e]'
-                >
-                  Customer service
-                </Link>
-              </li>
-              <li>
-                <Link
                   to='/privacy-policy'
                   className='text-gray-400 hover:text-[#f63a9e] transition-colors'
                 >
