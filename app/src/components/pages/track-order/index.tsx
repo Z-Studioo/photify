@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { createClient } from '@/lib/supabase/client';
 import { Header } from '@/components/layout/header';
@@ -176,12 +176,24 @@ export function OrderTrackPage() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const [orderNumber, setOrderNumber] = useState(
-    searchParams.get('order') || ''
+    searchParams.get('order_id') || searchParams.get('order') || ''
   );
-  const [email, setEmail] = useState('');
+  const [email, setEmail] = useState(
+    searchParams.get('email') || ''
+  );
   const [searchedOrder, setSearchedOrder] = useState<OrderStatus | null>(null);
   const [notFound, setNotFound] = useState(false);
   const [isSearching, setIsSearching] = useState(false);
+
+  // Auto-search when both order_id and email are present as query params (email link)
+  useEffect(() => {
+    const paramOrderId = searchParams.get('order_id') || searchParams.get('order');
+    const paramEmail = searchParams.get('email');
+    if (paramOrderId && paramEmail) {
+      handleSearch();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const handleSearch = async () => {
     if (!orderNumber.trim()) {
