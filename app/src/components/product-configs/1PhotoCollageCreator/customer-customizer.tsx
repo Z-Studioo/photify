@@ -27,7 +27,18 @@ import {
   AlertTriangle,
   Check,
   ArrowLeft,
+  RotateCcw,
 } from 'lucide-react';
+import {
+  AlertDialog,
+  AlertDialogContent,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogCancel,
+  AlertDialogAction,
+} from '@/components/ui/alert-dialog';
 import { motion, AnimatePresence } from 'framer-motion';
 import { toast } from 'sonner';
 import { CollageEditor } from './collage-editor';
@@ -49,6 +60,48 @@ import { uploadDataURLToStorage } from '@/lib/supabase/storage';
 
 type TabType = 'templates' | 'photos' | 'background';
 
+// ─── Session persistence ────────────────────────────────────────────────────
+const COLLAGE_SESSION_KEY = 'photify_collage_state';
+
+interface PersistedCollageState {
+  hasSelectedTemplate: boolean;
+  selectedTemplate: CollageTemplate | null;
+  selection: Omit<CollageSelection, 'photos'> & {
+    photos: Array<Omit<CollagePhoto, 'file'> & { file: null }>;
+  };
+  selectedSizeId: string | null;
+  selectedAspectRatioId: string | null;
+}
+
+function loadCollageSession(): PersistedCollageState | null {
+  try {
+    const raw = sessionStorage.getItem(COLLAGE_SESSION_KEY);
+    if (!raw) return null;
+    return JSON.parse(raw) as PersistedCollageState;
+  } catch {
+    return null;
+  }
+}
+
+function saveCollageSession(state: PersistedCollageState) {
+  try {
+    sessionStorage.setItem(COLLAGE_SESSION_KEY, JSON.stringify(state));
+  } catch {
+    // Quota exceeded (large base64 photos) — retry without photos
+    try {
+      sessionStorage.setItem(
+        COLLAGE_SESSION_KEY,
+        JSON.stringify({ ...state, selection: { ...state.selection, photos: [] } })
+      );
+    } catch { /* ignore */ }
+  }
+}
+
+function clearCollageSession() {
+  try { sessionStorage.removeItem(COLLAGE_SESSION_KEY); } catch { /* noop */ }
+}
+// ────────────────────────────────────────────────────────────────────────────
+
 export function CollageCustomizer() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
@@ -62,19 +115,31 @@ export function CollageCustomizer() {
   // Default dimensions (will be updated when template is selected)
   const defaultDimensions = { width: 20, height: 20, label: '20" × 20"' };
 
-  const [selection, setSelection] = useState<CollageSelection>({
-    templateId: null,
-    canvasSizeId: defaultDimensions.label,
-    canvasWidth: defaultDimensions.width,
-    canvasHeight: defaultDimensions.height,
-    backgroundId: 'white',
-    backgroundColor: 'rgba(255, 255, 255, 0.2)', // 20% opacity white
-    photos: [],
+  const [selection, setSelection] = useState<CollageSelection>(() => {
+    const p = loadCollageSession();
+    if (p?.selection) {
+      return {
+        ...p.selection,
+        photos: p.selection.photos.map(ph => ({ ...ph, file: null as unknown as File })),
+      };
+    }
+    return {
+      templateId: null,
+      canvasSizeId: defaultDimensions.label,
+      canvasWidth: defaultDimensions.width,
+      canvasHeight: defaultDimensions.height,
+      backgroundId: 'white',
+      backgroundColor: 'rgba(255, 255, 255, 0.2)',
+      photos: [],
+    };
   });
 
-  const [selectedTemplate, setSelectedTemplate] =
-    useState<CollageTemplate | null>(null);
-  const [hasSelectedTemplate, setHasSelectedTemplate] = useState(false); // User must choose template first
+  const [selectedTemplate, setSelectedTemplate] = useState<CollageTemplate | null>(
+    () => loadCollageSession()?.selectedTemplate ?? null
+  );
+  const [hasSelectedTemplate, setHasSelectedTemplate] = useState<boolean>(
+    () => loadCollageSession()?.hasSelectedTemplate ?? false
+  );
   const [activeTab, setActiveTab] = useState<TabType>('templates');
   const [showRuler, setShowRuler] = useState(false);
   const [collageDataURL, setCollageDataURL] = useState<string | null>(null);
@@ -86,20 +151,41 @@ export function CollageCustomizer() {
   const [showColorPicker, setShowColorPicker] = useState(false);
   const [colorHSL, setColorHSL] = useState({ h: 0, s: 0, l: 100 }); // Track HSL for picker position
   const [opacity, setOpacity] = useState(20); // Track opacity (0-100), default 20%
+  const [showBackDialog, setShowBackDialog] = useState(false);
+  const [showStartOverDialog, setShowStartOverDialog] = useState(false);
 
   // Size selection state
   const [showSizeSelection, setShowSizeSelection] = useState(false);
   const [aspectRatios, setAspectRatios] = useState<any[]>([]);
   const [sizes, setSizes] = useState<any[]>([]);
-  const [selectedAspectRatioId, setSelectedAspectRatioId] = useState<
-    string | null
-  >(null);
-  const [selectedSizeId, setSelectedSizeId] = useState<string | null>(null);
+  const [selectedAspectRatioId, setSelectedAspectRatioId] = useState<string | null>(
+    () => loadCollageSession()?.selectedAspectRatioId ?? null
+  );
+  const [selectedSizeId, setSelectedSizeId] = useState<string | null>(
+    () => loadCollageSession()?.selectedSizeId ?? null
+  );
 
   // Set mounted state on client side
   useEffect(() => {
     setIsMounted(true);
   }, []);
+
+  // Persist editor state to sessionStorage after every meaningful change
+  useEffect(() => {
+    if (!isMounted) return;
+    saveCollageSession({
+      hasSelectedTemplate,
+      selectedTemplate,
+      selection: {
+        ...selection,
+        // Strip non-serialisable File objects; url (base64) is enough to restore
+        photos: selection.photos.map(({ file: _file, ...rest }) => ({ ...rest, file: null })),
+      },
+      selectedSizeId,
+      selectedAspectRatioId,
+    });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isMounted, hasSelectedTemplate, selectedTemplate, selection, selectedSizeId, selectedAspectRatioId]);
 
   // Photo selection modal state
   const [showPhotoModal, setShowPhotoModal] = useState(false);
@@ -602,6 +688,7 @@ export function CollageCustomizer() {
         quantity: 1,
       });
 
+      clearCollageSession();
       toast.success('Collage added to cart!');
       openCart();
     } catch (error) {
@@ -818,13 +905,99 @@ export function CollageCustomizer() {
 
   return (
     <div className='h-screen flex flex-col bg-gray-50'>
+      {/* Start Over confirmation dialog */}
+      <AlertDialog open={showStartOverDialog} onOpenChange={setShowStartOverDialog}>
+        <AlertDialogContent className='max-w-sm rounded-2xl p-0 overflow-hidden'>
+          <div className='h-2 bg-gradient-to-r from-red-400 to-orange-400' />
+          <div className='px-6 pt-5 pb-6'>
+            <AlertDialogHeader className='space-y-2'>
+              <div className='flex items-center gap-3'>
+                <div className='w-10 h-10 rounded-full bg-red-50 flex items-center justify-center flex-shrink-0'>
+                  <RotateCcw className='w-5 h-5 text-red-500' />
+                </div>
+                <AlertDialogTitle className="font-['Bricolage_Grotesque',_sans-serif] text-lg text-gray-900" style={{ fontWeight: '700' }}>
+                  Start over?
+                </AlertDialogTitle>
+              </div>
+              <AlertDialogDescription className='text-sm text-gray-500 leading-relaxed pl-[52px]'>
+                This will clear your template, all uploaded photos, and background settings. You&apos;ll be taken back to the template selection screen. This can&apos;t be undone.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter className='flex-col sm:flex-row gap-2 mt-5'>
+              <AlertDialogCancel className='w-full sm:w-auto rounded-xl border-2 border-gray-200 hover:bg-gray-50 text-gray-700 font-medium'>
+                Keep my collage
+              </AlertDialogCancel>
+              <AlertDialogAction
+                className='w-full sm:w-auto rounded-xl bg-red-500 hover:bg-red-600 text-white font-semibold shadow-md shadow-red-200/50'
+                onClick={() => {
+                  clearCollageSession();
+                  setSelection({
+                    templateId: null,
+                    canvasSizeId: defaultDimensions.label,
+                    canvasWidth: defaultDimensions.width,
+                    canvasHeight: defaultDimensions.height,
+                    backgroundId: 'white',
+                    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+                    photos: [],
+                  });
+                  setSelectedTemplate(null);
+                  setHasSelectedTemplate(false);
+                  setCollageDataURL(null);
+                  setSelectedSizeId(null);
+                  setSelectedAspectRatioId(null);
+                  setSizes([]);
+                  setAspectRatios([]);
+                  setShowSizeSelection(false);
+                }}
+              >
+                Yes, start over
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </div>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Leave confirmation dialog */}
+      <AlertDialog open={showBackDialog} onOpenChange={setShowBackDialog}>
+        <AlertDialogContent className='max-w-sm rounded-2xl p-0 overflow-hidden'>
+          <div className='h-2 bg-gradient-to-r from-[#f63a9e] to-purple-500' />
+          <div className='px-6 pt-5 pb-6'>
+            <AlertDialogHeader className='space-y-2'>
+              <div className='flex items-center gap-3'>
+                <div className='w-10 h-10 rounded-full bg-pink-50 flex items-center justify-center flex-shrink-0'>
+                  <Home className='w-5 h-5 text-[#f63a9e]' />
+                </div>
+                <AlertDialogTitle className="font-['Bricolage_Grotesque',_sans-serif] text-lg text-gray-900" style={{ fontWeight: '700' }}>
+                  Leave the collage editor?
+                </AlertDialogTitle>
+              </div>
+              <AlertDialogDescription className='text-sm text-gray-500 leading-relaxed pl-[52px]'>
+                Your template choice, photos, and background colour are automatically saved. You can come back and continue right where you left off — or use the
+                {' '}<span className='font-medium text-gray-700'>Start over</span> button to begin fresh.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter className='flex-col sm:flex-row gap-2 mt-5'>
+              <AlertDialogCancel className='w-full sm:w-auto rounded-xl border-2 border-gray-200 hover:bg-gray-50 text-gray-700 font-medium'>
+                Keep editing
+              </AlertDialogCancel>
+              <AlertDialogAction
+                className='w-full sm:w-auto rounded-xl bg-[#f63a9e] hover:bg-[#e02d8d] text-white font-semibold shadow-md shadow-pink-200/50'
+                onClick={() => navigate(-1)}
+              >
+                Yes, go back
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </div>
+        </AlertDialogContent>
+      </AlertDialog>
+
       {/* Top Header - Canva Style - Responsive */}
       <header className='h-14 md:h-16 bg-white border-b border-gray-200 flex items-center justify-between px-2 md:px-4 shrink-0'>
         <div className='flex items-center gap-2 md:gap-4'>
           <Button
             variant='ghost'
             size='sm'
-            onClick={() => navigate(-1)}
+            onClick={() => hasSelectedTemplate ? setShowBackDialog(true) : navigate(-1)}
             className='text-gray-600 hover:text-gray-900 h-8 md:h-9 px-2 md:px-3'
           >
             <Home className='w-4 h-4 md:mr-2' />
@@ -860,6 +1033,19 @@ export function CollageCustomizer() {
             Share
           </Button>
 
+          {hasSelectedTemplate && (
+            <Button
+              variant='ghost'
+              size='sm'
+              title='Start over'
+              onClick={() => setShowStartOverDialog(true)}
+              className='text-gray-500 hover:text-red-600 hover:bg-red-50 h-8 md:h-9 px-2 md:px-3 transition-colors'
+            >
+              <RotateCcw className='w-4 h-4 md:mr-1.5' />
+              <span className='hidden md:inline text-sm'>Start over</span>
+            </Button>
+          )}
+
           <Button
             onClick={handleNext}
             disabled={
@@ -874,6 +1060,17 @@ export function CollageCustomizer() {
 
         {/* Mobile Actions - Compact */}
         <div className='flex md:hidden items-center gap-1'>
+          {hasSelectedTemplate && (
+            <Button
+              variant='ghost'
+              size='sm'
+              title='Start over'
+              onClick={() => setShowStartOverDialog(true)}
+              className='text-gray-400 hover:text-red-500 hover:bg-red-50 h-8 w-8 p-0 transition-colors'
+            >
+              <RotateCcw className='w-4 h-4' />
+            </Button>
+          )}
           <Button
             onClick={handleNext}
             disabled={

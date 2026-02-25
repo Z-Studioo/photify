@@ -96,6 +96,7 @@ export function PosterCollageCustomizer() {
   const [showRuler, setShowRuler] = useState(false);
   const [productPrice, setProductPrice] = useState(0.5); // Default price per sq inch
   const [showBackDialog, setShowBackDialog] = useState(false);
+  const [showStartOverDialog, setShowStartOverDialog] = useState(false);
 
   const [state, setState] = useState<PosterUploadState>(() => {
     // artImageUrl (from art detail page deep-link) always takes precedence.
@@ -325,6 +326,49 @@ export function PosterCollageCustomizer() {
 
   return (
     <div className='min-h-screen bg-gradient-to-br from-gray-50 via-pink-50/30 to-purple-50/30'>
+      {/* Start Over confirmation dialog */}
+      <AlertDialog open={showStartOverDialog} onOpenChange={setShowStartOverDialog}>
+        <AlertDialogContent className='max-w-sm rounded-2xl p-0 overflow-hidden'>
+          <div className='h-2 bg-gradient-to-r from-red-400 to-orange-400' />
+          <div className='px-6 pt-5 pb-6'>
+            <AlertDialogHeader className='space-y-2'>
+              <div className='flex items-center gap-3'>
+                <div className='w-10 h-10 rounded-full bg-red-50 flex items-center justify-center flex-shrink-0'>
+                  <RotateCcw className='w-5 h-5 text-red-500' />
+                </div>
+                <AlertDialogTitle className="font-['Bricolage_Grotesque',_sans-serif] text-lg text-gray-900" style={{ fontWeight: '700' }}>
+                  Start over?
+                </AlertDialogTitle>
+              </div>
+              <AlertDialogDescription className='text-sm text-gray-500 leading-relaxed pl-[52px]'>
+                This will remove your uploaded poster and all size choices. You&apos;ll start fresh from the upload screen. This can&apos;t be undone.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter className='flex-col sm:flex-row gap-2 mt-5'>
+              <AlertDialogCancel className='w-full sm:w-auto rounded-xl border-2 border-gray-200 hover:bg-gray-50 text-gray-700 font-medium'>
+                Keep my poster
+              </AlertDialogCancel>
+              <AlertDialogAction
+                className='w-full sm:w-auto rounded-xl bg-red-500 hover:bg-red-600 text-white font-semibold shadow-md shadow-red-200/50'
+                onClick={() => {
+                  clearPersistedPosterState();
+                  setState(prev => ({
+                    ...prev,
+                    imageUrl: null,
+                    imageFile: null,
+                    posterWidth: DEFAULT_POSTER_SIZE.width,
+                    posterHeight: DEFAULT_POSTER_SIZE.height,
+                  }));
+                  if (fileInputRef.current) fileInputRef.current.value = '';
+                }}
+              >
+                Yes, start over
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </div>
+        </AlertDialogContent>
+      </AlertDialog>
+
       {/* Leave confirmation dialog */}
       <AlertDialog open={showBackDialog} onOpenChange={setShowBackDialog}>
         <AlertDialogContent className='max-w-sm rounded-2xl p-0 overflow-hidden'>
@@ -413,17 +457,7 @@ export function PosterCollageCustomizer() {
                 variant='outline'
                 size='sm'
                 className='flex-shrink-0 bg-white hover:bg-red-50 hover:border-red-300 hover:text-red-600 h-8 sm:h-9 md:h-10 px-2 sm:px-3 md:px-4 border-2 border-gray-200 rounded-lg transition-colors'
-                onClick={() => {
-                  clearPersistedPosterState();
-                  setState(prev => ({
-                    ...prev,
-                    imageUrl: null,
-                    imageFile: null,
-                    posterWidth: DEFAULT_POSTER_SIZE.width,
-                    posterHeight: DEFAULT_POSTER_SIZE.height,
-                  }));
-                  if (fileInputRef.current) fileInputRef.current.value = '';
-                }}
+                onClick={() => setShowStartOverDialog(true)}
               >
                 <RotateCcw className='w-4 h-4' />
                 <span className='hidden sm:inline ml-1 md:ml-2 text-sm'>
