@@ -1,5 +1,5 @@
 import logo from '@/assets/images/logo.svg';
-import { motion, AnimatePresence } from 'motion/react';
+import { motion } from 'motion/react';
 import {
   DropdownMenu,
   DropdownMenuContent,
