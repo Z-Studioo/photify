@@ -8,7 +8,18 @@ import {
   X,
   ArrowLeft,
   ShoppingCart,
+  RotateCcw,
 } from 'lucide-react';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
 import { createClient } from '@/lib/supabase/client';
@@ -18,6 +29,24 @@ import { CropModal } from './crop-modal';
 import { MULTI_CANVAS_WALL_PRODUCT, getWallDimensionsPx } from './config';
 import { type MultiCanvasWallState, type Room } from './types';
 import { useCart } from '@/context/CartContext';
+
+// ─── Session persistence ─────────────────────────────────────────────────────
+const MULTI_CANVAS_SESSION_KEY = 'photify_multi_canvas_state';
+
+function loadPersistedMultiCanvasState() {
+  try {
+    const saved = sessionStorage.getItem(MULTI_CANVAS_SESSION_KEY);
+    if (saved) return JSON.parse(saved);
+  } catch {}
+  return null;
+}
+
+function clearPersistedMultiCanvasState() {
+  try {
+    sessionStorage.removeItem(MULTI_CANVAS_SESSION_KEY);
+  } catch {}
+}
+// ─────────────────────────────────────────────────────────────────────────────
 
 // Types for database
 interface Size {
@@ -46,27 +75,49 @@ export function MultiCanvasWallCustomizer() {
 
   // Size selection state
   const [sizes, setSizes] = useState<Size[]>([]);
-  const [selectedSizeId, setSelectedSizeId] = useState<string | null>(null);
-  const [canvasWidth, setCanvasWidth] = useState(
-    MULTI_CANVAS_WALL_PRODUCT.config.canvasWidth
-  );
-  const [canvasHeight, setCanvasHeight] = useState(
-    MULTI_CANVAS_WALL_PRODUCT.config.canvasHeight
-  );
+  const [selectedSizeId, setSelectedSizeId] = useState<string | null>(() => {
+    if (artImageUrl) return null; // fresh art flow — don't restore
+    return loadPersistedMultiCanvasState()?.selectedSizeId ?? null;
+  });
+  const [canvasWidth, setCanvasWidth] = useState(() => {
+    if (artImageUrl) return MULTI_CANVAS_WALL_PRODUCT.config.canvasWidth;
+    return loadPersistedMultiCanvasState()?.canvasWidth ?? MULTI_CANVAS_WALL_PRODUCT.config.canvasWidth;
+  });
+  const [canvasHeight, setCanvasHeight] = useState(() => {
+    if (artImageUrl) return MULTI_CANVAS_WALL_PRODUCT.config.canvasHeight;
+    return loadPersistedMultiCanvasState()?.canvasHeight ?? MULTI_CANVAS_WALL_PRODUCT.config.canvasHeight;
+  });
   const [productPrice, setProductPrice] = useState<number>(0); // Price per square inch
 
   // State — if artImageUrl provided, pre-fill all 3 canvases
-  const [state, setState] = useState<MultiCanvasWallState>({
-    canvases: Array.from({ length: 3 }, (_, i) => ({
-      id: i,
-      imageUrl: artImageUrl ?? null,
-      imageFile: null,
-      uploaded: artImageUrl ? true : false,
-    })),
-    showRulers: true,
-    selectedCanvasId: null,
-    selectedRoom: 'living-room', // default room
-    customSpacing: 12, // default 12 inches spacing
+  const [state, setState] = useState<MultiCanvasWallState>(() => {
+    if (!artImageUrl) {
+      const saved = loadPersistedMultiCanvasState();
+      if (saved?.canvases) {
+        return {
+          canvases: (saved.canvases as any[]).map((c: any) => ({
+            ...c,
+            imageFile: null,
+          })),
+          showRulers: true,
+          selectedCanvasId: null,
+          selectedRoom: saved.selectedRoom ?? 'living-room',
+          customSpacing: saved.customSpacing ?? 12,
+        };
+      }
+    }
+    return {
+      canvases: Array.from({ length: 3 }, (_, i) => ({
+        id: i,
+        imageUrl: artImageUrl ?? null,
+        imageFile: null,
+        uploaded: artImageUrl ? true : false,
+      })),
+      showRulers: true,
+      selectedCanvasId: null,
+      selectedRoom: 'living-room',
+      customSpacing: 12,
+    };
   });
 
   const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
@@ -78,6 +129,42 @@ export function MultiCanvasWallCustomizer() {
     canvasId: number;
     imageUrl: string;
   } | null>(null);
+  const [showBackDialog, setShowBackDialog] = useState(false);
+  const [showResetDialog, setShowResetDialog] = useState(false);
+
+  // Sync canvas dims when sizes load and a saved selectedSizeId is restored
+  useEffect(() => {
+    if (!selectedSizeId || sizes.length === 0) return;
+    const match = sizes.find(s => s.id === selectedSizeId);
+    if (match) {
+      setCanvasWidth(match.width_in);
+      setCanvasHeight(match.height_in);
+    }
+  }, [sizes, selectedSizeId]);
+
+  // Persist key state to sessionStorage
+  const isMountedRef = useRef(false);
+  useEffect(() => {
+    if (!isMountedRef.current) { isMountedRef.current = true; return; }
+    if (artImageUrl) return; // don't persist art-flow sessions
+    try {
+      sessionStorage.setItem(
+        MULTI_CANVAS_SESSION_KEY,
+        JSON.stringify({
+          canvases: state.canvases.map(c => ({
+            id: c.id,
+            imageUrl: c.imageUrl,
+            uploaded: c.uploaded,
+          })),
+          selectedRoom: state.selectedRoom,
+          customSpacing: state.customSpacing,
+          selectedSizeId,
+          canvasWidth,
+          canvasHeight,
+        })
+      );
+    } catch {}
+  }, [state.canvases, state.selectedRoom, state.customSpacing, selectedSizeId, canvasWidth, canvasHeight]);
 
   // Room backgrounds from database
   const [rooms, setRooms] = useState<Room[]>([]);
@@ -142,11 +229,19 @@ export function MultiCanvasWallCustomizer() {
         if (sizesData && sizesData.length > 0) {
           setSizes(sizesData);
 
-          // Auto-select first size
-          const firstSize = sizesData[0];
-          setSelectedSizeId(firstSize.id);
-          setCanvasWidth(firstSize.width_in);
-          setCanvasHeight(firstSize.height_in);
+          // Auto-select first size only if none was restored from session
+          setSelectedSizeId((prev: string | null) => {
+            if (prev) return prev;
+            return sizesData[0].id;
+          });
+          setCanvasWidth((prev: number) => {
+            if (prev !== MULTI_CANVAS_WALL_PRODUCT.config.canvasWidth) return prev;
+            return sizesData[0].width_in;
+          });
+          setCanvasHeight((prev: number) => {
+            if (prev !== MULTI_CANVAS_WALL_PRODUCT.config.canvasHeight) return prev;
+            return sizesData[0].height_in;
+          });
         } else {
           // left intentionally
         }
@@ -370,6 +465,7 @@ export function MultiCanvasWallCustomizer() {
     };
 
     addToCart(cartItem);
+    clearPersistedMultiCanvasState();
     toast.success('Added to cart! 3 canvases ready for checkout.');
     navigate('/cart');
   };
@@ -385,6 +481,27 @@ export function MultiCanvasWallCustomizer() {
       ),
     }));
     toast.success(`Canvas ${canvasId + 1} cleared`);
+  };
+
+  // Handle full reset
+  const handleReset = () => {
+    clearPersistedMultiCanvasState();
+    setState(prev => ({
+      ...prev,
+      canvases: Array.from({ length: 3 }, (_, i) => ({
+        id: i,
+        imageUrl: null,
+        imageFile: null,
+        uploaded: false,
+      })),
+      customSpacing: 12,
+      selectedRoom: 'living-room',
+    }));
+    setSelectedSizeId(sizes.length > 0 ? sizes[0].id : null);
+    if (sizes.length > 0) {
+      setCanvasWidth(sizes[0].width_in);
+      setCanvasHeight(sizes[0].height_in);
+    }
   };
 
   // Get dimensions (using selected size dimensions)
@@ -463,6 +580,79 @@ export function MultiCanvasWallCustomizer() {
 
   return (
     <div className='min-h-screen md:h-screen bg-gradient-to-br from-gray-50 via-pink-50/30 to-purple-50/30 flex flex-col md:flex-row overflow-hidden'>
+      {/* Leave editor dialog */}
+      <AlertDialog open={showBackDialog} onOpenChange={setShowBackDialog}>
+        <AlertDialogContent className='max-w-sm rounded-2xl p-0 overflow-hidden'>
+          <div className='h-2 bg-gradient-to-r from-[#f63a9e] to-purple-500' />
+          <div className='px-6 pt-5 pb-6'>
+            <AlertDialogHeader className='space-y-2'>
+              <div className='flex items-center gap-3'>
+                <div className='w-10 h-10 rounded-full bg-pink-50 flex items-center justify-center flex-shrink-0'>
+                  <ArrowLeft className='w-5 h-5 text-[#f63a9e]' />
+                </div>
+                <AlertDialogTitle
+                  className="font-['Bricolage_Grotesque',_sans-serif] text-lg text-gray-900"
+                  style={{ fontWeight: '700' }}
+                >
+                  Leave the editor?
+                </AlertDialogTitle>
+              </div>
+              <AlertDialogDescription className='text-sm text-gray-500 leading-relaxed pl-[52px]'>
+                You&apos;ve started building your gallery wall. Your progress
+                will be saved — you can come back and continue anytime.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter className='flex-col sm:flex-row gap-2 mt-5'>
+              <AlertDialogCancel className='w-full sm:w-auto rounded-xl border-2 border-gray-200 hover:bg-gray-50 text-gray-700 font-medium'>
+                Keep editing
+              </AlertDialogCancel>
+              <AlertDialogAction
+                className='w-full sm:w-auto rounded-xl bg-gradient-to-r from-[#f63a9e] to-purple-500 hover:opacity-90 text-white font-semibold shadow-md shadow-pink-200/50'
+                onClick={() => navigate(-1)}
+              >
+                Yes, go back
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </div>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Reset / start over dialog */}
+      <AlertDialog open={showResetDialog} onOpenChange={setShowResetDialog}>
+        <AlertDialogContent className='max-w-sm rounded-2xl p-0 overflow-hidden'>
+          <div className='h-2 bg-gradient-to-r from-red-400 to-orange-400' />
+          <div className='px-6 pt-5 pb-6'>
+            <AlertDialogHeader className='space-y-2'>
+              <div className='flex items-center gap-3'>
+                <div className='w-10 h-10 rounded-full bg-red-50 flex items-center justify-center flex-shrink-0'>
+                  <RotateCcw className='w-5 h-5 text-red-500' />
+                </div>
+                <AlertDialogTitle
+                  className="font-['Bricolage_Grotesque',_sans-serif] text-lg text-gray-900"
+                  style={{ fontWeight: '700' }}
+                >
+                  Start over?
+                </AlertDialogTitle>
+              </div>
+              <AlertDialogDescription className='text-sm text-gray-500 leading-relaxed pl-[52px]'>
+                This will remove all uploaded images and reset your canvas
+                layout. This can&apos;t be undone.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter className='flex-col sm:flex-row gap-2 mt-5'>
+              <AlertDialogCancel className='w-full sm:w-auto rounded-xl border-2 border-gray-200 hover:bg-gray-50 text-gray-700 font-medium'>
+                Keep my wall
+              </AlertDialogCancel>
+              <AlertDialogAction
+                className='w-full sm:w-auto rounded-xl bg-red-500 hover:bg-red-600 text-white font-semibold shadow-md shadow-red-200/50'
+                onClick={handleReset}
+              >
+                Yes, start over
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </div>
+        </AlertDialogContent>
+      </AlertDialog>
       {/* Main Content Area */}
       <div className='flex-1 flex items-stretch'>
         <div
@@ -488,7 +678,7 @@ export function MultiCanvasWallCustomizer() {
                 initial={{ opacity: 0, x: -20 }}
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ delay: 0.3 }}
-                onClick={() => navigate(-1)}
+                onClick={() => setShowBackDialog(true)}
                 className='flex items-center gap-1.5 sm:gap-2 px-3 py-2 sm:px-4 sm:py-2.5 md:px-5 md:py-3 bg-white/95 backdrop-blur-md hover:bg-white rounded-lg sm:rounded-xl md:rounded-2xl shadow-lg border-2 border-gray-200 hover:border-gray-300 transition-all group'
               >
                 <ArrowLeft className='w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-6 text-gray-700 group-hover:text-[#f63a9e] transition-colors' />
@@ -498,8 +688,20 @@ export function MultiCanvasWallCustomizer() {
               </motion.button>
             </div>
 
-            {/* Top Right - Ruler Toggle */}
-            <div className='absolute top-2 right-2 sm:top-4 sm:right-4 md:top-6 md:right-6 z-20'>
+            {/* Top Right - Reset + Ruler Toggle */}
+            <div className='absolute top-2 right-2 sm:top-4 sm:right-4 md:top-6 md:right-6 z-20 flex items-center gap-2'>
+              <motion.button
+                initial={{ opacity: 0, x: 20 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: 0.25 }}
+                onClick={() => setShowResetDialog(true)}
+                className='flex items-center gap-1.5 sm:gap-2 px-3 py-2 sm:px-4 sm:py-2.5 md:px-5 md:py-3 bg-white/95 backdrop-blur-md hover:bg-white rounded-lg sm:rounded-xl md:rounded-2xl shadow-lg border-2 border-gray-200 hover:border-red-300 hover:text-red-500 transition-all group'
+              >
+                <RotateCcw className='w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-6 text-gray-700 group-hover:text-red-500 transition-colors' />
+                <span className='hidden sm:inline text-xs sm:text-sm md:text-base font-semibold text-gray-700 group-hover:text-red-500 transition-colors'>
+                  Start Over
+                </span>
+              </motion.button>
               <motion.button
                 initial={{ opacity: 0, x: 20 }}
                 animate={{ opacity: 1, x: 0 }}
