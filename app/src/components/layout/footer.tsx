@@ -9,15 +9,13 @@ export function Footer() {
           {/* Logo & Description */}
           <div className='lg:col-span-2'>
             <div className='flex items-center gap-2 mb-4'>
-              <div className='w-10 h-10 bg-[#f63a9e] rounded-full flex items-center justify-center'>
-                <div className='w-3 h-3 bg-white rounded-full' />
-              </div>
-              <span
-                className="font-['Bricolage_Grotesque',_sans-serif] text-[#f63a9e]"
-                style={{ fontSize: '28px', fontWeight: '800' }}
-              >
-                Photify
-              </span>
+              <Link to='/'>
+                <img
+                  src='https://5fa4a340f8c967ae9d08053cb424cc05.cdn.bubble.io/f1742289951059x587038808958525700/Frame%2012.svg'
+                  alt='Photify'
+                  className='h-10 w-auto'
+                />
+              </Link>
             </div>
             <p className='text-gray-400 mb-4'>
               At Photify, we&apos;re dedicated to helping you transform your
