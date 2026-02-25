@@ -7,6 +7,7 @@ import {
   ArrowLeft,
   Loader2,
   Upload,
+  Check,
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
@@ -60,6 +61,14 @@ export function RoomInspirationPage({
   const [hoveredHotspot, setHoveredHotspot] = useState<string | null>(null);
   const { addToCart } = useCart();
   const supabase = createClient();
+  const [addedProductIds, setAddedProductIds] = useState<Set<string>>(new Set());
+  const [addedAll, setAddedAll] = useState(false);
+
+  const formatPrice = (price: number | undefined | null): string => {
+    if (price === undefined || price === null || isNaN(price) || price === 0)
+      return 'Not Available';
+    return `$${price.toFixed(2)}`;
+  };
 
   // Fetch room data from database
   useEffect(() => {
@@ -364,16 +373,25 @@ export function RoomInspirationPage({
   const displayRoom =
     currentRoom || rooms.find(r => r.id === propRoomId) || rooms[0];
 
-  const handleAddToCart = (product: Product) => {
+  const handleAddToCart = (product: Product, silent = false) => {
     addToCart({
       id: product.id,
       name: product.name,
       price: product.price,
       image: product.image,
       quantity: 1,
-      // size: '16" × 20"', // Not part of CartItem type
-      // frame: "Black Wood", // Not part of CartItem type
     });
+    if (!silent) {
+      toast.success(`${product.name} added to cart!`);
+    }
+    setAddedProductIds(prev => new Set(prev).add(product.id));
+    setTimeout(() => {
+      setAddedProductIds(prev => {
+        const next = new Set(prev);
+        next.delete(product.id);
+        return next;
+      });
+    }, 1800);
     setSelectedHotspot(null);
   };
 
@@ -408,56 +426,70 @@ export function RoomInspirationPage({
     );
   }
 
+  // Helper: is a product's price valid / purchasable
+  const hasPriceValid = (price: number | undefined | null) =>
+    price !== undefined && price !== null && !isNaN(price) && price > 0;
+
+  // NaN-safe room total
+  const roomTotal = displayRoom.hotspots.reduce(
+    (sum, h) => sum + (hasPriceValid(h.product.price) ? h.product.price : 0),
+    0
+  );
+  const roomTotalLabel = roomTotal > 0 ? `$${roomTotal.toFixed(2)}` : 'Not Available';
+
+  // Only art products with a valid price can be added to cart
+  const canAddToCart = (product: Product) =>
+    !!product.isArtProduct && hasPriceValid(product.price);
+
+  // Art products with valid price for "Add All"
+  const cartableProducts = displayRoom.hotspots.filter(h =>
+    canAddToCart(h.product)
+  );
+
   return (
     <div className="min-h-screen bg-white font-['Mona_Sans',_sans-serif]">
       <Header />
 
       {/* Page Title Bar */}
       <div className='bg-gray-50 border-b border-gray-200'>
-        <div className='max-w-[1400px] mx-auto px-6 py-8'>
+        <div className='max-w-[1400px] mx-auto px-4 sm:px-6 py-5 sm:py-8'>
           <Button
             onClick={() => navigate('/')}
             variant='ghost'
-            className='mb-6 -ml-3 h-auto px-3 py-2 hover:bg-gray-100 rounded-lg'
+            className='mb-4 sm:mb-6 -ml-3 h-auto px-3 py-2 hover:bg-gray-100 rounded-lg'
             style={{ fontWeight: '600' }}
           >
             <ArrowLeft className='w-4 h-4 mr-2' />
             Back to Home
           </Button>
 
-          <div className='flex items-end justify-between'>
+          <div className='flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3 sm:gap-4'>
             <div>
-              <div className='flex items-center gap-3 mb-3'>
-                <span className='text-sm text-gray-500'>Room Inspiration</span>
+              <div className='flex items-center gap-2 sm:gap-3 mb-2 sm:mb-3 flex-wrap'>
+                <span className='text-xs sm:text-sm text-gray-500'>Room Inspiration</span>
                 <span className='text-gray-300'>•</span>
-                <span
-                  className='text-sm text-gray-900'
-                  style={{ fontWeight: '600' }}
-                >
+                <span className='text-xs sm:text-sm text-gray-900' style={{ fontWeight: '600' }}>
                   {displayRoom.hotspots.length} products
                 </span>
               </div>
               <h1
-                className="font-['Bricolage_Grotesque',_sans-serif] text-gray-900"
-                style={{ fontWeight: '700', fontSize: '36px' }}
+                className="font-['Bricolage_Grotesque',_sans-serif] text-gray-900 text-2xl sm:text-3xl lg:text-4xl"
+                style={{ fontWeight: '700' }}
               >
                 {displayRoom.name}
               </h1>
-              <p className='text-gray-600 mt-2 max-w-2xl'>
+              <p className='text-gray-600 mt-1 sm:mt-2 text-sm sm:text-base max-w-2xl'>
                 {displayRoom.description}
               </p>
             </div>
 
-            <div className='hidden md:block text-right'>
-              <p className='text-sm text-gray-500 mb-1'>Complete look</p>
+            <div className='sm:text-right flex-shrink-0'>
+              <p className='text-xs sm:text-sm text-gray-500 mb-0.5 sm:mb-1'>Complete look</p>
               <p
-                className="font-['Bricolage_Grotesque',_sans-serif] text-gray-900"
-                style={{ fontWeight: '700', fontSize: '24px' }}
+                className="font-['Bricolage_Grotesque',_sans-serif] text-gray-900 text-lg sm:text-2xl"
+                style={{ fontWeight: '700' }}
               >
-                $
-                {displayRoom.hotspots
-                  .reduce((sum, h) => sum + h.product.price, 0)
-                  .toFixed(2)}
+                {roomTotalLabel}
               </p>
             </div>
           </div>
@@ -465,16 +497,17 @@ export function RoomInspirationPage({
       </div>
 
       {/* Main Content */}
-      <div className='max-w-[1400px] mx-auto px-6 py-8'>
-        <div className='grid grid-cols-12 gap-8'>
+      <div className='max-w-[1400px] mx-auto px-4 sm:px-6 py-6 sm:py-8'>
+        <div className='grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8'>
+
           {/* Room Image with Hotspots */}
-          <div className='col-span-8'>
-            <div className='sticky top-6'>
+          <div className='lg:col-span-8'>
+            <div className='lg:sticky lg:top-6'>
               <motion.div
                 initial={{ opacity: 0, scale: 0.95 }}
                 animate={{ opacity: 1, scale: 1 }}
                 transition={{ duration: 0.5 }}
-                className='relative rounded-3xl overflow-hidden shadow-2xl bg-gray-100'
+                className='relative rounded-2xl sm:rounded-3xl overflow-hidden shadow-2xl bg-gray-100'
               >
                 <ImageWithFallback
                   src={displayRoom.image}
@@ -500,25 +533,23 @@ export function RoomInspirationPage({
                     onMouseEnter={() => setHoveredHotspot(hotspot.id)}
                     onMouseLeave={() => setHoveredHotspot(null)}
                   >
-                    {/* Hotspot Pulse Animation */}
                     <div className='relative'>
                       <div className='absolute inset-0 bg-[#f63a9e] rounded-full opacity-40 animate-ping' />
-                      <div className='relative w-12 h-12 bg-white rounded-full border-4 border-[#f63a9e] flex items-center justify-center shadow-xl group-hover:bg-[#f63a9e] transition-all'>
-                        <Plus className='w-6 h-6 text-[#f63a9e] group-hover:text-white transition-colors' />
+                      <div className='relative w-8 h-8 sm:w-10 sm:h-10 md:w-12 md:h-12 bg-white rounded-full border-2 sm:border-4 border-[#f63a9e] flex items-center justify-center shadow-xl group-hover:bg-[#f63a9e] transition-all'>
+                        <Plus className='w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-6 text-[#f63a9e] group-hover:text-white transition-colors' />
                       </div>
                     </div>
 
-                    {/* Hotspot Label on Hover */}
                     <AnimatePresence>
                       {hoveredHotspot === hotspot.id && (
                         <motion.div
                           initial={{ opacity: 0, y: 10 }}
                           animate={{ opacity: 1, y: 0 }}
                           exit={{ opacity: 0, y: 10 }}
-                          className='absolute top-full mt-2 left-1/2 -translate-x-1/2 whitespace-nowrap'
+                          className='absolute top-full mt-2 left-1/2 -translate-x-1/2 whitespace-nowrap z-10'
                         >
                           <div
-                            className='bg-gray-900 text-white px-4 py-2 rounded-lg text-sm shadow-xl'
+                            className='bg-gray-900 text-white px-3 py-1.5 sm:px-4 sm:py-2 rounded-lg text-xs sm:text-sm shadow-xl'
                             style={{ fontWeight: '600' }}
                           >
                             {hotspot.product.name}
@@ -536,24 +567,20 @@ export function RoomInspirationPage({
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.5, delay: 0.3 }}
-                className='mt-6 bg-gradient-to-r from-[#FFF5FB] to-purple-50/30 rounded-2xl p-6 border-2 border-[#f63a9e]/20'
+                className='mt-4 sm:mt-6 bg-gradient-to-r from-[#FFF5FB] to-purple-50/30 rounded-xl sm:rounded-2xl p-4 sm:p-6 border-2 border-[#f63a9e]/20'
               >
-                <div className='flex items-start gap-4'>
-                  <div className='w-10 h-10 rounded-full bg-[#f63a9e]/10 flex items-center justify-center flex-shrink-0'>
-                    <Info className='w-5 h-5 text-[#f63a9e]' />
+                <div className='flex items-start gap-3 sm:gap-4'>
+                  <div className='w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-[#f63a9e]/10 flex items-center justify-center flex-shrink-0'>
+                    <Info className='w-4 h-4 sm:w-5 sm:h-5 text-[#f63a9e]' />
                   </div>
                   <div>
-                    <h3
-                      className='text-gray-900 mb-1'
-                      style={{ fontWeight: '700' }}
-                    >
+                    <h3 className='text-gray-900 mb-1 text-sm sm:text-base' style={{ fontWeight: '700' }}>
                       Shop This Room
                     </h3>
-                    <p className='text-gray-600 text-sm'>
-                      Click on the{' '}
-                      <Plus className='w-4 h-4 inline text-[#f63a9e]' /> icons
-                      to explore products featured in this room. Each piece has
-                      been carefully selected to create a cohesive look.
+                    <p className='text-gray-600 text-xs sm:text-sm'>
+                      Tap the{' '}
+                      <Plus className='w-3 h-3 sm:w-4 sm:h-4 inline text-[#f63a9e]' /> icons
+                      to explore products featured in this room.
                     </p>
                   </div>
                 </div>
@@ -562,125 +589,125 @@ export function RoomInspirationPage({
           </div>
 
           {/* Product List Sidebar */}
-          <div className='col-span-4'>
+          <div className='lg:col-span-4'>
             <motion.div
-              initial={{ opacity: 0, x: 20 }}
+              initial={{ opacity: 0, x: 0 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ duration: 0.5 }}
-              className='sticky top-6'
+              className='lg:sticky lg:top-6'
             >
-              <div className='bg-gray-50 rounded-3xl p-8 border-2 border-gray-100'>
+              <div className='bg-gray-50 rounded-2xl sm:rounded-3xl p-4 sm:p-6 lg:p-8 border-2 border-gray-100'>
                 <h2
-                  className="font-['Bricolage_Grotesque',_sans-serif] text-gray-900 mb-6"
-                  style={{
-                    fontWeight: '700',
-                    fontSize: '20px',
-                  }}
+                  className="font-['Bricolage_Grotesque',_sans-serif] text-gray-900 mb-4 sm:mb-6 text-base sm:text-lg lg:text-xl"
+                  style={{ fontWeight: '700' }}
                 >
                   Products in This Room
                 </h2>
 
-                <div className='space-y-4'>
-                  {displayRoom.hotspots.map((hotspot, index) => (
-                    <motion.div
-                      key={hotspot.id}
-                      initial={{ opacity: 0, y: 20 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{
-                        duration: 0.4,
-                        delay: 0.6 + index * 0.1,
-                      }}
-                      className='bg-white rounded-2xl p-4 border-2 border-gray-100 hover:border-[#f63a9e]/30 transition-all group cursor-pointer'
-                      onClick={() => setSelectedHotspot(hotspot)}
-                    >
-                      <div className='flex gap-4'>
-                        <div className='w-20 h-20 rounded-xl overflow-hidden bg-gray-100 flex-shrink-0'>
-                          <ImageWithFallback
-                            src={hotspot.product.image}
-                            alt={hotspot.product.name}
-                            className='w-full h-full object-cover group-hover:scale-110 transition-transform duration-300'
-                          />
-                        </div>
-                        <div className='flex-1 min-w-0'>
-                          <h3
-                            className='text-gray-900 mb-1 truncate'
-                            style={{ fontWeight: '600' }}
-                          >
-                            {hotspot.product.name}
-                          </h3>
-                          <p className='text-gray-500 text-xs mb-2'>
-                            {hotspot.product.category}
-                          </p>
-                          <p
-                            className='text-[#f63a9e]'
-                            style={{
-                              fontWeight: '700',
-                              fontSize: '16px',
-                            }}
-                          >
-                            ${hotspot.product.price}
-                          </p>
-                        </div>
-                      </div>
-                      <Button
-                        onClick={e => {
-                          e.stopPropagation();
-                          if (hotspot.product.isArtProduct) {
-                            handleAddToCart(hotspot.product);
-                          } else {
-                            navigate(
-                              `/product/${hotspot.product.slug || hotspot.product.id}`
-                            );
-                          }
-                        }}
-                        className='w-full mt-3 bg-[#f63a9e] hover:bg-[#e02d8d] text-white rounded-xl h-[45px]'
-                        style={{ fontWeight: '700' }}
+                <div className='space-y-3 sm:space-y-4'>
+                  {displayRoom.hotspots.map((hotspot, index) => {
+                    const priceOk = hasPriceValid(hotspot.product.price);
+                    const isAdded = addedProductIds.has(hotspot.product.id);
+                    return (
+                      <motion.div
+                        key={hotspot.id}
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.4, delay: 0.6 + index * 0.1 }}
+                        className='bg-white rounded-xl sm:rounded-2xl p-3 sm:p-4 border-2 border-gray-100 hover:border-[#f63a9e]/30 transition-all group cursor-pointer'
+                        onClick={() => setSelectedHotspot(hotspot)}
                       >
-                        {hotspot.product.isArtProduct ? (
-                          <>
-                            <ShoppingCart className='w-4 h-4 mr-2' />
-                            Add to Cart
-                          </>
-                        ) : (
-                          <>
-                            <Upload className='w-4 h-4 mr-2' />
-                            Upload Your Photo
-                          </>
-                        )}
-                      </Button>
-                    </motion.div>
-                  ))}
+                        <div className='flex gap-3 sm:gap-4'>
+                          <div className='w-16 h-16 sm:w-20 sm:h-20 rounded-lg sm:rounded-xl overflow-hidden bg-gray-100 flex-shrink-0'>
+                            <ImageWithFallback
+                              src={hotspot.product.image}
+                              alt={hotspot.product.name}
+                              className='w-full h-full object-cover group-hover:scale-110 transition-transform duration-300'
+                            />
+                          </div>
+                          <div className='flex-1 min-w-0'>
+                            <h3 className='text-gray-900 mb-0.5 sm:mb-1 truncate text-sm sm:text-base' style={{ fontWeight: '600' }}>
+                              {hotspot.product.name}
+                            </h3>
+                            <p className='text-gray-500 text-xs mb-1 sm:mb-2'>{hotspot.product.category}</p>
+                            <p
+                              className={priceOk ? 'text-[#f63a9e] text-sm sm:text-base' : 'text-gray-400 text-xs sm:text-sm italic'}
+                              style={{ fontWeight: priceOk ? '700' : '500' }}
+                            >
+                              {formatPrice(hotspot.product.price)}
+                            </p>
+                          </div>
+                        </div>
+
+                        <Button
+                          onClick={e => {
+                            e.stopPropagation();
+                            if (hotspot.product.isArtProduct && priceOk) {
+                              handleAddToCart(hotspot.product);
+                            } else if (!hotspot.product.isArtProduct) {
+                              navigate(`/product/${hotspot.product.slug || hotspot.product.id}`);
+                            }
+                          }}
+                          disabled={hotspot.product.isArtProduct && !priceOk}
+                          className={`w-full mt-2 sm:mt-3 rounded-xl h-[40px] sm:h-[45px] text-sm transition-all ${
+                            hotspot.product.isArtProduct && !priceOk
+                              ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                              : isAdded
+                                ? 'bg-green-500 hover:bg-green-600 text-white'
+                                : 'bg-[#f63a9e] hover:bg-[#e02d8d] text-white'
+                          }`}
+                          style={{ fontWeight: '700' }}
+                        >
+                          {hotspot.product.isArtProduct ? (
+                            isAdded ? (
+                              <><Check className='w-4 h-4 mr-2' />Added!</>
+                            ) : priceOk ? (
+                              <><ShoppingCart className='w-4 h-4 mr-2' />Add to Cart</>
+                            ) : (
+                              'Price Not Available'
+                            )
+                          ) : (
+                            <><Upload className='w-4 h-4 mr-2' />Upload Your Photo</>
+                          )}
+                        </Button>
+                      </motion.div>
+                    );
+                  })}
                 </div>
 
                 {/* Room Total */}
-                <div className='mt-8 pt-6 border-t-2 border-gray-200'>
-                  <div className='flex items-center justify-between mb-2'>
-                    <span className='text-gray-600'>Total for this room:</span>
-                    <span
-                      className='text-gray-900'
-                      style={{
-                        fontWeight: '700',
-                        fontSize: '20px',
-                      }}
-                    >
-                      $
-                      {displayRoom.hotspots
-                        .reduce((sum, h) => sum + h.product.price, 0)
-                        .toFixed(2)}
+                <div className='mt-6 sm:mt-8 pt-4 sm:pt-6 border-t-2 border-gray-200'>
+                  <div className='flex items-center justify-between mb-3 sm:mb-4'>
+                    <span className='text-gray-600 text-sm sm:text-base'>Total for this room:</span>
+                    <span className='text-gray-900 text-lg sm:text-xl' style={{ fontWeight: '700' }}>
+                      {roomTotalLabel}
                     </span>
                   </div>
                   <Button
                     onClick={() => {
-                      displayRoom.hotspots.forEach(h =>
-                        handleAddToCart(h.product)
-                      );
+                      cartableProducts.forEach(h => handleAddToCart(h.product, true));
+                      toast.success(`${cartableProducts.length} item${cartableProducts.length !== 1 ? 's' : ''} added to cart!`);
+                      setAddedAll(true);
+                      setTimeout(() => setAddedAll(false), 1800);
                     }}
+                    disabled={cartableProducts.length === 0}
                     variant='outline'
-                    className='w-full border-2 border-gray-300 hover:border-[#f63a9e] hover:bg-[#FFF5FB] rounded-xl h-[50px] mt-4'
+                    className={`w-full border-2 rounded-xl h-[46px] sm:h-[50px] mt-2 transition-all text-sm sm:text-base ${
+                      cartableProducts.length === 0
+                        ? 'border-gray-200 text-gray-400 cursor-not-allowed'
+                        : addedAll
+                          ? 'border-green-400 bg-green-50 text-green-700'
+                          : 'border-gray-300 hover:border-[#f63a9e] hover:bg-[#FFF5FB]'
+                    }`}
                     style={{ fontWeight: '700' }}
                   >
-                    <ShoppingCart className='w-5 h-5 mr-2' />
-                    Add All to Cart
+                    {addedAll ? (
+                      <><Check className='w-4 h-4 sm:w-5 sm:h-5 mr-2 text-green-500' />All Added!</>
+                    ) : (
+                      <><ShoppingCart className='w-4 h-4 sm:w-5 sm:h-5 mr-2' />
+                        {cartableProducts.length === 0 ? 'No Items Available' : `Add ${cartableProducts.length === displayRoom.hotspots.length ? 'All' : cartableProducts.length} to Cart`}
+                      </>
+                    )}
                   </Button>
                 </div>
               </div>
@@ -689,14 +716,14 @@ export function RoomInspirationPage({
         </div>
 
         {/* Other Rooms Section */}
-        <div className='mt-16'>
+        <div className='mt-10 sm:mt-16'>
           <h2
-            className="font-['Bricolage_Grotesque',_sans-serif] text-gray-900 mb-6"
-            style={{ fontWeight: '700', fontSize: '24px' }}
+            className="font-['Bricolage_Grotesque',_sans-serif] text-gray-900 mb-4 sm:mb-6 text-xl sm:text-2xl"
+            style={{ fontWeight: '700' }}
           >
             Explore More Rooms
           </h2>
-          <div className='grid grid-cols-3 gap-6'>
+          <div className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6'>
             {rooms
               .filter(r => r.id !== displayRoom.id)
               .map(room => (
@@ -708,25 +735,22 @@ export function RoomInspirationPage({
                   onClick={() => navigate(`/room/${room.id}`)}
                   className='group cursor-pointer'
                 >
-                  <div className='relative aspect-[4/3] rounded-2xl overflow-hidden mb-4 shadow-lg'>
+                  <div className='relative aspect-[4/3] rounded-xl sm:rounded-2xl overflow-hidden shadow-lg'>
                     <ImageWithFallback
                       src={room.image}
                       alt={room.name}
                       className='w-full h-full object-cover group-hover:scale-105 transition-transform duration-300'
                     />
-                    <div className='absolute inset-0 bg-gradient-to-t from-black/60 to-transparent flex items-end p-6'>
+                    <div className='absolute inset-0 bg-gradient-to-t from-black/60 to-transparent flex items-end p-4 sm:p-6'>
                       <div>
                         <h3
-                          className='text-white mb-1'
-                          style={{
-                            fontWeight: '700',
-                            fontSize: '18px',
-                          }}
+                          className='text-white mb-0.5 sm:mb-1 text-base sm:text-lg'
+                          style={{ fontWeight: '700' }}
                         >
                           {room.name}
                         </h3>
-                        <p className='text-white/80 text-sm'>
-                          {room.hotspots.length} products
+                        <p className='text-white/80 text-xs sm:text-sm'>
+                          {room.description || 'View room'}
                         </p>
                       </div>
                     </div>
@@ -742,152 +766,144 @@ export function RoomInspirationPage({
         open={!!selectedHotspot}
         onOpenChange={open => !open && setSelectedHotspot(null)}
       >
-        <DialogContent className='max-w-2xl p-0 overflow-hidden'>
+        <DialogContent className='w-[95vw] max-w-2xl p-0 overflow-hidden'>
           <DialogTitle className='sr-only'>
             {selectedHotspot?.product.name}
           </DialogTitle>
-          {selectedHotspot && (
-            <div className='grid grid-cols-2 gap-0'>
-              {/* Product Image */}
-              <div className='bg-gray-50'>
-                <ImageWithFallback
-                  src={selectedHotspot.product.image}
-                  alt={selectedHotspot.product.name}
-                  className='w-full h-full object-cover'
-                />
-              </div>
+          {selectedHotspot && (() => {
+            const p = selectedHotspot.product;
+            const priceOk = hasPriceValid(p.price);
+            const isAdded = addedProductIds.has(p.id);
+            return (
+              <div className='flex flex-col sm:grid sm:grid-cols-2 gap-0'>
+                {/* Product Image */}
+                <div className='bg-gray-50 aspect-square sm:aspect-auto max-h-48 sm:max-h-none overflow-hidden'>
+                  <ImageWithFallback
+                    src={p.image}
+                    alt={p.name}
+                    className='w-full h-full object-cover'
+                  />
+                </div>
 
-              {/* Product Details */}
-              <div className='p-8 flex flex-col'>
-                <div className='flex-1'>
-                  <h2
-                    className="font-['Bricolage_Grotesque',_sans-serif] text-gray-900 mb-4"
-                    style={{
-                      fontWeight: '700',
-                      fontSize: '24px',
-                    }}
-                  >
-                    {selectedHotspot.product.name}
-                  </h2>
-
-                  <div className='flex items-baseline gap-2 mb-4'>
-                    <p
-                      className='text-gray-900'
-                      style={{
-                        fontWeight: '700',
-                        fontSize: '28px',
-                      }}
+                {/* Product Details */}
+                <div className='p-5 sm:p-8 flex flex-col max-h-[70vh] sm:max-h-none overflow-y-auto'>
+                  <div className='flex-1'>
+                    <h2
+                      className="font-['Bricolage_Grotesque',_sans-serif] text-gray-900 mb-3 sm:mb-4 text-lg sm:text-2xl"
+                      style={{ fontWeight: '700' }}
                     >
-                      £{selectedHotspot.product.price.toFixed(2)}
+                      {p.name}
+                    </h2>
+
+                    <div className='flex items-baseline gap-2 mb-3 sm:mb-4 flex-wrap'>
+                      <p
+                        className={`text-xl sm:text-3xl ${priceOk ? 'text-gray-900' : 'text-gray-400 text-base sm:text-lg italic'}`}
+                        style={{ fontWeight: '700' }}
+                      >
+                        {priceOk ? `$${p.price.toFixed(2)}` : 'Price Not Available'}
+                      </p>
+                      {p.sizeName && (
+                        <span className='text-gray-500 text-xs sm:text-sm'>{p.sizeName}</span>
+                      )}
+                    </div>
+
+                    <p className='text-gray-600 mb-4 sm:mb-6 text-xs sm:text-sm leading-relaxed'>
+                      {p.isArtProduct
+                        ? `Premium art print${p.sizeName ? ` available in ${p.sizeName}` : ''}. Museum-quality printing.`
+                        : 'Create your own custom product with your photos. Choose size, style, and more in our editor.'}
                     </p>
-                    {selectedHotspot.product.sizeName && (
-                      <span className='text-gray-500 text-sm'>
-                        {selectedHotspot.product.sizeName}
-                      </span>
+
+                    {p.isArtProduct ? (
+                      <>
+                        {p.sizeName && (
+                          <div className='mb-3 sm:mb-4'>
+                            <label className='text-xs sm:text-sm text-gray-900 mb-1.5 sm:mb-2 block' style={{ fontWeight: '600' }}>
+                              Size
+                            </label>
+                            <div className='px-3 py-2 sm:px-4 sm:py-3 border-2 border-[#f63a9e] bg-pink-50 rounded text-xs sm:text-sm text-gray-900'>
+                              <span style={{ fontWeight: '600' }}>{p.sizeName}</span>
+                            </div>
+                          </div>
+                        )}
+                        {priceOk && (
+                          <div className='mb-4 sm:mb-6 flex items-center gap-2 text-xs sm:text-sm text-green-700'>
+                            <span style={{ fontWeight: '600' }}>● In stock - Ready to ship</span>
+                          </div>
+                        )}
+                        {!priceOk && (
+                          <div className='mb-4 sm:mb-6 p-3 bg-amber-50 border border-amber-200 rounded-lg'>
+                            <p className='text-xs sm:text-sm text-amber-800'>
+                              Pricing is not available for this item right now.
+                            </p>
+                          </div>
+                        )}
+                      </>
+                    ) : (
+                      <div className='mb-4 sm:mb-6 p-3 sm:p-4 bg-blue-50 border border-blue-200 rounded-lg'>
+                        <p className='text-xs sm:text-sm text-blue-900'>
+                          <span style={{ fontWeight: '600' }}>Customizable Product:</span>{' '}
+                          Upload your photo and personalize this product in our editor.
+                        </p>
+                      </div>
                     )}
                   </div>
 
-                  <p className='text-gray-600 mb-6 text-sm leading-relaxed'>
-                    {selectedHotspot.product.isArtProduct
-                      ? `Premium art print available in ${selectedHotspot.product.sizeName}. Museum-quality printing.`
-                      : 'Create your own custom product with your photos. Choose size, style, and more in our editor.'}
-                  </p>
-
-                  {selectedHotspot.product.isArtProduct ? (
-                    <>
-                      {/* Size Display (Fixed) */}
-                      <div className='mb-4'>
-                        <label
-                          className='text-sm text-gray-900 mb-2 block'
+                  {/* Actions */}
+                  <div className='space-y-2 sm:space-y-3 mt-2'>
+                    {p.isArtProduct ? (
+                      <>
+                        <Button
+                          onClick={() => handleAddToCart(p)}
+                          disabled={!priceOk}
+                          className={`w-full rounded h-[44px] sm:h-[50px] text-sm sm:text-base transition-all ${
+                            isAdded
+                              ? 'bg-green-500 hover:bg-green-600 text-white'
+                              : !priceOk
+                                ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                                : 'bg-[#f63a9e] hover:bg-[#e02d8d] text-white'
+                          }`}
+                          style={{ fontWeight: '700' }}
+                        >
+                          {isAdded ? (
+                            <><Check className='w-4 h-4 sm:w-5 sm:h-5 mr-2' />Added to Cart!</>
+                          ) : priceOk ? (
+                            <><ShoppingCart className='w-4 h-4 sm:w-5 sm:h-5 mr-2' />Add to Cart — ${p.price.toFixed(2)}</>
+                          ) : (
+                            'Price Not Available'
+                          )}
+                        </Button>
+                        <button
+                          onClick={() => handleProductClick(p.slug || p.id)}
+                          className='text-gray-900 text-xs sm:text-sm w-full hover:underline py-1'
                           style={{ fontWeight: '600' }}
                         >
-                          Size
-                        </label>
-                        <div className='px-4 py-3 border-2 border-[#f63a9e] bg-pink-50 rounded text-sm text-gray-900'>
-                          <span style={{ fontWeight: '600' }}>
-                            {selectedHotspot.product.sizeName}
-                          </span>
-                        </div>
-                      </div>
-
-                      {/* Stock Status */}
-                      <div className='mb-6 flex items-center gap-2 text-sm text-green-700'>
-                        <span style={{ fontWeight: '600' }}>
-                          ● In stock - Ready to ship
-                        </span>
-                      </div>
-                    </>
-                  ) : (
-                    <div className='mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg'>
-                      <p className='text-sm text-blue-900'>
-                        <span style={{ fontWeight: '600' }}>
-                          Customizable Product:
-                        </span>{' '}
-                        Upload your photo and personalize this product in our
-                        editor.
-                      </p>
-                    </div>
-                  )}
-                </div>
-
-                {/* Actions */}
-                <div className='space-y-3'>
-                  {selectedHotspot.product.isArtProduct ? (
-                    <>
-                      <Button
-                        onClick={() => handleAddToCart(selectedHotspot.product)}
-                        className='w-full bg-[#f63a9e] hover:bg-[#e02d8d] text-white rounded h-[50px]'
-                        style={{ fontWeight: '700' }}
-                      >
-                        <ShoppingCart className='w-5 h-5 mr-2' />
-                        Add to Cart - £
-                        {selectedHotspot.product.price.toFixed(2)}
-                      </Button>
-                      <button
-                        onClick={() =>
-                          handleProductClick(
-                            selectedHotspot.product.slug ||
-                              selectedHotspot.product.id
-                          )
-                        }
-                        className='text-gray-900 text-sm w-full hover:underline'
-                        style={{ fontWeight: '600' }}
-                      >
-                        View Full Details
-                      </button>
-                    </>
-                  ) : (
-                    <>
-                      <Button
-                        onClick={() =>
-                          navigate(
-                            `/product/${selectedHotspot.product.slug || selectedHotspot.product.id}`
-                          )
-                        }
-                        className='w-full bg-[#f63a9e] hover:bg-[#e02d8d] text-white rounded h-[50px]'
-                        style={{ fontWeight: '700' }}
-                      >
-                        <Upload className='w-5 h-5 mr-2' />
-                        Upload Your Photo
-                      </Button>
-                      <button
-                        onClick={() =>
-                          handleProductClick(
-                            selectedHotspot.product.slug ||
-                              selectedHotspot.product.id
-                          )
-                        }
-                        className='text-gray-900 text-sm w-full hover:underline'
-                        style={{ fontWeight: '600' }}
-                      >
-                        View Product Details
-                      </button>
-                    </>
-                  )}
+                          View Full Details
+                        </button>
+                      </>
+                    ) : (
+                      <>
+                        <Button
+                          onClick={() => navigate(`/product/${p.slug || p.id}`)}
+                          className='w-full bg-[#f63a9e] hover:bg-[#e02d8d] text-white rounded h-[44px] sm:h-[50px] text-sm sm:text-base'
+                          style={{ fontWeight: '700' }}
+                        >
+                          <Upload className='w-4 h-4 sm:w-5 sm:h-5 mr-2' />
+                          Upload Your Photo
+                        </Button>
+                        <button
+                          onClick={() => handleProductClick(p.slug || p.id)}
+                          className='text-gray-900 text-xs sm:text-sm w-full hover:underline py-1'
+                          style={{ fontWeight: '600' }}
+                        >
+                          View Product Details
+                        </button>
+                      </>
+                    )}
+                  </div>
                 </div>
               </div>
-            </div>
-          )}
+            );
+          })()}
         </DialogContent>
       </Dialog>
 
