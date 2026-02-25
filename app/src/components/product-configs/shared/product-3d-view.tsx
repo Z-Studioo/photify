@@ -344,7 +344,7 @@ export function Product3DView({
   };
 
   // Handle add to cart
-  const handleAddToCart = () => {
+  const handleAddToCart = async () => {
     const selectedSize = sizes.find(s => s.id === selectedSizeId);
     const selectedRatio = aspectRatios.find(
       r => r.id === selectedAspectRatioId
@@ -367,7 +367,7 @@ export function Product3DView({
       quantity: 1,
     };
 
-    addToCart(cartItem);
+    await addToCart(cartItem);
     toast.success('Added to basket!');
 
     // Navigate to cart page

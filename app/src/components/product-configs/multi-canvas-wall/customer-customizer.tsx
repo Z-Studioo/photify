@@ -37,14 +37,18 @@ function loadPersistedMultiCanvasState() {
   try {
     const saved = sessionStorage.getItem(MULTI_CANVAS_SESSION_KEY);
     if (saved) return JSON.parse(saved);
-  } catch {}
+  } catch {
+    //
+  }
   return null;
 }
 
 function clearPersistedMultiCanvasState() {
   try {
     sessionStorage.removeItem(MULTI_CANVAS_SESSION_KEY);
-  } catch {}
+  } catch {
+    //
+  }
 }
 // ─────────────────────────────────────────────────────────────────────────────
 
@@ -163,7 +167,9 @@ export function MultiCanvasWallCustomizer() {
           canvasHeight,
         })
       );
-    } catch {}
+    } catch {
+      //
+    }
   }, [state.canvases, state.selectedRoom, state.customSpacing, selectedSizeId, canvasWidth, canvasHeight]);
 
   // Room backgrounds from database
@@ -432,7 +438,7 @@ export function MultiCanvasWallCustomizer() {
     : '0.00';
 
   // Handle add to cart
-  const handleAddToCart = () => {
+  const handleAddToCart = async () => {
     if (!allUploaded) {
       toast.error('Please upload images for all 3 canvases');
       return;
@@ -464,7 +470,7 @@ export function MultiCanvasWallCustomizer() {
       },
     };
 
-    addToCart(cartItem);
+    await addToCart(cartItem);
     clearPersistedMultiCanvasState();
     toast.success('Added to cart! 3 canvases ready for checkout.');
     navigate('/cart');

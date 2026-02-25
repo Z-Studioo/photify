@@ -1,6 +1,7 @@
 'use client';
 
 import { createContext, useContext, useState, type ReactNode } from 'react';
+import { uploadDataURLToStorage } from '@/lib/supabase/storage';
 
 export interface CartItem {
   id: string;
@@ -15,7 +16,7 @@ export type DeliveryMethod = 'standard' | 'express';
 
 interface CartContextType {
   cartItems: CartItem[];
-  addToCart: (item: CartItem) => void;
+  addToCart: (item: CartItem) => Promise<void>;
   removeFromCart: (id: string) => void;
   updateQuantity: (id: string, quantity: number) => void;
   clearCart: () => void;
@@ -53,15 +54,31 @@ export function CartProvider({ children }: { children: ReactNode }) {
     setPromoApplied(false);
   };
 
-  const addToCart = (item: CartItem) => {
+  const addToCart = async (item: CartItem): Promise<void> => {
+    let imageUrl = item.image;
+
+    // Auto-upload data: or blob: URLs to Supabase so track-order shows the image
+    if (imageUrl && (imageUrl.startsWith('data:') || imageUrl.startsWith('blob:'))) {
+      try {
+        const uploaded = await uploadDataURLToStorage(imageUrl, 'cart-images');
+        if (uploaded) {
+          imageUrl = uploaded;
+        }
+      } catch {
+        // Keep original URL if upload fails - image just won't show in track-order
+      }
+    }
+
+    const resolvedItem = { ...item, image: imageUrl };
+
     setCartItems((prev) => {
-      const existingItem = prev.find((i) => i.id === item.id);
+      const existingItem = prev.find((i) => i.id === resolvedItem.id);
       if (existingItem) {
         return prev.map((i) =>
-          i.id === item.id ? { ...i, quantity: i.quantity + item.quantity } : i
+          i.id === resolvedItem.id ? { ...i, quantity: i.quantity + resolvedItem.quantity } : i
         );
       }
-      return [...prev, item];
+      return [...prev, resolvedItem];
     });
   };
 
