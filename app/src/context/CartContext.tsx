@@ -8,6 +8,7 @@ export interface CartItem {
   name: string;
   price: number;
   image: string;
+  images?: string[];
   size?: string;
   quantity: number;
 }
@@ -69,7 +70,29 @@ export function CartProvider({ children }: { children: ReactNode }) {
       }
     }
 
-    const resolvedItem = { ...item, image: imageUrl };
+    // Auto-upload any additional images (e.g. multi-canvas products)
+    let resolvedImages: string[] | undefined;
+    if (item.images && item.images.length > 0) {
+      resolvedImages = await Promise.all(
+        item.images.map(async (img) => {
+          if (img && (img.startsWith('data:') || img.startsWith('blob:'))) {
+            try {
+              const uploaded = await uploadDataURLToStorage(img, 'cart-images');
+              return uploaded ?? img;
+            } catch {
+              return img;
+            }
+          }
+          return img;
+        })
+      );
+    }
+
+    const resolvedItem = {
+      ...item,
+      image: imageUrl,
+      ...(resolvedImages ? { images: resolvedImages } : {}),
+    };
 
     setCartItems((prev) => {
       const existingItem = prev.find((i) => i.id === resolvedItem.id);

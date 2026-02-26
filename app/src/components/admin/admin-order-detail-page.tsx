@@ -189,6 +189,7 @@ export function AdminOrderDetailPage() {
               size: item.size || 'N/A',
               category: 'Product',
               image: item.image || '#',
+              images: Array.isArray(item.images) ? item.images : [],
               invoice: `#INV-${Math.random().toString(36).substr(2, 9).toUpperCase()}`,
               unitPrice: `£${parseFloat(item.price).toFixed(2)}`,
               quantity: item.quantity || 1,
@@ -1007,14 +1008,30 @@ export function AdminOrderDetailPage() {
                         <td className='py-4 px-2 text-sm'>{item.quantity}</td>
                         <td className='py-4 px-2 text-sm'>{item.category}</td>
                         <td className='py-4 px-2'>
-                          <a
-                            href={item.image}
-                            target='_blank'
-                            rel='noopener noreferrer'
-                            className='text-sm text-blue-600 hover:underline'
-                          >
-                            link/SJDJDH
-                          </a>
+                          {item.images && item.images.length > 0 ? (
+                            <div className='flex flex-col gap-1'>
+                              {(item.images as string[]).map((imgUrl: string, imgIdx: number) => (
+                                <a
+                                  key={imgUrl || `img-${imgIdx}`}
+                                  href={imgUrl}
+                                  target='_blank'
+                                  rel='noopener noreferrer'
+                                  className='text-sm text-blue-600 hover:underline'
+                                >
+                                  Image {imgIdx + 1}
+                                </a>
+                              ))}
+                            </div>
+                          ) : (
+                            <a
+                              href={item.image}
+                              target='_blank'
+                              rel='noopener noreferrer'
+                              className='text-sm text-blue-600 hover:underline'
+                            >
+                              link/SJDJDH
+                            </a>
+                          )}
                         </td>
                         <td className='py-4 px-2'>
                           <a
