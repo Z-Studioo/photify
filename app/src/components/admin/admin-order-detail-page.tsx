@@ -11,7 +11,6 @@ import {
   MapPin,
   Mail,
   Phone,
-  Download,
   CreditCard,
   Loader2,
   MoveLeft,
@@ -19,6 +18,7 @@ import {
   XCircle,
   X,
   CheckCircle2Icon,
+  Copy,
 } from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
 import { toast } from 'sonner';
@@ -34,6 +34,7 @@ import {
   AlertDialogTitle,
 } from '../ui/alert-dialog';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { Badge } from '../ui/badge';
 
 const STATUS_FLOW = ['pending', 'processing', 'shipped', 'delivered'] as const;
 type OrderStatus = (typeof STATUS_FLOW)[number] | 'cancelled';
@@ -120,6 +121,7 @@ export function AdminOrderDetailPage() {
   const navigate = useNavigate();
   const { orderId } = useParams();
   const [notes, setNotes] = useState('');
+  const [savingNote, setSavingNote] = useState(false);
   const [order, setOrder] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const supabase = createClient();
@@ -168,7 +170,10 @@ export function AdminOrderDetailPage() {
             shipping: 'Standard Delivery',
             paymentMethod:
               data.payment_status === 'paid' ? 'Card Payment' : 'Pending',
-            deliveryMethod: 'Standard',
+            deliveryMethod:
+              Math.abs(parseFloat(data.shipping_cost || 0) - 19.99) < 0.01
+                ? 'Express'
+                : 'Standard',
             deliveryPrice: `£${parseFloat(data.shipping_cost || 0).toFixed(2)}`,
             subtotal: `£${parseFloat(data.subtotal).toFixed(2)}`,
             deliveryCharge: `£${parseFloat(data.shipping_cost || 0).toFixed(2)}`,
@@ -193,6 +198,7 @@ export function AdminOrderDetailPage() {
           };
 
           setOrder(transformedOrder);
+          setNotes(data.notes || '');
         }
       } catch (err) {
         console.error('Error fetching order:', err);
@@ -205,13 +211,18 @@ export function AdminOrderDetailPage() {
   }, [orderId, supabase]);
 
   // Helper function to send status change notification email
-  const sendStatusNotificationEmail = async (orderNumber: string, status: string) => {
+  const sendStatusNotificationEmail = async (
+    orderNumber: string,
+    status: string
+  ) => {
     try {
       const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000';
 
       // Get the current Supabase session token
-      const { data: { session } } = await supabase.auth.getSession();
-      
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+
       if (!session?.access_token) {
         console.error('No active session token found');
         toast.error('Failed to send notification email: Not authenticated');
@@ -224,7 +235,7 @@ export function AdminOrderDetailPage() {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            'Authorization': `Bearer ${session.access_token}`,
+            Authorization: `Bearer ${session.access_token}`,
           },
           body: JSON.stringify({ status }),
         }
@@ -243,7 +254,12 @@ export function AdminOrderDetailPage() {
   };
 
   const handleNextStatus = async () => {
-    if (!order || order.status === 'delivered' || order.status === 'cancelled' || updating)
+    if (
+      !order ||
+      order.status === 'delivered' ||
+      order.status === 'cancelled' ||
+      updating
+    )
       return;
 
     const nextStatus = getNextStatus(order.status);
@@ -275,7 +291,7 @@ export function AdminOrderDetailPage() {
       }));
 
       toast.success(`Order moved to ${nextStatus}`);
-      
+
       // Send email notification to customer (await to prevent race conditions)
       await sendStatusNotificationEmail(order.id, nextStatus);
     } catch (err) {
@@ -287,7 +303,12 @@ export function AdminOrderDetailPage() {
   };
 
   const handleBackStatus = async () => {
-    if (!order || order.status === 'pending' || order.status === 'cancelled' || updating)
+    if (
+      !order ||
+      order.status === 'pending' ||
+      order.status === 'cancelled' ||
+      updating
+    )
       return;
 
     const previousStatus = getPreviousStatus(order.status);
@@ -360,7 +381,7 @@ export function AdminOrderDetailPage() {
 
       toast.success('Order cancelled');
       setShowCancelDialog(false);
-      
+
       // Send cancellation email notification to customer (await to prevent race conditions)
       await sendStatusNotificationEmail(order.id, 'cancelled');
     } catch (err) {
@@ -429,13 +450,26 @@ export function AdminOrderDetailPage() {
     toast.success('Invoice opened in print window');
   };
 
-  const handleDownloadLabel = () => {
-    toast.success('Shipping label downloaded');
+  const handleCopy = (text: string, label: string) => {
+    void navigator.clipboard.writeText(text).then(() => {
+      toast.success(`${label} copied to clipboard`);
+    });
   };
-  const handleAddNote = () => {
-    if (notes.trim()) {
-      toast.success('Note added successfully');
-      setNotes('');
+
+  const handleSaveNote = async () => {
+    if (!orderId) return;
+    setSavingNote(true);
+    try {
+      const { error } = await supabase
+        .from('orders')
+        .update({ notes })
+        .eq('order_number', orderId);
+      if (error) throw error;
+      toast.success('Note saved successfully');
+    } catch {
+      toast.error('Failed to save note');
+    } finally {
+      setSavingNote(false);
     }
   };
 
@@ -480,7 +514,10 @@ export function AdminOrderDetailPage() {
                 Order Detail
               </h1>
             </div>
-            <button className='p-2 hover:bg-gray-100 rounded-lg'>
+            <button
+              disabled
+              className='p-2 rounded-lg opacity-30 cursor-not-allowed'
+            >
               <svg width='20' height='20' viewBox='0 0 20 20' fill='none'>
                 <path
                   d='M10 5L10 15M5 10L15 10'
@@ -510,21 +547,36 @@ export function AdminOrderDetailPage() {
                 <div className='flex items-center gap-3'>
                   {/* Current Status Badge */}
                   <div className='flex items-center gap-2'>
-                    <span className='text-xs text-gray-500 font-medium'>Current Status:</span>
-                    <span className={`px-4 py-1.5 rounded-full text-sm font-semibold ${
-                      order.status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
-                      order.status === 'processing' ? 'bg-blue-100 text-blue-800' :
-                      order.status === 'shipped' ? 'bg-purple-100 text-purple-800' :
-                      order.status === 'delivered' ? 'bg-green-100 text-green-800' :
-                      order.status === 'cancelled' ? 'bg-red-100 text-red-800' :
-                      'bg-gray-100 text-gray-700'
-                    }`}>
-                      {order.status === 'pending' ? 'Pending' :
-                       order.status === 'processing' ? 'Payment Confirmed' :
-                       order.status === 'shipped' ? 'Dispatched' :
-                       order.status === 'delivered' ? 'Delivered' :
-                       order.status === 'cancelled' ? 'Cancelled' :
-                       order.status.charAt(0).toUpperCase() + order.status.slice(1)}
+                    <span className='text-xs text-gray-500 font-medium'>
+                      Current Status:
+                    </span>
+                    <span
+                      className={`px-4 py-1.5 rounded-full text-sm font-semibold ${
+                        order.status === 'pending'
+                          ? 'bg-yellow-100 text-yellow-800'
+                          : order.status === 'processing'
+                            ? 'bg-blue-100 text-blue-800'
+                            : order.status === 'shipped'
+                              ? 'bg-purple-100 text-purple-800'
+                              : order.status === 'delivered'
+                                ? 'bg-green-100 text-green-800'
+                                : order.status === 'cancelled'
+                                  ? 'bg-red-100 text-red-800'
+                                  : 'bg-gray-100 text-gray-700'
+                      }`}
+                    >
+                      {order.status === 'pending'
+                        ? 'Pending'
+                        : order.status === 'processing'
+                          ? 'Payment Confirmed'
+                          : order.status === 'shipped'
+                            ? 'Dispatched'
+                            : order.status === 'delivered'
+                              ? 'Delivered'
+                              : order.status === 'cancelled'
+                                ? 'Cancelled'
+                                : order.status.charAt(0).toUpperCase() +
+                                  order.status.slice(1)}
                     </span>
                   </div>
                 </div>
@@ -608,11 +660,15 @@ export function AdminOrderDetailPage() {
 
                           {/* Label + Meta */}
                           <div className='text-center'>
-                            <p className={`text-xs font-medium mb-0.5 ${
-                              step.completed ? 'text-gray-900' :
-                              step.active ? 'text-[#f63a9e] font-bold' :
-                              'text-gray-500'
-                            }`}>
+                            <p
+                              className={`text-xs font-medium mb-0.5 ${
+                                step.completed
+                                  ? 'text-gray-900'
+                                  : step.active
+                                    ? 'text-[#f63a9e] font-bold'
+                                    : 'text-gray-500'
+                              }`}
+                            >
                               {step.label}
                             </p>
 
@@ -712,10 +768,13 @@ export function AdminOrderDetailPage() {
                         ) : (
                           <>
                             <span className='font-semibold'>
-                              {order.status === 'pending' ? 'Confirm Payment' :
-                               order.status === 'processing' ? 'Mark as Dispatched' :
-                               order.status === 'shipped' ? 'Mark as Delivered' :
-                               'Next Status'}
+                              {order.status === 'pending'
+                                ? 'Confirm Payment'
+                                : order.status === 'processing'
+                                  ? 'Mark as Dispatched'
+                                  : order.status === 'shipped'
+                                    ? 'Mark as Delivered'
+                                    : 'Next Status'}
                             </span>
                             <MoveRight className='ml-2' />
                           </>
@@ -725,22 +784,58 @@ export function AdminOrderDetailPage() {
                   </div>
 
                   {/* Helper Text */}
-                  {!updating && order.status !== 'delivered' && order.status !== 'cancelled' && (
-                    <div className='mt-4 flex items-start gap-2 text-xs text-gray-600 bg-blue-50 border border-blue-200 rounded p-3'>
-                      <svg className='w-4 h-4 text-blue-600 mt-0.5 flex-shrink-0' fill='none' viewBox='0 0 24 24' stroke='currentColor'>
-                        <path strokeLinecap='round' strokeLinejoin='round' strokeWidth={2} d='M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z' />
-                      </svg>
-                      <p>
-                        {order.status === 'pending' ? (
-                          <span><strong>Next action:</strong> Order will be marked as <strong className='text-blue-700'>Payment Confirmed</strong>. Customer notification already sent during checkout.</span>
-                        ) : order.status === 'processing' ? (
-                          <span><strong>Next action:</strong> Order will be marked as <strong className='text-purple-700'>Dispatched</strong> and customer will receive a dispatch notification email.</span>
-                        ) : order.status === 'shipped' ? (
-                          <span><strong>Next action:</strong> Order will be marked as <strong className='text-green-700'>Delivered</strong> and customer will receive a delivery confirmation email.</span>
-                        ) : null}
-                      </p>
-                    </div>
-                  )}
+                  {!updating &&
+                    order.status !== 'delivered' &&
+                    order.status !== 'cancelled' && (
+                      <div className='mt-4 flex items-start gap-2 text-xs text-gray-600 bg-blue-50 border border-blue-200 rounded p-3'>
+                        <svg
+                          className='w-4 h-4 text-blue-600 mt-0.5 flex-shrink-0'
+                          fill='none'
+                          viewBox='0 0 24 24'
+                          stroke='currentColor'
+                        >
+                          <path
+                            strokeLinecap='round'
+                            strokeLinejoin='round'
+                            strokeWidth={2}
+                            d='M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z'
+                          />
+                        </svg>
+                        <p>
+                          {order.status === 'pending' ? (
+                            <span>
+                              <strong>Next action:</strong> Order will be marked
+                              as{' '}
+                              <strong className='text-blue-700'>
+                                Payment Confirmed
+                              </strong>
+                              . Customer notification already sent during
+                              checkout.
+                            </span>
+                          ) : order.status === 'processing' ? (
+                            <span>
+                              <strong>Next action:</strong> Order will be marked
+                              as{' '}
+                              <strong className='text-purple-700'>
+                                Dispatched
+                              </strong>{' '}
+                              and customer will receive a dispatch notification
+                              email.
+                            </span>
+                          ) : order.status === 'shipped' ? (
+                            <span>
+                              <strong>Next action:</strong> Order will be marked
+                              as{' '}
+                              <strong className='text-green-700'>
+                                Delivered
+                              </strong>{' '}
+                              and customer will receive a delivery confirmation
+                              email.
+                            </span>
+                          ) : null}
+                        </p>
+                      </div>
+                    )}
                 </div>
 
                 {order.remarks && order.remarks.length && (
@@ -760,52 +855,46 @@ export function AdminOrderDetailPage() {
                 Shipping Details
               </h3>
               <div className='space-y-3'>
-                <div>
-                  <p className='font-medium'>{order.customer}</p>
-                  <p className='text-sm text-gray-600 mt-1'>{order.address}</p>
+                <div className='flex items-start justify-between gap-2'>
+                  <div>
+                    <p className='font-medium'>{order.customer}</p>
+                    <p className='text-sm text-gray-600 mt-1'>
+                      {order.address}
+                    </p>
+                  </div>
+                  <button
+                    onClick={() =>
+                      handleCopy(
+                        `${order.customer}\n${order.address}`,
+                        'Name & address'
+                      )
+                    }
+                    className='p-1.5 hover:bg-gray-100 rounded flex-shrink-0 mt-0.5'
+                    title='Copy name & address'
+                  >
+                    <Copy className='w-3.5 h-3.5 text-gray-400' />
+                  </button>
                 </div>
                 <div className='flex items-center gap-2 text-sm text-gray-600'>
                   <Mail className='w-4 h-4' />
-                  <span>{order.email}</span>
-                  <button className='ml-1 p-1 hover:bg-gray-100 rounded'>
-                    <svg width='14' height='14' viewBox='0 0 14 14' fill='none'>
-                      <rect
-                        x='1'
-                        y='1'
-                        width='8'
-                        height='8'
-                        rx='1'
-                        stroke='currentColor'
-                        strokeWidth='1.5'
-                      />
-                      <path
-                        d='M5 5V4C5 2.89543 5.89543 2 7 2H10C11.1046 2 12 2.89543 12 4V7C12 8.10457 11.1046 9 10 9H9'
-                        stroke='currentColor'
-                        strokeWidth='1.5'
-                      />
-                    </svg>
+                  <span className='flex-1'>{order.email}</span>
+                  <button
+                    onClick={() => handleCopy(order.email, 'Email')}
+                    className='p-1 hover:bg-gray-100 rounded'
+                    title='Copy email'
+                  >
+                    <Copy className='w-3.5 h-3.5 text-gray-400' />
                   </button>
                 </div>
                 <div className='flex items-center gap-2 text-sm text-gray-600'>
                   <Phone className='w-4 h-4' />
-                  <span>{order.phone}</span>
-                  <button className='ml-1 p-1 hover:bg-gray-100 rounded'>
-                    <svg width='14' height='14' viewBox='0 0 14 14' fill='none'>
-                      <rect
-                        x='1'
-                        y='1'
-                        width='8'
-                        height='8'
-                        rx='1'
-                        stroke='currentColor'
-                        strokeWidth='1.5'
-                      />
-                      <path
-                        d='M5 5V4C5 2.89543 5.89543 2 7 2H10C11.1046 2 12 2.89543 12 4V7C12 8.10457 11.1046 9 10 9H9'
-                        stroke='currentColor'
-                        strokeWidth='1.5'
-                      />
-                    </svg>
+                  <span className='flex-1'>{order.phone}</span>
+                  <button
+                    onClick={() => handleCopy(order.phone, 'Phone')}
+                    className='p-1 hover:bg-gray-100 rounded'
+                    title='Copy phone'
+                  >
+                    <Copy className='w-3.5 h-3.5 text-gray-400' />
                   </button>
                 </div>
               </div>
@@ -830,16 +919,25 @@ export function AdminOrderDetailPage() {
                 </svg>
                 Customer Consent
               </h3>
-              <div className='flex items-start gap-3'>
-                <div className='mt-0.5'>
-                  <CheckCircle className='w-4 h-4 text-gray-400' />
+              <div className='flex items-start justify-between gap-2'>
+                <div className='flex items-start gap-3 flex-1'>
+                  <div className='mt-0.5'>
+                    <CheckCircle className='w-4 h-4 text-gray-400' />
+                  </div>
+                  <div>
+                    <p className='font-medium text-sm'>
+                      Behind-the-scenes process
+                    </p>
+                    <p className='text-sm text-gray-600'>{order.consent}</p>
+                  </div>
                 </div>
-                <div>
-                  <p className='font-medium text-sm'>
-                    Behind-the-scenes process
-                  </p>
-                  <p className='text-sm text-gray-600'>{order.consent}</p>
-                </div>
+                <button
+                  onClick={() => handleCopy(order.consent, 'Consent')}
+                  className='p-1.5 hover:bg-gray-100 rounded flex-shrink-0 mt-0.5'
+                  title='Copy consent'
+                >
+                  <Copy className='w-3.5 h-3.5 text-gray-400' />
+                </button>
               </div>
             </div>
 
@@ -979,29 +1077,12 @@ export function AdminOrderDetailPage() {
             <div className='bg-white rounded-lg border border-gray-200 p-6'>
               <h3 className='font-semibold mb-4'>Actions</h3>
               <div className='space-y-3'>
-                {/* <Button
-                  onClick={handlePrintInvoice}
-                  className='w-full bg-[#f63a9e] hover:bg-[#e02d8d]'
-                  style={{ height: '44px' }}
-                >
-                  Invoice
-                </Button> */}
-
                 <Button
                   onClick={handlePrintInvoice}
                   className='w-full bg-[#f63a9e] hover:bg-[#e02d8d]'
                   style={{ height: '44px' }}
                 >
-                  Invoice
-                </Button>
-                <Button
-                  onClick={handleDownloadLabel}
-                  variant='outline'
-                  className='w-full'
-                  style={{ height: '44px' }}
-                >
-                  <Download className='w-4 h-4 mr-2' />
-                  Download label
+                  Print Invoice
                 </Button>
               </div>
             </div>
@@ -1017,12 +1098,20 @@ export function AdminOrderDetailPage() {
                 className='mb-3'
               />
               <Button
-                onClick={handleAddNote}
+                onClick={handleSaveNote}
                 variant='outline'
                 className='w-full'
                 size='sm'
+                disabled={savingNote}
               >
-                Add Note
+                {savingNote ? (
+                  <>
+                    <Loader2 className='w-3.5 h-3.5 mr-2 animate-spin' />
+                    Saving...
+                  </>
+                ) : (
+                  'Save Note'
+                )}
               </Button>
             </div>
 
@@ -1040,9 +1129,7 @@ export function AdminOrderDetailPage() {
                   <div className='flex-1 min-w-0'>
                     <div className='flex items-start justify-between gap-2 mb-1'>
                       <p className='font-medium text-sm'>Order Confirmation</p>
-                      <button className='text-sm text-[#f63a9e] hover:underline whitespace-nowrap'>
-                        New email
-                      </button>
+                      <Badge>New email</Badge>
                     </div>
                     <p className='text-xs text-gray-600'>
                       October 20th, 2025, 5:55 pm
@@ -1072,7 +1159,9 @@ export function AdminOrderDetailPage() {
           />
 
           <AlertDialogFooter>
-            <AlertDialogCancel disabled={updating}>Keep Order</AlertDialogCancel>
+            <AlertDialogCancel disabled={updating}>
+              Keep Order
+            </AlertDialogCancel>
             <AlertDialogAction
               className='bg-red-600 hover:bg-red-700'
               onClick={handleCancelOrder}
