@@ -36,7 +36,7 @@ const Navbar = ({ onReset, isResetting }: NavbarProps) => {
 
   const handleStartTour = () => {
     setSelectedFeature(null);
-    setSelectedView('room');
+    setSelectedView('3droom');
     localStorage.removeItem('dashboard-tour-completed');
     window.location.reload();
   };

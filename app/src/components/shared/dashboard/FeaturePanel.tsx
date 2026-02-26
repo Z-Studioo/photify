@@ -56,7 +56,7 @@ const FeaturePanel = () => {
       selectedView === 'optimization' ||
       selectedFeature?.name === 'SIDE APPEARANCE'
     )
-      setSelectedView('room');
+      setSelectedView('3droom');
     setSelectedFeature(null);
   };
 

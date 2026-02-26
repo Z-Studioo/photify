@@ -27,7 +27,7 @@ export async function sendContactEmail(data: ContactEmailData): Promise<void> {
 
   // Email to support team
   const supportEmail = {
-    to: config.SUPPORT_EMAIL || 'support@photify.co',
+    to: config.SUPPORT_EMAIL as string,
     from: config.SENDGRID_FROM_EMAIL || 'noreply@photify.co',
     replyTo: email,
     subject: `Contact Form: ${subject}`,

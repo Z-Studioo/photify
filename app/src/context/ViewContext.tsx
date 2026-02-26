@@ -14,7 +14,7 @@ interface ViewContextType {
 const ViewContext = createContext<ViewContextType | undefined>(undefined);
 
 export const ViewProvider = ({ children }: { children: ReactNode }) => {
-  const [selectedView, setSelectedView] = useState<ViewMode>('room');
+  const [selectedView, setSelectedView] = useState<ViewMode>('3droom');
   const [isTransitioning, setIsTransitioning] = useState(false);
 
   const handleViewChange = (view: ViewMode) => {
@@ -24,7 +24,7 @@ export const ViewProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const reset = () => {
-    setSelectedView('room');
+    setSelectedView('3droom');
     setIsTransitioning(false);
   };
 

@@ -105,7 +105,7 @@ const OptimizationView: React.FC<OptimizationViewProps> = ({ isVisible }) => {
   ]);
 
   const handleGoBack = () => {
-    setSelectedView('room');
+    setSelectedView('3droom');
     setSelectedFeature(null);
   };
 

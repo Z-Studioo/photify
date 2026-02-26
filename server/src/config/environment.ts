@@ -35,8 +35,8 @@ export const config: Config = {
   OPENAI_API_KEY: process.env.OPENAI_API_KEY,
   SENDGRID_API_KEY: process.env.SENDGRID_API_KEY,
   SENDGRID_FROM_EMAIL: process.env.SENDGRID_FROM_EMAIL || 'noreply@photify.co',
-  SUPPORT_EMAIL: process.env.SUPPORT_EMAIL || 'support@photify.co',
-  ADMIN_EMAIL: process.env.ADMIN_EMAIL || 'admin@photify.co',
+  SUPPORT_EMAIL: process.env.SUPPORT_EMAIL,
+  ADMIN_EMAIL: process.env.ADMIN_EMAIL,
 };
 
 // Validate required environment variables in production

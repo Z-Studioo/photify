@@ -461,13 +461,9 @@ export function MultiCanvasWallCustomizer() {
       name: `Multi-Canvas Wall - ${selectedSize.display_label}`,
       price: parseFloat(totalPrice),
       image: state.canvases[0].imageUrl || '/placeholder.jpg',
+      images: state.canvases.map(c => c.imageUrl || '/placeholder.jpg'),
       size: `3 × ${selectedSize.width_in}" × ${selectedSize.height_in}" canvases with ${state.customSpacing}" spacing`,
       quantity: 1,
-      customization: {
-        canvases: state.canvases.map(c => c.imageUrl),
-        spacing: state.customSpacing,
-        room: state.selectedRoom,
-      },
     };
 
     await addToCart(cartItem);
