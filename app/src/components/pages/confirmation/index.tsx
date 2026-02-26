@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, type ComponentType } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Header } from '@/components/layout/header';
 import { Footer } from '@/components/layout/footer';
@@ -543,7 +543,7 @@ export function ConfirmationPage() {
                       {/* Connecting line */}
                       <div className='absolute left-7 top-14 bottom-14 w-0.5 bg-gray-200' />
 
-                      {((): Array<{ icon: React.ElementType; title: string; description: string; status: 'complete' | 'current' | 'upcoming'; badge: string }> => {
+                      {((): Array<{ icon: ComponentType<{ className?: string }>; title: string; description: string; status: 'complete' | 'current' | 'upcoming'; badge: string }> => {
                           const s = orderStatus;
                           const step1 = s === 'processing' || s === 'shipped' || s === 'delivered' ? 'complete' : 'complete';
                           const step2 = s === 'shipped' || s === 'delivered' ? 'complete' : (s === 'processing' ? 'current' : 'current');
