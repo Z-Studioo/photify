@@ -20,10 +20,10 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import Navbar from '@/components/shared/dashboard/Navbar';
 import FeaturePanel from '@/components/shared/dashboard/FeaturePanel';
 import ThreeDCanvas from '@/components/shared/dashboard/ThreeDCanvas';
-import RoomFrame3D from '@/components/shared/dashboard/RoomFrame3D';
+// import RoomFrame3D from '@/components/shared/dashboard/RoomFrame3D';
 import ImageCropper from '@/components/shared/common/ImageCropper';
 import OptimizationView from '@/components/shared/dashboard/OptimizationView';
-import WallCarousel from '@/components/shared/dashboard/WallCarousel';
+// import WallCarousel from '@/components/shared/dashboard/WallCarousel';
 import ViewControls from '@/components/shared/dashboard/ViewControls';
 import QuantityControl from '@/components/shared/dashboard/QuantityControl';
 import ApplyChangesControl from '@/components/shared/dashboard/ApplyChangesControl';
@@ -53,7 +53,7 @@ const Dashboard: React.FC = () => {
       applyPendingEdgeType();
 
       if (selectedView === 'crop' || selectedView === 'optimization') {
-        setSelectedView('room');
+        setSelectedView('3droom');
       }
       setSelectedFeature(null);
     } catch (error) {
@@ -66,12 +66,12 @@ const Dashboard: React.FC = () => {
   const { resetAll } = useGlobalReset();
 
   const {
-    currentWallIndex,
-    slideDirection,
-    wallImages,
-    handlePreviousWall: handlePrevWall,
-    handleNextWall: handleNext,
-    handleSelectIndex,
+    // currentWallIndex,
+    // slideDirection,
+    // wallImages,
+    // handlePreviousWall: handlePrevWall,
+    // handleNextWall: handleNext,
+    // handleSelectIndex,
     addCustomWall,
   } = useWallCarousel({ defaultWalls: [Wall, Wall1, Wall2] });
 
@@ -223,6 +223,7 @@ const Dashboard: React.FC = () => {
           )}
           {!isEditingView && (
             <>
+              {/* Room View (2D wall carousel) temporarily hidden
               <div
                 className={`absolute inset-0 transition-all duration-500 ${
                   selectedView === 'room'
@@ -247,6 +248,7 @@ const Dashboard: React.FC = () => {
                   <RoomFrame3D onInteraction={() => setSelectedView('3d')} />
                 </div>
               </div>
+              */}
 
               <div
                 className={`absolute inset-0 transition-all duration-700 ease-out ${
@@ -637,10 +639,9 @@ const Dashboard: React.FC = () => {
                       applyPendingEdgeType();
                       if (
                         selectedView === 'crop' ||
-                        selectedView === 'optimization' ||
-                        selectedView === '3d'
+                        selectedView === 'optimization'
                       )
-                        setSelectedView('room');
+                        setSelectedView('3droom');
                       setSelectedFeature(null);
                     }}
                   />
@@ -707,10 +708,8 @@ const Dashboard: React.FC = () => {
                   onClick={() => {
                     applyPendingChanges();
                     applyPendingEdgeType();
-                    setSelectedView('room');
+                    setSelectedView('3droom');
                     setSelectedFeature(null);
-                    if (selectedFeature?.name === 'SIDE APPEARANCE')
-                      setSelectedView('room');
                   }}
                 >
                   Apply Changes

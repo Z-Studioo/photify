@@ -1,5 +1,5 @@
 import { motion } from 'motion/react';
-import { Box, Eye, ImagePlus, Home } from 'lucide-react';
+import { Box, /* Eye, */ ImagePlus, Home } from 'lucide-react';
 
 interface ViewControlsProps {
   selectedView: string;
@@ -43,6 +43,7 @@ const ViewControls: React.FC<ViewControlsProps> = ({
         }}
       >
         <div className='flex border border-gray-300 divide-x divide-gray-300'>
+          {/* Room View button temporarily hidden
           <motion.button
             onClick={() => onViewChange('room')}
             className={`flex items-center justify-center px-2 py-2 md:px-5 md:py-3 text-xs md:text-sm font-medium rounded-none cursor-pointer transition-all flex-shrink-0 whitespace-nowrap ${
@@ -54,10 +55,24 @@ const ViewControls: React.FC<ViewControlsProps> = ({
             whileHover={{ scale: 1.02 }}
             whileTap={{ scale: 0.98 }}
           >
+            <span className='hidden md:inline ml-1'>Room View</span>
+          </motion.button>
+          */}
+          <motion.button
+            onClick={() => onViewChange('3droom')}
+            className={`flex items-center justify-center px-2 py-2 md:px-5 md:py-3 text-xs md:text-sm font-medium rounded-none cursor-pointer transition-all flex-shrink-0 whitespace-nowrap ${
+              selectedView === '3droom'
+                ? 'bg-primary text-white'
+                : 'bg-white text-gray-700 hover:bg-gray-100'
+            }`}
+            type='button'
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.98 }}
+          >
             <motion.div
               animate={{
-                rotate: selectedView === 'room' ? 360 : 0,
-                scale: selectedView === 'room' ? 1.1 : 1,
+                rotate: selectedView === '3droom' ? 360 : 0,
+                scale: selectedView === '3droom' ? 1.1 : 1,
               }}
               transition={{
                 rotate: { duration: 0.3, ease: [0.22, 1, 0.36, 1] },
@@ -70,9 +85,9 @@ const ViewControls: React.FC<ViewControlsProps> = ({
                 flexShrink: 0,
               }}
             >
-              <Eye className='h-4 w-4 md:h-5 md:w-5' />
+              <Home className='h-4 w-4 md:h-5 md:w-5' />
             </motion.div>
-            <span className='hidden md:inline ml-1'>Room View</span>
+            <span className='hidden md:inline ml-1'>3D Room</span>
           </motion.button>
           <motion.button
             onClick={() => onViewChange('3d')}
@@ -104,37 +119,6 @@ const ViewControls: React.FC<ViewControlsProps> = ({
               <Box className='h-4 w-4 md:h-5 md:w-5' />
             </motion.div>
             <span className='hidden md:inline ml-1'>3D View</span>
-          </motion.button>
-          <motion.button
-            onClick={() => onViewChange('3droom')}
-            className={`flex items-center justify-center px-2 py-2 md:px-5 md:py-3 text-xs md:text-sm font-medium rounded-none cursor-pointer transition-all flex-shrink-0 whitespace-nowrap ${
-              selectedView === '3droom'
-                ? 'bg-primary text-white'
-                : 'bg-white text-gray-700 hover:bg-gray-100'
-            }`}
-            type='button'
-            whileHover={{ scale: 1.02 }}
-            whileTap={{ scale: 0.98 }}
-          >
-            <motion.div
-              animate={{
-                rotate: selectedView === '3droom' ? 360 : 0,
-                scale: selectedView === '3droom' ? 1.1 : 1,
-              }}
-              transition={{
-                rotate: { duration: 0.3, ease: [0.22, 1, 0.36, 1] },
-                scale: { duration: 0.2 },
-              }}
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                flexShrink: 0,
-              }}
-            >
-              <Home className='h-4 w-4 md:h-5 md:w-5' />
-            </motion.div>
-            <span className='hidden md:inline ml-1'>3D Room</span>
           </motion.button>
         </div>
       </motion.div>

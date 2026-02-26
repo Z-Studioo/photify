@@ -514,19 +514,6 @@ export function AdminOrderDetailPage() {
                 Order Detail
               </h1>
             </div>
-            <button
-              disabled
-              className='p-2 rounded-lg opacity-30 cursor-not-allowed'
-            >
-              <svg width='20' height='20' viewBox='0 0 20 20' fill='none'>
-                <path
-                  d='M10 5L10 15M5 10L15 10'
-                  stroke='currentColor'
-                  strokeWidth='2'
-                  strokeLinecap='round'
-                />
-              </svg>
-            </button>
           </div>
         </div>
 
