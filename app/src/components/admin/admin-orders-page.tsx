@@ -10,6 +10,7 @@ import {
   Trash2,
   ChevronLeft,
   ChevronRight,
+  RefreshCw,
 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -276,14 +277,26 @@ export function AdminOrdersPage() {
     <AdminLayout>
       <div className='max-w-7xl mx-auto'>
         {/* Header */}
-        <div className='mb-8'>
-          <h1
-            className="font-['Bricolage_Grotesque',_sans-serif] mb-2"
-            style={{ fontSize: '32px', fontWeight: '600' }}
+        <div className='mb-8 flex items-start justify-between'>
+          <div>
+            <h1
+              className="font-['Bricolage_Grotesque',_sans-serif] mb-2"
+              style={{ fontSize: '32px', fontWeight: '600' }}
+            >
+              Orders Management
+            </h1>
+            <p className='text-gray-600'>View and manage all customer orders</p>
+          </div>
+          <Button
+            variant='outline'
+            size='sm'
+            onClick={() => void fetchOrders()}
+            disabled={loading}
+            className='flex items-center gap-2 mt-1'
           >
-            Orders Management
-          </h1>
-          <p className='text-gray-600'>View and manage all customer orders</p>
+            <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
+            Refresh
+          </Button>
         </div>
 
         {/* Filters */}
