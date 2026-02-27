@@ -193,6 +193,7 @@ export function AdminOrderDetailPage() {
               invoice: `#INV-${Math.random().toString(36).substr(2, 9).toUpperCase()}`,
               unitPrice: `£${parseFloat(item.price).toFixed(2)}`,
               quantity: item.quantity || 1,
+              customization: item.customization || null,
             })),
             hosted_invoice_url: data.hosted_invoice_url || '#',
             remarks: data.remarks || '',
@@ -987,6 +988,9 @@ export function AdminOrderDetailPage() {
                         Category
                       </th>
                       <th className='text-left py-3 px-2 text-xs font-medium text-gray-600'>
+                        Customization
+                      </th>
+                      <th className='text-left py-3 px-2 text-xs font-medium text-gray-600'>
                         Images
                       </th>
                       <th className='text-left py-3 px-2 text-xs font-medium text-gray-600'>
@@ -1007,6 +1011,38 @@ export function AdminOrderDetailPage() {
                         <td className='py-4 px-2 text-sm'>{item.size}</td>
                         <td className='py-4 px-2 text-sm'>{item.quantity}</td>
                         <td className='py-4 px-2 text-sm'>{item.category}</td>
+                        <td className='py-4 px-2'>
+                          {item.customization ? (
+                            <div className='flex flex-col gap-1 text-xs'>
+                              {item.customization.shape && (
+                                <span className='inline-flex items-center gap-1'>
+                                  <span className='text-gray-400 font-medium'>Shape:</span>
+                                  <span className='capitalize font-semibold text-gray-700'>{item.customization.shape}</span>
+                                </span>
+                              )}
+                              {item.customization.edgeType && (
+                                <span className='inline-flex items-center gap-1'>
+                                  <span className='text-gray-400 font-medium'>Sides:</span>
+                                  <span className='capitalize font-semibold text-gray-700'>{item.customization.edgeType}</span>
+                                </span>
+                              )}
+                              {item.customization.cornerStyle && (
+                                <span className='inline-flex items-center gap-1'>
+                                  <span className='text-gray-400 font-medium'>Corners:</span>
+                                  <span className='capitalize font-semibold text-gray-700'>{item.customization.cornerStyle}</span>
+                                </span>
+                              )}
+                              {item.customization.imageQuality !== undefined && (
+                                <span className='inline-flex items-center gap-1'>
+                                  <span className='text-gray-400 font-medium'>Quality:</span>
+                                  <span className='font-semibold text-gray-700'>{item.customization.imageQuality}%</span>
+                                </span>
+                              )}
+                            </div>
+                          ) : (
+                            <span className='text-gray-400 text-xs'>—</span>
+                          )}
+                        </td>
                         <td className='py-4 px-2'>
                           {item.images && item.images.length > 0 ? (
                             <div className='flex flex-col gap-1'>

@@ -3,6 +3,13 @@
 import { createContext, useContext, useState, type ReactNode } from 'react';
 import { uploadDataURLToStorage } from '@/lib/supabase/storage';
 
+export interface CartItemCustomization {
+  edgeType?: string;     // 'wrapped' | 'mirrored'
+  cornerStyle?: string;  // 'rounded' | 'sharp'
+  imageQuality?: number; // 0–100
+  shape?: string;        // 'rectangular' | 'circular' | etc.
+}
+
 export interface CartItem {
   id: string;
   name: string;
@@ -11,6 +18,7 @@ export interface CartItem {
   images?: string[];
   size?: string;
   quantity: number;
+  customization?: CartItemCustomization;
 }
 
 export type DeliveryMethod = 'standard' | 'express';
