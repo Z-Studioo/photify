@@ -50,7 +50,7 @@ const QuantityControl: React.FC<QuantityControlProps> = ({
   const { addToast } = useToast();
   const { addToCart } = useCart();
   const navigate = useNavigate();
-  const { selectedSize, selectedRatio, shape, selectedProduct, preview } =
+  const { selectedSize, selectedRatio, shape, selectedProduct, preview, cornerStyle, quality, edgeType } =
     useUpload();
   const [params] = useSearchParams();
   // Get price data from localStorage
@@ -142,6 +142,12 @@ const QuantityControl: React.FC<QuantityControlProps> = ({
         image: finalImageUrl,
         price: priceData.sellPrice,
         size: selectedSize?.display_label || 'Custom Size',
+        customization: {
+          edgeType: edgeType || 'wrapped',
+          cornerStyle: cornerStyle || 'sharp',
+          imageQuality: quality?.[0] ?? 100,
+          shape: shape || 'rectangular',
+        },
       });
       addToast('Quantity updated and added to cart successfully!', 'success');
       navigate('/cart');

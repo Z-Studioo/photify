@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { createClient } from '@/lib/supabase/client';
 import { Header } from '@/components/layout/header';
@@ -184,6 +184,7 @@ export function OrderTrackPage() {
   const [searchedOrder, setSearchedOrder] = useState<OrderStatus | null>(null);
   const [notFound, setNotFound] = useState(false);
   const [isSearching, setIsSearching] = useState(false);
+  const orderDetailsRef = useRef<HTMLDivElement>(null);
 
   // Auto-search when both order_id and email are present as query params (email link)
   useEffect(() => {
@@ -240,6 +241,9 @@ export function OrderTrackPage() {
         setSearchedOrder(transformedOrder);
         setNotFound(false);
         toast.success('Order found!');
+        setTimeout(() => {
+          orderDetailsRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }, 100);
       } else {
         setSearchedOrder(null);
         setNotFound(true);
@@ -553,6 +557,7 @@ export function OrderTrackPage() {
             {/* Order Details */}
             {searchedOrder && (
               <motion.div
+                ref={orderDetailsRef}
                 initial={{ opacity: 0, y: 30 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -30 }}

@@ -53,6 +53,15 @@ function clearPersistedMultiCanvasState() {
 // ─────────────────────────────────────────────────────────────────────────────
 
 // Types for database
+interface AspectRatio {
+  id: string;
+  label: string;
+  width_ratio: number;
+  height_ratio: number;
+  orientation: string;
+  active: boolean;
+}
+
 interface Size {
   id: string;
   aspect_ratio_id: string;
@@ -78,6 +87,11 @@ export function MultiCanvasWallCustomizer() {
     : null;
 
   // Size selection state
+  const [aspectRatios, setAspectRatios] = useState<AspectRatio[]>([]);
+  const [selectedAspectRatioId, setSelectedAspectRatioId] = useState<string | null>(() => {
+    if (artImageUrl) return null;
+    return loadPersistedMultiCanvasState()?.selectedAspectRatioId ?? null;
+  });
   const [sizes, setSizes] = useState<Size[]>([]);
   const [selectedSizeId, setSelectedSizeId] = useState<string | null>(() => {
     if (artImageUrl) return null; // fresh art flow — don't restore
@@ -162,6 +176,7 @@ export function MultiCanvasWallCustomizer() {
           })),
           selectedRoom: state.selectedRoom,
           customSpacing: state.customSpacing,
+          selectedAspectRatioId,
           selectedSizeId,
           canvasWidth,
           canvasHeight,
@@ -170,7 +185,7 @@ export function MultiCanvasWallCustomizer() {
     } catch {
       //
     }
-  }, [state.canvases, state.selectedRoom, state.customSpacing, selectedSizeId, canvasWidth, canvasHeight]);
+  }, [state.canvases, state.selectedRoom, state.customSpacing, selectedAspectRatioId, selectedSizeId, canvasWidth, canvasHeight]);
 
   // Room backgrounds from database
   const [rooms, setRooms] = useState<Room[]>([]);
@@ -204,52 +219,89 @@ export function MultiCanvasWallCustomizer() {
           setProductPrice(productData.price);
         }
 
-        // Fetch sizes
-        // If product has allowedSizes in config, use those
-        // Otherwise, fetch all active sizes as fallback
-        let sizesQuery;
+        // Fetch sizes and aspect ratios from product config
+        let allSizes: Size[] = [];
 
         if (
           productData?.config?.allowedSizes &&
           productData.config.allowedSizes.length > 0
         ) {
-          // Fetch specific sizes from config
-          sizesQuery = supabase
+          const { data: sizesData } = await supabase
             .from('sizes')
             .select('*')
             .in('id', productData.config.allowedSizes)
             .eq('active', true)
             .order('area_in2');
+          allSizes = sizesData || [];
         } else {
-          // Fallback: fetch all active sizes
-          sizesQuery = supabase
+          const { data: sizesData } = await supabase
             .from('sizes')
             .select('*')
             .eq('active', true)
             .order('area_in2')
             .limit(20);
+          allSizes = sizesData || [];
         }
 
-        const { data: sizesData } = await sizesQuery;
+        // Fetch aspect ratios — either from allowedRatios in config, or derive from the sizes
+        let ratios: AspectRatio[] = [];
+        if (
+          productData?.config?.allowedRatios &&
+          productData.config.allowedRatios.length > 0
+        ) {
+          const { data: ratiosData } = await supabase
+            .from('aspect_ratios')
+            .select('*')
+            .in('id', productData.config.allowedRatios)
+            .eq('active', true)
+            .order('label');
+          ratios = ratiosData || [];
+        } else if (allSizes.length > 0) {
+          // Derive unique ratio IDs from sizes and fetch them
+          const ratioIds = [...new Set(allSizes.map(s => s.aspect_ratio_id))];
+          const { data: ratiosData } = await supabase
+            .from('aspect_ratios')
+            .select('*')
+            .in('id', ratioIds)
+            .eq('active', true)
+            .order('label');
+          ratios = ratiosData || [];
+        }
 
-        if (sizesData && sizesData.length > 0) {
-          setSizes(sizesData);
+        setSizes(allSizes);
+        setAspectRatios(ratios);
 
-          // Auto-select first size only if none was restored from session
+        // Pick the first ratio and first size
+        const firstRatio = ratios[0] ?? null;
+        const firstRatioId = firstRatio?.id ?? null;
+
+        setSelectedAspectRatioId((prev: string | null) => {
+          if (prev && ratios.some(r => r.id === prev)) return prev;
+          return firstRatioId;
+        });
+
+        // Auto-select first size of the chosen ratio
+        const initialRatioId = (loadPersistedMultiCanvasState()?.selectedAspectRatioId &&
+          ratios.some(r => r.id === loadPersistedMultiCanvasState()?.selectedAspectRatioId))
+          ? loadPersistedMultiCanvasState()!.selectedAspectRatioId
+          : firstRatioId;
+
+        const sizesForInitialRatio = allSizes.filter(s => s.aspect_ratio_id === initialRatioId);
+        const firstSizeForRatio = sizesForInitialRatio[0] ?? allSizes[0];
+
+        if (firstSizeForRatio) {
           setSelectedSizeId((prev: string | null) => {
-            if (prev) return prev;
-            return sizesData[0].id;
+            if (prev && allSizes.some(s => s.id === prev)) return prev;
+            return firstSizeForRatio.id;
           });
           setCanvasWidth((prev: number) => {
             if (prev !== MULTI_CANVAS_WALL_PRODUCT.config.canvasWidth) return prev;
-            return sizesData[0].width_in;
+            return firstSizeForRatio.width_in;
           });
           setCanvasHeight((prev: number) => {
             if (prev !== MULTI_CANVAS_WALL_PRODUCT.config.canvasHeight) return prev;
-            return sizesData[0].height_in;
+            return firstSizeForRatio.height_in;
           });
-        } else {
-          // left intentionally
         }
       } catch (error) {
         console.error('Error fetching product configuration:', error);
@@ -423,6 +475,11 @@ export function MultiCanvasWallCustomizer() {
   const handleRoomChange = (roomId: string) => {
     setState(prev => ({ ...prev, selectedRoom: roomId }));
   };
+
+  // Sizes filtered by selected aspect ratio
+  const filteredSizes = selectedAspectRatioId
+    ? sizes.filter(s => s.aspect_ratio_id === selectedAspectRatioId)
+    : sizes;
 
   // Check if all canvases have images
   const allUploaded = state.canvases.every(c => c.uploaded);
@@ -903,7 +960,7 @@ export function MultiCanvasWallCustomizer() {
 
       {/* Right Sidebar - Responsive */}
       <div className='w-full md:w-[420px] lg:w-[460px] bg-white border-t md:border-t-0 md:border-l border-gray-200 flex flex-col shadow-xl md:max-h-none md:h-screen'>
-        {/* Debug Info - Only in development */}
+        {/* Debug Info - Only in development
         {process.env.NODE_ENV === 'development' && !productId && (
           <div className='bg-yellow-100 border-2 border-yellow-400 rounded-lg p-3 max-w-sm m-3'>
             <p className='text-xs font-semibold text-yellow-800 mb-1'>
@@ -914,7 +971,7 @@ export function MultiCanvasWallCustomizer() {
               for custom rooms.
             </p>
           </div>
-        )}
+        )} */}
 
         {/* Sidebar Header */}
         <div className='px-4 py-3 sm:px-6 sm:py-4 md:px-8 md:py-6 lg:py-8 border-b border-gray-200 bg-gradient-to-br from-gray-50 to-white'>
@@ -931,6 +988,59 @@ export function MultiCanvasWallCustomizer() {
 
         {/* Sidebar Content */}
         <div className='flex-1 overflow-y-auto p-4 sm:p-6 md:p-8 space-y-4 sm:space-y-5 md:space-y-6 lg:space-y-8'>
+          {/* Aspect Ratio Selection */}
+          {aspectRatios.length > 0 && (
+            <div>
+              <h3 className='font-semibold text-gray-900 mb-2 sm:mb-3 text-xs sm:text-sm md:text-base'>
+                Aspect Ratio
+              </h3>
+              <div className='grid grid-cols-3 sm:grid-cols-4 gap-1.5 sm:gap-2'>
+                {aspectRatios.map(ratio => (
+                  <button
+                    key={ratio.id}
+                    onClick={() => {
+                      setSelectedAspectRatioId(ratio.id);
+                      // Auto-select the first size for this ratio
+                      const firstSize = sizes.find(s => s.aspect_ratio_id === ratio.id);
+                      if (firstSize) {
+                        setSelectedSizeId(firstSize.id);
+                        setCanvasWidth(firstSize.width_in);
+                        setCanvasHeight(firstSize.height_in);
+                      }
+                    }}
+                    className={`flex flex-col items-center justify-center p-2 sm:p-2.5 rounded-lg border-2 transition-all ${
+                      selectedAspectRatioId === ratio.id
+                        ? 'border-[#f63a9e] bg-pink-50 shadow-sm'
+                        : 'border-gray-200 bg-white hover:border-gray-300'
+                    }`}
+                  >
+                    {/* Visual ratio indicator */}
+                    <div className='mb-1.5 flex items-center justify-center w-8 h-8'>
+                      <div
+                        className={`border-2 rounded-sm ${
+                          selectedAspectRatioId === ratio.id ? 'border-[#f63a9e]' : 'border-gray-400'
+                        }`}
+                        style={{
+                          width: ratio.width_ratio >= ratio.height_ratio
+                            ? 28
+                            : Math.round(28 * ratio.width_ratio / ratio.height_ratio),
+                          height: ratio.height_ratio >= ratio.width_ratio
+                            ? 28
+                            : Math.round(28 * ratio.height_ratio / ratio.width_ratio),
+                        }}
+                      />
+                    </div>
+                    <span className={`text-[10px] sm:text-xs font-semibold ${
+                      selectedAspectRatioId === ratio.id ? 'text-[#f63a9e]' : 'text-gray-600'
+                    }`}>
+                      {ratio.label}
+                    </span>
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
           {/* Size Selection */}
           <div>
             <h3 className='font-semibold text-gray-900 mb-2 sm:mb-3 md:mb-4 text-xs sm:text-sm md:text-base'>
@@ -939,7 +1049,7 @@ export function MultiCanvasWallCustomizer() {
 
             {/* Size List */}
             <div className='space-y-2 sm:space-y-2.5'>
-              {sizes.map(size => {
+              {filteredSizes.map(size => {
                 // Calculate price for 3 canvases (3 × area × price per sq inch)
                 const totalPrice = (size.area_in2 * productPrice * 3).toFixed(
                   2

@@ -7,8 +7,15 @@ interface CartItem {
   name: string;
   size?: string;
   image?: string;
+  images?: string[];
   price: number;
   quantity: number;
+  customization?: {
+    edgeType?: string;
+    cornerStyle?: string;
+    imageQuality?: number;
+    shape?: string;
+  };
 }
 
 interface CheckoutRequestBody {
