@@ -12,6 +12,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { Switch } from '@/components/ui/switch';
 import { createClient } from '@/lib/supabase/client';
 import { toast } from 'sonner';
 
@@ -49,6 +50,7 @@ export function AdminProductContentEditor({
   const [slug, setSlug] = useState('');
   const [productType, setProductType] = useState('');
   const [configStatus, setConfigStatus] = useState('');
+  const [isActive, setIsActive] = useState(false);
 
   // SEO Meta Fields
   const [metaTitle, setMetaTitle] = useState('');
@@ -92,6 +94,7 @@ export function AdminProductContentEditor({
         setSlug(data.slug || '');
         setProductType(data.product_type || '');
         setConfigStatus(data.config_status || '');
+        setIsActive(data.active ?? false);
 
         // SEO Fields
         setMetaTitle(data.seo_title || '');
@@ -147,6 +150,7 @@ export function AdminProductContentEditor({
           price: parseFloat(price),
           slug: slug.trim(),
           product_type: productType,
+          active: isActive,
           config_status: configStatus,
           seo_title: metaTitle,
           seo_description: metaDescription,
@@ -368,6 +372,27 @@ export function AdminProductContentEditor({
             <p className='text-xs text-gray-500 mt-1'>
               URL-friendly identifier (lowercase, dashes)
             </p>
+          </div>
+        </div>
+
+        {/* Active / Inactive toggle */}
+        <div className='flex items-center justify-between p-4 bg-gray-50 border border-gray-200 rounded-xl'>
+          <div>
+            <p className='font-semibold text-gray-900 text-sm'>Product Visibility</p>
+            <p className='text-xs text-gray-500 mt-0.5'>
+              {isActive
+                ? 'Product is live and visible to customers'
+                : 'Product is hidden from customers (draft mode)'}
+            </p>
+          </div>
+          <div className='flex items-center gap-3'>
+            <span className={`text-sm font-medium ${isActive ? 'text-green-600' : 'text-gray-400'}`}>
+              {isActive ? 'Active' : 'Inactive'}
+            </span>
+            <Switch
+              checked={isActive}
+              onCheckedChange={setIsActive}
+            />
           </div>
         </div>
 
