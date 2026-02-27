@@ -40,7 +40,7 @@ export const PRODUCT_CONFIGURERS: ProductConfigurer[] = [
   {
     id: 'multi-canvas-wall',
     name: 'Multi-Canvas Wall Gallery',
-    description: 'Create a gallery wall with 4 custom canvases in a fixed layout',
+    description: 'Create a gallery wall with 3 custom canvases in a fixed layout',
     route: 'multi-canvas-wall',
     icon: 'LayoutGrid',
     requiresProductId: true, // Needs productId to fetch room backgrounds from product config
