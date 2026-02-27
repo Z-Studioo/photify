@@ -25,6 +25,8 @@ import {
   Tag,
   Zap,
   Loader2,
+  ChevronDown,
+  ChevronUp,
 } from 'lucide-react';
 
 function cn(...inputs: any[]) {
@@ -59,6 +61,7 @@ export function CheckoutPage() {
   const [isProcessing, setIsProcessing] = useState(false);
   const [isSearchingAddress, setIsSearchingAddress] = useState(false);
   const [errors, setErrors] = useState<Partial<FormData>>({});
+  const [summaryOpen, setSummaryOpen] = useState(false);
 
   // Validation functions
   const validateName = (name: string): boolean => {
@@ -453,11 +456,52 @@ export function CheckoutPage() {
             <span style={{ fontWeight: '600' }}>Back to Cart</span>
           </motion.button>
         </div>
+
+        {/* Step Progress Bar */}
+        <div className='mt-4 sm:mt-6'>
+          <div className='flex items-center justify-between mb-2 sm:mb-3'>
+            {['Details', 'Address', 'Review', 'Payment'].map((label, i) => {
+              const step = i + 1;
+              const isDone = completedSteps.includes(step);
+              const isActive = currentStep === step;
+              return (
+                <div key={label} className='flex-1 flex flex-col items-center'>
+                  <div
+                    className={cn(
+                      'w-7 h-7 sm:w-9 sm:h-9 lg:w-10 lg:h-10 rounded-full flex items-center justify-center text-xs sm:text-sm font-bold transition-all shadow-sm',
+                      isDone
+                        ? 'bg-green-500 text-white'
+                        : isActive
+                          ? 'bg-[#f63a9e] text-white shadow-[#f63a9e]/30 shadow-lg'
+                          : 'bg-gray-200 text-gray-400'
+                    )}
+                  >
+                    {isDone ? <Check className='w-4 h-4' /> : step}
+                  </div>
+                  <span
+                    className={cn(
+                      'text-[10px] sm:text-xs mt-1 font-semibold',
+                      isActive ? 'text-[#f63a9e]' : isDone ? 'text-green-600' : 'text-gray-400'
+                    )}
+                  >
+                    {label}
+                  </span>
+                </div>
+              );
+            })}
+          </div>
+          <div className='relative h-1 sm:h-1.5 bg-gray-200 rounded-full mx-3'>
+            <div
+              className='absolute top-0 left-0 h-full bg-gradient-to-r from-[#f63a9e] to-purple-500 rounded-full transition-all duration-500'
+              style={{ width: `${((currentStep - 1) / 3) * 100}%` }}
+            />
+          </div>
+        </div>
       </div>
 
       {/* Main Content */}
       <div className='relative z-10 max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 pb-8 sm:pb-12'>
-        <div className='grid lg:grid-cols-2 gap-6 sm:gap-8 lg:gap-12 items-start'>
+        <div className='flex flex-col-reverse lg:grid lg:grid-cols-2 gap-6 sm:gap-8 lg:gap-12 items-start'>
           {/* Left Side - Form */}
           <div>
             <AnimatePresence mode='wait'>
@@ -643,7 +687,7 @@ export function CheckoutPage() {
                           <Button
                             onClick={handlePostcodeSearch}
                             disabled={isSearchingAddress}
-                            className='h-16 px-8 bg-[#f63a9e] hover:bg-[#e02d8d] text-white rounded-2xl shadow-lg disabled:opacity-50'
+                            className='h-12 sm:h-14 lg:h-16 px-4 sm:px-6 lg:px-8 bg-[#f63a9e] hover:bg-[#e02d8d] text-white rounded-xl sm:rounded-2xl shadow-lg disabled:opacity-50 whitespace-nowrap'
                             style={{ fontWeight: '700' }}
                           >
                             {isSearchingAddress ? (
@@ -909,7 +953,7 @@ export function CheckoutPage() {
                         </p>
                       </div>
 
-                      <div className='grid grid-cols-3 gap-4'>
+                      <div className='grid grid-cols-1 md:grid-cols-3 gap-4'>
                         {[
                           {
                             icon: Shield,
@@ -1030,7 +1074,7 @@ export function CheckoutPage() {
                             ) : (
                               <>
                                 <CreditCard className='w-5 h-5 mr-2' />
-                                Complete Purchase ${total.toFixed(2)}
+                                Proceed to Pay · £{total.toFixed(2)}
                               </>
                             )}
                           </span>
@@ -1050,10 +1094,28 @@ export function CheckoutPage() {
             animate={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.5, delay: 0.2 }}
           >
-            <div className='bg-white rounded-2xl sm:rounded-3xl p-4 sm:p-6 shadow-xl border border-gray-100'>
-              <div>
+            <div className='bg-white rounded-2xl sm:rounded-3xl shadow-xl border border-gray-100 overflow-hidden'>
+              {/* Mobile collapsible toggle */}
+              <button
+                className='lg:hidden w-full flex items-center justify-between p-4 sm:p-5'
+                onClick={() => setSummaryOpen(v => !v)}
+              >
+                <div className='flex items-center gap-2'>
+                  <div className='w-8 h-8 rounded-xl bg-[#f63a9e] flex items-center justify-center'>
+                    <ShoppingBag className='w-4 h-4 text-white' />
+                  </div>
+                  <div className='text-left'>
+                    <p className='font-semibold text-gray-900 text-sm'>Order Summary</p>
+                    <p className='text-xs text-gray-500'>{cartItems.length} item{cartItems.length !== 1 ? 's' : ''} · £{total.toFixed(2)}</p>
+                  </div>
+                </div>
+                {summaryOpen ? <ChevronUp className='w-5 h-5 text-gray-400' /> : <ChevronDown className='w-5 h-5 text-gray-400' />}
+              </button>
+
+              {/* Summary body — always visible on desktop, collapsible on mobile */}
+              <div className={cn('p-4 sm:p-6', summaryOpen ? 'block' : 'hidden lg:block')}>
                 {/* Header */}
-                <div className='flex items-center gap-2 sm:gap-3 mb-4 sm:mb-6'>
+                <div className='hidden lg:flex items-center gap-2 sm:gap-3 mb-4 sm:mb-6'>
                   <div className='w-8 h-8 sm:w-10 sm:h-10 rounded-xl bg-[#f63a9e] flex items-center justify-center'>
                     <ShoppingBag className='w-4 h-4 sm:w-5 sm:h-5 text-white' />
                   </div>
@@ -1108,7 +1170,7 @@ export function CheckoutPage() {
                           className='text-[#f63a9e] text-sm'
                           style={{ fontWeight: '700' }}
                         >
-                          ${item.price.toFixed(2)}
+                          £{item.price.toFixed(2)}
                         </span>
                       </div>
                     </motion.div>
@@ -1120,7 +1182,7 @@ export function CheckoutPage() {
                   <div className='flex justify-between items-center text-gray-600 text-sm'>
                     <span>Subtotal:</span>
                     <span style={{ fontWeight: '600' }}>
-                      ${subtotal.toFixed(2)}
+                      £{subtotal.toFixed(2)}
                     </span>
                   </div>
                   <div className='flex justify-between items-center text-gray-600 text-sm'>
@@ -1130,7 +1192,7 @@ export function CheckoutPage() {
                     </span>
                     <div className='text-right'>
                       <span style={{ fontWeight: '600' }}>
-                        ${deliveryFee.toFixed(2)}
+                        £{deliveryFee.toFixed(2)}
                       </span>
                       <div className='text-xs text-gray-500 mt-0.5'>
                         Est. {getEstimatedDays()}
@@ -1144,7 +1206,7 @@ export function CheckoutPage() {
                         Promo{appliedPromoCode ? ` (${appliedPromoCode})` : ''}:
                       </span>
                       <span style={{ fontWeight: '600' }}>
-                        -${discount.toFixed(2)}
+                        -£{discount.toFixed(2)}
                       </span>
                     </div>
                   )}
@@ -1165,7 +1227,7 @@ export function CheckoutPage() {
                             lineHeight: '1',
                           }}
                         >
-                          ${total.toFixed(2)}
+                          £{total.toFixed(2)}
                         </div>
                       </div>
                     </div>

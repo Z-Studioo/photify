@@ -102,7 +102,7 @@ export function AdminArtEditPage() {
             slug: '',
             description: '',
             category: 'Abstract',
-            price: '£0.00',
+            price: '',
             images: [],
             product_type: 'Canvas',
             allow_customization: false,
@@ -224,46 +224,63 @@ export function AdminArtEditPage() {
       return;
     }
 
+    if (!product.price.trim() || product.price === '£') {
+      toast.error('Base price is required');
+      return;
+    }
+
+    if (isNewProduct && product.images.length === 0) {
+      toast.error('Please upload at least one image before creating the product');
+      return;
+    }
+
+    // Normalise price — ensure it has £ prefix
+    const normalisedPrice = product.price.startsWith('£')
+      ? product.price
+      : `£${product.price}`;
+
     try {
       setSaving(true);
 
       if (isNewProduct) {
+        // Check slug uniqueness
+        const { data: existing } = await supabase
+          .from('art_products')
+          .select('id')
+          .eq('slug', product.slug.trim())
+          .maybeSingle();
+        if (existing) {
+          toast.error('An art product with this slug already exists. Please choose a different slug.');
+          setSaving(false);
+          return;
+        }
+
         // Create new product
         const { data, error } = await supabase
           .from('art_products')
           .insert([
             {
-              name: product.name,
-              slug: product.slug,
-              description: product.description || null,
+              name: product.name.trim(),
+              slug: product.slug.trim(),
+              description: product.description?.trim() || null,
               category: product.category,
-              price: product.price,
-              images: product.images.length > 0 ? product.images : [],
+              price: normalisedPrice,
+              image: product.images[0],  // legacy NOT NULL column
+              size: '',  // legacy NOT NULL column (superseded by available_sizes)
+              images: product.images,
               product_type: product.product_type,
               customization_product_id:
                 product.allow_customization && product.customization_product_id
                   ? product.customization_product_id
                   : null,
               allow_customization: product.allow_customization,
-              meta_title: product.meta_title || null,
-              meta_description: product.meta_description || null,
-              meta_keywords:
-                product.meta_keywords && product.meta_keywords.length > 0
-                  ? product.meta_keywords
-                  : [],
-              features:
-                product.features && product.features.length > 0
-                  ? product.features
-                  : [],
-              specifications:
-                product.specifications && product.specifications.length > 0
-                  ? product.specifications
-                  : [],
+              meta_title: product.meta_title?.trim() || null,
+              meta_description: product.meta_description?.trim() || null,
+              meta_keywords: product.meta_keywords ?? [],
+              features: product.features ?? [],
+              specifications: product.specifications ?? [],
               aspect_ratio_id: product.aspect_ratio_id || null,
-              available_sizes:
-                product.available_sizes && product.available_sizes.length > 0
-                  ? product.available_sizes
-                  : [],
+              available_sizes: product.available_sizes ?? [],
               stock_quantity: product.stock_quantity || 0,
               status: product.status,
               is_bestseller: product.is_bestseller || false,
@@ -272,50 +289,36 @@ export function AdminArtEditPage() {
           .select()
           .single();
 
-        if (error) {
-          // console.error('Insert error:', error);
-          throw error;
-        }
+        if (error) throw error;
 
         toast.success('Art product created successfully');
         navigate(`/admin/art-collection/edit/${data.id}`);
       } else {
         // Update existing product
-
         const { error } = await supabase
           .from('art_products')
           .update({
-            name: product.name,
-            slug: product.slug,
-            description: product.description || null,
+            name: product.name.trim(),
+            slug: product.slug.trim(),
+            description: product.description?.trim() || null,
             category: product.category,
-            price: product.price,
-            images: product.images.length > 0 ? product.images : [],
+            price: normalisedPrice,
+            image: product.images[0] ?? '',  // keep legacy column in sync
+            size: '',  // legacy NOT NULL column (superseded by available_sizes)
+            images: product.images,
             product_type: product.product_type,
             customization_product_id:
               product.allow_customization && product.customization_product_id
                 ? product.customization_product_id
                 : null,
             allow_customization: product.allow_customization,
-            meta_title: product.meta_title || null,
-            meta_description: product.meta_description || null,
-            meta_keywords:
-              product.meta_keywords && product.meta_keywords.length > 0
-                ? product.meta_keywords
-                : [],
-            features:
-              product.features && product.features.length > 0
-                ? product.features
-                : [],
-            specifications:
-              product.specifications && product.specifications.length > 0
-                ? product.specifications
-                : [],
+            meta_title: product.meta_title?.trim() || null,
+            meta_description: product.meta_description?.trim() || null,
+            meta_keywords: product.meta_keywords ?? [],
+            features: product.features ?? [],
+            specifications: product.specifications ?? [],
             aspect_ratio_id: product.aspect_ratio_id || null,
-            available_sizes:
-              product.available_sizes && product.available_sizes.length > 0
-                ? product.available_sizes
-                : [],
+            available_sizes: product.available_sizes ?? [],
             stock_quantity: product.stock_quantity || 0,
             status: product.status,
             is_bestseller: product.is_bestseller || false,
@@ -581,14 +584,21 @@ export function AdminArtEditPage() {
               <div className='grid grid-cols-3 gap-4'>
                 <div>
                   <Label htmlFor='base-price'>Base Price *</Label>
-                  <Input
-                    id='base-price'
-                    value={product.price}
-                    onChange={e =>
-                      setProduct({ ...product, price: e.target.value })
-                    }
-                    placeholder='£68.00'
-                  />
+                  <div className='relative mt-1'>
+                    <span className='absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm'>£</span>
+                    <Input
+                      id='base-price'
+                      type='number'
+                      step='0.01'
+                      min='0.01'
+                      value={product.price.replace('£', '')}
+                      onChange={e =>
+                        setProduct({ ...product, price: e.target.value })
+                      }
+                      placeholder='68.00'
+                      className='pl-7'
+                    />
+                  </div>
                   <p className='text-xs text-gray-500 mt-1'>
                     Reference price (individual size prices set in Sizes tab)
                   </p>
@@ -715,10 +725,17 @@ export function AdminArtEditPage() {
               >
                 Product Images
               </h2>
-              <p className='text-sm text-gray-600 mb-6'>
+              <p className='text-sm text-gray-600 mb-2'>
                 Upload and manage product images. First image will be the
                 featured image.
               </p>
+              {isNewProduct && (
+                <div className='mb-4 p-3 bg-amber-50 border border-amber-200 rounded-lg'>
+                  <p className='text-sm text-amber-700'>
+                    <strong>Required:</strong> Upload at least one image before creating this art product.
+                  </p>
+                </div>
+              )}
 
               {/* Image gallery */}
               <div className='space-y-4'>
