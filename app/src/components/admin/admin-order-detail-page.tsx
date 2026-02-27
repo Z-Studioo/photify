@@ -970,122 +970,132 @@ export function AdminOrderDetailPage() {
 
             {/* Order Items */}
             <div className='bg-white rounded-lg border border-gray-200 p-6'>
-              <h3 className='font-semibold mb-4'>Order Items</h3>
-              <div className='overflow-x-auto'>
-                <table className='w-full'>
-                  <thead className='border-b border-gray-200'>
-                    <tr>
-                      <th className='text-left py-3 px-2 text-xs font-medium text-gray-600'>
-                        Product
-                      </th>
-                      <th className='text-left py-3 px-2 text-xs font-medium text-gray-600'>
-                        Sizes
-                      </th>
-                      <th className='text-left py-3 px-2 text-xs font-medium text-gray-600'>
-                        Qty.
-                      </th>
-                      <th className='text-left py-3 px-2 text-xs font-medium text-gray-600'>
-                        Category
-                      </th>
-                      <th className='text-left py-3 px-2 text-xs font-medium text-gray-600'>
-                        Customization
-                      </th>
-                      <th className='text-left py-3 px-2 text-xs font-medium text-gray-600'>
-                        Images
-                      </th>
-                      <th className='text-left py-3 px-2 text-xs font-medium text-gray-600'>
-                        Invoice
-                      </th>
-                      <th className='text-right py-3 px-2 text-xs font-medium text-gray-600'>
-                        Unit Price
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {order.items.map((item: any, index: number) => (
-                      <tr
-                        key={index}
-                        className='border-b border-gray-100 last:border-0'
-                      >
-                        <td className='py-4 px-2 text-sm'>{item.product}</td>
-                        <td className='py-4 px-2 text-sm'>{item.size}</td>
-                        <td className='py-4 px-2 text-sm'>{item.quantity}</td>
-                        <td className='py-4 px-2 text-sm'>{item.category}</td>
-                        <td className='py-4 px-2'>
-                          {item.customization ? (
-                            <div className='flex flex-col gap-1 text-xs'>
-                              {item.customization.shape && (
-                                <span className='inline-flex items-center gap-1'>
-                                  <span className='text-gray-400 font-medium'>Shape:</span>
-                                  <span className='capitalize font-semibold text-gray-700'>{item.customization.shape}</span>
-                                </span>
-                              )}
-                              {item.customization.edgeType && (
-                                <span className='inline-flex items-center gap-1'>
-                                  <span className='text-gray-400 font-medium'>Sides:</span>
-                                  <span className='capitalize font-semibold text-gray-700'>{item.customization.edgeType}</span>
-                                </span>
-                              )}
-                              {item.customization.cornerStyle && (
-                                <span className='inline-flex items-center gap-1'>
-                                  <span className='text-gray-400 font-medium'>Corners:</span>
-                                  <span className='capitalize font-semibold text-gray-700'>{item.customization.cornerStyle}</span>
-                                </span>
-                              )}
-                              {item.customization.imageQuality !== undefined && (
-                                <span className='inline-flex items-center gap-1'>
-                                  <span className='text-gray-400 font-medium'>Quality:</span>
-                                  <span className='font-semibold text-gray-700'>{item.customization.imageQuality}%</span>
-                                </span>
-                              )}
-                            </div>
-                          ) : (
-                            <span className='text-gray-400 text-xs'>—</span>
-                          )}
-                        </td>
-                        <td className='py-4 px-2'>
-                          {item.images && item.images.length > 0 ? (
-                            <div className='flex flex-col gap-1'>
-                              {(item.images as string[]).map((imgUrl: string, imgIdx: number) => (
-                                <a
-                                  key={imgUrl || `img-${imgIdx}`}
-                                  href={imgUrl}
-                                  target='_blank'
-                                  rel='noopener noreferrer'
-                                  className='text-sm text-blue-600 hover:underline'
-                                >
-                                  Image {imgIdx + 1}
-                                </a>
-                              ))}
-                            </div>
-                          ) : (
+              <div className='flex items-center justify-between mb-5'>
+                <h3 className='font-semibold text-gray-900'>Order Items</h3>
+                <span className='text-xs text-gray-500 bg-gray-100 px-2.5 py-1 rounded-full font-medium'>
+                  {order.items.length} {order.items.length === 1 ? 'item' : 'items'}
+                </span>
+              </div>
+
+              <div className='space-y-4'>
+                {order.items.map((item: any, index: number) => (
+                  <div
+                    key={index}
+                    className='border border-gray-200 rounded-xl overflow-hidden'
+                  >
+                    {/* Item header */}
+                    <div className='bg-gray-50 px-4 py-3 flex items-center justify-between border-b border-gray-200'>
+                      <div className='flex items-center gap-3 min-w-0'>
+                        <span className='flex-shrink-0 w-6 h-6 rounded-full bg-[#f63a9e]/10 text-[#f63a9e] text-xs font-bold flex items-center justify-center'>
+                          {index + 1}
+                        </span>
+                        <span className='font-semibold text-sm text-gray-900 truncate'>{item.product}</span>
+                      </div>
+                      <span className='flex-shrink-0 text-base font-bold text-gray-900 ml-4'>{item.unitPrice}</span>
+                    </div>
+
+                    {/* Item body */}
+                    <div className='px-4 py-4 grid grid-cols-2 sm:grid-cols-4 gap-4'>
+                      {/* Size */}
+                      <div>
+                        <p className='text-[10px] font-medium text-gray-400 uppercase tracking-wide mb-1'>Size</p>
+                        <p className='text-sm font-semibold text-gray-800'>{item.size}</p>
+                      </div>
+
+                      {/* Quantity */}
+                      <div>
+                        <p className='text-[10px] font-medium text-gray-400 uppercase tracking-wide mb-1'>Qty</p>
+                        <p className='text-sm font-semibold text-gray-800'>× {item.quantity}</p>
+                      </div>
+
+                      {/* Customization */}
+                      <div className='col-span-2'>
+                        <p className='text-[10px] font-medium text-gray-400 uppercase tracking-wide mb-1.5'>Customization</p>
+                        {item.customization ? (
+                          <div className='flex flex-wrap gap-1.5'>
+                            {item.customization.shape && (
+                              <span className='inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-purple-50 border border-purple-200 text-xs text-purple-700'>
+                                <span className='font-medium'>Shape:</span>
+                                <span className='capitalize font-semibold'>{item.customization.shape}</span>
+                              </span>
+                            )}
+                            {item.customization.edgeType && (
+                              <span className='inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-blue-50 border border-blue-200 text-xs text-blue-700'>
+                                <span className='font-medium'>Sides:</span>
+                                <span className='capitalize font-semibold'>{item.customization.edgeType}</span>
+                              </span>
+                            )}
+                            {item.customization.cornerStyle && (
+                              <span className='inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-emerald-50 border border-emerald-200 text-xs text-emerald-700'>
+                                <span className='font-medium'>Corners:</span>
+                                <span className='capitalize font-semibold'>{item.customization.cornerStyle}</span>
+                              </span>
+                            )}
+                            {item.customization.imageQuality !== undefined && (
+                              <span className='inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-amber-50 border border-amber-200 text-xs text-amber-700'>
+                                <span className='font-medium'>Quality:</span>
+                                <span className='font-semibold'>{item.customization.imageQuality}%</span>
+                              </span>
+                            )}
+                          </div>
+                        ) : (
+                          <span className='text-xs text-gray-400 italic'>No customization data</span>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Item footer — images + invoice */}
+                    <div className='px-4 py-3 bg-gray-50 border-t border-gray-200 flex flex-wrap items-center justify-between gap-3'>
+                      {/* Images */}
+                      <div className='flex items-center gap-2 flex-wrap'>
+                        <span className='text-[10px] font-medium text-gray-400 uppercase tracking-wide'>Images:</span>
+                        {item.images && item.images.length > 0 ? (
+                          (item.images as string[]).map((imgUrl: string, imgIdx: number) => (
                             <a
-                              href={item.image}
+                              key={imgUrl || `img-${imgIdx}`}
+                              href={imgUrl}
                               target='_blank'
                               rel='noopener noreferrer'
-                              className='text-sm text-blue-600 hover:underline'
+                              className='inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-blue-50 border border-blue-200 text-xs text-blue-700 hover:bg-blue-100 transition-colors font-medium'
                             >
-                              link/SJDJDH
+                              <svg className='w-3 h-3' fill='none' viewBox='0 0 24 24' stroke='currentColor' strokeWidth={2}>
+                                <path strokeLinecap='round' strokeLinejoin='round' d='M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z' />
+                              </svg>
+                              Image {imgIdx + 1}
                             </a>
-                          )}
-                        </td>
-                        <td className='py-4 px-2'>
+                          ))
+                        ) : item.image && item.image !== '#' ? (
                           <a
-                            href={order.hosted_invoice_url}
+                            href={item.image}
                             target='_blank'
                             rel='noopener noreferrer'
-                            className='text-sm text-blue-600 hover:underline'
+                            className='inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-blue-50 border border-blue-200 text-xs text-blue-700 hover:bg-blue-100 transition-colors font-medium'
                           >
-                            INV/{orderId}
+                            <svg className='w-3 h-3' fill='none' viewBox='0 0 24 24' stroke='currentColor' strokeWidth={2}>
+                              <path strokeLinecap='round' strokeLinejoin='round' d='M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z' />
+                            </svg>
+                            View Image
                           </a>
-                        </td>
-                        <td className='py-4 px-2 text-sm text-right'>
-                          {item.unitPrice}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
+                        ) : (
+                          <span className='text-xs text-gray-400 italic'>No image</span>
+                        )}
+                      </div>
+
+                      {/* Invoice */}
+                      <a
+                        href={order.hosted_invoice_url}
+                        target='_blank'
+                        rel='noopener noreferrer'
+                        className='inline-flex items-center gap-1 px-2.5 py-1 rounded-md bg-gray-100 border border-gray-300 text-xs text-gray-700 hover:bg-gray-200 transition-colors font-medium'
+                      >
+                        <svg className='w-3 h-3' fill='none' viewBox='0 0 24 24' stroke='currentColor' strokeWidth={2}>
+                          <path strokeLinecap='round' strokeLinejoin='round' d='M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z' />
+                        </svg>
+                        INV/{orderId}
+                      </a>
+                    </div>
+                  </div>
+                ))}
               </div>
 
               <Separator className='my-4' />
