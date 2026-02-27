@@ -1,8 +1,9 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { AdminLayout } from './admin-layout';
-import { Search, Edit, Eye } from 'lucide-react';
+import { Search, Edit, Eye, Plus } from 'lucide-react';
 import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
 import { ImageWithFallback } from '@/components/figma/image-with-fallback';
 import { useProducts } from '@/lib/supabase/hooks';
 
@@ -67,15 +68,14 @@ export function AdminProductsPage() {
               View and edit product configurations
             </p>
           </div>
-          {/* Add Product button disabled */}
-          {/* <Button 
+          <Button
             onClick={() => navigate('/admin/products/new')}
-            className="bg-[#f63a9e] hover:bg-[#e02d8d] gap-2" 
+            className='bg-[#f63a9e] hover:bg-[#e02d8d] gap-2'
             style={{ height: '50px' }}
           >
-            <Plus className="w-5 h-5" />
+            <Plus className='w-5 h-5' />
             Add New Product
-          </Button> */}
+          </Button>
         </div>
 
         {/* Search */}

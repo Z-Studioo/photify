@@ -15,12 +15,24 @@ import {
 } from '@/components/product-configs';
 import { Button } from '@/components/ui/button';
 import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
+import {
   ArrowLeft,
   Loader2,
   FileText,
   Settings as SettingsIcon,
   Tag,
   Images,
+  Trash2,
+  TriangleAlert,
 } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 import { ImageWithFallback } from '@/components/figma/image-with-fallback';
@@ -42,6 +54,8 @@ export function AdminProductEditPage() {
   const { productId } = useParams<{ productId: string }>();
   const [product, setProduct] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [deleting, setDeleting] = useState(false);
 
   // Fetch product data
   useEffect(() => {
@@ -91,6 +105,25 @@ export function AdminProductEditPage() {
       fetchProduct();
     }
   }, [productId]);
+
+  const handleDeleteProduct = async () => {
+    setDeleting(true);
+    try {
+      const supabase = createClient();
+      const { error } = await supabase
+        .from('products')
+        .delete()
+        .eq('id', product.id);
+      if (error) throw error;
+      toast.success(`"${product.name}" has been deleted.`);
+      navigate('/admin/products');
+    } catch {
+      toast.error('Failed to delete product. Please try again.');
+    } finally {
+      setDeleting(false);
+      setShowDeleteDialog(false);
+    }
+  };
 
   const handleConfigSave = () => {
     // Refresh product data after save
@@ -287,7 +320,7 @@ export function AdminProductEditPage() {
 
         {/* Tabs for Product Info, Configuration, Images, Categories & Featured, and Tags */}
         <Tabs defaultValue='content' className='w-full'>
-          <TabsList className='grid w-full max-w-5xl grid-cols-5'>
+          <TabsList className='grid w-full max-w-5xl grid-cols-6'>
             <TabsTrigger value='content' className='flex items-center gap-2'>
               <FileText className='w-4 h-4' />
               Product Info & Content
@@ -310,6 +343,13 @@ export function AdminProductEditPage() {
             <TabsTrigger value='tags' className='flex items-center gap-2'>
               <Tag className='w-4 h-4' />
               Tags
+            </TabsTrigger>
+            <TabsTrigger
+              value='danger'
+              className='flex items-center gap-2 text-red-600 data-[state=active]:text-red-600 data-[state=active]:bg-red-50'
+            >
+              <TriangleAlert className='w-4 h-4' />
+              Settings
             </TabsTrigger>
           </TabsList>
 
@@ -431,8 +471,73 @@ export function AdminProductEditPage() {
               <AdminProductTagsEditor productId={product.id} />
             </div>
           </TabsContent>
+
+          {/* Danger Zone Tab */}
+          <TabsContent value='danger' className='mt-6'>
+            <div className='bg-white rounded-lg border-2 border-red-200 p-8'>
+              <div className='flex items-center gap-3 mb-6'>
+                <div className='w-12 h-12 rounded-xl bg-red-100 flex items-center justify-center'>
+                  <TriangleAlert className='w-6 h-6 text-red-600' />
+                </div>
+                <div>
+                  <h2 className="font-['Bricolage_Grotesque',_sans-serif] text-xl font-semibold text-red-700">
+                    Danger Zone
+                  </h2>
+                  <p className='text-sm text-red-500'>Actions here are irreversible. Proceed with caution.</p>
+                </div>
+              </div>
+
+              <div className='border border-red-200 rounded-xl p-6 flex items-start justify-between gap-6'>
+                <div>
+                  <h3 className='font-semibold text-gray-900 mb-1'>Delete this product</h3>
+                  <p className='text-sm text-gray-500'>
+                    Permanently deletes <strong>{product.name}</strong> and all its configuration, images,
+                    and size data. This action <strong>cannot be undone</strong>.
+                  </p>
+                </div>
+                <Button
+                  variant='destructive'
+                  className='flex-shrink-0 gap-2'
+                  onClick={() => setShowDeleteDialog(true)}
+                >
+                  <Trash2 className='w-4 h-4' />
+                  Delete Product
+                </Button>
+              </div>
+            </div>
+          </TabsContent>
         </Tabs>
       </div>
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className='flex items-center gap-2 text-red-600'>
+              <TriangleAlert className='w-5 h-5' />
+              Delete &quot;{product.name}&quot;?
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              This will permanently delete the product and all associated configuration, size options, and
+              image data from the database. This action <strong>cannot be undone</strong>.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={deleting}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDeleteProduct}
+              disabled={deleting}
+              className='bg-red-600 hover:bg-red-700 focus:ring-red-600 gap-2'
+            >
+              {deleting ? (
+                <><Loader2 className='w-4 h-4 animate-spin' /> Deleting...</>
+              ) : (
+                <><Trash2 className='w-4 h-4' /> Yes, delete it</>
+              )}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </AdminLayout>
   );
 }

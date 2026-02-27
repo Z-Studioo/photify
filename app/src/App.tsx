@@ -56,6 +56,7 @@ const AdminRoomsPage = lazy(() => import('@/pages/admin/rooms'));
 const AdminRoomNewPage = lazy(() => import('@/pages/admin/rooms/new'));
 const AdminRoomEditPage = lazy(() => import('@/pages/admin/rooms/[roomId]'));
 const AdminProductsPage = lazy(() => import('@/pages/admin/products'));
+const AdminProductNewPage = lazy(() => import('@/pages/admin/products/new'));
 const AdminProductEditPage = lazy(() => import('@/pages/admin/products/edit/[productId]'));
 const AdminArtCollectionPage = lazy(() => import('@/pages/admin/art-collection'));
 const AdminArtCollectionNewPage = lazy(() => import('@/pages/admin/art-collection/new'));
@@ -208,6 +209,10 @@ const App: React.FC = () => {
                       <Route
                         path='/admin/products'
                         element={<AdminProductsPage />}
+                      />
+                      <Route
+                        path='/admin/products/new'
+                        element={<AdminProductNewPage />}
                       />
                       <Route
                         path='/admin/products/edit/:productId'

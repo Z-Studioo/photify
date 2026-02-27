@@ -878,14 +878,13 @@ export function OrderTrackPage() {
                             initial={{ opacity: 0, y: 10 }}
                             animate={{ opacity: 1, y: 0 }}
                             transition={{ delay: 0.5 + index * 0.1 }}
-                            whileHover={{ x: 8, scale: 1.02 }}
-                            className='group flex items-center gap-5 p-4 bg-gray-50 rounded-2xl border-2 border-gray-100 hover:border-[#f63a9e] hover:bg-[#FFF5FB] transition-all cursor-pointer'
+                            className='flex items-center gap-5 p-4 bg-gray-50 rounded-2xl border-2 border-gray-100'
                           >
                             <div className='relative w-28 h-28 rounded-xl overflow-hidden shadow-lg flex-shrink-0'>
                               <ImageWithFallback
                                 src={item.image}
                                 alt={item.name}
-                                className='w-full h-full object-cover group-hover:scale-110 transition-transform duration-500'
+                                className='w-full h-full object-cover'
                               />
                             </div>
 
@@ -911,8 +910,6 @@ export function OrderTrackPage() {
                                 </span>
                               </div>
                             </div>
-
-                            <ArrowRight className='w-6 h-6 text-[#f63a9e] opacity-0 group-hover:opacity-100 transition-opacity' />
                           </motion.div>
                         ))}
                       </div>
