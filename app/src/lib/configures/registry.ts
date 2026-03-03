@@ -7,6 +7,7 @@ export interface ProductConfigurer {
   name: string;                  // Display name for admin panel
   description: string;           // Description of what this configurer does
   route: string;                 // URL route path (without /customize/ prefix)
+  customUrl?: string;            // Override full URL (e.g. '/upload' for single-canvas)
   icon?: string;                 // Optional icon name from lucide-react
   requiresProductId: boolean;    // Whether this configurer needs a productId
   isActive: boolean;             // Whether this configurer is available
@@ -30,11 +31,12 @@ export const PRODUCT_CONFIGURERS: ProductConfigurer[] = [
   },
   {
     id: 'single-canvas',
-    name: 'Single Canvas Uploader',
-    description: 'Upload a single image and customize canvas size',
-    route: 'single-canvas',
+    name: 'Single Canvas Editor',
+    description: 'Upload a single image and customise canvas size, crop, edge style and shape — uses the /upload dashboard editor',
+    route: 'upload',
+    customUrl: '/upload',
     icon: 'Image',
-    requiresProductId: false, // Handles its own flow
+    requiresProductId: true,
     isActive: true
   },
   {
@@ -100,6 +102,14 @@ export function buildConfiguratorUrl(configurerId: string, productId?: string): 
   const configurer = getConfigurerById(configurerId);
   if (!configurer) {
     return '/customize';
+  }
+
+  // If the configurer declares a custom URL (e.g. single-canvas → /upload)
+  if (configurer.customUrl) {
+    if (productId) {
+      return `${configurer.customUrl}?productId=${productId}&configurerType=${configurerId}`;
+    }
+    return configurer.customUrl;
   }
 
   const baseUrl = `/customize/${configurer.route}`;
