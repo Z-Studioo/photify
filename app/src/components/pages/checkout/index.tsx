@@ -33,6 +33,21 @@ function cn(...inputs: any[]) {
   return inputs.filter(Boolean).join(' ');
 }
 
+interface PostcoderAddress {
+  addressline1: string;
+  addressline2?: string;
+  summaryline?: string;
+  organisation?: string;
+  buildingname?: string;
+  premise?: string;
+  street?: string;
+  dependentlocality?: string;
+  posttown: string;
+  county?: string;
+  postcode: string;
+  country?: string;
+}
+
 interface FormData {
   name: string;
   phone: string;
@@ -54,7 +69,7 @@ export function CheckoutPage() {
     address: '',
     videoPermission: false,
   });
-  const [searchedAddresses, setSearchedAddresses] = useState<string[]>([]);
+  const [searchedAddresses, setSearchedAddresses] = useState<PostcoderAddress[]>([]);
   const [showAddresses, setShowAddresses] = useState(false);
   const [fieldFocus, setFieldFocus] = useState<string | null>(null);
   const [completedSteps, setCompletedSteps] = useState<number[]>([]);
@@ -200,133 +215,64 @@ export function CheckoutPage() {
 
     setIsSearchingAddress(true);
     setSearchedAddresses([]);
+    setShowAddresses(false);
 
     try {
-      // Normalize postcode: remove extra spaces, convert to uppercase
-      let postcode = formData.postcode.trim().toUpperCase().replace(/\s+/g, '');
+      const postcode = formData.postcode.trim().toUpperCase().replace(/\s+/g, '');
 
-      // Add space before last 3 characters if not present (standard UK format)
-      if (postcode.length >= 5 && !postcode.includes(' ')) {
-        postcode = postcode.slice(0, -3) + ' ' + postcode.slice(-3);
-      }
-
-      // Try exact postcode first
-      let response = await fetch(
-        `https://api.postcodes.io/postcodes/${encodeURIComponent(postcode)}`
+      const response = await fetch(
+        `${import.meta.env.VITE_API_URL}/api/address/lookup?postcode=${encodeURIComponent(postcode)}`
       );
-
-      // If exact match fails, try autocomplete/partial match
-      if (!response.ok && response.status === 404) {
-        const partialPostcode = postcode.replace(/\s+/g, '');
-        const autocompleteResponse = await fetch(
-          `https://api.postcodes.io/postcodes/${encodeURIComponent(partialPostcode)}/autocomplete`
-        );
-
-        if (autocompleteResponse.ok) {
-          const autocompleteData = await autocompleteResponse.json();
-          if (
-            autocompleteData.status === 200 &&
-            autocompleteData.result &&
-            autocompleteData.result.length > 0
-          ) {
-            // Use the first suggested postcode
-            const suggestedPostcode = autocompleteData.result[0];
-            response = await fetch(
-              `https://api.postcodes.io/postcodes/${encodeURIComponent(suggestedPostcode)}`
-            );
-
-            if (response.ok) {
-              toast.info(`Using closest match: ${suggestedPostcode}`);
-            }
-          }
-        }
-      }
 
       if (!response.ok) {
         if (response.status === 404) {
           toast.error('Postcode not found. Please check and try again.');
-          setSearchedAddresses([]);
-          setShowAddresses(true);
-          return;
+        } else if (response.status === 502) {
+          toast.error('Address lookup unavailable. Please enter your address manually.');
+        } else {
+          throw new Error('Failed to search postcode');
         }
-        throw new Error('Failed to search postcode');
+        setShowAddresses(true);
+        return;
       }
 
-      const data = await response.json();
+      const data: PostcoderAddress[] = await response.json();
 
-      if (data.status === 200 && data.result) {
-        const result = data.result;
-
-        // Build comprehensive address list
-        const addresses: string[] = [];
-
-        // Primary address
-        addresses.push(
-          `${result.postcode}, ${result.admin_district || result.parish || ''}, ${result.region}, ${result.country}`
-        );
-
-        // Add ward/parish if available
-        if (result.parish && result.parish !== result.admin_district) {
-          addresses.push(
-            `${result.postcode}, ${result.parish}, ${result.admin_district}, ${result.region}`
-          );
-        }
-
-        // Add specific locality if available
-        if (result.admin_ward) {
-          addresses.push(
-            `${result.postcode}, ${result.admin_ward}, ${result.admin_district}, ${result.region}`
-          );
-        }
-
-        // Try to get nearby postcodes for more options
-        try {
-          const nearbyResponse = await fetch(
-            `https://api.postcodes.io/postcodes?lon=${result.longitude}&lat=${result.latitude}&radius=500&limit=5`
-          );
-
-          if (nearbyResponse.ok) {
-            const nearbyData = await nearbyResponse.json();
-            if (nearbyData.status === 200 && nearbyData.result) {
-              nearbyData.result.forEach((nearby: any) => {
-                if (nearby.postcode !== result.postcode) {
-                  addresses.push(
-                    `${nearby.postcode}, ${nearby.admin_district}, ${nearby.region}`
-                  );
-                }
-              });
-            }
-          }
-        } catch (e) {
-          // Ignore nearby search errors
-          console.warn('Nearby postcode search failed:', e);
-        }
-
-        // Remove duplicates
-        const uniqueAddresses = [...new Set(addresses)];
-
-        setSearchedAddresses(uniqueAddresses);
+      if (!Array.isArray(data) || data.length === 0) {
+        toast.error('No addresses found for this postcode. Please check and try again.');
         setShowAddresses(true);
-        toast.success(
-          `Found ${uniqueAddresses.length} address${uniqueAddresses.length > 1 ? 'es' : ''}`
-        );
-      } else {
-        toast.error('No address found for this postcode');
-        setSearchedAddresses([]);
-        setShowAddresses(true);
+        return;
       }
+
+      setSearchedAddresses(data);
+      setShowAddresses(true);
+      toast.success(`Found ${data.length} address${data.length !== 1 ? 'es' : ''}`);
     } catch (error) {
       console.error('Postcode search error:', error);
       toast.error('Failed to search postcode. Please try again.');
-      setSearchedAddresses([]);
       setShowAddresses(true);
     } finally {
       setIsSearchingAddress(false);
     }
   };
 
-  const selectAddress = (address: string) => {
-    setFormData({ ...formData, address });
+  const formatAddress = (addr: PostcoderAddress): string => {
+    const parts = [
+      addr.addressline1,
+      addr.addressline2,
+      addr.posttown,
+      addr.county,
+      addr.postcode,
+    ].filter(Boolean);
+    return parts.join(', ');
+  };
+
+  const selectAddress = (addr: PostcoderAddress) => {
+    setFormData({
+      ...formData,
+      address: formatAddress(addr),
+      postcode: addr.postcode,
+    });
     setShowAddresses(false);
   };
 
@@ -719,52 +665,60 @@ export function CheckoutPage() {
                           >
                             Select Your Address
                           </Label>
-                          <div className='space-y-3 max-h-96 overflow-y-auto pr-2'>
-                            {searchedAddresses.map((address, index) => (
-                              <motion.button
-                                key={index}
-                                onClick={() => selectAddress(address)}
-                                className={cn(
-                                  'w-full text-left p-6 rounded-2xl border-2 transition-all',
-                                  formData.address === address
-                                    ? 'border-[#f63a9e] bg-gradient-to-br from-[#f63a9e]/5 to-purple-50 shadow-lg'
-                                    : 'border-gray-200 bg-white hover:border-[#f63a9e]/50 hover:shadow-md'
-                                )}
-                                initial={{ opacity: 0, x: -20 }}
-                                animate={{ opacity: 1, x: 0 }}
-                                transition={{ delay: index * 0.1 }}
-                                whileHover={{ x: 5 }}
-                                whileTap={{ scale: 0.98 }}
-                              >
-                                <div className='flex items-center justify-between'>
-                                  <div className='flex items-start gap-3'>
-                                    <MapPin
-                                      className={cn(
-                                        'w-5 h-5 mt-0.5',
-                                        formData.address === address
-                                          ? 'text-[#f63a9e]'
-                                          : 'text-gray-400'
+                          <div className='space-y-2 max-h-96 overflow-y-auto pr-2'>
+                            {searchedAddresses.map((addr, index) => {
+                              const formatted = formatAddress(addr);
+                              const isSelected = formData.address === formatted;
+                              return (
+                                <motion.button
+                                  key={index}
+                                  onClick={() => selectAddress(addr)}
+                                  className={cn(
+                                    'w-full text-left p-4 rounded-2xl border-2 transition-all',
+                                    isSelected
+                                      ? 'border-[#f63a9e] bg-gradient-to-br from-[#f63a9e]/5 to-purple-50 shadow-lg'
+                                      : 'border-gray-200 bg-white hover:border-[#f63a9e]/50 hover:shadow-md'
+                                  )}
+                                  initial={{ opacity: 0, x: -20 }}
+                                  animate={{ opacity: 1, x: 0 }}
+                                  transition={{ delay: index * 0.04 }}
+                                  whileHover={{ x: 4 }}
+                                  whileTap={{ scale: 0.98 }}
+                                >
+                                  <div className='flex items-center justify-between gap-3'>
+                                    <div className='flex items-start gap-3 min-w-0'>
+                                      <MapPin
+                                        className={cn(
+                                          'w-4 h-4 mt-0.5 flex-shrink-0',
+                                          isSelected ? 'text-[#f63a9e]' : 'text-gray-400'
+                                        )}
+                                      />
+                                      <div className='min-w-0'>
+                                        <p className='font-semibold text-gray-900 text-sm leading-tight'>
+                                          {addr.addressline1}
+                                          {addr.addressline2 && `, ${addr.addressline2}`}
+                                        </p>
+                                        <p className='text-gray-500 text-xs mt-0.5'>
+                                          {[addr.posttown, addr.county, addr.postcode].filter(Boolean).join(', ')}
+                                        </p>
+                                      </div>
+                                    </div>
+                                    <AnimatePresence>
+                                      {isSelected && (
+                                        <motion.div
+                                          initial={{ scale: 0, rotate: -180 }}
+                                          animate={{ scale: 1, rotate: 0 }}
+                                          exit={{ scale: 0, rotate: 180 }}
+                                          className='w-8 h-8 rounded-full bg-[#f63a9e] flex items-center justify-center flex-shrink-0'
+                                        >
+                                          <Check className='w-4 h-4 text-white' />
+                                        </motion.div>
                                       )}
-                                    />
-                                    <span className='text-gray-900'>
-                                      {address}
-                                    </span>
+                                    </AnimatePresence>
                                   </div>
-                                  <AnimatePresence>
-                                    {formData.address === address && (
-                                      <motion.div
-                                        initial={{ scale: 0, rotate: -180 }}
-                                        animate={{ scale: 1, rotate: 0 }}
-                                        exit={{ scale: 0, rotate: 180 }}
-                                        className='w-10 h-10 rounded-full bg-[#f63a9e] flex items-center justify-center'
-                                      >
-                                        <Check className='w-6 h-6 text-white' />
-                                      </motion.div>
-                                    )}
-                                  </AnimatePresence>
-                                </div>
-                              </motion.button>
-                            ))}
+                                </motion.button>
+                              );
+                            })}
                           </div>
                         </motion.div>
                       )}

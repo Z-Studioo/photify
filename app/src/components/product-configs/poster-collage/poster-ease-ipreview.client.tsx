@@ -467,7 +467,7 @@ export default function PosterEaselPreview({
   const REF_MIN_DISTANCE = 2.5;
   const REF_MAX_DISTANCE = 6;
   const dynamicMinDistance = REF_MIN_DISTANCE * scaleRatio * 0.7;
-  const dynamicMaxDistance = REF_MAX_DISTANCE * scaleRatio * 2.5; // Allow zooming out MUCH more
+  const dynamicMaxDistance = REF_MAX_DISTANCE * scaleRatio * 0.5; // Restrict zoom-out to just beyond the animation end position
 
   // ===== ORBIT TARGET (from 18x24 perfect setup) =====
   // Now that we're lifting the poster for larger sizes, we can target closer to center
@@ -564,7 +564,7 @@ export default function PosterEaselPreview({
           maxDistance={dynamicMaxDistance}
           minPolarAngle={Math.PI / 6}
           maxPolarAngle={Math.PI / 2.1}
-          enablePan={true}
+          enablePan={false}
           enableDamping={true}
           dampingFactor={0.05}
         />

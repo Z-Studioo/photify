@@ -5,6 +5,7 @@ import searchRoutes from './search';
 import embeddingsRoutes from './embeddings';
 import contactRoutes from './contact';
 import ordersRoutes from './orders';
+import addressRoutes from './address';
 
 const router = Router();
 
@@ -91,5 +92,6 @@ router.use('/search', searchRoutes);
 router.use('/embeddings', embeddingsRoutes);
 router.use('/contact', contactRoutes);
 router.use('/orders', ordersRoutes);
+router.use('/address', addressRoutes);
 
 export default router;
