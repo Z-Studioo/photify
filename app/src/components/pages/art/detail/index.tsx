@@ -12,7 +12,7 @@ import {
   Star,
   ChevronLeft,
   ChevronRight,
-  LayoutGrid,
+  // LayoutGrid,
   Image as ImageIcon,
   Frame,
   Check,
@@ -61,14 +61,6 @@ const PRODUCT_TYPE_OPTIONS = [
     bg: 'from-pink-50 to-white',
   },
   {
-    configurerType: 'multi-canvas-wall',
-    label: '3-Canvas Gallery Wall',
-    description: 'Split or repeat this artwork across 3 side-by-side canvases for a statement wall.',
-    icon: LayoutGrid,
-    accent: '#6366f1',
-    bg: 'from-indigo-50 to-white',
-  },
-  {
     configurerType: 'poster-collage',
     label: 'Poster / Event Stand',
     description: 'Print as a large poster displayed on a premium canvas stand.',
@@ -81,7 +73,7 @@ const PRODUCT_TYPE_OPTIONS = [
 export function ArtDetailPage({ artProduct }: ArtDetailPageProps) {
   const navigate = useNavigate();
   const supabase = createClient();
-  const { setArtFixedPrice, setArtName, setFile, setPreview, setOriginalPreview } = useUpload();
+  const { setArtFixedPrice, setArtName, setFile, setPreview } = useUpload();
 
   const [mainImage, setMainImage] = useState(0);
   const [showProductSelector, setShowProductSelector] = useState(false);
@@ -195,7 +187,6 @@ export function ArtDetailPage({ artProduct }: ArtDetailPageProps) {
       } catch {
         // Fallback: set URL as preview directly
         setPreview(artImageUrl);
-        setOriginalPreview(artImageUrl);
       } finally {
         setNavigating(false);
       }
@@ -206,8 +197,13 @@ export function ArtDetailPage({ artProduct }: ArtDetailPageProps) {
         `/customize/multi-canvas-wall?artImageUrl=${encodedArt}${product ? `&productId=${product.id}` : ''}`
       );
     } else if (configurerType === 'poster-collage') {
+      const rawPrice = String(artProduct.price || '0').replace(/[^0-9.]/g, '');
+      const fixedPrice = parseFloat(rawPrice) || 0;
+      const artNameStr = String(artProduct.name || '').trim();
+      const priceParam = fixedPrice > 0 ? `&artFixedPrice=${fixedPrice}` : '';
+      const nameParam = artNameStr ? `&artName=${encodeURIComponent(artNameStr)}` : '';
       navigate(
-        `/customize/poster-collage?artImageUrl=${encodedArt}${product ? `&productId=${product.id}` : ''}`
+        `/customize/poster-collage?artImageUrl=${encodedArt}${product ? `&productId=${product.id}` : ''}${priceParam}${nameParam}`
       );
     }
   };
