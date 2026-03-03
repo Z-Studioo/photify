@@ -50,7 +50,7 @@ const QuantityControl: React.FC<QuantityControlProps> = ({
   const { addToast } = useToast();
   const { addToCart } = useCart();
   const navigate = useNavigate();
-  const { selectedSize, selectedRatio, shape, selectedProduct, preview, cornerStyle, quality, edgeType } =
+  const { selectedSize, selectedRatio, shape, selectedProduct, preview, cornerStyle, quality, edgeType, artFixedPrice, artName } =
     useUpload();
   const [params] = useSearchParams();
   // Get price data from localStorage
@@ -93,12 +93,13 @@ const QuantityControl: React.FC<QuantityControlProps> = ({
 
   useEffect(() => {
     if (selectedProduct && selectedSize) {
+      const canvasPrice = +(selectedProduct.price || 0) * selectedSize.area_in2;
       setPriceData({
-        sellPrice: +(selectedProduct.price || 0) * selectedSize.area_in2,
-        actualPrice: +selectedProduct.price * selectedSize.area_in2,
+        sellPrice: canvasPrice + artFixedPrice,
+        actualPrice: canvasPrice + artFixedPrice,
       });
     }
-  }, [selectedProduct, selectedSize]);
+  }, [selectedProduct, selectedSize, artFixedPrice]);
 
   const handleConfirmClick = () => {
     setShowConfirmation(true);
@@ -138,7 +139,9 @@ const QuantityControl: React.FC<QuantityControlProps> = ({
       addToCart({
         quantity,
         id: `${selectedRatio || 'custom'}-${selectedSize?.display_label || 'custom'}-${shape || 'rectangular'}`,
-        name: `${selectedRatio || 'Custom Ratio'} - ${selectedSize?.display_label || 'Custom Size'} - ${shape || 'Rectangular'}`,
+        name: artName
+          ? `${artName} — ${selectedRatio || 'Custom Ratio'} ${selectedSize?.display_label || 'Custom Size'}`
+          : `${selectedRatio || 'Custom Ratio'} - ${selectedSize?.display_label || 'Custom Size'} - ${shape || 'Rectangular'}`,
         image: finalImageUrl,
         price: priceData.sellPrice,
         size: selectedSize?.display_label || 'Custom Size',
@@ -254,7 +257,16 @@ const QuantityControl: React.FC<QuantityControlProps> = ({
             transition={{ delay: 0.3 }}
             className='w-full text-right mb-0.5'
           >
-            {hasDiscount ? (
+            {artFixedPrice > 0 ? (
+              <div className='flex flex-col items-end gap-0.5'>
+                <span className='text-base font-bold text-gray-900'>
+                  £{totalSellPrice.toFixed(2)}
+                </span>
+                <span className='text-[10px] text-gray-400 leading-tight'>
+                  Art £{(artFixedPrice * quantity).toFixed(2)} + Canvas £{((priceData.sellPrice - artFixedPrice) * quantity).toFixed(2)}
+                </span>
+              </div>
+            ) : hasDiscount ? (
               <div className='flex flex-col items-end -space-y-1'>
                 <div className='flex items-baseline justify-end gap-1'>
                   <Badge
@@ -310,7 +322,7 @@ const QuantityControl: React.FC<QuantityControlProps> = ({
         onOpenChange={setShowConfirmation}
         onConfirm={handleFinalConfirm}
         title='Confirm Order'
-        description={`You are about to place an order for ${quantity} canvas${quantity > 1 ? 'es' : ''} for $${totalSellPrice.toFixed(2)}`}
+        description={`You are about to place an order for ${quantity} canvas${quantity > 1 ? 'es' : ''} for £${totalSellPrice.toFixed(2)}${artFixedPrice > 0 ? ` (art £${(artFixedPrice * quantity).toFixed(2)} + canvas £${((priceData.sellPrice - artFixedPrice) * quantity).toFixed(2)})` : ''}`}
         confirmText={localConfirming ? 'Processing...' : 'Yes, Confirm Order'}
         cancelText='Cancel'
         isLoading={localConfirming}

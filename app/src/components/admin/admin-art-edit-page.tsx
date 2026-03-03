@@ -225,7 +225,7 @@ export function AdminArtEditPage() {
     }
 
     if (!product.price.trim() || product.price === '£') {
-      toast.error('Base price is required');
+      toast.error('Fixed price is required');
       return;
     }
 
@@ -583,7 +583,7 @@ export function AdminArtEditPage() {
 
               <div className='grid grid-cols-3 gap-4'>
                 <div>
-                  <Label htmlFor='base-price'>Base Price *</Label>
+                  <Label htmlFor='base-price'>Fixed Price *</Label>
                   <div className='relative mt-1'>
                     <span className='absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm'>£</span>
                     <Input
@@ -600,7 +600,7 @@ export function AdminArtEditPage() {
                     />
                   </div>
                   <p className='text-xs text-gray-500 mt-1'>
-                    Reference price (individual size prices set in Sizes tab)
+                    Fixed art fee added on top of the canvas print price
                   </p>
                 </div>
 

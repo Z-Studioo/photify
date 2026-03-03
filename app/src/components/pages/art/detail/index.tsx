@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useUpload } from '@/context/UploadContext';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Header } from '@/components/layout/header';
 import { Footer } from '@/components/layout/footer';
@@ -22,6 +23,7 @@ import {
   RefreshCw,
   Palette,
   Tag,
+  Loader2,
 } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 
@@ -79,11 +81,13 @@ const PRODUCT_TYPE_OPTIONS = [
 export function ArtDetailPage({ artProduct }: ArtDetailPageProps) {
   const navigate = useNavigate();
   const supabase = createClient();
+  const { setArtFixedPrice, setArtName, setFile, setPreview, setOriginalPreview } = useUpload();
 
   const [mainImage, setMainImage] = useState(0);
   const [showProductSelector, setShowProductSelector] = useState(false);
   const [products, setProducts] = useState<Product[]>([]);
   const [loadingProducts, setLoadingProducts] = useState(false);
+  const [navigating, setNavigating] = useState(false);
   const [similarProducts, setSimilarProducts] = useState<SimilarArt[]>([]);
   const [loadingSimilar, setLoadingSimilar] = useState(true);
 
@@ -159,12 +163,43 @@ export function ArtDetailPage({ artProduct }: ArtDetailPageProps) {
 
   const artImageUrl = images[0]; // Primary art image to pre-feed
 
-  const handleSelectProductType = (configurerType: string) => {
+  const handleSelectProductType = async (configurerType: string) => {
     const product = products.find(p => p.config?.configurerType === configurerType);
     const encodedArt = encodeURIComponent(artImageUrl);
 
     if (configurerType === 'single-canvas') {
+      // Parse price and name
+      const rawPrice = String(artProduct.price || '0').replace(/[^0-9.]/g, '');
+      const fixedPrice = parseFloat(rawPrice) || 0;
+      const artNameStr = String(artProduct.name || '').trim();
+
+      // Set context values DIRECTLY — the UploadProvider is already mounted during
+      // in-app navigation so restore() won't run again.
+      setArtFixedPrice(fixedPrice);
+      setArtName(artNameStr);
+
+      // Also keep sessionStorage as a page-refresh fallback
       sessionStorage.setItem('photify_art_image_url', artImageUrl);
+      if (fixedPrice > 0) sessionStorage.setItem('photify_art_fixed_price', String(fixedPrice));
+      if (artNameStr) sessionStorage.setItem('photify_art_name', artNameStr);
+
+      // Fetch the art image and set it in context so the dashboard gets the image immediately
+      setNavigating(true);
+      try {
+        const response = await fetch(artImageUrl);
+        const blob = await response.blob();
+        const ext = blob.type.split('/')[1] || 'jpg';
+        const artFile = new File([blob], `art-${Date.now()}.${ext}`, { type: blob.type });
+        // setFile triggers the UploadContext useEffect that converts to base64 and persists to IndexedDB
+        setFile(artFile);
+      } catch {
+        // Fallback: set URL as preview directly
+        setPreview(artImageUrl);
+        setOriginalPreview(artImageUrl);
+      } finally {
+        setNavigating(false);
+      }
+
       navigate('/dashboard');
     } else if (configurerType === 'multi-canvas-wall') {
       navigate(
@@ -519,23 +554,30 @@ export function ArtDetailPage({ artProduct }: ArtDetailPageProps) {
                       return (
                         <motion.button
                           key={option.configurerType}
-                          whileHover={{ scale: 1.01 }}
-                          whileTap={{ scale: 0.99 }}
-                          onClick={() => handleSelectProductType(option.configurerType)}
-                          className={`w-full text-left p-4 rounded-2xl border-2 border-gray-100 bg-gradient-to-r ${option.bg} hover:border-gray-200 shadow-sm hover:shadow-md transition-all flex items-center gap-4`}
+                          whileHover={{ scale: navigating ? 1 : 1.01 }}
+                          whileTap={{ scale: navigating ? 1 : 0.99 }}
+                          onClick={() => !navigating && handleSelectProductType(option.configurerType)}
+                          disabled={navigating}
+                          className={`w-full text-left p-4 rounded-2xl border-2 border-gray-100 bg-gradient-to-r ${option.bg} hover:border-gray-200 shadow-sm hover:shadow-md transition-all flex items-center gap-4 disabled:opacity-60 disabled:cursor-not-allowed`}
                         >
                           <div
                             className='w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0'
                             style={{ backgroundColor: `${option.accent}18` }}
                           >
-                            <Icon className='w-6 h-6' style={{ color: option.accent }} />
+                            {navigating && option.configurerType === 'single-canvas' ? (
+                              <Loader2 className='w-6 h-6 animate-spin' style={{ color: option.accent }} />
+                            ) : (
+                              <Icon className='w-6 h-6' style={{ color: option.accent }} />
+                            )}
                           </div>
                           <div className='flex-1 min-w-0'>
                             <p className='font-semibold text-gray-900 text-sm'>
                               {option.label}
                             </p>
                             <p className='text-xs text-gray-500 mt-0.5 leading-relaxed'>
-                              {option.description}
+                              {navigating && option.configurerType === 'single-canvas'
+                                ? 'Loading artwork…'
+                                : option.description}
                             </p>
                           </div>
                           <ArrowRight className='w-4 h-4 text-gray-400 flex-shrink-0' />
