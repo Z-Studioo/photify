@@ -143,10 +143,10 @@ function EaselStand({ posterHeight }: { posterHeight: number }) {
         {woodMaterial}
       </mesh>
 
-      {/* Front center leg - moved back, supports from below */}
+      {/* Front center leg - behind canvas, bottom spreads backward */}
       <mesh
-        position={[0, easelHeight / 2 - 0.5, 0.15]}
-        rotation={[-Math.PI * 0.15, 0, 0]}
+        position={[0, easelHeight / 2 - 0.6, -0.9]}
+        rotation={[Math.PI * 0.1, 0, 0]}
         castShadow
       >
         <boxGeometry args={[legWidth, easelHeight - 1.0, legDepth]} />
@@ -174,11 +174,11 @@ function EaselStand({ posterHeight }: { posterHeight: number }) {
       </mesh>
 
       {/* Additional support pegs (small blocks that canvas rests on) */}
-      <mesh position={[-0.3, 1.15, -0.08]} castShadow>
+      <mesh position={[-0.3, 1.15, -0.13]} castShadow>
         <boxGeometry args={[0.06, 0.03, 0.06]} />
         {woodMaterial}
       </mesh>
-      <mesh position={[0.3, 1.15, -0.08]} castShadow>
+      <mesh position={[0.3, 1.15, -0.13]} castShadow>
         <boxGeometry args={[0.06, 0.03, 0.06]} />
         {woodMaterial}
       </mesh>
