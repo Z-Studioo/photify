@@ -83,6 +83,11 @@ interface UploadContextType {
   applyPendingChanges: () => void;
   cancelPendingCropChanges: () => void;
   reset: () => Promise<void>;
+  // Art collection fixed price (set when navigating from art detail page)
+  artFixedPrice: number;
+  setArtFixedPrice: (price: number) => void;
+  artName: string;
+  setArtName: (name: string) => void;
 }
 
 const UploadContext = createContext<UploadContextType | undefined>(undefined);
@@ -154,6 +159,8 @@ export const UploadProvider = ({ children }: { children: React.ReactNode }) => {
   const [file, setFile] = useState<File | null>(null);
   const [preview, setPreview] = useState<string | null>(null);
   const [originalPreview, setOriginalPreview] = useState<string | null>(null);
+  const [artFixedPrice, setArtFixedPrice] = useState<number>(0);
+  const [artName, setArtName] = useState<string>('');
   const [shape, setShape] = useState<CanvasShape>('rectangle');
   const [pendingFile, setPendingFile] = useState<File | null>(null);
   const [pendingPreview, setPendingPreview] = useState<string | null>(null);
@@ -168,7 +175,7 @@ export const UploadProvider = ({ children }: { children: React.ReactNode }) => {
     () => getStoredMetadata().quality || [70]
   );
   const [cornerStyle, setCornerStyle] = useState<CornerStyle>(
-    () => getStoredMetadata().cornerStyle || 'sharp'
+    () => getStoredMetadata().cornerStyle || 'rounded'
   );
   const [pendingCornerStyle, setPendingCornerStyle] = useState<CornerStyle | null>(null);
 
@@ -253,6 +260,57 @@ export const UploadProvider = ({ children }: { children: React.ReactNode }) => {
       } catch (error) {
         console.error('Error restoring from IndexedDB:', error);
         await del('photify_uploaded_image');
+      }
+
+      // Check for an art image pre-loaded from the art detail page.
+      // This must run AFTER the normal IndexedDB restore so it always wins.
+      const pendingArtUrl = sessionStorage.getItem('photify_art_image_url');
+      const pendingArtPrice = sessionStorage.getItem('photify_art_fixed_price');
+      const pendingArtName = sessionStorage.getItem('photify_art_name');
+      if (pendingArtPrice) {
+        setArtFixedPrice(parseFloat(pendingArtPrice) || 0);
+        sessionStorage.removeItem('photify_art_fixed_price');
+      } else {
+        setArtFixedPrice(0);
+      }
+      if (pendingArtName) {
+        setArtName(pendingArtName);
+        sessionStorage.removeItem('photify_art_name');
+      } else {
+        setArtName('');
+      }
+      if (pendingArtUrl) {
+        sessionStorage.removeItem('photify_art_image_url');
+        try {
+          const response = await fetch(pendingArtUrl);
+          const blob = await response.blob();
+          const ext = blob.type.split('/')[1] || 'jpg';
+          const artFile = new File([blob], `art-${Date.now()}.${ext}`, { type: blob.type });
+          // Convert to base64 so preview + originalPreview are both set correctly
+          const reader = new FileReader();
+          reader.readAsDataURL(artFile);
+          await new Promise<void>(resolve => { reader.onload = () => resolve(); });
+          const base64 = reader.result as string;
+          setFile(artFile);
+          setPreview(base64);
+          setOriginalPreview(base64);
+          // Persist immediately so restore on next visit also gets the art image
+          try {
+            await set('photify_uploaded_image', {
+              fileName: artFile.name,
+              fileType: artFile.type,
+              fileSize: artFile.size,
+              base64Data: base64,
+              preview: base64,
+              originalPreview: base64,
+              version: CURRENT_VERSION,
+            });
+          } catch { /* non-critical */ }
+        } catch {
+          // Fallback: use URL directly (no file object, crop may be limited)
+          setPreview(pendingArtUrl);
+          setOriginalPreview(pendingArtUrl);
+        }
       }
 
       const metadata = getStoredMetadata();
@@ -404,6 +462,8 @@ export const UploadProvider = ({ children }: { children: React.ReactNode }) => {
     setCornerStyle('rounded');
     setEdgeType('wrapped');
     setQuantity(1);
+    setArtFixedPrice(0);
+    setArtName('');
 
     if (file) {
       const base64 = await fileToBase64(file);
@@ -460,6 +520,10 @@ export const UploadProvider = ({ children }: { children: React.ReactNode }) => {
         setQuantity,
         pendingQuantity,
         setPendingQuantity,
+        artFixedPrice,
+        setArtFixedPrice,
+        artName,
+        setArtName,
       }}
     >
       {children}

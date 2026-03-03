@@ -87,6 +87,8 @@ export function PosterCollageCustomizer() {
   const artImageUrl = searchParams.get('artImageUrl')
     ? decodeURIComponent(searchParams.get('artImageUrl')!)
     : null;
+  const artFixedPrice = parseFloat(searchParams.get('artFixedPrice') || '0') || 0;
+  const artName = searchParams.get('artName') ? decodeURIComponent(searchParams.get('artName')!) : '';
   const supabase = createClient();
   const { addToCart } = useCart();
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -268,10 +270,14 @@ export function PosterCollageCustomizer() {
     toast.success(`Size selected: ${size.label}`);
   };
 
-  // Calculate price
+  // Calculate canvas-only price
+  const calculateCanvasPrice = () => {
+    return state.posterWidth * state.posterHeight * productPrice;
+  };
+
+  // Calculate total price (canvas + art fixed price)
   const calculatePrice = () => {
-    const area = state.posterWidth * state.posterHeight;
-    return (area * productPrice).toFixed(2);
+    return (calculateCanvasPrice() + artFixedPrice).toFixed(2);
   };
 
   // Add to cart
@@ -282,14 +288,17 @@ export function PosterCollageCustomizer() {
     }
 
     try {
-      const area = state.posterWidth * state.posterHeight;
-      const price = parseFloat((area * productPrice).toFixed(2));
+      const canvasPrice = calculateCanvasPrice();
+      const totalPrice = parseFloat((canvasPrice + artFixedPrice).toFixed(2));
+      const itemName = artName
+        ? `${artName} — Poster ${state.posterWidth}" × ${state.posterHeight}"`
+        : `${POSTER_COLLAGE_PRODUCT.name} - ${state.posterWidth}" × ${state.posterHeight}"`;
 
       await addToCart({
         id: POSTER_COLLAGE_PRODUCT.id,
-        name: `${POSTER_COLLAGE_PRODUCT.name} - ${state.posterWidth}" × ${state.posterHeight}"`,
+        name: itemName,
         quantity: 1,
-        price: price,
+        price: totalPrice,
         image: state.imageUrl,
         size: `${state.posterWidth}" × ${state.posterHeight}"`,
       });
@@ -578,13 +587,20 @@ export function PosterCollageCustomizer() {
                 <p className='text-gray-600 text-[11px] xs:text-xs sm:text-sm leading-snug'>
                   Upload your custom design for special events
                 </p>
-                <div className='flex items-baseline gap-1.5 sm:gap-2 mt-2 sm:mt-3'>
-                  <span className='text-[#f63a9e] text-lg xs:text-xl sm:text-2xl md:text-3xl font-bold'>
-                    £{state.imageUrl ? calculatePrice() : '21.60'}
-                  </span>
-                  <span className='text-[10px] xs:text-xs sm:text-sm text-gray-600'>
-                    ({state.posterWidth}&quot; × {state.posterHeight}&quot;)
-                  </span>
+                <div className='mt-2 sm:mt-3'>
+                  <div className='flex items-baseline gap-1.5 sm:gap-2'>
+                    <span className='text-[#f63a9e] text-lg xs:text-xl sm:text-2xl md:text-3xl font-bold'>
+                      £{state.imageUrl ? calculatePrice() : (artFixedPrice > 0 ? (21.60 + artFixedPrice).toFixed(2) : '21.60')}
+                    </span>
+                    <span className='text-[10px] xs:text-xs sm:text-sm text-gray-600'>
+                      ({state.posterWidth}&quot; × {state.posterHeight}&quot;)
+                    </span>
+                  </div>
+                  {artFixedPrice > 0 && (
+                    <p className='text-[10px] xs:text-xs text-gray-400 mt-0.5'>
+                      Art £{artFixedPrice.toFixed(2)} + Poster £{state.imageUrl ? calculateCanvasPrice().toFixed(2) : '21.60'}
+                    </p>
+                  )}
                 </div>
 
                 {/* Add to Cart Button */}
@@ -695,6 +711,7 @@ export function PosterCollageCustomizer() {
                         state.posterWidth === size.width &&
                         state.posterHeight === size.height;
 
+                      const totalSizePrice = (parseFloat(price) + artFixedPrice).toFixed(2);
                       return (
                         <button
                           key={size.label}
@@ -716,9 +733,16 @@ export function PosterCollageCustomizer() {
                                 </span>
                               )}
                             </div>
-                            <span className='text-[#f63a9e] font-semibold text-[11px] xs:text-xs sm:text-sm md:text-base'>
-                              £{price}
-                            </span>
+                            <div className='flex flex-col items-end'>
+                              <span className='text-[#f63a9e] font-semibold text-[11px] xs:text-xs sm:text-sm md:text-base'>
+                                £{artFixedPrice > 0 ? totalSizePrice : price}
+                              </span>
+                              {artFixedPrice > 0 && (
+                                <span className='text-[8px] xs:text-[9px] text-gray-400 leading-tight'>
+                                  Art £{artFixedPrice.toFixed(2)} + Poster £{price}
+                                </span>
+                              )}
+                            </div>
                           </div>
                           <p className='text-[10px] xs:text-[10px] sm:text-xs text-gray-600 leading-snug'>
                             {size.description}

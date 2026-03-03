@@ -520,32 +520,11 @@ const ThreeDCanvas = ({
             ease: [0.22, 1, 0.36, 1],
           }}
         >
-          <div className='flex border border-gray-300 divide-x divide-gray-300'>
-            <motion.button
-              onClick={() => setCornerStyle('sharp')}
-              className={`flex items-center justify-center px-2 py-2 md:px-5 md:py-3 text-xs md:text-sm font-medium rounded-none cursor-pointer transition-all flex-shrink-0 whitespace-nowrap ${
-                cornerStyle === 'sharp'
-                  ? 'bg-primary text-white'
-                  : 'bg-white text-gray-700 hover:bg-gray-100'
-              }`}
-              type='button'
-              whileHover={{ scale: 1.02 }}
-              whileTap={{ scale: 0.98 }}
-            >
-              <span className='hidden md:inline ml-1'>Sharp</span>
-              <span className='md:hidden'>Sharp</span>
-            </motion.button>
-
+          <div className='flex border border-gray-300'>
             <motion.button
               onClick={() => setCornerStyle('rounded')}
-              className={`flex items-center justify-center px-2 py-2 md:px-5 md:py-3 text-xs md:text-sm font-medium rounded-none cursor-pointer transition-all flex-shrink-0 whitespace-nowrap ${
-                cornerStyle === 'rounded'
-                  ? 'bg-primary text-white'
-                  : 'bg-white text-gray-700 hover:bg-gray-100'
-              }`}
+              className='flex items-center justify-center px-2 py-2 md:px-5 md:py-3 text-xs md:text-sm font-medium rounded-none cursor-default transition-all flex-shrink-0 whitespace-nowrap bg-primary text-white'
               type='button'
-              whileHover={{ scale: 1.02 }}
-              whileTap={{ scale: 0.98 }}
             >
               <span className='hidden md:inline ml-1'>Rounded</span>
               <span className='md:hidden'>Round</span>

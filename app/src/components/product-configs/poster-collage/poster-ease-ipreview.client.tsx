@@ -117,6 +117,20 @@ function EaselStand({ posterHeight }: { posterHeight: number }) {
   const easelHeight = posterHeightUnits + 0.8; // Taller than poster
   const easelBaseWidth = 0.7;
 
+  // ── Front leg: derived from two anchor points so it never detaches ──
+  // Anchor 1 (top): where the front leg meets the top crossbar (same Z as back legs)
+  const frontLegPivotY = easelHeight - 0.15;
+  const frontLegPivotZ = -0.25;
+  // Anchor 2 (bottom): floor contact — spreads backward proportionally with height
+  const frontLegFloorZ = -(0.3 + easelHeight * 0.24);
+  // Derive length, angle, and center-point from the two anchors
+  const flDeltaY = frontLegPivotY;                          // bottom is at y=0
+  const flDeltaZ = frontLegPivotZ - frontLegFloorZ;         // positive: pivot is less-negative (closer to cam)
+  const frontLegLength = Math.sqrt(flDeltaY * flDeltaY + flDeltaZ * flDeltaZ);
+  const frontLegAngle = Math.atan2(flDeltaZ, flDeltaY);     // rotation.x — +θ tilts top toward cam
+  const frontLegCenterY = frontLegPivotY / 2;
+  const frontLegCenterZ = (frontLegPivotZ + frontLegFloorZ) / 2;
+
   // Wood material
   const woodMaterial = useMemo(
     () => (
@@ -143,13 +157,13 @@ function EaselStand({ posterHeight }: { posterHeight: number }) {
         {woodMaterial}
       </mesh>
 
-      {/* Front center leg - moved back, supports from below */}
+      {/* Front center leg — mathematically derived so it always connects top crossbar → floor */}
       <mesh
-        position={[0, easelHeight / 2 - 0.5, 0.15]}
-        rotation={[-Math.PI * 0.15, 0, 0]}
+        position={[0, frontLegCenterY, frontLegCenterZ]}
+        rotation={[frontLegAngle, 0, 0]}
         castShadow
       >
-        <boxGeometry args={[legWidth, easelHeight - 1.0, legDepth]} />
+        <boxGeometry args={[legWidth, frontLegLength, legDepth]} />
         {woodMaterial}
       </mesh>
 
@@ -174,11 +188,11 @@ function EaselStand({ posterHeight }: { posterHeight: number }) {
       </mesh>
 
       {/* Additional support pegs (small blocks that canvas rests on) */}
-      <mesh position={[-0.3, 1.15, -0.08]} castShadow>
+      <mesh position={[-0.3, 1.15, -0.13]} castShadow>
         <boxGeometry args={[0.06, 0.03, 0.06]} />
         {woodMaterial}
       </mesh>
-      <mesh position={[0.3, 1.15, -0.08]} castShadow>
+      <mesh position={[0.3, 1.15, -0.13]} castShadow>
         <boxGeometry args={[0.06, 0.03, 0.06]} />
         {woodMaterial}
       </mesh>
@@ -467,7 +481,7 @@ export default function PosterEaselPreview({
   const REF_MIN_DISTANCE = 2.5;
   const REF_MAX_DISTANCE = 6;
   const dynamicMinDistance = REF_MIN_DISTANCE * scaleRatio * 0.7;
-  const dynamicMaxDistance = REF_MAX_DISTANCE * scaleRatio * 2.5; // Allow zooming out MUCH more
+  const dynamicMaxDistance = REF_MAX_DISTANCE * scaleRatio * 0.9; // Restrict zoom-out to just beyond the animation end position
 
   // ===== ORBIT TARGET (from 18x24 perfect setup) =====
   // Now that we're lifting the poster for larger sizes, we can target closer to center
@@ -564,7 +578,7 @@ export default function PosterEaselPreview({
           maxDistance={dynamicMaxDistance}
           minPolarAngle={Math.PI / 6}
           maxPolarAngle={Math.PI / 2.1}
-          enablePan={true}
+          enablePan={false}
           enableDamping={true}
           dampingFactor={0.05}
         />

@@ -113,7 +113,7 @@ export function AdminConfigurerSelector({
                   {selectedConfigurer.description}
                 </p>
                 <div className='flex items-center gap-4 text-xs text-blue-600'>
-                  <span>Route: /customize/{selectedConfigurer.route}</span>
+                  <span>Route: {selectedConfigurer.customUrl ?? `/customize/${selectedConfigurer.route}`}</span>
                   {selectedConfigurer.requiresProductId && (
                     <span className='px-2 py-0.5 bg-blue-100 rounded'>
                       Requires Product ID
