@@ -874,11 +874,11 @@ export function AdminArtEditPage() {
               availableSizes={product.available_sizes || []}
               images={product.images}
               onSizesChange={sizes =>
-                setProduct({ ...product, available_sizes: sizes })
+                setProduct(prev => prev ? { ...prev, available_sizes: sizes } : prev)
               }
               aspectRatioId={product.aspect_ratio_id || undefined}
               onAspectRatioChange={ratioId =>
-                setProduct({ ...product, aspect_ratio_id: ratioId })
+                setProduct(prev => prev ? { ...prev, aspect_ratio_id: ratioId } : prev)
               }
             />
           </TabsContent>

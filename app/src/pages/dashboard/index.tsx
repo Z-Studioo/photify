@@ -42,7 +42,6 @@ interface MenuFeature {
 const Dashboard: React.FC = () => {
   const wallImageInputRef = useRef<HTMLInputElement>(null);
   const { selectedFeature, setSelectedFeature } = useFeature();
-
   const [isConfirming, setIsConfirming] = useState(false);
 
   const handleConfirmAndApply = async () => {
@@ -118,6 +117,7 @@ const Dashboard: React.FC = () => {
     quality,
     selectedProduct,
   } = useUpload();
+
   const { selectedView, setSelectedView } = useView();
   const { edgeType, applyPendingEdgeType } = useEdge();
   const [pricePerItem, setPricePerItem] = useState<number>(0);

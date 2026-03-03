@@ -255,6 +255,43 @@ export const UploadProvider = ({ children }: { children: React.ReactNode }) => {
         await del('photify_uploaded_image');
       }
 
+      // Check for an art image pre-loaded from the art detail page.
+      // This must run AFTER the normal IndexedDB restore so it always wins.
+      const pendingArtUrl = sessionStorage.getItem('photify_art_image_url');
+      if (pendingArtUrl) {
+        sessionStorage.removeItem('photify_art_image_url');
+        try {
+          const response = await fetch(pendingArtUrl);
+          const blob = await response.blob();
+          const ext = blob.type.split('/')[1] || 'jpg';
+          const artFile = new File([blob], `art-${Date.now()}.${ext}`, { type: blob.type });
+          // Convert to base64 so preview + originalPreview are both set correctly
+          const reader = new FileReader();
+          reader.readAsDataURL(artFile);
+          await new Promise<void>(resolve => { reader.onload = () => resolve(); });
+          const base64 = reader.result as string;
+          setFile(artFile);
+          setPreview(base64);
+          setOriginalPreview(base64);
+          // Persist immediately so restore on next visit also gets the art image
+          try {
+            await set('photify_uploaded_image', {
+              fileName: artFile.name,
+              fileType: artFile.type,
+              fileSize: artFile.size,
+              base64Data: base64,
+              preview: base64,
+              originalPreview: base64,
+              version: CURRENT_VERSION,
+            });
+          } catch { /* non-critical */ }
+        } catch {
+          // Fallback: use URL directly (no file object, crop may be limited)
+          setPreview(pendingArtUrl);
+          setOriginalPreview(pendingArtUrl);
+        }
+      }
+
       const metadata = getStoredMetadata();
       if (metadata.selectedRatio) {
         setSelectedRatio(metadata.selectedRatio);

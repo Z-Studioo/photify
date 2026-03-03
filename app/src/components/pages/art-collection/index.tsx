@@ -14,6 +14,7 @@ interface ArtProduct {
   name: string;
   image: string;
   size: string;
+  sizeCount?: number;
   price: string;
   isBestSeller: boolean;
   category: string;
@@ -257,6 +258,7 @@ export function ArtCollectionPage({
           name: art.name,
           image: (Array.isArray(art.images) && art.images.length > 0 ? art.images[0] : null) || art.image || '',
           size: art.size || '',
+          sizeCount: Array.isArray(art.available_sizes) ? art.available_sizes.length : 0,
           price: art.price || '',
           isBestSeller: art.is_bestseller || false,
           category: art.category || '',
@@ -429,10 +431,16 @@ export function ArtCollectionPage({
                       >
                         {product.name}
                       </h3>
-                      <div className='flex items-center gap-2 text-gray-600 text-sm mb-1'>
-                        <Ruler className='w-4 h-4' />
-                        <span>{product.size}</span>
-                      </div>
+                      {(product.size || (product.sizeCount ?? 0) > 0) && (
+                        <div className='flex items-center gap-2 text-gray-600 text-sm mb-1'>
+                          <Ruler className='w-4 h-4' />
+                          <span>
+                            {product.size
+                              ? product.size
+                              : `${product.sizeCount} size${product.sizeCount === 1 ? '' : 's'} available`}
+                          </span>
+                        </div>
+                      )}
                       <p className='text-[#f63a9e]'>
                         From <span>{product.price}</span>
                       </p>

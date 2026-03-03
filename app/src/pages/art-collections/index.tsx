@@ -18,6 +18,7 @@ interface RawArtProduct {
   images: string[];
   price: string;
   size: string;
+  available_sizes: { size_id: string; price: number; image_url: string }[] | null;
   category: string;
   is_bestseller: boolean;
   status: string;
@@ -37,7 +38,7 @@ export default function ArtCollections() {
       // Fetch all art products with their tags
       const { data: productsData } = await supabase
         .from('art_products')
-        .select('id, slug, name, image, images, price, size, category, is_bestseller, status, created_at, art_product_tags(tags(id, name, slug, color))')
+        .select('id, slug, name, image, images, price, size, available_sizes, category, is_bestseller, status, created_at, art_product_tags(tags(id, name, slug, color))')
         .eq('status', 'active')
         .order('created_at', { ascending: false });
 

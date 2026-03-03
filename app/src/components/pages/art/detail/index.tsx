@@ -164,9 +164,8 @@ export function ArtDetailPage({ artProduct }: ArtDetailPageProps) {
     const encodedArt = encodeURIComponent(artImageUrl);
 
     if (configurerType === 'single-canvas') {
-      navigate(
-        `/customize/single-canvas?artImageUrl=${encodedArt}${product ? `&productId=${product.id}` : ''}`
-      );
+      sessionStorage.setItem('photify_art_image_url', artImageUrl);
+      navigate('/dashboard');
     } else if (configurerType === 'multi-canvas-wall') {
       navigate(
         `/customize/multi-canvas-wall?artImageUrl=${encodedArt}${product ? `&productId=${product.id}` : ''}`
