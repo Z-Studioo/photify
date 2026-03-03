@@ -19,6 +19,9 @@ import {
   X,
   CheckCircle2Icon,
   Copy,
+  Download,
+  ExternalLink,
+  FileText,
 } from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
 import { toast } from 'sonner';
@@ -34,7 +37,7 @@ import {
   AlertDialogTitle,
 } from '../ui/alert-dialog';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { Badge } from '../ui/badge';
+// import { Badge } from '../ui/badge';
 
 const STATUS_FLOW = ['pending', 'processing', 'shipped', 'delivered'] as const;
 type OrderStatus = (typeof STATUS_FLOW)[number] | 'cancelled';
@@ -450,6 +453,40 @@ export function AdminOrderDetailPage() {
     }
 
     toast.success('Invoice opened in print window');
+  };
+
+  const handleDownloadImage = async (url: string, filename: string) => {
+    try {
+      const response = await fetch(url);
+      if (!response.ok) throw new Error('Fetch failed');
+      const blob = await response.blob();
+      const blobUrl = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = blobUrl;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(blobUrl);
+    } catch {
+      toast.error('Could not download image — opening in new tab instead');
+      window.open(url, '_blank');
+    }
+  };
+
+  const handleDownloadInvoice = () => {
+    if (!order) return;
+    const invoiceHtml = `<html><head><title>Invoice #${order.id}</title><style>body{font-family:Arial,sans-serif;padding:20px}h1{color:#f63a9e}table{width:100%;border-collapse:collapse;margin-top:20px}th,td{border:1px solid #ccc;padding:8px;text-align:left}</style></head><body><h1>Invoice #${order.id}</h1><p><strong>Customer:</strong> ${order.customer}</p><p><strong>Email:</strong> ${order.email}</p><p><strong>Phone:</strong> ${order.phone}</p><table><thead><tr><th>Product</th><th>Size</th><th>Unit Price</th><th>Qty</th></tr></thead><tbody>${order.items.map((item: any) => `<tr><td>${item.product}</td><td>${item.size}</td><td>${item.unitPrice}</td><td>${item.quantity ?? 1}</td></tr>`).join('')}</tbody></table><h3>Total: ${order.total}</h3></body></html>`;
+    const blob = new Blob([invoiceHtml], { type: 'text/html' });
+    const blobUrl = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = blobUrl;
+    a.download = `invoice-${order.id}.html`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(blobUrl);
+    toast.success('Invoice downloaded');
   };
 
   const handleCopy = (text: string, label: string) => {
@@ -1045,54 +1082,89 @@ export function AdminOrderDetailPage() {
                     </div>
 
                     {/* Item footer — images + invoice */}
-                    <div className='px-4 py-3 bg-gray-50 border-t border-gray-200 flex flex-wrap items-center justify-between gap-3'>
-                      {/* Images */}
+                    <div className='px-4 py-3 bg-gray-50 border-t border-gray-200 space-y-3'>
+                      {/* Images row */}
                       <div className='flex items-center gap-2 flex-wrap'>
                         <span className='text-[10px] font-medium text-gray-400 uppercase tracking-wide'>Images:</span>
                         {item.images && item.images.length > 0 ? (
                           (item.images as string[]).map((imgUrl: string, imgIdx: number) => (
-                            <a
-                              key={imgUrl || `img-${imgIdx}`}
-                              href={imgUrl}
-                              target='_blank'
-                              rel='noopener noreferrer'
-                              className='inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-blue-50 border border-blue-200 text-xs text-blue-700 hover:bg-blue-100 transition-colors font-medium'
-                            >
-                              <svg className='w-3 h-3' fill='none' viewBox='0 0 24 24' stroke='currentColor' strokeWidth={2}>
-                                <path strokeLinecap='round' strokeLinejoin='round' d='M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z' />
-                              </svg>
-                              Image {imgIdx + 1}
-                            </a>
+                            <div key={imgUrl || `img-${imgIdx}`} className='flex items-center gap-1'>
+                              <a
+                                href={imgUrl}
+                                target='_blank'
+                                rel='noopener noreferrer'
+                                className='inline-flex items-center gap-1 px-2 py-1 rounded-l-md bg-blue-50 border border-blue-200 text-xs text-blue-700 hover:bg-blue-100 transition-colors font-medium'
+                                title='View image'
+                              >
+                                <ExternalLink className='w-3 h-3' />
+                                Image {imgIdx + 1}
+                              </a>
+                              <button
+                                onClick={() => handleDownloadImage(imgUrl, `order-${orderId}-image-${imgIdx + 1}.jpg`)}
+                                className='inline-flex items-center gap-1 px-2 py-1 rounded-r-md bg-blue-600 border border-blue-600 text-xs text-white hover:bg-blue-700 transition-colors font-medium -ml-px'
+                                title='Download image'
+                              >
+                                <Download className='w-3 h-3' />
+                              </button>
+                            </div>
                           ))
                         ) : item.image && item.image !== '#' ? (
-                          <a
-                            href={item.image}
-                            target='_blank'
-                            rel='noopener noreferrer'
-                            className='inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-blue-50 border border-blue-200 text-xs text-blue-700 hover:bg-blue-100 transition-colors font-medium'
-                          >
-                            <svg className='w-3 h-3' fill='none' viewBox='0 0 24 24' stroke='currentColor' strokeWidth={2}>
-                              <path strokeLinecap='round' strokeLinejoin='round' d='M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z' />
-                            </svg>
-                            View Image
-                          </a>
+                          <div className='flex items-center gap-1'>
+                            <a
+                              href={item.image}
+                              target='_blank'
+                              rel='noopener noreferrer'
+                              className='inline-flex items-center gap-1 px-2 py-1 rounded-l-md bg-blue-50 border border-blue-200 text-xs text-blue-700 hover:bg-blue-100 transition-colors font-medium'
+                              title='View image'
+                            >
+                              <ExternalLink className='w-3 h-3' />
+                              View Image
+                            </a>
+                            <button
+                              onClick={() => handleDownloadImage(item.image, `order-${orderId}-image.jpg`)}
+                              className='inline-flex items-center gap-1 px-2 py-1 rounded-r-md bg-blue-600 border border-blue-600 text-xs text-white hover:bg-blue-700 transition-colors font-medium -ml-px'
+                              title='Download image'
+                            >
+                              <Download className='w-3 h-3' />
+                            </button>
+                          </div>
                         ) : (
                           <span className='text-xs text-gray-400 italic'>No image</span>
                         )}
                       </div>
 
-                      {/* Invoice */}
-                      <a
-                        href={order.hosted_invoice_url}
-                        target='_blank'
-                        rel='noopener noreferrer'
-                        className='inline-flex items-center gap-1 px-2.5 py-1 rounded-md bg-gray-100 border border-gray-300 text-xs text-gray-700 hover:bg-gray-200 transition-colors font-medium'
-                      >
-                        <svg className='w-3 h-3' fill='none' viewBox='0 0 24 24' stroke='currentColor' strokeWidth={2}>
-                          <path strokeLinecap='round' strokeLinejoin='round' d='M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z' />
-                        </svg>
-                        INV/{orderId}
-                      </a>
+                      {/* Invoice row */}
+                      <div className='flex items-center gap-2 flex-wrap'>
+                        <span className='text-[10px] font-medium text-gray-400 uppercase tracking-wide'>Invoice:</span>
+                        {order.hosted_invoice_url && order.hosted_invoice_url !== '#' && (
+                          <a
+                            href={order.hosted_invoice_url}
+                            target='_blank'
+                            rel='noopener noreferrer'
+                            className='inline-flex items-center gap-1 px-2 py-1 rounded-md bg-gray-100 border border-gray-300 text-xs text-gray-700 hover:bg-gray-200 transition-colors font-medium'
+                            title='View invoice on Stripe'
+                          >
+                            <ExternalLink className='w-3 h-3' />
+                            View on Stripe
+                          </a>
+                        )}
+                        <button
+                          onClick={handlePrintInvoice}
+                          className='inline-flex items-center gap-1 px-2 py-1 rounded-md bg-gray-100 border border-gray-300 text-xs text-gray-700 hover:bg-gray-200 transition-colors font-medium'
+                          title='Print invoice'
+                        >
+                          <FileText className='w-3 h-3' />
+                          Print INV/{orderId}
+                        </button>
+                        <button
+                          onClick={handleDownloadInvoice}
+                          className='inline-flex items-center gap-1 px-2 py-1 rounded-md bg-[#f63a9e] border border-[#f63a9e] text-xs text-white hover:bg-[#e02d8d] transition-colors font-medium'
+                          title='Download invoice as HTML'
+                        >
+                          <Download className='w-3 h-3' />
+                          Download INV
+                        </button>
+                      </div>
                     </div>
                   </div>
                 ))}
@@ -1166,7 +1238,7 @@ export function AdminOrderDetailPage() {
             </div>
 
             {/* Email History */}
-            <div className='bg-white rounded-lg border border-gray-200 p-6'>
+            {/* <div className='bg-white rounded-lg border border-gray-200 p-6'>
               <div className='flex items-center gap-2 mb-4'>
                 <Mail className='w-4 h-4' />
                 <h3 className='font-semibold'>Email History</h3>
@@ -1187,7 +1259,7 @@ export function AdminOrderDetailPage() {
                   </div>
                 </div>
               </div>
-            </div>
+            </div> */}
           </div>
         </div>
       </div>

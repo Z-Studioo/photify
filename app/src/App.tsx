@@ -10,6 +10,8 @@ import { ToastProvider } from '@/components/shared/common/toast';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { PresetProvider } from './context/PresetContext';
 import { ScrollToTop } from '@/components/shared/ScrollToTop';
+import { WhatsAppButton } from '@/components/shared/whatsapp-floating-button';
+import { CookieConsent } from '@/components/shared/cookie-consent';
 
 const Dashboard = lazy(() => import('@/pages/dashboard/index'));
 const UploadImage = lazy(() => import('./pages/upload'));
@@ -18,17 +20,27 @@ const CropPage = lazy(() => import('@/pages/crop'));
 const ContactPage = lazy(() => import('@/pages/contact'));
 const PrivacyPolicyPage = lazy(() => import('@/pages/privacy-policy'));
 const TermsOfUsePage = lazy(() => import('@/pages/terms-of-use'));
-const RefundReturnPolicyPage = lazy(() => import('@/pages/refund-return-policy'));
+const RefundReturnPolicyPage = lazy(
+  () => import('@/pages/refund-return-policy')
+);
 const TrackOrderPage = lazy(() => import('@/pages/track-order'));
 const RoomPage = lazy(() => import('@/pages/room/[id]'));
 const NotFoundPage = lazy(() => import('@/pages/not-found'));
 const ProductPage = lazy(() => import('@/pages/product/[id]'));
 const ProductsPage = lazy(() => import('@/pages/products'));
-const MultiCanvasWallPage = lazy(() => import('@/pages/customize/multi-canvas-wall'));
-const PosterCollagePage = lazy(() => import('@/pages/customize/poster-collage'));
+const MultiCanvasWallPage = lazy(
+  () => import('@/pages/customize/multi-canvas-wall')
+);
+const PosterCollagePage = lazy(
+  () => import('@/pages/customize/poster-collage')
+);
 const SingleCanvasPage = lazy(() => import('@/pages/customize/single-canvas'));
-const PhotoCollageCreatorPage = lazy(() => import('@/pages/customize/photo-collage-creator'));
-const Product3DViewPage = lazy(() => import('@/pages/customize/product-3d-view'));
+const PhotoCollageCreatorPage = lazy(
+  () => import('@/pages/customize/photo-collage-creator')
+);
+const Product3DViewPage = lazy(
+  () => import('@/pages/customize/product-3d-view')
+);
 const CheckoutPage = lazy(() => import('@/pages/checkout'));
 const ConfirmationPage = lazy(() => import('@/pages/confirmation'));
 const CartPage = lazy(() => import('@/pages/cart'));
@@ -46,30 +58,48 @@ const AdminLoginPage = lazy(() => import('@/pages/admin/login'));
 const AdminDashboardPage = lazy(() => import('@/pages/admin/dashboard'));
 const AdminAnalyticsPage = lazy(() => import('@/pages/admin/analytics'));
 const AdminCategoriesPage = lazy(() => import('@/pages/admin/categories'));
-const AdminCategoryDetailPage = lazy(() => import('@/pages/admin/categories/[categoryId]'));
+const AdminCategoryDetailPage = lazy(
+  () => import('@/pages/admin/categories/[categoryId]')
+);
 const AdminOrdersPage = lazy(() => import('@/pages/admin/orders'));
-const AdminOrderDetailPage = lazy(() => import('@/pages/admin/orders/[orderId]'));
+const AdminOrderDetailPage = lazy(
+  () => import('@/pages/admin/orders/[orderId]')
+);
 const AdminPromotionsPage = lazy(() => import('@/pages/admin/promotions'));
-const AdminPromotionNewPage = lazy(() => import('@/pages/admin/promotions/new'));
-const AdminPromotionEditPage = lazy(() => import('@/pages/admin/promotions/edit/[promotionId]'));
+const AdminPromotionNewPage = lazy(
+  () => import('@/pages/admin/promotions/new')
+);
+const AdminPromotionEditPage = lazy(
+  () => import('@/pages/admin/promotions/edit/[promotionId]')
+);
 const AdminRoomsPage = lazy(() => import('@/pages/admin/rooms'));
 const AdminRoomNewPage = lazy(() => import('@/pages/admin/rooms/new'));
 const AdminRoomEditPage = lazy(() => import('@/pages/admin/rooms/[roomId]'));
 const AdminProductsPage = lazy(() => import('@/pages/admin/products'));
 const AdminProductNewPage = lazy(() => import('@/pages/admin/products/new'));
-const AdminProductEditPage = lazy(() => import('@/pages/admin/products/edit/[productId]'));
-const AdminArtCollectionPage = lazy(() => import('@/pages/admin/art-collection'));
-const AdminArtCollectionNewPage = lazy(() => import('@/pages/admin/art-collection/new'));
-const AdminArtCollectionEditPage = lazy(() => import('@/pages/admin/art-collection/edit/[id]'));
+const AdminProductEditPage = lazy(
+  () => import('@/pages/admin/products/edit/[productId]')
+);
+const AdminArtCollectionPage = lazy(
+  () => import('@/pages/admin/art-collection')
+);
+const AdminArtCollectionNewPage = lazy(
+  () => import('@/pages/admin/art-collection/new')
+);
+const AdminArtCollectionEditPage = lazy(
+  () => import('@/pages/admin/art-collection/edit/[id]')
+);
 const AdminSettingsPage = lazy(() => import('@/pages/admin/settings'));
 const AdminCustomersPage = lazy(() => import('@/pages/admin/customers'));
-const Category = lazy(() => import('@/pages/category/[category]/CategoryPageRoute'));
+const Category = lazy(
+  () => import('@/pages/category/[category]/CategoryPageRoute')
+);
 
 const queryClient = new QueryClient();
 
 const PageLoader = () => (
-  <div className="min-h-screen flex items-center justify-center">
-    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#f63a9e]" />
+  <div className='min-h-screen flex items-center justify-center'>
+    <div className='animate-spin rounded-full h-12 w-12 border-b-2 border-[#f63a9e]' />
   </div>
 );
 
@@ -80,6 +110,8 @@ const App: React.FC = () => {
         <CartProvider>
           <BrowserRouter>
             <ScrollToTop />
+            <WhatsAppButton />
+            <CookieConsent />
             <AdminProvider>
               <UploadProvider>
                 <PresetProvider>
@@ -108,9 +140,18 @@ const App: React.FC = () => {
                         }
                       />
                       <Route path='/contact' element={<ContactPage />} />
-                      <Route path='/privacy-policy' element={<PrivacyPolicyPage />} />
-                      <Route path='/terms-of-use' element={<TermsOfUsePage />} />
-                      <Route path='/refund-return-policy' element={<RefundReturnPolicyPage />} />
+                      <Route
+                        path='/privacy-policy'
+                        element={<PrivacyPolicyPage />}
+                      />
+                      <Route
+                        path='/terms-of-use'
+                        element={<TermsOfUsePage />}
+                      />
+                      <Route
+                        path='/refund-return-policy'
+                        element={<RefundReturnPolicyPage />}
+                      />
                       <Route path='/track-order' element={<TrackOrderPage />} />
                       <Route path='/room/:id' element={<RoomPage />} />
                       <Route path='/products' element={<ProductsPage />} />
@@ -180,7 +221,10 @@ const App: React.FC = () => {
                         path='/admin/categories/:categoryId'
                         element={<AdminCategoryDetailPage />}
                       />
-                      <Route path='/admin/orders' element={<AdminOrdersPage />} />
+                      <Route
+                        path='/admin/orders'
+                        element={<AdminOrdersPage />}
+                      />
                       <Route
                         path='/admin/orders/:orderId'
                         element={<AdminOrderDetailPage />}
@@ -238,7 +282,10 @@ const App: React.FC = () => {
                         path='/admin/customers'
                         element={<AdminCustomersPage />}
                       />
-                      <Route path='/category/:category' element={<Category />} />
+                      <Route
+                        path='/category/:category'
+                        element={<Category />}
+                      />
                       <Route path='*' element={<NotFoundPage />} />
                     </Routes>
                   </Suspense>

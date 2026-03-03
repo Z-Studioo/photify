@@ -144,7 +144,7 @@ const QuantityControl: React.FC<QuantityControlProps> = ({
         size: selectedSize?.display_label || 'Custom Size',
         customization: {
           edgeType: edgeType || 'wrapped',
-          cornerStyle: cornerStyle || 'sharp',
+          cornerStyle: cornerStyle || 'rounded',
           imageQuality: quality?.[0] ?? 100,
           shape: shape || 'rectangular',
         },
