@@ -118,7 +118,7 @@ export function CartPage() {
           setDiscount(result.discount_amount);
           setAppliedPromoCode(promoCode.toUpperCase().trim());
           toast.success(
-            `Promo code applied! You saved $${result.discount_amount.toFixed(2)}`
+            `Promo code applied! You saved £${result.discount_amount.toFixed(2)}`
           );
         } else {
           toast.error(result.error_message || 'Invalid promo code');
@@ -178,7 +178,7 @@ export function CartPage() {
                 </span>
                 <span className='text-gray-400'>•</span>
                 <span style={{ fontWeight: '600' }}>
-                  $
+                  £
                   {cartItems
                     .reduce((sum, item) => sum + item.price * item.quantity, 0)
                     .toFixed(2)}
@@ -321,13 +321,13 @@ export function CartPage() {
                           </div>
                           <div className='text-right'>
                             <p className='text-xs text-gray-500 mb-1'>
-                              ${item.price.toFixed(2)} each
+                              £{item.price.toFixed(2)} each
                             </p>
                             <p
                               className='text-[#f63a9e]'
                               style={{ fontWeight: '700', fontSize: '20px' }}
                             >
-                              ${(item.price * item.quantity).toFixed(2)}
+                              £{(item.price * item.quantity).toFixed(2)}
                             </p>
                           </div>
                         </div>
@@ -372,7 +372,7 @@ export function CartPage() {
                       className='text-gray-900'
                       style={{ fontWeight: '600' }}
                     >
-                      ${subtotal.toFixed(2)}
+                      £{subtotal.toFixed(2)}
                     </span>
                   </div>
                   <div className='flex items-center justify-between py-2 px-3 rounded-lg bg-gray-50'>
@@ -381,7 +381,7 @@ export function CartPage() {
                       className='text-gray-900'
                       style={{ fontWeight: '600' }}
                     >
-                      ${deliveryPrice.toFixed(2)}
+                      £{deliveryPrice.toFixed(2)}
                     </span>
                   </div>
                   {promoApplied && (
@@ -398,7 +398,7 @@ export function CartPage() {
                           className='text-green-600'
                           style={{ fontWeight: '700' }}
                         >
-                          -${discount.toFixed(2)}
+                          -£{discount.toFixed(2)}
                         </span>
                       </div>
                       <div className='flex items-center gap-2 px-3 py-2 bg-green-50/50 rounded-lg border border-green-100'>
@@ -430,7 +430,7 @@ export function CartPage() {
                         className="font-['Bricolage_Grotesque',_sans-serif] text-[#f63a9e]"
                         style={{ fontSize: '34px', fontWeight: '700' }}
                       >
-                        ${total.toFixed(2)}
+                        £{total.toFixed(2)}
                       </span>
                     </div>
                     <p className='text-xs text-gray-500 text-center mt-2'>
@@ -531,7 +531,7 @@ export function CartPage() {
                               className='text-[#f63a9e]'
                               style={{ fontWeight: '700', fontSize: '15px' }}
                             >
-                              ${deliveryOptions.standard.price.toFixed(2)}
+                              £{deliveryOptions.standard.price.toFixed(2)}
                             </span>
                           </div>
                           <p className='text-xs text-gray-500 ml-6'>
@@ -585,7 +585,7 @@ export function CartPage() {
                               className='text-[#f63a9e]'
                               style={{ fontWeight: '700', fontSize: '15px' }}
                             >
-                              ${deliveryOptions.express.price.toFixed(2)}
+                              £{deliveryOptions.express.price.toFixed(2)}
                             </span>
                           </div>
                           <p className='text-xs text-gray-500 ml-6'>
@@ -690,7 +690,7 @@ export function CartPage() {
                             className='text-green-600 text-xs mt-1'
                             style={{ fontWeight: '600' }}
                           >
-                            You saved ${discount.toFixed(2)} on this order
+                            You saved £{discount.toFixed(2)} on this order
                           </p>
                         </div>
                       </div>

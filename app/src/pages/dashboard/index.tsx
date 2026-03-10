@@ -673,7 +673,7 @@ const Dashboard: React.FC = () => {
                   initial={{ scale: 0.9 }}
                   animate={{ scale: 1 }}
                 >
-                  ${(pricePerItem * quantity).toFixed(2)}
+                  £{(pricePerItem * quantity).toFixed(2)}
                 </motion.span>
                 {selectedSize &&
                   +(selectedProduct?.oldPrice || 0) > pricePerItem && (
@@ -683,7 +683,7 @@ const Dashboard: React.FC = () => {
                       animate={{ opacity: 1 }}
                     >
                       <span className='line-through text-gray-500'>
-                        ${(pricePerItem * quantity).toFixed(2)}
+                        £{(pricePerItem * quantity).toFixed(2)}
                       </span>
                       <span className='ml-2 text-green-600 font-medium'>
                         {Math.round(

@@ -258,7 +258,7 @@ const CropPanel: React.FC<CropPanelProps> = ({ onSelectionChange }) => {
                       <div
                         className={`font-bold text-lg leading-tight ${isSelected ? 'text-primary' : 'text-gray-900'}`}
                       >
-                        $
+                        £
                         {selectedProduct
                           ? (+selectedProduct.price * size.area_in2).toFixed(2)
                           : '0.00'}
@@ -266,7 +266,7 @@ const CropPanel: React.FC<CropPanelProps> = ({ onSelectionChange }) => {
                       {discount > 0 && (
                         <>
                           <div className='text-gray-400 text-xs line-through leading-tight mt-0.5'>
-                            $
+                            £
                             {(+selectedProduct!.price * size.area_in2).toFixed(
                               2
                             )}
@@ -295,7 +295,7 @@ const CropPanel: React.FC<CropPanelProps> = ({ onSelectionChange }) => {
                         </span>
                       </div>
                       <div className='text-xs text-green-600 font-semibold'>
-                        Save $
+                        Save £
                         {(
                           -(
                             +(selectedProduct?.price ?? 0) *

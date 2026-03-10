@@ -176,7 +176,7 @@ const RatioSizePanel: React.FC<RatioSizePanelProps> = ({
                     {size!.display_label}
                   </div>
                 </div>
-                <div className='font-bold text-lg text-primary'>${price}</div>
+                <div className='font-bold text-lg text-primary'>£{price}</div>
               </div>
             </motion.button>
           );
