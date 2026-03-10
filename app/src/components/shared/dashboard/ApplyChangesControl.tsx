@@ -55,7 +55,7 @@ const ApplyChangesControl: React.FC<ApplyChangesControlProps> = ({
             stiffness: 300,
           }}
         >
-          ${totalPrice.toFixed(2)}
+          £{totalPrice.toFixed(2)}
         </motion.span>
 
         {hasDiscount && (
@@ -66,7 +66,7 @@ const ApplyChangesControl: React.FC<ApplyChangesControlProps> = ({
             transition={{ delay: 0.2, duration: 0.3 }}
           >
             <span className='line-through text-gray-500'>
-              ${(selectedSize.actual_price * quantity).toFixed(2)}
+              £{(selectedSize.actual_price * quantity).toFixed(2)}
             </span>
             <span className='ml-2 text-green-600 font-medium'>
               {discountPercentage}% OFF

@@ -806,7 +806,7 @@ export function ConfirmationPage() {
                             className='text-[#f63a9e]'
                             style={{ fontSize: '20px', fontWeight: '800' }}
                           >
-                            ${(item.price * item.quantity).toFixed(2)}
+                            £{(item.price * item.quantity).toFixed(2)}
                           </div>
                         </div>
                       </motion.div>
@@ -822,7 +822,7 @@ export function ConfirmationPage() {
                           Subtotal
                         </span>
                         <span style={{ fontWeight: '700', fontSize: '18px' }}>
-                          ${orderData.subtotal.toFixed(2)}
+                          £{orderData.subtotal.toFixed(2)}
                         </span>
                       </div>
                       <div className='flex justify-between items-center text-gray-600'>
@@ -832,7 +832,7 @@ export function ConfirmationPage() {
                         </span>
                         <div className='text-right'>
                           <span style={{ fontWeight: '700', fontSize: '18px' }}>
-                            ${orderData.deliveryFee.toFixed(2)}
+                            £{orderData.deliveryFee.toFixed(2)}
                           </span>
                           <p className='text-xs text-gray-500 mt-0.5'>
                             {orderData.deliveryType} • {orderData.estimatedDays}
@@ -853,7 +853,7 @@ export function ConfirmationPage() {
                           className='text-[#f63a9e]'
                           style={{ fontWeight: '800', fontSize: '28px' }}
                         >
-                          ${orderData.total.toFixed(2)}
+                          £{orderData.total.toFixed(2)}
                         </span>
                       </div>
                     </div>
