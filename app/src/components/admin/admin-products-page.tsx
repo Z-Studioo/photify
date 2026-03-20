@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { AdminLayout } from './admin-layout';
-import { Search, Edit, Eye, Plus } from 'lucide-react';
+import { Search, Edit, Eye } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { ImageWithFallback } from '@/components/figma/image-with-fallback';
@@ -34,7 +34,6 @@ export function AdminProductsPage() {
           categories.length > 0
             ? categories.join(', ')
             : productTypeLabels[product.product_type] || 'Uncategorized',
-        type: 'Customizable',
         basePrice: `£${typeof product.price === 'number' ? product.price.toFixed(2) : product.price}/sq in`,
         stock: 'Unlimited',
         status: product.active ? 'Active' : 'Inactive',
@@ -56,7 +55,7 @@ export function AdminProductsPage() {
     <AdminLayout>
       <div className='max-w-7xl mx-auto'>
         {/* Header */}
-        <div className='mb-8 flex items-start justify-between'>
+        <div className='mb-8'>
           <div>
             <h1
               className="font-['Bricolage_Grotesque',_sans-serif] mb-2"
@@ -68,14 +67,6 @@ export function AdminProductsPage() {
               View and edit product configurations
             </p>
           </div>
-          <Button
-            onClick={() => navigate('/admin/products/new')}
-            className='bg-[#f63a9e] hover:bg-[#e02d8d] gap-2'
-            style={{ height: '50px' }}
-          >
-            <Plus className='w-5 h-5' />
-            Add New Product
-          </Button>
         </div>
 
         {/* Search */}
@@ -121,9 +112,6 @@ export function AdminProductsPage() {
                       Categories
                     </th>
                     <th className='px-6 py-4 text-left text-xs font-medium text-gray-600 uppercase tracking-wider'>
-                      Type
-                    </th>
-                    <th className='px-6 py-4 text-left text-xs font-medium text-gray-600 uppercase tracking-wider'>
                       Base Price
                     </th>
                     <th className='px-6 py-4 text-left text-xs font-medium text-gray-600 uppercase tracking-wider'>
@@ -162,11 +150,6 @@ export function AdminProductsPage() {
                       <td className='px-6 py-4'>
                         <span className='text-sm text-gray-900'>
                           {product.category}
-                        </span>
-                      </td>
-                      <td className='px-6 py-4'>
-                        <span className='text-sm text-gray-600'>
-                          {product.type}
                         </span>
                       </td>
                       <td className='px-6 py-4'>

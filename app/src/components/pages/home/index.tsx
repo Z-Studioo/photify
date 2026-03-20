@@ -3,9 +3,9 @@ import { CategoryNav } from '@/components/shared/category-nav';
 import { FeaturedCollections } from '@/components/shared/featured-collections';
 import { ProductCard } from '@/components/shared/product-card';
 import { RoomInspiration } from '@/components/shared/room-inspiration';
+import { ArtProductCard } from '@/components/shared/art-product-card';
 // import { AIToolsSection } from '@/components/ai-tools/ai-tools-section';
 import { Footer } from '@/components/layout/footer';
-import { ImageWithFallback } from '@/components/figma/image-with-fallback';
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 
@@ -351,75 +351,15 @@ export function HomePage({
             {artProducts.length > 0 ? (
               <>
                 {artProducts.slice(0, 7).map((product, index) => (
-                  <motion.div
+                  <ArtProductCard
                     key={product.productId}
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.3, delay: index * 0.05 }}
-                    className='group cursor-pointer'
-                    onClick={() => navigate(`/art/${product.productId}`)}
-                  >
-                    {/* Product Image */}
-                    <div className='relative aspect-square mb-3 overflow-hidden rounded-lg bg-gray-100'>
-                      <ImageWithFallback
-                        src={product.images[0] || '/assets/placeholder.png'}
-                        alt={product.name}
-                        className='w-full h-full object-cover transition-transform duration-300 group-hover:scale-105'
-                      />
-                    </div>
-
-                    {/* Product Info */}
-                    <div>
-                      <h3
-                        className="font-['Bricolage_Grotesque',_sans-serif] mb-1"
-                        style={{
-                          fontSize: '16px',
-                          lineHeight: '1.3',
-                          fontWeight: '600',
-                        }}
-                      >
-                        {product.name}
-                      </h3>
-                      <div className={`flex items-center justify-between`}>
-                        <div className='flex flex-col'>
-                          <span className='text-gray-500 text-xs font-semibold uppercase tracking-wider mb-1'>
-                            Starting At
-                          </span>
-
-                          <div className='flex items-start'>
-                            <div className='flex items-start text-[#f63a9e]'>
-                              <span className='font-bold text-lg mt-2 mr-0.5'>
-                                £
-                              </span>
-
-                              <span className='font-extrabold text-4xl tracking-tighter leading-none font-bricolage'>
-                                {typeof product.price === 'number'
-                                  ? Math.floor(product.price)
-                                  : product.price}
-                              </span>
-
-                              <span className='font-bold text-xl mt-2'>
-                                .
-                                {typeof product.price === 'number'
-                                  ? product.price.toFixed(2).split('.')[1]
-                                  : '00'}
-                              </span>
-                            </div>
-
-                            <div className='ml-3 flex flex-col justify-center border-l border-gray-200 pl-3'>
-                              <span className='text-gray-400 text-[10px] font-bold uppercase tracking-widest leading-none'>
-                                Per
-                              </span>
-
-                              <span className='text-gray-600 text-sm font-bold leading-tight whitespace-nowrap'>
-                                sq in
-                              </span>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  </motion.div>
+                    id={product.productId}
+                    slug={product.productId}
+                    name={product.name}
+                    images={product.images}
+                    price={product.price}
+                    index={index}
+                  />
                 ))}
               </>
             ) : (

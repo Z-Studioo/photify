@@ -3,7 +3,6 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { Separator } from '@/components/ui/separator';
 import { Plus, X, Save, Loader2, Upload, Info } from 'lucide-react';
 import {
   Select,
@@ -297,12 +296,44 @@ export function AdminProductContentEditor({
   }
 
   return (
-    <div className='space-y-8'>
+    <div className='space-y-5'>
       {/* Basic Product Information */}
-      <div className='bg-white rounded-lg border border-gray-200 p-6'>
-        <div className='flex items-center gap-2 mb-6'>
+      <div className='rounded-xl border border-gray-200 bg-white p-6 shadow-sm'>
+        <div className='mb-5 flex items-center gap-2'>
           <Info className='w-5 h-5 text-[#f63a9e]' />
-          <h3 className='text-lg font-semibold'>Basic Product Information</h3>
+          <div>
+            <h3 className='text-lg font-semibold text-gray-900'>
+              Basic Product Information
+            </h3>
+            <p className='text-sm text-gray-500'>
+              Core details shown on product pages and listings
+            </p>
+          </div>
+        </div>
+
+        <div className='mb-6 flex items-center justify-between rounded-xl border border-gray-200 bg-gray-50 px-4 py-3'>
+          <div>
+            <p className='text-sm font-semibold text-gray-900'>
+              Product Visibility
+            </p>
+            <p className='text-xs text-gray-500'>
+              Control whether this product is shown to customers
+            </p>
+          </div>
+          <div className='flex items-center gap-3'>
+            <span
+              className={`inline-flex rounded-full px-2.5 py-1 text-xs font-semibold ${
+                isActive
+                  ? 'bg-green-100 text-green-700'
+                  : 'bg-gray-200 text-gray-600'
+              }`}
+            >
+              {isActive ? 'Active' : 'Inactive'}
+            </span>
+            <div className='rounded-full border border-gray-200 bg-white px-2 py-1'>
+              <Switch checked={isActive} onCheckedChange={setIsActive} />
+            </div>
+          </div>
         </div>
 
         {/* Product Name */}
@@ -313,7 +344,7 @@ export function AdminProductContentEditor({
             value={name}
             onChange={e => setName(e.target.value)}
             placeholder='e.g., Single Canvas Print'
-            className='mt-2'
+            className='mt-2 bg-white'
             required
           />
           <p className='text-xs text-gray-500 mt-1'>
@@ -330,7 +361,7 @@ export function AdminProductContentEditor({
             onChange={e => setDescription(e.target.value)}
             placeholder='Short description of the product...'
             rows={3}
-            className='mt-2'
+            className='mt-2 bg-white'
           />
           <p className='text-xs text-gray-500 mt-1'>
             Brief product description
@@ -349,7 +380,7 @@ export function AdminProductContentEditor({
               value={price}
               onChange={e => setPrice(e.target.value)}
               placeholder='0.00'
-              className='mt-2'
+              className='mt-2 bg-white'
               required
             />
             <p className='text-xs text-gray-500 mt-1'>Price per square inch</p>
@@ -366,7 +397,7 @@ export function AdminProductContentEditor({
                 )
               }
               placeholder='single-canvas-print'
-              className='mt-2'
+              className='mt-2 bg-white'
               required
             />
             <p className='text-xs text-gray-500 mt-1'>
@@ -375,33 +406,12 @@ export function AdminProductContentEditor({
           </div>
         </div>
 
-        {/* Active / Inactive toggle */}
-        <div className='flex items-center justify-between p-4 bg-gray-50 border border-gray-200 rounded-xl'>
-          <div>
-            <p className='font-semibold text-gray-900 text-sm'>Product Visibility</p>
-            <p className='text-xs text-gray-500 mt-0.5'>
-              {isActive
-                ? 'Product is live and visible to customers'
-                : 'Product is hidden from customers (draft mode)'}
-            </p>
-          </div>
-          <div className='flex items-center gap-3'>
-            <span className={`text-sm font-medium ${isActive ? 'text-green-600' : 'text-gray-400'}`}>
-              {isActive ? 'Active' : 'Inactive'}
-            </span>
-            <Switch
-              checked={isActive}
-              onCheckedChange={setIsActive}
-            />
-          </div>
-        </div>
-
         {/* Product Type and Status Row */}
         <div className='grid grid-cols-1 md:grid-cols-2 gap-6'>
           <div>
             <Label htmlFor='product-type'>Product Type *</Label>
             <Select value={productType} onValueChange={setProductType}>
-              <SelectTrigger className='mt-2'>
+              <SelectTrigger className='mt-2 bg-white'>
                 <SelectValue placeholder='Select product type' />
               </SelectTrigger>
               <SelectContent>
@@ -418,7 +428,7 @@ export function AdminProductContentEditor({
           <div>
             <Label htmlFor='config-status'>Configuration Status *</Label>
             <Select value={configStatus} onValueChange={setConfigStatus}>
-              <SelectTrigger className='mt-2'>
+              <SelectTrigger className='mt-2 bg-white'>
                 <SelectValue placeholder='Select status' />
               </SelectTrigger>
               <SelectContent>
@@ -433,11 +443,12 @@ export function AdminProductContentEditor({
         </div>
       </div>
 
-      <Separator />
-
       {/* Page Settings */}
-      <div className='bg-white rounded-lg border border-gray-200 p-6'>
-        <h3 className='text-lg font-semibold mb-6'>Page Settings</h3>
+      <div className='rounded-xl border border-gray-200 bg-white p-6 shadow-sm'>
+        <h3 className='mb-1 text-lg font-semibold text-gray-900'>Page Settings</h3>
+        <p className='mb-6 text-sm text-gray-500'>
+          SEO metadata that helps search engines and previews
+        </p>
 
         {/* Meta Title */}
         <div className='mb-6'>
@@ -447,7 +458,7 @@ export function AdminProductContentEditor({
             value={metaTitle}
             onChange={e => setMetaTitle(e.target.value)}
             placeholder='Single Canvas Print - Custom Photo Canvas | Photify'
-            className='mt-2'
+            className='mt-2 bg-white'
           />
           <div className='flex items-center justify-between mt-1'>
             <p className='text-xs text-gray-500'>Optimal: 50-60 characters</p>
@@ -468,7 +479,7 @@ export function AdminProductContentEditor({
             onChange={e => setMetaDescription(e.target.value)}
             placeholder='Transform your memories into stunning canvas art...'
             rows={3}
-            className='mt-2'
+            className='mt-2 bg-white'
           />
           <div className='flex items-center justify-between mt-1'>
             <p className='text-xs text-gray-500'>Optimal: 150-160 characters</p>
@@ -492,16 +503,18 @@ export function AdminProductContentEditor({
                 e.key === 'Enter' && (e.preventDefault(), addKeyword())
               }
               placeholder='Add keyword and press Enter'
+              className='bg-white'
             />
-            <Button type='button' onClick={addKeyword}>
+            <Button type='button' onClick={addKeyword} variant='outline' className='px-4'>
               <Plus className='w-4 h-4' />
+              Add
             </Button>
           </div>
           <div className='flex flex-wrap gap-2 mt-3'>
             {keywords.map((keyword, index) => (
               <span
                 key={index}
-                className='inline-flex items-center gap-1 bg-gray-100 text-gray-700 px-3 py-1 rounded-full text-sm'
+                className='inline-flex items-center gap-1 rounded-full border border-gray-200 bg-gray-50 px-3 py-1 text-sm text-gray-700'
               >
                 {keyword}
                 <button
@@ -523,7 +536,7 @@ export function AdminProductContentEditor({
             value={canonicalUrl}
             onChange={e => setCanonicalUrl(e.target.value)}
             placeholder='https://photify.com/product/single-canvas'
-            className='mt-2'
+            className='mt-2 bg-white'
           />
           <p className='text-xs text-gray-500 mt-1'>
             The preferred URL for this page
@@ -532,8 +545,13 @@ export function AdminProductContentEditor({
       </div>
 
       {/* Social Media Preview */}
-      <div className='bg-white rounded-lg border border-gray-200 p-6'>
-        <h3 className='text-lg font-semibold mb-6'>Social Media Preview</h3>
+      <div className='rounded-xl border border-gray-200 bg-white p-6 shadow-sm'>
+        <h3 className='mb-1 text-lg font-semibold text-gray-900'>
+          Social Media Preview
+        </h3>
+        <p className='mb-6 text-sm text-gray-500'>
+          Configure title, description, and image for shared links
+        </p>
 
         <div className='mb-6'>
           <Label htmlFor='og-title'>Social Title</Label>
@@ -542,7 +560,7 @@ export function AdminProductContentEditor({
             value={ogTitle}
             onChange={e => setOgTitle(e.target.value)}
             placeholder='Leave empty to use Page Title'
-            className='mt-2'
+            className='mt-2 bg-white'
           />
         </div>
 
@@ -554,7 +572,7 @@ export function AdminProductContentEditor({
             onChange={e => setOgDescription(e.target.value)}
             placeholder='Leave empty to use Page Description'
             rows={2}
-            className='mt-2'
+            className='mt-2 bg-white'
           />
         </div>
 
@@ -565,14 +583,14 @@ export function AdminProductContentEditor({
             value={ogImage}
             onChange={e => setOgImage(e.target.value)}
             placeholder='https://example.com/image.jpg'
-            className='mt-2'
+            className='mt-2 bg-white'
           />
           <p className='text-xs text-gray-500 mt-1'>Recommended: 1200×630px</p>
         </div>
       </div>
 
       {/* Product Features */}
-      <div className='bg-white rounded-lg border border-gray-200 p-6'>
+      <div className='rounded-xl border border-gray-200 bg-white p-6 shadow-sm'>
         <div className='flex items-center justify-between mb-6'>
           <div>
             <h3 className='text-lg font-semibold'>Features</h3>
@@ -580,7 +598,7 @@ export function AdminProductContentEditor({
               Add custom icons (PNG, 64x64px recommended)
             </p>
           </div>
-          <Button type='button' onClick={addFeature} size='sm'>
+          <Button type='button' onClick={addFeature} size='sm' variant='outline'>
             <Plus className='w-4 h-4 mr-2' />
             Add Feature
           </Button>
@@ -588,8 +606,8 @@ export function AdminProductContentEditor({
 
         <div className='space-y-4'>
           {features.map((feature, index) => (
-            <div key={index} className='border border-gray-200 rounded-lg p-4'>
-              <div className='flex gap-3'>
+            <div key={index} className='rounded-lg border border-gray-200 bg-gray-50 p-4'>
+              <div className='flex flex-col gap-3 md:flex-row'>
                 {/* Icon Upload Section */}
                 <div className='flex-shrink-0'>
                   {feature.icon ? (
@@ -628,7 +646,7 @@ export function AdminProductContentEditor({
                     value={feature.text}
                     onChange={e => updateFeature(index, 'text', e.target.value)}
                     placeholder='e.g., Museum-quality canvas material'
-                    className='flex-1'
+                    className='flex-1 bg-white'
                   />
                   <Button
                     type='button'
@@ -643,8 +661,8 @@ export function AdminProductContentEditor({
               </div>
 
               {feature.icon && (
-                <p className='text-xs text-gray-500 mt-2 ml-19'>
-                  Icon uploaded • Click to remove
+                <p className='mt-2 text-xs text-gray-500'>
+                  Icon uploaded. Hover and click to remove.
                 </p>
               )}
             </div>
@@ -658,10 +676,10 @@ export function AdminProductContentEditor({
       </div>
 
       {/* Specifications */}
-      <div className='bg-white rounded-lg border border-gray-200 p-6'>
+      <div className='rounded-xl border border-gray-200 bg-white p-6 shadow-sm'>
         <div className='flex items-center justify-between mb-6'>
           <h3 className='text-lg font-semibold'>Specifications</h3>
-          <Button type='button' onClick={addSpecification} size='sm'>
+          <Button type='button' onClick={addSpecification} size='sm' variant='outline'>
             <Plus className='w-4 h-4 mr-2' />
             Add Specification
           </Button>
@@ -669,13 +687,17 @@ export function AdminProductContentEditor({
 
         <div className='space-y-3'>
           {specifications.map((spec, index) => (
-            <div key={index} className='grid grid-cols-[1fr_1fr_auto] gap-2'>
+            <div
+              key={index}
+              className='grid grid-cols-1 gap-2 rounded-lg border border-gray-200 bg-gray-50 p-3 md:grid-cols-[1fr_1fr_auto]'
+            >
               <Input
                 value={spec.label}
                 onChange={e =>
                   updateSpecification(index, 'label', e.target.value)
                 }
                 placeholder='Label (e.g., Material)'
+                className='bg-white'
               />
               <Input
                 value={spec.value}
@@ -683,12 +705,14 @@ export function AdminProductContentEditor({
                   updateSpecification(index, 'value', e.target.value)
                 }
                 placeholder='Value (e.g., 100% Cotton Canvas)'
+                className='bg-white'
               />
               <Button
                 type='button'
                 variant='outline'
                 size='icon'
                 onClick={() => removeSpecification(index)}
+                className='md:self-center'
               >
                 <X className='w-4 h-4' />
               </Button>
@@ -703,10 +727,10 @@ export function AdminProductContentEditor({
       </div>
 
       {/* Trust Badges */}
-      <div className='bg-white rounded-lg border border-gray-200 p-6'>
+      <div className='rounded-xl border border-gray-200 bg-white p-6 shadow-sm'>
         <div className='flex items-center justify-between mb-6'>
           <h3 className='text-lg font-semibold'>Trust Badges</h3>
-          <Button type='button' onClick={addTrustBadge} size='sm'>
+          <Button type='button' onClick={addTrustBadge} size='sm' variant='outline'>
             <Plus className='w-4 h-4 mr-2' />
             Add Badge
           </Button>
@@ -716,17 +740,19 @@ export function AdminProductContentEditor({
           {trustBadges.map((badge, index) => (
             <div
               key={index}
-              className='grid grid-cols-[120px_1fr_1fr_auto] gap-2'
+              className='grid grid-cols-1 gap-2 rounded-lg border border-gray-200 bg-gray-50 p-3 md:grid-cols-[120px_1fr_1fr_auto]'
             >
               <Input
                 value={badge.icon}
                 onChange={e => updateTrustBadge(index, 'icon', e.target.value)}
                 placeholder='Icon name'
+                className='bg-white'
               />
               <Input
                 value={badge.title}
                 onChange={e => updateTrustBadge(index, 'title', e.target.value)}
                 placeholder='Title'
+                className='bg-white'
               />
               <Input
                 value={badge.subtitle}
@@ -734,12 +760,14 @@ export function AdminProductContentEditor({
                   updateTrustBadge(index, 'subtitle', e.target.value)
                 }
                 placeholder='Subtitle'
+                className='bg-white'
               />
               <Button
                 type='button'
                 variant='outline'
                 size='icon'
                 onClick={() => removeTrustBadge(index)}
+                className='md:self-center'
               >
                 <X className='w-4 h-4' />
               </Button>
@@ -757,10 +785,10 @@ export function AdminProductContentEditor({
       </div>
 
       {/* Reviews */}
-      <div className='bg-white rounded-lg border border-gray-200 p-6'>
+      <div className='rounded-xl border border-gray-200 bg-white p-6 shadow-sm'>
         <h3 className='text-lg font-semibold mb-6'>Reviews & Rating</h3>
 
-        <div className='grid grid-cols-2 gap-4'>
+        <div className='grid grid-cols-1 gap-4 md:grid-cols-2'>
           <div>
             <Label htmlFor='rating'>Average Rating</Label>
             <Input
@@ -792,7 +820,7 @@ export function AdminProductContentEditor({
       </div>
 
       {/* Save Button */}
-      <div className='flex justify-end gap-3 pt-6 border-t'>
+      <div className='flex justify-end border-t border-gray-200 pt-6'>
         <Button
           onClick={handleSave}
           disabled={saving}

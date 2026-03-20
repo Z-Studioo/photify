@@ -20,9 +20,6 @@ import {
   Sparkles,
   Heart,
   Star,
-  Download,
-  Share2,
-  Shield,
   Clock,
   Loader2,
 } from 'lucide-react';
@@ -119,8 +116,11 @@ export function ConfirmationPage() {
   const [orderData, setOrderData] = useState<OrderData | null>(null);
   const [orderStatus, setOrderStatus] = useState<string>('pending');
   const [loading, setLoading] = useState(true);
-  const [showConfetti, setShowConfetti] = useState(true);
+  const [showConfetti, setShowConfetti] = useState(false);
   const [currentTestimonial, setCurrentTestimonial] = useState(0);
+  const [filmingConsent, setFilmingConsent] = useState<'yes' | 'no' | null>(
+    null
+  );
 
   const testimonials = [
     { text: 'The prints arrived beautifully packaged!', author: 'Sarah M.' },
@@ -226,11 +226,13 @@ export function ConfirmationPage() {
     fetchOrder();
   }, [orderId, navigate, clearCart]);
 
-  // Hide confetti after 4 seconds
+  // Show confetti only after consent and hide after 4 seconds
   useEffect(() => {
+    if (filmingConsent === null) return;
+    setShowConfetti(true);
     const timer = setTimeout(() => setShowConfetti(false), 4000);
     return () => clearTimeout(timer);
-  }, []);
+  }, [filmingConsent]);
 
   // Rotate testimonials
   useEffect(() => {
@@ -257,85 +259,6 @@ export function ConfirmationPage() {
       .subscribe();
     return () => { supabase.removeChannel(channel); };
   }, [orderId]);
-
-  const handlePrintInvoice = () => {
-    if (!orderData) return;
-    const win = window.open('', '_blank', 'width=820,height=900');
-    if (!win) { toast.error('Please allow popups to print the invoice'); return; }
-    const itemsHtml = orderData.items
-      .map(
-        item => `<tr>
-          <td style="padding:10px 12px;border-bottom:1px solid #eee;">${item.name}</td>
-          <td style="padding:10px 12px;border-bottom:1px solid #eee;text-align:center;">${(item as { size?: string }).size || '—'}</td>
-          <td style="padding:10px 12px;border-bottom:1px solid #eee;text-align:center;">${item.quantity}</td>
-          <td style="padding:10px 12px;border-bottom:1px solid #eee;text-align:right;">£${(item.price * item.quantity).toFixed(2)}</td>
-        </tr>`
-      )
-      .join('');
-    win.document.write(`<!DOCTYPE html>
-<html><head><meta charset="utf-8"/><title>Invoice – ${orderData.orderNumber}</title>
-<style>
-  body{font-family:sans-serif;color:#111;margin:40px;}
-  h1{color:#f63a9e;font-size:28px;margin:0;}
-  .header{display:flex;justify-content:space-between;align-items:flex-start;border-bottom:2px solid #f63a9e;padding-bottom:16px;margin-bottom:24px;}
-  .section{margin-bottom:20px;}
-  .section h2{font-size:12px;text-transform:uppercase;color:#888;letter-spacing:.1em;margin-bottom:8px;}
-  table{width:100%;border-collapse:collapse;}
-  th{background:#fafafa;padding:10px 12px;text-align:left;font-size:12px;text-transform:uppercase;color:#888;border-bottom:2px solid #eee;}
-  td{font-size:14px;}
-  .total-row td{font-weight:bold;font-size:16px;color:#f63a9e;border-top:2px solid #eee;}
-  @media print{body{margin:20px;}}
-</style></head><body>
-<div class="header">
-  <div><h1>Photify</h1><p style="color:#888;margin:4px 0 0;">Invoice</p></div>
-  <div style="text-align:right;font-size:13px;color:#555;">
-    <strong>Order #${orderData.orderNumber}</strong><br/>
-    ${new Date().toLocaleDateString('en-GB',{year:'numeric',month:'long',day:'numeric'})}
-  </div>
-</div>
-<div class="section">
-  <h2>Customer Details</h2>
-  <p style="margin:2px 0;font-size:14px;"><strong>${orderData.name}</strong></p>
-  <p style="margin:2px 0;font-size:14px;">${orderData.email}</p>
-  <p style="margin:2px 0;font-size:14px;">${orderData.phone || '—'}</p>
-  <p style="margin:2px 0;font-size:14px;">${orderData.address}</p>
-</div>
-<div class="section">
-  <h2>Order Items</h2>
-  <table>
-    <thead><tr><th>Item</th><th style="text-align:center;">Size</th><th style="text-align:center;">Qty</th><th style="text-align:right;">Price</th></tr></thead>
-    <tbody>${itemsHtml}</tbody>
-    <tfoot>
-      <tr><td colspan="3" style="padding:8px 12px;">Subtotal</td><td style="padding:8px 12px;text-align:right;">£${orderData.subtotal.toFixed(2)}</td></tr>
-      <tr><td colspan="3" style="padding:8px 12px;">${orderData.deliveryType}</td><td style="padding:8px 12px;text-align:right;">£${orderData.deliveryFee.toFixed(2)}</td></tr>
-      <tr class="total-row"><td colspan="3" style="padding:12px;">Total</td><td style="padding:12px;text-align:right;">£${orderData.total.toFixed(2)}</td></tr>
-    </tfoot>
-  </table>
-</div>
-<div style="margin-top:24px;color:#888;font-size:12px;">Estimated Delivery: ${orderData.estimatedDelivery} (${orderData.deliveryType} · ${orderData.estimatedDays})</div>
-</body></html>`);
-    win.document.close();
-    win.focus();
-    setTimeout(() => win.print(), 500);
-  };
-
-  const handleShare = async () => {
-    const url = window.location.href;
-    const shareText = `I just ordered from Photify! Order #${orderData?.orderNumber}`;
-    if (navigator.share) {
-      try {
-        await navigator.share({ title: 'My Photify Order', text: shareText, url });
-      } catch (err) {
-        if ((err as Error).name !== 'AbortError') {
-          await navigator.clipboard.writeText(url);
-          toast.success('Order link copied to clipboard!');
-        }
-      }
-    } else {
-      await navigator.clipboard.writeText(url);
-      toast.success('Order link copied to clipboard!');
-    }
-  };
 
   if (loading) {
     return (
@@ -365,7 +288,59 @@ export function ConfirmationPage() {
 
       <Header />
 
-      <main className='flex-1 relative'>
+      {filmingConsent === null ? (
+        <main className='fixed inset-0 z-[120] bg-white/95 backdrop-blur-sm flex items-center justify-center px-4 sm:px-6 py-10'>
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.35 }}
+            className='w-full max-w-2xl bg-white rounded-3xl border-2 border-gray-200 shadow-xl p-6 sm:p-8'
+          >
+            <div className='flex items-start gap-4 mb-5'>
+              <div className='w-12 h-12 rounded-xl bg-[#FFF5FB] flex items-center justify-center flex-shrink-0'>
+                <Video className='w-6 h-6 text-[#f63a9e]' />
+              </div>
+              <div>
+                <h2
+                  className="font-['Bricolage_Grotesque',_sans-serif] text-gray-900"
+                  style={{ fontSize: '28px', fontWeight: '700', lineHeight: '1.2' }}
+                >
+                  Quick Consent
+                </h2>
+                <p className='text-gray-600 mt-1'>
+                  Would you allow us to film the making of your product for
+                  promotional purposes?
+                </p>
+              </div>
+            </div>
+
+            <div className='rounded-xl border border-gray-200 bg-gray-50 p-4 mb-6'>
+              <p className='text-sm text-gray-600'>
+                Your choice is required to continue to your order confirmation.
+              </p>
+            </div>
+
+            <div className='grid grid-cols-1 sm:grid-cols-2 gap-3'>
+              <Button
+                onClick={() => setFilmingConsent('yes')}
+                className='h-12 rounded-xl bg-[#f63a9e] hover:bg-[#e02d8d] text-white'
+                style={{ fontWeight: '700' }}
+              >
+                Yes, I consent
+              </Button>
+              <Button
+                onClick={() => setFilmingConsent('no')}
+                variant='outline'
+                className='h-12 rounded-xl border-2 border-gray-200 hover:border-gray-300 bg-white'
+                style={{ fontWeight: '700' }}
+              >
+                No, I do not consent
+              </Button>
+            </div>
+          </motion.div>
+        </main>
+      ) : (
+        <main className='flex-1 relative'>
         {/* Subtle Background Elements */}
         <div className='fixed inset-0 overflow-hidden pointer-events-none'>
           <FloatingShape
@@ -953,67 +928,6 @@ export function ConfirmationPage() {
                   </Button>
                 </motion.div>
 
-                <div className='grid grid-cols-2 gap-3'>
-                  <motion.div
-                    whileHover={{ scale: 1.03 }}
-                    whileTap={{ scale: 0.97 }}
-                  >
-                    <Button
-                      onClick={handlePrintInvoice}
-                      variant='outline'
-                      className='w-full border-2 border-gray-200 hover:border-[#f63a9e] hover:bg-[#f63a9e]/5 rounded-xl h-[50px]'
-                      style={{ fontWeight: '700' }}
-                    >
-                      <Download className='w-5 h-5 mr-2' />
-                      Print
-                    </Button>
-                  </motion.div>
-
-                  <motion.div
-                    whileHover={{ scale: 1.03 }}
-                    whileTap={{ scale: 0.97 }}
-                  >
-                    <Button
-                      onClick={handleShare}
-                      variant='outline'
-                      className='w-full border-2 border-gray-200 hover:border-[#f63a9e] hover:bg-[#f63a9e]/5 rounded-xl h-[50px]'
-                      style={{ fontWeight: '700' }}
-                    >
-                      <Share2 className='w-5 h-5 mr-2' />
-                      Share
-                    </Button>
-                  </motion.div>
-                </div>
-              </motion.div>
-
-              {/* Security Badge */}
-              <motion.div
-                initial={{ opacity: 0, x: 30 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: 2.1 }}
-              >
-                <div className='bg-gray-50 rounded-2xl p-6 border border-gray-200'>
-                  <div className='flex items-center gap-4 mb-4'>
-                    <div className='w-12 h-12 rounded-xl bg-white border-2 border-gray-200 flex items-center justify-center shadow-sm'>
-                      <Shield className='w-6 h-6 text-gray-600' />
-                    </div>
-                    <div>
-                      <h4
-                        className='text-gray-900'
-                        style={{ fontWeight: '800' }}
-                      >
-                        Secure Payment
-                      </h4>
-                      <p className='text-gray-600 text-xs'>
-                        Encrypted & Protected
-                      </p>
-                    </div>
-                  </div>
-                  <p className='text-gray-600 text-sm'>
-                    Your payment was processed securely via Stripe with 256-bit
-                    encryption 🔒
-                  </p>
-                </div>
               </motion.div>
 
               {/* Customer Testimonial */}
@@ -1064,7 +978,8 @@ export function ConfirmationPage() {
             </div>
           </div>
         </div>
-      </main>
+        </main>
+      )}
 
       <Footer />
     </div>

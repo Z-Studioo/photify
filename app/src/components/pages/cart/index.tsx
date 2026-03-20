@@ -2,7 +2,6 @@ import { useCart } from '@/context/CartContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { RadioGroup } from '@/components/ui/radio-group';
-import { Label } from '@/components/ui/label';
 import { ImageWithFallback } from '@/components/figma/image-with-fallback';
 import {
   X,
@@ -16,7 +15,6 @@ import {
   Sparkles,
   ArrowLeft,
   Shield,
-  Clock,
   Gift,
   Check,
   CreditCard,
@@ -497,12 +495,12 @@ export function CartPage() {
                       onClick={() => setDeliveryMethod('standard')}
                       className={`flex items-start gap-3 p-4 rounded-xl border-2 cursor-pointer transition-all ${
                         deliveryMethod === 'standard'
-                          ? 'border-[#f63a9e] bg-[#FFF5FB] shadow-md ring-2 ring-[#f63a9e]/20'
-                          : 'border-gray-200 hover:border-[#f63a9e]/40 hover:shadow-sm bg-white'
+                          ? 'border-[#f63a9e] bg-[#FFF5FB]'
+                          : 'border-gray-200 hover:border-[#f63a9e]/40 bg-white'
                       }`}
                     >
                       <div
-                        className={`mt-1 w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all ${
+                        className={`mt-0.5 w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all ${
                           deliveryMethod === 'standard'
                             ? 'border-[#f63a9e] bg-[#f63a9e]'
                             : 'border-gray-300 bg-white'
@@ -516,28 +514,17 @@ export function CartPage() {
                         )}
                       </div>
                       <div className='flex-1'>
-                        <Label htmlFor='standard' className='cursor-pointer'>
-                          <div className='flex items-center justify-between mb-1.5'>
-                            <div className='flex items-center gap-2'>
-                              <Clock className='w-4 h-4 text-gray-400' />
-                              <span
-                                className='text-gray-900'
-                                style={{ fontWeight: '600', fontSize: '15px' }}
-                              >
-                                {deliveryOptions.standard.name}
-                              </span>
-                            </div>
-                            <span
-                              className='text-[#f63a9e]'
-                              style={{ fontWeight: '700', fontSize: '15px' }}
-                            >
-                              £{deliveryOptions.standard.price.toFixed(2)}
-                            </span>
-                          </div>
-                          <p className='text-xs text-gray-500 ml-6'>
-                            {deliveryOptions.standard.duration}
-                          </p>
-                        </Label>
+                        <div className='flex items-center justify-between gap-3'>
+                          <span className='text-[15px] font-semibold text-gray-900 leading-5'>
+                            {deliveryOptions.standard.name}
+                          </span>
+                          <span className='text-[15px] font-semibold text-[#f63a9e] whitespace-nowrap'>
+                            £{deliveryOptions.standard.price.toFixed(2)}
+                          </span>
+                        </div>
+                        <p className='text-sm text-gray-500 mt-1'>
+                          {deliveryOptions.standard.duration}
+                        </p>
                       </div>
                     </div>
 
@@ -545,12 +532,12 @@ export function CartPage() {
                       onClick={() => setDeliveryMethod('express')}
                       className={`flex items-start gap-3 p-4 rounded-xl border-2 cursor-pointer transition-all ${
                         deliveryMethod === 'express'
-                          ? 'border-[#f63a9e] bg-[#FFF5FB] shadow-md ring-2 ring-[#f63a9e]/20'
-                          : 'border-gray-200 hover:border-[#f63a9e]/40 hover:shadow-sm bg-white'
+                          ? 'border-[#f63a9e] bg-[#FFF5FB]'
+                          : 'border-gray-200 hover:border-[#f63a9e]/40 bg-white'
                       }`}
                     >
                       <div
-                        className={`mt-1 w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all ${
+                        className={`mt-0.5 w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all ${
                           deliveryMethod === 'express'
                             ? 'border-[#f63a9e] bg-[#f63a9e]'
                             : 'border-gray-300 bg-white'
@@ -564,34 +551,22 @@ export function CartPage() {
                         )}
                       </div>
                       <div className='flex-1'>
-                        <Label htmlFor='express' className='cursor-pointer'>
-                          <div className='flex items-center justify-between mb-1.5'>
-                            <div className='flex items-center gap-2'>
-                              <Sparkles className='w-4 h-4 text-[#f63a9e]' />
-                              <span
-                                className='text-gray-900'
-                                style={{ fontWeight: '600', fontSize: '15px' }}
-                              >
-                                {deliveryOptions.express.name}
-                              </span>
-                              <span
-                                className='text-xs bg-[#f63a9e] text-white px-2 py-1 rounded-full shadow-sm'
-                                style={{ fontWeight: '700' }}
-                              >
-                                FAST
-                              </span>
-                            </div>
-                            <span
-                              className='text-[#f63a9e]'
-                              style={{ fontWeight: '700', fontSize: '15px' }}
-                            >
-                              £{deliveryOptions.express.price.toFixed(2)}
+                        <div className='flex items-center justify-between gap-3'>
+                          <div className='flex items-center gap-2'>
+                            <span className='text-[15px] font-semibold text-gray-900 leading-5'>
+                              {deliveryOptions.express.name}
+                            </span>
+                            <span className='text-[10px] bg-[#f63a9e] text-white px-2 py-0.5 rounded-full font-bold tracking-wide'>
+                              FAST
                             </span>
                           </div>
-                          <p className='text-xs text-gray-500 ml-6'>
-                            {deliveryOptions.express.duration}
-                          </p>
-                        </Label>
+                          <span className='text-[15px] font-semibold text-[#f63a9e] whitespace-nowrap'>
+                            £{deliveryOptions.express.price.toFixed(2)}
+                          </span>
+                        </div>
+                        <p className='text-sm text-gray-500 mt-1'>
+                          {deliveryOptions.express.duration}
+                        </p>
                       </div>
                     </div>
                   </div>

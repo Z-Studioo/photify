@@ -20,7 +20,6 @@ import {
   ShoppingBag,
   Shield,
   Lock,
-  Star,
   Truck,
   Tag,
   Zap,
@@ -629,21 +628,22 @@ export function CheckoutPage() {
                         <motion.div
                           whileHover={{ scale: 1.05 }}
                           whileTap={{ scale: 0.95 }}
+                          className='shrink-0'
                         >
                           <Button
                             onClick={handlePostcodeSearch}
                             disabled={isSearchingAddress}
-                            className='h-12 sm:h-14 lg:h-16 px-4 sm:px-6 lg:px-8 bg-[#f63a9e] hover:bg-[#e02d8d] text-white rounded-xl sm:rounded-2xl shadow-lg disabled:opacity-50 whitespace-nowrap'
+                            className='h-12 sm:h-14 lg:h-16 min-w-[112px] sm:min-w-[132px] px-4 sm:px-6 bg-gradient-to-r from-[#f63a9e] to-[#e02d8d] hover:from-[#e02d8d] hover:to-[#d2267f] text-white rounded-xl sm:rounded-2xl shadow-md hover:shadow-lg transition-all duration-200 disabled:opacity-50 disabled:hover:shadow-md inline-flex items-center justify-center gap-2 whitespace-nowrap border-0'
                             style={{ fontWeight: '700' }}
                           >
                             {isSearchingAddress ? (
                               <>
-                                <Loader2 className='w-5 h-5 mr-2 animate-spin' />
+                                <Loader2 className='w-4 h-4 sm:w-5 sm:h-5 animate-spin' />
                                 Searching...
                               </>
                             ) : (
                               <>
-                                <Search className='w-5 h-5 mr-2' />
+                                <Search className='w-4 h-4 sm:w-5 sm:h-5' />
                                 Find
                               </>
                             )}
@@ -776,93 +776,68 @@ export function CheckoutPage() {
                 {currentStep === 3 && (
                   <div className='space-y-4 sm:space-y-6'>
                     <motion.div
-                      className='p-4 sm:p-6 lg:p-8 bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 rounded-xl sm:rounded-2xl border-2 border-indigo-200 relative overflow-hidden'
+                      className='py-1'
                       initial={{ opacity: 0, y: 20 }}
                       animate={{ opacity: 1, y: 0 }}
                     >
-                      <div className='absolute top-0 right-0 w-20 h-20 sm:w-40 sm:h-40 bg-indigo-300/30 rounded-full blur-3xl' />
-                      <div className='relative z-10'>
-                        <div className='flex items-center gap-2 sm:gap-3 mb-4 sm:mb-6'>
-                          <div className='w-10 h-10 sm:w-12 sm:h-12 rounded-xl sm:rounded-2xl bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center flex-shrink-0'>
-                            <User className='w-5 h-5 sm:w-6 sm:h-6 text-white' />
-                          </div>
-                          <h3
-                            className="font-['Bricolage_Grotesque',_sans-serif] text-gray-900 text-base sm:text-lg lg:text-xl"
-                            style={{ fontWeight: '700' }}
-                          >
-                            Contact Information
-                          </h3>
-                        </div>
-                        <div className='space-y-3 sm:space-y-4'>
-                          {[
-                            { icon: User, label: 'Name', value: formData.name },
-                            {
-                              icon: Phone,
-                              label: 'Phone',
-                              value: formData.phone,
-                            },
-                            {
-                              icon: Mail,
-                              label: 'Email',
-                              value: formData.email,
-                            },
-                          ].map((item, index) => {
-                            const ItemIcon = item.icon;
-                            return (
-                              <motion.div
-                                key={item.label}
-                                className='flex flex-col sm:flex-row sm:items-center justify-between gap-2 p-3 sm:p-4 lg:p-5 bg-white/80 backdrop-blur-sm rounded-lg sm:rounded-xl'
-                                initial={{ opacity: 0, x: -20 }}
-                                animate={{ opacity: 1, x: 0 }}
-                                transition={{ delay: index * 0.1 }}
-                              >
-                                <div className='flex items-center gap-2 sm:gap-3'>
-                                  <ItemIcon className='w-4 h-4 sm:w-5 sm:h-5 text-gray-400 flex-shrink-0' />
-                                  <span className='text-gray-600 text-sm sm:text-base'>
-                                    {item.label}:
-                                  </span>
-                                </div>
-                                <span
-                                  className='text-gray-900 text-sm sm:text-base break-words ml-6 sm:ml-0'
-                                  style={{ fontWeight: '600' }}
-                                >
-                                  {item.value}
+                      <div className='space-y-1'>
+                        {[
+                          { icon: User, label: 'Name', value: formData.name },
+                          {
+                            icon: Phone,
+                            label: 'Phone',
+                            value: formData.phone,
+                          },
+                          {
+                            icon: Mail,
+                            label: 'Email',
+                            value: formData.email,
+                          },
+                        ].map((item, index) => {
+                          const ItemIcon = item.icon;
+                          return (
+                            <motion.div
+                              key={item.label}
+                              className='flex flex-col sm:flex-row sm:items-center justify-between gap-2 py-3 border-b border-gray-200'
+                              initial={{ opacity: 0, x: -20 }}
+                              animate={{ opacity: 1, x: 0 }}
+                              transition={{ delay: index * 0.08 }}
+                            >
+                              <div className='flex items-center gap-2 sm:gap-3'>
+                                <ItemIcon className='w-4 h-4 sm:w-5 sm:h-5 text-gray-400 flex-shrink-0' />
+                                <span className='text-gray-600 text-sm sm:text-base'>
+                                  {item.label}
                                 </span>
-                              </motion.div>
-                            );
-                          })}
-                        </div>
-                      </div>
-                    </motion.div>
+                              </div>
+                              <span
+                                className='text-gray-900 text-sm sm:text-base break-words ml-6 sm:ml-0'
+                                style={{ fontWeight: '600' }}
+                              >
+                                {item.value}
+                              </span>
+                            </motion.div>
+                          );
+                        })}
 
-                    <motion.div
-                      className='p-4 sm:p-6 lg:p-8 bg-gradient-to-br from-purple-50 via-pink-50 to-rose-50 rounded-xl sm:rounded-2xl border-2 border-purple-200 relative overflow-hidden'
-                      initial={{ opacity: 0, y: 20 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ delay: 0.2 }}
-                    >
-                      <div className='absolute bottom-0 left-0 w-20 h-20 sm:w-40 sm:h-40 bg-purple-300/30 rounded-full blur-3xl' />
-                      <div className='relative z-10'>
-                        <div className='flex items-center gap-2 sm:gap-3 mb-4 sm:mb-6'>
-                          <div className='w-10 h-10 sm:w-12 sm:h-12 rounded-xl sm:rounded-2xl bg-gradient-to-br from-purple-500 to-pink-600 flex items-center justify-center flex-shrink-0'>
-                            <Truck className='w-5 h-5 sm:w-6 sm:h-6 text-white' />
-                          </div>
-                          <h3
-                            className="font-['Bricolage_Grotesque',_sans-serif] text-gray-900 text-base sm:text-lg lg:text-xl"
-                            style={{ fontWeight: '700' }}
-                          >
-                            Delivery Address
-                          </h3>
-                        </div>
-                        <div className='p-3 sm:p-4 lg:p-5 bg-white/80 backdrop-blur-sm rounded-lg sm:rounded-xl flex items-start gap-2 sm:gap-3'>
+                        <motion.div
+                          className='py-3 border-b border-gray-200 flex items-start gap-2 sm:gap-3'
+                          initial={{ opacity: 0, x: -20 }}
+                          animate={{ opacity: 1, x: 0 }}
+                          transition={{ delay: 0.24 }}
+                        >
                           <MapPin className='w-4 h-4 sm:w-5 sm:h-5 text-[#f63a9e] mt-0.5 flex-shrink-0' />
-                          <p
-                            className='text-gray-900 text-sm sm:text-base break-words'
-                            style={{ fontWeight: '600' }}
-                          >
-                            {formData.address}
-                          </p>
-                        </div>
+                          <div>
+                            <p className='text-gray-600 text-sm sm:text-base mb-1'>
+                              Delivery Address
+                            </p>
+                            <p
+                              className='text-gray-900 text-sm sm:text-base break-words'
+                              style={{ fontWeight: '600' }}
+                            >
+                              {formData.address}
+                            </p>
+                          </div>
+                        </motion.div>
                       </div>
                     </motion.div>
 
@@ -992,7 +967,7 @@ export function CheckoutPage() {
                           className='w-full h-12 sm:h-14 lg:h-16 rounded-xl sm:rounded-2xl text-white text-sm sm:text-base shadow-xl bg-[#f63a9e] hover:bg-[#e02d8d] disabled:opacity-50 disabled:cursor-not-allowed transition-all'
                           style={{ fontWeight: '700' }}
                         >
-                          Continue
+                          Looks Good
                           <ArrowRight className='w-4 h-4 sm:w-5 sm:h-5 ml-1 sm:ml-2' />
                         </Button>
                       </motion.div>
@@ -1185,32 +1160,6 @@ export function CheckoutPage() {
                         </div>
                       </div>
                     </div>
-                  </div>
-                </div>
-
-                {/* Trust Badges - Compact */}
-                <div className='grid grid-cols-2 gap-2 mb-4'>
-                  <div className='p-3 bg-green-50 rounded-lg border border-green-200 text-center'>
-                    <div className='w-6 h-6 rounded-full bg-green-500 flex items-center justify-center mx-auto mb-1'>
-                      <Check className='w-4 h-4 text-white' />
-                    </div>
-                    <p
-                      className='text-xs text-green-800'
-                      style={{ fontWeight: '600' }}
-                    >
-                      Free Returns
-                    </p>
-                  </div>
-                  <div className='p-3 bg-blue-50 rounded-lg border border-blue-200 text-center'>
-                    <div className='w-6 h-6 rounded-full bg-blue-500 flex items-center justify-center mx-auto mb-1'>
-                      <Star className='w-4 h-4 text-white' />
-                    </div>
-                    <p
-                      className='text-xs text-blue-800'
-                      style={{ fontWeight: '600' }}
-                    >
-                      Premium Quality
-                    </p>
                   </div>
                 </div>
 
