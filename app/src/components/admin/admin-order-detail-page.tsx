@@ -360,21 +360,48 @@ export function AdminOrderDetailPage() {
 
     try {
       setUpdating(true);
+
+      // Call the backend API to cancel order and process refund
+      const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+
+      // Get the current Supabase session token for admin authentication
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+
+      if (!session?.access_token) {
+        console.error('No active session token found');
+        toast.error('Failed to cancel order: Not authenticated');
+        return;
+      }
+
+      const response = await fetch(
+        `${apiUrl}/api/orders/${order.id}/cancel`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${session.access_token}`,
+          },
+          body: JSON.stringify({ reason: cancelReason }),
+        }
+      );
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || error.message || 'Failed to cancel order');
+      }
+
+      const result = await response.json();
+
+      // Update local state
       const payload = {
         status: 'cancelled',
         remarks: cancelReason,
         cancelled_at: new Date().toISOString(),
+        payment_status: 'refunded',
       };
 
-      const { error } = await supabase
-        .from('orders')
-        .update(payload)
-        .eq('order_number', order.id)
-        .select();
-
-      if (error) throw error;
-
-      // Update local state
       setOrder((prev: any) => ({
         ...prev,
         ...payload,
@@ -384,14 +411,16 @@ export function AdminOrderDetailPage() {
         }),
       }));
 
-      toast.success('Order cancelled');
+      toast.success(
+        `Order cancelled and refund of ${result.data.refund_amount} processed successfully`
+      );
       setShowCancelDialog(false);
 
-      // Send cancellation email notification to customer (await to prevent race conditions)
-      await sendStatusNotificationEmail(order.id, 'cancelled');
+      console.log('Refund details:', result.data);
     } catch (err) {
       console.error('Error cancelling order:', err);
-      toast.error('Failed to cancel order');
+      const errorMessage = err instanceof Error ? err.message : 'Failed to cancel order';
+      toast.error(errorMessage);
     } finally {
       setUpdating(false);
     }
