@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Separator } from '@/components/ui/separator';
+import { Switch } from '@/components/ui/switch';
 import { Save, Loader2 } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 import { toast } from 'sonner';
@@ -77,6 +78,7 @@ export function AdminProductConfigEditor({
           setConfig({
             allowedRatios: [],
             allowedSizes: [],
+            sizePrices: {},
           });
         }
       } catch (error: any) {
@@ -105,23 +107,36 @@ export function AdminProductConfigEditor({
           return size && updatedRatios.includes(size.aspect_ratio_id);
         })
       : config.allowedSizes || [];
+    const currentSizePrices = config.sizePrices || {};
+    const updatedSizePrices = Object.fromEntries(
+      Object.entries(currentSizePrices).filter(([sizeId]) =>
+        updatedSizes.includes(sizeId)
+      )
+    );
 
     setConfig({
       ...config,
       allowedRatios: updatedRatios,
       allowedSizes: updatedSizes,
+      sizePrices: updatedSizePrices,
     });
   };
 
   const toggleSize = (sizeId: string) => {
     const allowedSizes = config.allowedSizes || [];
     const isIncluded = allowedSizes.includes(sizeId);
+    const currentSizePrices = config.sizePrices || {};
+    const updatedSizePrices = { ...currentSizePrices };
+    if (isIncluded) {
+      delete updatedSizePrices[sizeId];
+    }
 
     setConfig({
       ...config,
       allowedSizes: isIncluded
         ? allowedSizes.filter((id: string) => id !== sizeId)
         : [...allowedSizes, sizeId],
+      sizePrices: updatedSizePrices,
     });
   };
 
@@ -138,10 +153,41 @@ export function AdminProductConfigEditor({
     const updatedSizes = allSelected
       ? currentSizes.filter((id: string) => !sizesForRatio.includes(id))
       : [...new Set([...currentSizes, ...sizesForRatio])];
+    const currentSizePrices = config.sizePrices || {};
+    const updatedSizePrices = Object.fromEntries(
+      Object.entries(currentSizePrices).filter(([sizeId]) =>
+        updatedSizes.includes(sizeId)
+      )
+    );
 
     setConfig({
       ...config,
       allowedSizes: updatedSizes,
+      sizePrices: updatedSizePrices,
+    });
+  };
+
+  const updateSizePrice = (sizeId: string, value: string) => {
+    const currentSizePrices = config.sizePrices || {};
+    if (value === '') {
+      const updatedSizePrices = { ...currentSizePrices };
+      delete updatedSizePrices[sizeId];
+      setConfig({
+        ...config,
+        sizePrices: updatedSizePrices,
+      });
+      return;
+    }
+
+    const numericValue = Number(value);
+    if (Number.isNaN(numericValue)) return;
+
+    setConfig({
+      ...config,
+      sizePrices: {
+        ...currentSizePrices,
+        [sizeId]: numericValue,
+      },
     });
   };
 
@@ -154,6 +200,20 @@ export function AdminProductConfigEditor({
 
     if (!config.allowedSizes || config.allowedSizes.length === 0) {
       toast.error('Please select at least one size');
+      return;
+    }
+
+    const missingPriceCount = (config.allowedSizes || []).filter(
+      (sizeId: string) => {
+        const price = config.sizePrices?.[sizeId];
+        return typeof price !== 'number' || price <= 0;
+      }
+    ).length;
+
+    if (missingPriceCount > 0) {
+      toast.error(
+        `Please add a valid price for all selected sizes (${missingPriceCount} missing)`
+      );
       return;
     }
 
@@ -223,12 +283,14 @@ export function AdminProductConfigEditor({
   }
 
   return (
-    <div className='space-y-8'>
+    <div className='space-y-6'>
       {/* Product Type Badge */}
-      <div>
-        <Label className='text-sm text-gray-600'>Product Type</Label>
+      <div className='rounded-lg border border-gray-200 bg-gray-50 px-4 py-3'>
+        <Label className='text-xs font-semibold uppercase tracking-wide text-gray-500'>
+          Product Type
+        </Label>
         <div className='mt-2'>
-          <span className='inline-flex items-center px-3 py-1 rounded-md text-sm font-medium bg-blue-100 text-blue-700'>
+          <span className='inline-flex items-center rounded-full bg-white px-3 py-1 text-sm font-medium text-gray-800 border border-gray-200'>
             {productType === 'canvas' && 'Canvas Print'}
             {productType === 'framed_canvas' && 'Framed Canvas'}
             {productType === 'metal_print' && 'Metal Print'}
@@ -236,136 +298,146 @@ export function AdminProductConfigEditor({
         </div>
       </div>
 
-      <Separator />
-
       {/* Aspect Ratios Selection */}
-      <div>
+      <div className='rounded-lg border border-gray-200 bg-white p-5'>
         <div className='mb-4'>
-          <h3 className='text-lg font-semibold mb-1'>Aspect Ratios</h3>
+          <h3 className='mb-1 text-lg font-semibold'>Aspect Ratios & Sizes</h3>
           <p className='text-sm text-gray-600'>
-            Select which aspect ratios are available for this product
+            Enable a ratio to configure its available sizes
           </p>
         </div>
 
-        <div className='grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4'>
+        <div className='space-y-3'>
           {aspectRatios.map(ratio => {
             const isSelected = config.allowedRatios?.includes(ratio.id);
             const sizesCount = getSizesCountForRatio(ratio.id);
             const selectedSizesCount = getSelectedSizesCountForRatio(ratio.id);
+            const sizesForRatio = allSizes.filter(
+              size => size.aspect_ratio_id === ratio.id
+            );
+            const allSelected =
+              sizesForRatio.length > 0 &&
+              sizesForRatio.every(size =>
+                (config.allowedSizes || []).includes(size.id)
+              );
 
             return (
               <div
                 key={ratio.id}
-                className={`p-4 border-2 rounded-lg cursor-pointer transition-all hover:shadow-md ${
+                className={`rounded-lg border p-4 transition-all ${
                   isSelected
-                    ? 'border-[#f63a9e] bg-pink-50'
-                    : 'border-gray-200 hover:border-gray-300'
+                    ? 'border-gray-300 bg-gray-50'
+                    : 'border-gray-200 bg-white'
                 }`}
-                onClick={() => toggleRatio(ratio.id)}
               >
-                <div className='font-semibold text-gray-900'>{ratio.label}</div>
-                <div className='text-sm text-gray-600 capitalize mt-1'>
-                  {ratio.orientation}
+                <div className='flex items-start justify-between gap-4'>
+                  <div>
+                    <div className='font-semibold text-gray-900'>{ratio.label}</div>
+                    <div className='mt-1 text-sm capitalize text-gray-600'>
+                      {ratio.orientation}
+                    </div>
+                    <div className='mt-2 text-xs text-gray-500'>
+                      {isSelected
+                        ? `${selectedSizesCount} of ${sizesCount} sizes selected`
+                        : `${sizesCount} sizes available`}
+                    </div>
+                  </div>
+                  <div className='flex items-center gap-3'>
+                    <span
+                      className={`text-xs font-medium ${
+                        isSelected ? 'text-green-700' : 'text-gray-500'
+                      }`}
+                    >
+                      {isSelected ? 'Enabled' : 'Disabled'}
+                    </span>
+                    <Switch
+                      checked={isSelected}
+                      onCheckedChange={() => toggleRatio(ratio.id)}
+                    />
+                  </div>
                 </div>
-                <div className='text-xs text-gray-500 mt-2'>
-                  {isSelected && selectedSizesCount > 0
-                    ? `${selectedSizesCount} of ${sizesCount} sizes selected`
-                    : `${sizesCount} sizes available`}
-                </div>
+
+                {isSelected && (
+                  <div className='mt-4 border-t border-gray-200 pt-4'>
+                    {sizesForRatio.length === 0 ? (
+                      <div className='rounded-md border border-dashed border-gray-200 bg-white px-3 py-4 text-sm text-gray-500'>
+                        No sizes available for this ratio.
+                      </div>
+                    ) : (
+                      <>
+                        <div className='mb-3 flex justify-end'>
+                          <Button
+                            variant='outline'
+                            size='sm'
+                            onClick={() => selectAllSizesForRatio(ratio.id)}
+                          >
+                            {allSelected ? 'Deselect All' : 'Select All'}
+                          </Button>
+                        </div>
+
+                        <div className='grid grid-cols-2 gap-3 md:grid-cols-4 lg:grid-cols-6'>
+                          {sizesForRatio.map(size => {
+                            const isSizeSelected = (config.allowedSizes || []).includes(
+                              size.id
+                            );
+
+                            return (
+                              <div
+                                key={size.id}
+                                className={`cursor-pointer rounded-lg border p-3 text-center transition-all ${
+                                  isSizeSelected
+                                    ? 'border-[#f63a9e] bg-pink-50 shadow-sm'
+                                    : 'border-gray-200 bg-white hover:border-gray-300'
+                                }`}
+                                onClick={() => toggleSize(size.id)}
+                              >
+                                <div className='text-sm font-medium'>
+                                  {size.display_label}
+                                </div>
+                                <div className='mt-1 text-xs text-gray-500'>
+                                  {size.area_in2} sq in
+                                </div>
+                                {isSizeSelected && (
+                                  <div
+                                    className='mt-3 border-t border-gray-200 pt-3'
+                                    onClick={e => e.stopPropagation()}
+                                  >
+                                    <Label className='text-[11px] font-medium text-gray-600'>
+                                      Price (GBP)
+                                    </Label>
+                                    <Input
+                                      type='number'
+                                      min='0'
+                                      step='0.01'
+                                      placeholder='0.00'
+                                      value={
+                                        config.sizePrices?.[size.id] !== undefined
+                                          ? String(config.sizePrices[size.id])
+                                          : ''
+                                      }
+                                      onChange={e =>
+                                        updateSizePrice(size.id, e.target.value)
+                                      }
+                                      className='mt-1 h-8 bg-white text-xs'
+                                    />
+                                  </div>
+                                )}
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </>
+                    )}
+                  </div>
+                )}
               </div>
             );
           })}
         </div>
       </div>
 
-      <Separator />
-
-      {/* Sizes Selection */}
-      <div>
-        <div className='mb-4'>
-          <h3 className='text-lg font-semibold mb-1'>Available Sizes</h3>
-          <p className='text-sm text-gray-600'>
-            Select specific sizes for the selected aspect ratios
-            {config.allowedRatios?.length === 0 &&
-              ' (Select aspect ratios first)'}
-          </p>
-        </div>
-
-        {config.allowedRatios?.length === 0 ? (
-          <div className='text-center py-8 text-gray-500'>
-            Please select at least one aspect ratio to see available sizes
-          </div>
-        ) : (
-          <div className='space-y-6'>
-            {config.allowedRatios?.map((ratioId: string) => {
-              const ratio = aspectRatios.find(r => r.id === ratioId);
-              const sizesForRatio = allSizes.filter(
-                size => size.aspect_ratio_id === ratioId
-              );
-              const allSelected = sizesForRatio.every(size =>
-                (config.allowedSizes || []).includes(size.id)
-              );
-
-              if (!ratio) return null;
-
-              return (
-                <div key={ratioId} className='border rounded-lg p-4'>
-                  <div className='flex items-center justify-between mb-4'>
-                    <div>
-                      <h4 className='font-semibold text-gray-900'>
-                        {ratio.label}
-                      </h4>
-                      <p className='text-sm text-gray-600'>
-                        {getSelectedSizesCountForRatio(ratioId)} of{' '}
-                        {sizesForRatio.length} selected
-                      </p>
-                    </div>
-                    <Button
-                      variant='outline'
-                      size='sm'
-                      onClick={() => selectAllSizesForRatio(ratioId)}
-                    >
-                      {allSelected ? 'Deselect All' : 'Select All'}
-                    </Button>
-                  </div>
-
-                  <div className='grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-3'>
-                    {sizesForRatio.map(size => {
-                      const isSelected = (config.allowedSizes || []).includes(
-                        size.id
-                      );
-
-                      return (
-                        <div
-                          key={size.id}
-                          className={`p-3 border-2 rounded-lg cursor-pointer transition-all text-center ${
-                            isSelected
-                              ? 'border-[#f63a9e] bg-pink-50'
-                              : 'border-gray-200 hover:border-gray-300'
-                          }`}
-                          onClick={() => toggleSize(size.id)}
-                        >
-                          <div className='font-medium text-sm'>
-                            {size.display_label}
-                          </div>
-                          <div className='text-xs text-gray-500 mt-1'>
-                            {size.area_in2} sq in
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        )}
-      </div>
-
-      <Separator />
-
       {/* Summary */}
-      <div className='bg-gray-50 rounded-lg p-4'>
+      <div className='rounded-lg border border-gray-200 bg-gray-50 p-4'>
         <h4 className='font-semibold mb-2'>Configuration Summary</h4>
         <div className='space-y-1 text-sm text-gray-700'>
           <p>
@@ -377,9 +449,24 @@ export function AdminProductConfigEditor({
             {config.allowedSizes?.length || 0} selected
           </p>
           <p>
+            <span className='font-medium'>Priced Sizes:</span>{' '}
+            {Object.entries(config.sizePrices || {}).filter(
+              ([sizeId, price]) =>
+                (config.allowedSizes || []).includes(sizeId) &&
+                typeof price === 'number' &&
+                price > 0
+            ).length}{' '}
+            set
+          </p>
+          <p>
             <span className='font-medium'>Status:</span>{' '}
             {config.allowedRatios?.length > 0 &&
-            config.allowedSizes?.length > 0 ? (
+            config.allowedSizes?.length > 0 &&
+            (config.allowedSizes || []).every(
+              (sizeId: string) =>
+                typeof config.sizePrices?.[sizeId] === 'number' &&
+                config.sizePrices[sizeId] > 0
+            ) ? (
               <span className='text-green-600'>Ready to activate</span>
             ) : (
               <span className='text-yellow-600'>Incomplete configuration</span>
@@ -389,7 +476,7 @@ export function AdminProductConfigEditor({
       </div>
 
       {/* Save Button */}
-      <div className='flex justify-end gap-3 pt-6 border-t'>
+      <div className='flex justify-end gap-3 border-t border-gray-200 pt-5'>
         <Button
           variant='outline'
           onClick={() => window.history.back()}

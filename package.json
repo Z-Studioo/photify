@@ -46,6 +46,7 @@
   "devDependencies": {
     "@commitlint/cli": "^18.4.3",
     "@commitlint/config-conventional": "^18.4.3",
+    "baseline-browser-mapping": "^2.10.8",
     "commitizen": "^4.2.4",
     "concurrently": "^8.2.2",
     "cz-conventional-changelog": "^3.3.0",

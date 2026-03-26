@@ -1,6 +1,7 @@
 'use client';
+import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { motion } from 'framer-motion';
+import { AnimatePresence, motion } from 'framer-motion';
 import { ImageWithFallback } from '@/components/figma/image-with-fallback';
 import { Ruler } from 'lucide-react';
 
@@ -28,6 +29,20 @@ export function ProductCard({
   className = '',
 }: ProductCardProps) {
   const navigate = useNavigate();
+  const [currentImageIndex, setCurrentImageIndex] = useState(0);
+
+  useEffect(() => {
+    if (!images || images.length <= 1) {
+      setCurrentImageIndex(0);
+      return;
+    }
+
+    const interval = setInterval(() => {
+      setCurrentImageIndex(prev => (prev + 1) % images.length);
+    }, 2000);
+
+    return () => clearInterval(interval);
+  }, [images]);
 
   const handleClick = () => {
     navigate(`/product/${slug || id}`);
@@ -53,15 +68,26 @@ export function ProductCard({
 
         {/* Product Image */}
         <div className='relative aspect-square overflow-hidden bg-gray-100'>
-          <ImageWithFallback
-            src={
-              images && images.length > 0
-                ? images[0]
-                : '/assets/placeholder.png'
-            }
-            alt={name}
-            className='w-full h-full object-cover group-hover:scale-110 transition-transform duration-500'
-          />
+          <AnimatePresence>
+            <motion.div
+              key={`${id}-${currentImageIndex}`}
+              initial={{ opacity: 0, scale: 1.03 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.98 }}
+              transition={{ duration: 0.65, ease: 'easeInOut' }}
+              className='absolute inset-0'
+            >
+              <ImageWithFallback
+                src={
+                  images && images.length > 0
+                    ? images[currentImageIndex] || images[0]
+                    : '/assets/placeholder.png'
+                }
+                alt={name}
+                className='w-full h-full object-cover group-hover:scale-110 transition-transform duration-700'
+              />
+            </motion.div>
+          </AnimatePresence>
 
           {/* Overlay on hover */}
           <div className='absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-end p-4'>
@@ -77,7 +103,11 @@ export function ProductCard({
             {images.slice(0, 5).map((_, idx) => (
               <div
                 key={idx}
-                className='w-1.5 h-1.5 rounded-full bg-white/80 shadow-sm'
+                className={`w-1.5 h-1.5 rounded-full shadow-sm transition-all ${
+                  idx === currentImageIndex
+                    ? 'bg-white'
+                    : 'bg-white/50'
+                }`}
               />
             ))}
           </div>
@@ -120,16 +150,6 @@ export function ProductCard({
                   {typeof price === 'number'
                     ? price.toFixed(2).split('.')[1]
                     : '00'}
-                </span>
-              </div>
-
-              <div className='ml-3 flex flex-col justify-center border-l border-gray-200 pl-3'>
-                <span className='text-gray-400 text-[10px] font-bold uppercase tracking-widest leading-none'>
-                  Per
-                </span>
-
-                <span className='text-gray-600 text-sm font-bold leading-tight whitespace-nowrap'>
-                  sq in
                 </span>
               </div>
             </div>
