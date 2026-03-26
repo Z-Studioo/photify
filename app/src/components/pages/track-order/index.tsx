@@ -14,8 +14,6 @@ import {
   Package,
   Truck,
   CheckCircle2,
-  MapPin,
-  Calendar,
   Box,
   Home,
   AlertCircle,

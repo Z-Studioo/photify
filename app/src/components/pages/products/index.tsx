@@ -8,6 +8,7 @@ import {
   Image as ImageIcon,
   Camera,
   Palette,
+  Package,
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 

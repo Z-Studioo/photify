@@ -3,7 +3,6 @@ import { useState, useEffect } from 'react';
 import { Header } from '@/components/layout/header';
 import { Footer } from '@/components/layout/footer';
 import { ArtProductCard } from '@/components/shared/art-product-card';
-import { motion } from 'framer-motion';
 import { useSearchParams } from 'react-router-dom';
 import { Helmet } from '@dr.pogodin/react-helmet';
 

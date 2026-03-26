@@ -3,7 +3,6 @@ import { useNavigate } from 'react-router-dom';
 import { AdminLayout } from './admin-layout';
 import { Search, Edit, Eye } from 'lucide-react';
 import { Input } from '@/components/ui/input';
-import { Button } from '@/components/ui/button';
 import { ImageWithFallback } from '@/components/figma/image-with-fallback';
 import { useProducts } from '@/lib/supabase/hooks';
 
