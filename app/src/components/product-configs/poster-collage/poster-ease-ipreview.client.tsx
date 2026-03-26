@@ -576,8 +576,10 @@ export default function PosterEaselPreview({
           target={[0, orbitTargetY, -0.1]}
           minDistance={dynamicMinDistance}
           maxDistance={dynamicMaxDistance}
-          minPolarAngle={Math.PI / 6}
-          maxPolarAngle={Math.PI / 2.1}
+          minPolarAngle={Math.PI / 3.5} // Prevent going too low (floor view)
+          maxPolarAngle={Math.PI / 2.05} // Prevent going behind (back of stand)
+          minAzimuthAngle={-Math.PI / 2.5} // Limit left rotation
+          maxAzimuthAngle={Math.PI / 2.5} // Limit right rotation
           enablePan={false}
           enableDamping={true}
           dampingFactor={0.05}
