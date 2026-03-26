@@ -1,11 +1,9 @@
 'use client';
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { Header } from '@/components/layout/header';
 import { Footer } from '@/components/layout/footer';
-import { ImageWithFallback } from '@/components/figma/image-with-fallback';
-import { Ruler } from 'lucide-react';
-import { motion } from 'framer-motion';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { ArtProductCard } from '@/components/shared/art-product-card';
+import { useSearchParams } from 'react-router-dom';
 import { Helmet } from '@dr.pogodin/react-helmet';
 
 interface ArtProduct {
@@ -241,7 +239,6 @@ export function ArtCollectionPage({
   initialCategories,
 }: ArtCollectionPageProps) {
   const [searchParams] = useSearchParams();
-  const navigate = useNavigate();
   const [selectedCategory, setSelectedCategory] = useState<string>('All');
 
   // Use server-fetched data if available, otherwise use mock data
@@ -328,127 +325,20 @@ export function ArtCollectionPage({
 
           {/* Product Grid */}
           <div className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6'>
-            {filteredProducts.map((product: ArtProduct, index: number) => {
-              // const halfwayPoint = Math.floor(filteredProducts.length / 2);
-              // const shouldShowAICard = index === halfwayPoint;
-
-              return (
-                <React.Fragment key={`product-${product.id}-${index}`}>
-                  {/* AI Card - Commented Out */}
-                  {/* {shouldShowAICard && (
-                    <motion.div
-                      key='ai-browse-card'
-                      initial={{ opacity: 0, y: 20 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ duration: 0.3, delay: index * 0.05 }}
-                      className='bg-gradient-to-br from-[#f63a9e] to-[#e02d8d] rounded-lg overflow-hidden aspect-square flex flex-col justify-between p-6'
-                    >
-                      <div className='flex gap-2'>
-                        <motion.div
-                          className='bg-white/20 backdrop-blur-sm rounded-lg p-2'
-                          whileHover={{ scale: 1.05 }}
-                          transition={{ duration: 0.2 }}
-                        >
-                          <Sparkles className='w-5 h-5 text-white' />
-                        </motion.div>
-                        <motion.div
-                          className='bg-white/20 backdrop-blur-sm rounded-lg p-2'
-                          whileHover={{ scale: 1.05 }}
-                          transition={{ duration: 0.2 }}
-                        >
-                          <Wand2 className='w-5 h-5 text-white' />
-                        </motion.div>
-                        <motion.div
-                          className='bg-white/20 backdrop-blur-sm rounded-lg p-2'
-                          whileHover={{ scale: 1.05 }}
-                          transition={{ duration: 0.2 }}
-                        >
-                          <Zap className='w-5 h-5 text-white' />
-                        </motion.div>
-                      </div>
-
-                      <div className='flex flex-col'>
-                        <h3
-                          className="font-['Bricolage_Grotesque',_sans-serif] text-white mb-2"
-                          style={{
-                            fontSize: '20px',
-                            lineHeight: '1.2',
-                            fontWeight: '600',
-                          }}
-                        >
-                          Can&apos;t find one?
-                          <br />
-                          Our AI Will Generate on the GO
-                        </h3>
-                        <p className='text-white/90 text-sm'>
-                          Create custom artwork tailored to your preferences with
-                          our AI-powered tools.
-                        </p>
-                      </div>
-
-                      <button
-                        onClick={() => navigate('/ai-generate')}
-                        className='bg-white text-[#f63a9e] px-5 rounded-full hover:bg-white/90 transition-all inline-flex items-center justify-center gap-2 w-full'
-                        style={{ height: '50px' }}
-                      >
-                        <Sparkles className='w-5 h-5' />
-                        Try it now
-                      </button>
-                    </motion.div>
-                  )} */}
-
-                  <motion.div
-                    key={product.id}
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.3, delay: index * 0.05 }}
-                    className='group cursor-pointer'
-                    onClick={() => navigate(`/art/${product.slug ?? product.id}`)}
-                  >
-                    {/* Product Image */}
-                    <div className='relative aspect-square mb-3 overflow-hidden rounded-lg'>
-                      {product.isBestSeller && (
-                        <div className='absolute top-3 left-3 bg-[#f63a9e] text-white text-xs px-3 py-1 rounded-sm z-10'>
-                          BEST SELLER
-                        </div>
-                      )}
-                      <ImageWithFallback
-                        src={product.image}
-                        alt={product.name}
-                        className='w-full h-full object-cover transition-transform duration-300 group-hover:scale-105'
-                      />
-                    </div>
-
-                    {/* Product Info */}
-                    <div>
-                      <h3
-                        className="font-['Bricolage_Grotesque',_sans-serif] mb-1"
-                        style={{
-                          fontSize: '16px',
-                          lineHeight: '1.3',
-                          fontWeight: '600',
-                        }}
-                      >
-                        {product.name}
-                      </h3>
-                      {(product.size || (product.sizeCount ?? 0) > 0) && (
-                        <div className='flex items-center gap-2 text-gray-600 text-sm mb-1'>
-                          <Ruler className='w-4 h-4' />
-                          <span>
-                            {product.size
-                              ? product.size
-                              : `${product.sizeCount} size${product.sizeCount === 1 ? '' : 's'} available`}
-                          </span>
-                        </div>
-                      )}
-                      <p className='text-[#f63a9e]'>
-                        From <span>{product.price}</span>
-                      </p>
-                    </div>
-                  </motion.div>
-                </React.Fragment>
-              );
-            })}
+            {filteredProducts.map((product: ArtProduct, index: number) => (
+              <ArtProductCard
+                key={product.id}
+                id={product.id}
+                slug={product.slug}
+                name={product.name}
+                image={product.image}
+                price={product.price}
+                size={product.size}
+                sizeCount={product.sizeCount}
+                isBestSeller={product.isBestSeller}
+                index={index}
+              />
+            ))}
           </div>
 
           {/* No Results */}

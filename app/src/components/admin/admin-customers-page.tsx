@@ -201,7 +201,6 @@ export const AdminCustomersPage = () => {
                   'Orders',
                   'Total Spent',
                   'Last Order',
-                  'Status',
                   'Actions',
                 ].map(h => (
                   <th
@@ -236,19 +235,6 @@ export const AdminCustomersPage = () => {
                       : '—'}
                   </td>
                   <td className='px-6 py-4'>
-                    <span
-                      className={`inline-flex px-2.5 py-1 rounded-full text-xs font-medium ${
-                        customer.status === 'VIP'
-                          ? 'bg-purple-100 text-purple-700'
-                          : customer.status === 'Active'
-                            ? 'bg-green-100 text-green-700'
-                            : 'bg-blue-100 text-blue-700'
-                      }`}
-                    >
-                      {customer.status}
-                    </span>
-                  </td>
-                  <td className='px-6 py-4'>
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
                         <Button variant='ghost' size='sm'>
@@ -280,112 +266,116 @@ export const AdminCustomersPage = () => {
           open={!!selectedCustomer}
           onOpenChange={() => setSelectedCustomer(null)}
         >
-          <DialogContent className='max-w-5xl max-h-[90vh] overflow-y-auto'>
-            <DialogHeader>
-              <DialogTitle>Customer Details</DialogTitle>
+          <DialogContent className='w-[97vw] max-w-6xl border border-gray-200 bg-white p-0 shadow-xl sm:max-w-6xl sm:rounded-2xl'>
+            <DialogHeader className='border-b border-gray-100 px-6 py-5'>
+              <DialogTitle className="font-['Bricolage_Grotesque'] text-xl text-[#0d1635] sm:text-2xl">
+                Customer Details
+              </DialogTitle>
             </DialogHeader>
 
             {selectedCustomer && (
-              <div className='grid md:grid-cols-2 gap-6 mt-4'>
-                {/* Info + Stats */}
-                <div className='space-y-4'>
-                  <div className='bg-gray-50 p-4 rounded'>
-                    <h3 className='font-semibold mb-3'>Customer Information</h3>
-                    <div className='text-sm space-y-2'>
-                      <div className='flex justify-between'>
-                        <span>Name</span>
-                        <span>{selectedCustomer.name}</span>
-                      </div>
-                      <div className='flex flex-col'>
-                        <span>Email</span>
-                        <span className='truncate'>
-                          {selectedCustomer.email}
-                        </span>
-                      </div>
-                      <div className='flex justify-between'>
-                        <span>Phone</span>
-                        <span>{selectedCustomer.phone}</span>
-                      </div>
-                      <div className='flex flex-col'>
-                        <span>Customer ID</span>
-                        <span className='truncate text-xs'>
-                          {selectedCustomer.id}
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className='bg-gray-50 p-4 rounded'>
-                    <h3 className='font-semibold mb-3'>Statistics</h3>
-                    <div className='text-sm space-y-2'>
-                      <div className='flex justify-between'>
-                        <span>Total Orders</span>
-                        <span className='font-medium'>
-                          {selectedCustomer.total_orders}
-                        </span>
-                      </div>
-                      <div className='flex justify-between'>
-                        <span>Total Spent</span>
-                        <span className='font-medium text-[#f63a9e]'>
-                          £{selectedCustomer.total_spent.toFixed(2)}
-                        </span>
-                      </div>
-                      <div className='flex justify-between'>
-                        <span>Avg. Order</span>
-                        <span className='font-medium'>
-                          £{avgOrder.toFixed(2)}
-                        </span>
-                      </div>
-                      <div className='flex justify-between'>
-                        <span>Status</span>
-                        <span
-                          className={`font-medium ${
-                            selectedCustomer.status === 'VIP'
-                              ? 'text-purple-600'
-                              : selectedCustomer.status === 'Active'
-                                ? 'text-green-600'
-                                : 'text-blue-600'
-                          }`}
-                        >
-                          {selectedCustomer.status}
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Orders */}
-                <div>
-                  <h3 className='font-semibold mb-3'>Order History</h3>
-                  <div className='space-y-2'>
-                    {customerOrders.length ? (
-                      customerOrders.map(o => (
-                        <div
-                          key={o.order_number}
-                          className='bg-gray-50 p-3 rounded'
-                        >
-                          <div className='flex justify-between mb-1'>
-                            <span className='font-medium'>
-                              {o.order_number}
-                            </span>
-                            <span className='font-medium text-[#f63a9e]'>
-                              £{o.amount.toFixed(2)}
-                            </span>
-                          </div>
-                          <div className='flex justify-between text-xs'>
-                            <span>
-                              {new Date(o.created_at).toLocaleDateString()}
-                            </span>
-                            <span className='px-2 py-1 rounded-full bg-green-100 text-green-700'>
-                              {o.status}
-                            </span>
-                          </div>
+              <div className='max-h-[82vh] overflow-y-auto px-6 py-6'>
+                <div className='grid gap-6 lg:grid-cols-[360px_minmax(0,1fr)]'>
+                  {/* Left column */}
+                  <div className='space-y-5'>
+                    <section className='rounded-xl border border-gray-200 bg-white p-5'>
+                      <h3 className='mb-4 text-sm font-semibold uppercase tracking-wide text-gray-500'>
+                        Customer Information
+                      </h3>
+                      <div className='space-y-4'>
+                        <div>
+                          <p className='text-xs text-gray-500'>Name</p>
+                          <p className='mt-1 text-sm font-medium text-gray-900'>
+                            {selectedCustomer.name}
+                          </p>
                         </div>
-                      ))
-                    ) : (
-                      <p className='text-gray-500'>No orders found</p>
-                    )}
+                        <div>
+                          <p className='text-xs text-gray-500'>Email</p>
+                          <p className='mt-1 break-all text-sm font-medium text-gray-900'>
+                            {selectedCustomer.email}
+                          </p>
+                        </div>
+                        <div>
+                          <p className='text-xs text-gray-500'>Phone</p>
+                          <p className='mt-1 text-sm font-medium text-gray-900'>
+                            {selectedCustomer.phone}
+                          </p>
+                        </div>
+                        <div>
+                          <p className='text-xs text-gray-500'>Customer ID</p>
+                          <p className='mt-1 break-all text-xs text-gray-600'>
+                            {selectedCustomer.id}
+                          </p>
+                        </div>
+                      </div>
+                    </section>
+
+                    <section className='rounded-xl border border-gray-200 bg-gray-50 p-5'>
+                      <h3 className='mb-4 text-sm font-semibold uppercase tracking-wide text-gray-500'>
+                        Statistics
+                      </h3>
+                      <div className='space-y-3'>
+                        <div className='flex items-center justify-between rounded-md bg-white px-3 py-2'>
+                          <span className='text-sm text-gray-600'>Total Orders</span>
+                          <span className='text-base font-semibold text-gray-900'>
+                            {selectedCustomer.total_orders}
+                          </span>
+                        </div>
+                        <div className='flex items-center justify-between rounded-md bg-white px-3 py-2'>
+                          <span className='text-sm text-gray-600'>Total Spent</span>
+                          <span className='text-base font-semibold text-[#f63a9e]'>
+                            £{selectedCustomer.total_spent.toFixed(2)}
+                          </span>
+                        </div>
+                        <div className='flex items-center justify-between rounded-md bg-white px-3 py-2'>
+                          <span className='text-sm text-gray-600'>Avg. Order</span>
+                          <span className='text-base font-semibold text-gray-900'>
+                            £{avgOrder.toFixed(2)}
+                          </span>
+                        </div>
+                      </div>
+                    </section>
                   </div>
+
+                  {/* Right column */}
+                  <section className='rounded-xl border border-gray-200 bg-white p-5'>
+                    <h3 className='mb-4 text-sm font-semibold uppercase tracking-wide text-gray-500'>
+                      Order History
+                    </h3>
+                    <div className='space-y-3 max-h-[60vh] overflow-y-auto pr-1'>
+                      {customerOrders.length ? (
+                        customerOrders.map(o => (
+                          <div
+                            key={o.order_number}
+                            className='rounded-lg border border-gray-200 bg-gray-50 p-4'
+                          >
+                            <div className='mb-2 flex items-start justify-between gap-3'>
+                              <p className='break-all text-sm font-medium text-gray-900'>
+                                {o.order_number}
+                              </p>
+                              <p className='whitespace-nowrap text-sm font-semibold text-[#f63a9e]'>
+                                £{o.amount.toFixed(2)}
+                              </p>
+                            </div>
+                            <div className='flex items-center justify-between'>
+                              <p className='text-xs text-gray-500'>
+                                {new Date(o.created_at).toLocaleDateString()}
+                              </p>
+                              <span className='inline-flex rounded-full bg-green-100 px-2.5 py-1 text-xs font-medium text-green-700'>
+                                {o.status}
+                              </span>
+                            </div>
+                          </div>
+                        ))
+                      ) : (
+                        <div className='flex min-h-[220px] items-center justify-center rounded-lg border border-dashed border-gray-200 bg-gray-50 px-4'>
+                          <p className='text-sm font-medium text-gray-500'>
+                            No orders found
+                          </p>
+                        </div>
+                      )}
+                    </div>
+                  </section>
                 </div>
               </div>
             )}

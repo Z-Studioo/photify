@@ -55,7 +55,7 @@ export function AdminConfigurerSelector({
     <div className='space-y-4'>
       {/* Header */}
       <div>
-        <Label className='text-sm font-medium text-gray-700 flex items-center gap-2'>
+        <Label className='flex items-center gap-2 text-sm font-semibold text-gray-800'>
           <Settings className='w-4 h-4' />
           Product Configurator
         </Label>
@@ -72,27 +72,18 @@ export function AdminConfigurerSelector({
           onValueChange={handleChange}
           disabled={disabled}
         >
-          <SelectTrigger className='w-full'>
-            <SelectValue placeholder='No configurator (standard product)' />
+          <SelectTrigger className='h-11 w-full bg-white'>
+            <SelectValue
+              placeholder='No configurator (standard product)'
+              className='truncate'
+            />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value='none'>
-              <div className='flex flex-col'>
-                <span className='font-medium'>No Configurator</span>
-                <span className='text-xs text-gray-500'>
-                  Standard product without customization
-                </span>
-              </div>
-            </SelectItem>
+            <SelectItem value='none'>No Configurator</SelectItem>
 
             {configurers.map(configurer => (
               <SelectItem key={configurer.id} value={configurer.id}>
-                <div className='flex flex-col py-1'>
-                  <span className='font-medium'>{configurer.name}</span>
-                  <span className='text-xs text-gray-500'>
-                    {configurer.description}
-                  </span>
-                </div>
+                {configurer.name}
               </SelectItem>
             ))}
           </SelectContent>
@@ -100,22 +91,22 @@ export function AdminConfigurerSelector({
 
         {/* Selected Configurer Info */}
         {selectedConfigurer && (
-          <div className='p-3 bg-blue-50 rounded-lg border border-blue-200'>
+          <div className='rounded-lg border border-gray-200 bg-gray-50 p-4'>
             <div className='flex items-start justify-between gap-3'>
               <div className='flex-1'>
                 <div className='flex items-center gap-2 mb-1'>
-                  <div className='w-2 h-2 rounded-full bg-blue-500' />
-                  <span className='text-sm font-medium text-blue-900'>
+                  <div className='h-2 w-2 rounded-full bg-green-500' />
+                  <span className='text-sm font-semibold text-gray-900'>
                     {selectedConfigurer.name}
                   </span>
                 </div>
-                <p className='text-xs text-blue-700 mb-2'>
+                <p className='mb-2 text-xs text-gray-600'>
                   {selectedConfigurer.description}
                 </p>
-                <div className='flex items-center gap-4 text-xs text-blue-600'>
+                <div className='flex flex-wrap items-center gap-3 text-xs text-gray-600'>
                   <span>Route: {selectedConfigurer.customUrl ?? `/customize/${selectedConfigurer.route}`}</span>
                   {selectedConfigurer.requiresProductId && (
-                    <span className='px-2 py-0.5 bg-blue-100 rounded'>
+                    <span className='rounded bg-gray-200 px-2 py-0.5'>
                       Requires Product ID
                     </span>
                   )}
@@ -136,7 +127,7 @@ export function AdminConfigurerSelector({
 
         {/* No Configurator Selected */}
         {!selectedId && (
-          <div className='p-3 bg-gray-50 rounded-lg border border-gray-200'>
+          <div className='rounded-lg border border-gray-200 bg-gray-50 p-4'>
             <div className='flex items-start gap-2'>
               <AlertCircle className='w-4 h-4 text-gray-500 mt-0.5' />
               <div className='flex-1'>
@@ -152,10 +143,10 @@ export function AdminConfigurerSelector({
       </div>
 
       {/* Info Box */}
-      <div className='p-3 bg-yellow-50 rounded-lg border border-yellow-200'>
+      <div className='rounded-lg border border-amber-200 bg-amber-50 px-4 py-3'>
         <div className='flex items-start gap-2'>
-          <AlertCircle className='w-4 h-4 text-yellow-600 mt-0.5' />
-          <div className='text-xs text-yellow-800'>
+          <AlertCircle className='mt-0.5 h-4 w-4 text-amber-600' />
+          <div className='text-xs text-amber-800'>
             <strong>Note:</strong> After selecting a configurator, make sure to
             save the product. The configurator will only work if the product has
             a properly configured price and available sizes in the config.
