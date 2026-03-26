@@ -691,38 +691,43 @@ export function ConfirmationPage() {
                             className='text-gray-900'
                             style={{ fontWeight: '700' }}
                           >
-                            Behind-the-Scenes Video
+                            Your Behind-the-Scenes Video is Coming!
                           </h3>
                           <Sparkles className='w-5 h-5 text-[#f63a9e]' />
                         </div>
 
                         <p className='text-gray-600 mb-4'>
-                          You&apos;ll receive a personalized video showing your
-                          prints being crafted with care. We&apos;ll send it to
-                          your email once ready. 🎥
+                          We&apos;re creating a special video of your prints being crafted — perfect for sharing on social media! 📱✨
+                          We&apos;ll send it to <strong>{orderData.email}</strong> once ready.
                         </p>
 
                         <div className='flex flex-wrap gap-3'>
-                          {['Quality Check', 'Packaging', 'Personal Touch'].map(
-                            (feature, i) => (
-                              <motion.div
-                                key={feature}
-                                className='flex items-center gap-2 px-4 py-2 bg-white rounded-full shadow-sm border border-gray-100'
-                                initial={{ opacity: 0, scale: 0.8 }}
-                                animate={{ opacity: 1, scale: 1 }}
-                                transition={{ delay: 1.4 + i * 0.1 }}
-                              >
-                                <div className='w-2 h-2 rounded-full bg-[#f63a9e]' />
+                          {[
+                            { icon: '📸', label: 'Social Ready' },
+                            { icon: '🎨', label: 'Crafting Process' },
+                            { icon: '✨', label: 'Shareable Content' },
+                          ].map((feature, i) => (
+                            <motion.div
+                              key={feature.label}
+                              className='flex items-center gap-2 px-4 py-2 bg-white rounded-full shadow-sm border border-gray-100'
+                              initial={{ opacity: 0, scale: 0.8 }}
+                              animate={{ opacity: 1, scale: 1 }}
+                              transition={{ delay: 1.4 + i * 0.1 }}
+                            >
+                                <span className='text-sm'>{feature.icon}</span>
                                 <span
                                   className='text-sm text-gray-700'
                                   style={{ fontWeight: '600' }}
                                 >
-                                  {feature}
+                                  {feature.label}
                                 </span>
                               </motion.div>
-                            )
-                          )}
+                          ))}
                         </div>
+
+                        <p className='text-xs text-gray-500 mt-3'>
+                          💡 Get ready to share your print journey with the world! 🌍
+                        </p>
                       </div>
                     </div>
                   </div>

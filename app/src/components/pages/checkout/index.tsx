@@ -27,6 +27,8 @@ import {
   Loader2,
   ChevronDown,
   ChevronUp,
+  Video,
+  Sparkles,
 } from 'lucide-react';
 
 function cn(...inputs: any[]) {
@@ -954,6 +956,123 @@ export function CheckoutPage() {
                       </div>
                     </motion.div>
                   </div>
+                )}
+
+                {/* Video Permission Option - Step 3 Only */}
+                {currentStep === 3 && (
+                  <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.6 }}
+                    className='mb-6'
+                  >
+                    <div className='p-5 sm:p-6 bg-gradient-to-br from-[#f63a9e]/5 to-purple-50 rounded-2xl border-2 border-[#f63a9e]/20 relative overflow-hidden'>
+                      {/* Animated background decoration */}
+                      <motion.div
+                        className='absolute top-0 right-0 w-32 h-32 bg-[#f63a9e]/10 rounded-full blur-3xl'
+                        animate={{
+                          scale: [1, 1.2, 1],
+                          opacity: [0.3, 0.5, 0.3],
+                        }}
+                        transition={{
+                          duration: 4,
+                          repeat: Infinity,
+                          ease: 'easeInOut',
+                        }}
+                      />
+
+                      <div className='relative z-10'>
+                        {/* Header */}
+                        <div className='flex items-start gap-4 mb-4'>
+                          <motion.div
+                            className='w-14 h-14 rounded-2xl bg-gradient-to-br from-[#f63a9e] to-purple-600 flex items-center justify-center flex-shrink-0 shadow-lg'
+                            animate={{
+                              rotate: [0, 5, -5, 0],
+                            }}
+                            transition={{
+                              duration: 4,
+                              repeat: Infinity,
+                              ease: 'easeInOut',
+                            }}
+                          >
+                            <Video className='w-7 h-7 text-white' />
+                          </motion.div>
+
+                          <div className='flex-1'>
+                            <div className='flex items-center gap-2 mb-1'>
+                              <h3
+                                className='text-gray-900 text-lg sm:text-xl'
+                                style={{ fontWeight: '700' }}
+                              >
+                                Behind-the-Scenes Video
+                              </h3>
+                              <Sparkles className='w-5 h-5 text-[#f63a9e]' />
+                            </div>
+                            <p className='text-gray-600 text-sm'>
+                              Let us capture your prints being crafted into shareable content! 🎥✨
+                            </p>
+                          </div>
+                        </div>
+
+                        {/* Checkbox */}
+                        <motion.label
+                          className='flex items-start gap-4 p-4 bg-white rounded-xl border-2 border-gray-200 hover:border-[#f63a9e]/50 cursor-pointer transition-all group'
+                          whileHover={{ scale: 1.01 }}
+                          whileTap={{ scale: 0.99 }}
+                        >
+                          <div className='relative flex-shrink-0 pt-1'>
+                            <input
+                              type='checkbox'
+                              checked={formData.videoPermission}
+                              onChange={e =>
+                                setFormData({
+                                  ...formData,
+                                  videoPermission: e.target.checked,
+                                })
+                              }
+                              className='w-6 h-6 sm:w-5 sm:h-5 rounded-md border-2 border-gray-300 text-[#f63a9e] focus:ring-[#f63a9e] focus:ring-offset-0 cursor-pointer transition-all'
+                            />
+                          </div>
+
+                          <div className='flex-1'>
+                            <p className='text-gray-900 font-semibold mb-2'>
+                              Yes, film my order journey! {formData.videoPermission && '🎬'}
+                            </p>
+                            <p className='text-gray-600 text-sm leading-relaxed mb-3'>
+                              We'll create a behind-the-scenes video of your prints being made — perfect for sharing on social media or keeping as a memory! 📱✨
+                            </p>
+
+                            {/* Feature highlights */}
+                            <div className='flex flex-wrap gap-2'>
+                              {[
+                                { icon: '📸', label: 'Social Ready' },
+                                { icon: '🎨', label: 'Crafting Process' },
+                                { icon: '✨', label: 'Shareable Content' },
+                                { icon: '📱', label: 'Instagram Ready' },
+                              ].map((feature, i) => (
+                                <span
+                                  key={i}
+                                  className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold transition-all ${
+                                    formData.videoPermission
+                                      ? 'bg-[#f63a9e] text-white shadow-md'
+                                      : 'bg-gray-100 text-gray-600'
+                                  }`}
+                                >
+                                  <span>{feature.icon}</span>
+                                  {feature.label}
+                                </span>
+                              ))}
+                            </div>
+                          </div>
+                        </motion.label>
+
+                        {/* Note */}
+                        <p className='text-xs text-gray-500 mt-3 pl-1'>
+                          💡 We'll send the video to {formData.email || 'your email'} — perfect for posting on your socials! 📲
+                        </p>
+                      </div>
+                    </div>
+                  </motion.div>
                 )}
 
                 {/* Navigation Buttons - Inside Container */}
