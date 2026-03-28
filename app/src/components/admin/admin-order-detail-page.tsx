@@ -172,7 +172,13 @@ export function AdminOrderDetailPage() {
             date: new Date(data.created_at).toLocaleDateString('en-GB'),
             shipping: 'Standard Delivery',
             paymentMethod:
-              data.payment_status === 'paid' ? 'Card Payment' : 'Pending',
+              data.payment_status === 'paid'
+                ? 'Card Payment'
+                : data.payment_status === 'refunded'
+                  ? 'Refunded'
+                  : data.payment_status === 'failed'
+                    ? 'Payment Failed'
+                    : 'Pending',
             deliveryMethod:
               Math.abs(parseFloat(data.shipping_cost || 0) - 19.99) < 0.01
                 ? 'Express'
@@ -184,6 +190,7 @@ export function AdminOrderDetailPage() {
             timeline: generateTimeline({ ...data, status: dbStatus }),
             payment_status: data.payment_status,
             paid_at: data.paid_at,
+            cancelled_at: data.cancelled_at,
             consent: data.video_permission
               ? 'Customer has consented to video processing'
               : 'No video consent',
@@ -637,6 +644,23 @@ export function AdminOrderDetailPage() {
                 </div>
               </div>
 
+              {/* Refund Alert Banner */}
+              {order.payment_status === 'refunded' && (
+                <Alert className='mb-6 border-green-200 bg-green-50'>
+                  <CheckCircle2Icon className='h-4 w-4 text-green-600' />
+                  <AlertTitle className='text-green-900'>Order Refunded</AlertTitle>
+                  <AlertDescription className='text-green-700'>
+                    {order.cancelled_at
+                      ? `This order was cancelled and refunded on ${new Date(order.cancelled_at).toLocaleDateString('en-GB', {
+                          day: 'numeric',
+                          month: 'long',
+                          year: 'numeric'
+                        })}. The refund has been processed to the customer's original payment method.`
+                      : 'This order has been cancelled and refunded to the customer.'}
+                  </AlertDescription>
+                </Alert>
+              )}
+
               {/* Order Timeline */}
               <div className='mb-6'>
                 <div className='flex items-center justify-between mb-4'>
@@ -998,12 +1022,38 @@ export function AdminOrderDetailPage() {
 
             {/* Payment & Delivery Info */}
             <div className='grid grid-cols-3 gap-4'>
-              <div className='bg-white rounded-lg border border-gray-200 p-4'>
+              <div className={`bg-white rounded-lg border p-4 ${
+                order.payment_status === 'refunded'
+                  ? 'border-green-200 bg-green-50'
+                  : 'border-gray-200'
+              }`}>
                 <div className='flex items-center gap-2 mb-2'>
-                  <CreditCard className='w-4 h-4 text-gray-600' />
+                  <CreditCard className={`w-4 h-4 ${
+                    order.payment_status === 'refunded'
+                      ? 'text-green-600'
+                      : 'text-gray-600'
+                  }`} />
                   <h3 className='text-sm font-medium'>Payment Method</h3>
+                  {order.payment_status === 'refunded' && (
+                    <span className='ml-auto px-2 py-0.5 text-xs font-semibold rounded-full bg-green-100 text-green-700'>
+                      Refunded
+                    </span>
+                  )}
                 </div>
-                <p className='text-sm text-gray-600'>{order.paymentMethod}</p>
+                <p className={`text-sm ${
+                  order.payment_status === 'refunded'
+                    ? 'text-green-700 font-medium'
+                    : 'text-gray-600'
+                }`}>{order.paymentMethod}</p>
+                {order.payment_status === 'refunded' && order.cancelled_at && (
+                  <p className='text-xs text-green-600 mt-1'>
+                    Refunded on {new Date(order.cancelled_at).toLocaleDateString('en-GB', {
+                      day: 'numeric',
+                      month: 'short',
+                      year: 'numeric'
+                    })}
+                  </p>
+                )}
               </div>
               <div className='bg-white rounded-lg border border-gray-200 p-4'>
                 <div className='flex items-center gap-2 mb-2'>
