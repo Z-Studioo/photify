@@ -128,6 +128,9 @@ function EaselStand({ posterHeight, ledgeHeightAdjustment }: { posterHeight: num
   const BASE_LEDGE_HEIGHT = 1.15;
   const ledgeHeight = BASE_LEDGE_HEIGHT + ledgeHeightAdjustment;
 
+  // Poster tilt angle (same as in PosterCanvasMesh)
+  const POSTER_TILT = -0.12; // radians, backward tilt
+
   // ── Front leg: derived from two anchor points so it never detaches ──
   // Anchor 1 (top): where the front leg meets the top crossbar (same Z as back legs)
   const frontLegPivotY = easelHeight - 0.15;
@@ -156,14 +159,14 @@ function EaselStand({ posterHeight, ledgeHeightAdjustment }: { posterHeight: num
 
   return (
     <group position={[0, 0, 0]}>
-      {/* Back left leg - BEHIND the canvas */}
-      <mesh position={[-easelBaseWidth / 2, easelHeight / 2, -0.25]} castShadow>
+      {/* Back left leg - BEHIND the canvas, tilted backward */}
+      <mesh position={[-easelBaseWidth / 2, easelHeight / 2, -0.25]} rotation={[POSTER_TILT, 0, 0]} castShadow>
         <boxGeometry args={[legWidth, easelHeight, legDepth]} />
         {woodMaterial}
       </mesh>
 
-      {/* Back right leg - BEHIND the canvas */}
-      <mesh position={[easelBaseWidth / 2, easelHeight / 2, -0.25]} castShadow>
+      {/* Back right leg - BEHIND the canvas, tilted backward */}
+      <mesh position={[easelBaseWidth / 2, easelHeight / 2, -0.25]} rotation={[POSTER_TILT, 0, 0]} castShadow>
         <boxGeometry args={[legWidth, easelHeight, legDepth]} />
         {woodMaterial}
       </mesh>
@@ -178,14 +181,14 @@ function EaselStand({ posterHeight, ledgeHeightAdjustment }: { posterHeight: num
         {woodMaterial}
       </mesh>
 
-      {/* Top crossbar - connects back legs, BEHIND canvas */}
-      <mesh position={[0, easelHeight - 0.15, -0.25]} castShadow>
+      {/* Top crossbar - connects back legs, BEHIND canvas, tilted backward */}
+      <mesh position={[0, easelHeight - 0.15, -0.25]} rotation={[POSTER_TILT, 0, 0]} castShadow>
         <boxGeometry args={[easelBaseWidth + 0.15, legWidth, legDepth]} />
         {woodMaterial}
       </mesh>
 
-      {/* Upper middle support bar - BEHIND canvas */}
-      <mesh position={[0, easelHeight * 0.65, -0.22]} castShadow>
+      {/* Upper middle support bar - BEHIND canvas, tilted backward */}
+      <mesh position={[0, easelHeight * 0.65, -0.22]} rotation={[POSTER_TILT, 0, 0]} castShadow>
         <boxGeometry
           args={[easelBaseWidth - 0.1, legWidth * 0.7, legDepth * 0.8]}
         />
