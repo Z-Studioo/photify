@@ -56,21 +56,28 @@ function PosterCanvasMesh({
   }, [canvasWidth, canvasHeight, canvasDepth]);
 
   // Position: On easel, resting on the ledge
-  // Ledge is at Y=1.15, support pegs at Z=-0.08
+  // Ledge is at Y=1.15, support pegs at Z=-0.13
   // Calculate poster center position dynamically based on height
   const BASE_LEDGE_HEIGHT = 1.15;
-  const TILT_OFFSET = 0.05; // Small offset to account for backward tilt
-  
+  const LEDGE_THICKNESS = 0.05; // Thickness of the wooden ledge
+
   // For larger posters, raise the ledge height to keep poster higher up
   // This keeps the stand base visible in frame
   const REFERENCE_HEIGHT_FOR_LIFT = 24; // inches
   const heightRatio = height / REFERENCE_HEIGHT_FOR_LIFT;
   const ledgeHeightAdjustment = heightRatio > 1 ? (heightRatio - 1) * 0.8 : 0; // Raise ledge for posters taller than 24"
   const LEDGE_HEIGHT = BASE_LEDGE_HEIGHT + ledgeHeightAdjustment;
-  
-  const posterCenterY = LEDGE_HEIGHT + canvasHeight / 2 + TILT_OFFSET;
-  const posterPosition: [number, number, number] = [0, posterCenterY, -0.1]; // Resting on ledge, aligned with support
-  const posterRotation: [number, number, number] = [-0.15, 0, 0]; // Tilt BACKWARD (negative = lean back)
+
+  // Poster should rest ON TOP of the ledge (accounting for ledge thickness)
+  // and be aligned with the support pegs at Z=-0.13
+  const posterBottomY = LEDGE_HEIGHT + LEDGE_THICKNESS / 2;
+  const posterCenterY = posterBottomY + canvasHeight / 2;
+  const posterPosition: [number, number, number] = [0, posterCenterY, -0.13]; // Resting on ledge, aligned with support pegs
+
+  // Calculate the proper tilt angle to match the easel's front leg
+  // The front leg is angled backward to support the leaning poster
+  // A tilt of -0.12 radians provides a natural lean without being too extreme
+  const posterRotation: [number, number, number] = [-0.12, 0, 0]; // Tilt BACKWARD (negative = lean back)
 
   if (!imageTexture) {
     return (
@@ -107,7 +114,7 @@ function PosterCanvasMesh({
 }
 
 // Wooden Easel Stand
-function EaselStand({ posterHeight }: { posterHeight: number }) {
+function EaselStand({ posterHeight, ledgeHeightAdjustment }: { posterHeight: number; ledgeHeightAdjustment: number }) {
   const INCHES_TO_UNITS = 0.1;
   const posterHeightUnits = posterHeight * INCHES_TO_UNITS;
 
@@ -116,6 +123,10 @@ function EaselStand({ posterHeight }: { posterHeight: number }) {
   const legDepth = 0.03;
   const easelHeight = posterHeightUnits + 0.8; // Taller than poster
   const easelBaseWidth = 0.7;
+
+  // Ledge height - moves up for larger posters to keep them in view
+  const BASE_LEDGE_HEIGHT = 1.15;
+  const ledgeHeight = BASE_LEDGE_HEIGHT + ledgeHeightAdjustment;
 
   // ── Front leg: derived from two anchor points so it never detaches ──
   // Anchor 1 (top): where the front leg meets the top crossbar (same Z as back legs)
@@ -182,17 +193,17 @@ function EaselStand({ posterHeight }: { posterHeight: number }) {
       </mesh>
 
       {/* Canvas ledge/support - BEHIND canvas, holds it up */}
-      <mesh position={[0, 1.15, -0.15]} castShadow>
+      <mesh position={[0, ledgeHeight, -0.15]} castShadow>
         <boxGeometry args={[easelBaseWidth - 0.1, 0.05, 0.12]} />
         {woodMaterial}
       </mesh>
 
       {/* Additional support pegs (small blocks that canvas rests on) */}
-      <mesh position={[-0.3, 1.15, -0.13]} castShadow>
+      <mesh position={[-0.3, ledgeHeight, -0.13]} castShadow>
         <boxGeometry args={[0.06, 0.03, 0.06]} />
         {woodMaterial}
       </mesh>
-      <mesh position={[0.3, 1.15, -0.13]} castShadow>
+      <mesh position={[0.3, ledgeHeight, -0.13]} castShadow>
         <boxGeometry args={[0.06, 0.03, 0.06]} />
         {woodMaterial}
       </mesh>
@@ -289,7 +300,7 @@ function CameraAnimator({
   const hasStarted = useRef(false);
 
   const duration = 4; // seconds
-  const lookAtTarget: [number, number, number] = [0, orbitTargetY, -0.1]; // Look at orbit target (dynamic)
+  const lookAtTarget: [number, number, number] = [0, orbitTargetY, -0.13]; // Look at orbit target (dynamic, aligned with poster)
 
   useEffect(() => {
     camera.position.set(...startPosition);
@@ -348,7 +359,7 @@ function RulerOverlay({
   const INCHES_TO_UNITS = 0.1;
   const widthInUnits = posterWidth * INCHES_TO_UNITS;
   const heightInUnits = posterHeight * INCHES_TO_UNITS;
-  const posterPos: [number, number, number] = [0, posterCenterY, -0.1];
+  const posterPos: [number, number, number] = [0, posterCenterY, -0.13]; // Aligned with poster position
 
   return (
     <group>
@@ -436,16 +447,17 @@ export default function PosterEaselPreview({
   // Calculate dynamic poster center Y position (same as in PosterCanvasMesh)
   const INCHES_TO_UNITS = 0.1;
   const BASE_LEDGE_HEIGHT = 1.15;
-  const TILT_OFFSET = 0.05;
-  
+  const LEDGE_THICKNESS = 0.05;
+
   // For larger posters, raise the ledge height to keep poster higher up
   const REFERENCE_HEIGHT_FOR_LIFT = 24; // inches
   const heightRatio = height / REFERENCE_HEIGHT_FOR_LIFT;
   const ledgeHeightAdjustment = heightRatio > 1 ? (heightRatio - 1) * 0.8 : 0;
   const LEDGE_HEIGHT = BASE_LEDGE_HEIGHT + ledgeHeightAdjustment;
-  
+
   const canvasHeight = height * INCHES_TO_UNITS;
-  const posterCenterY = LEDGE_HEIGHT + canvasHeight / 2 + TILT_OFFSET;
+  const posterBottomY = LEDGE_HEIGHT + LEDGE_THICKNESS / 2;
+  const posterCenterY = posterBottomY + canvasHeight / 2;
 
   // ===== REFERENCE SIZE: 18x24 (works perfectly) =====
   const REFERENCE_WIDTH = 18;
@@ -537,7 +549,7 @@ export default function PosterEaselPreview({
           angle={Math.PI / 5}
           penumbra={0.5}
           distance={10}
-          target-position={[0, posterCenterY, -0.1]}
+          target-position={[0, posterCenterY, -0.13]}
           castShadow
           shadow-mapSize-width={1024}
           shadow-mapSize-height={1024}
@@ -547,7 +559,7 @@ export default function PosterEaselPreview({
         <StudioRoomEnvironment wallColor={wallColor} />
 
         {/* Easel Stand */}
-        <EaselStand posterHeight={height} />
+        <EaselStand posterHeight={height} ledgeHeightAdjustment={ledgeHeightAdjustment} />
 
         {/* Poster on Canvas */}
         <PosterCanvasMesh imageUrl={imageUrl} width={width} height={height} />
@@ -573,7 +585,7 @@ export default function PosterEaselPreview({
         {/* Orbit Controls */}
         <OrbitControls
           enabled={animationComplete}
-          target={[0, orbitTargetY, -0.1]}
+          target={[0, orbitTargetY, -0.13]}
           minDistance={dynamicMinDistance}
           maxDistance={dynamicMaxDistance}
           minPolarAngle={Math.PI / 3.5} // Prevent going too low (floor view)
