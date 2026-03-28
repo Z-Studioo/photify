@@ -428,13 +428,15 @@ export function AdminOrdersPage() {
                           >
                             <Printer className='w-4 h-4 text-gray-600' />
                           </button>
-                          <button
-                            onClick={() => setOrderToDelete(order.id)}
-                            className='p-2 hover:bg-red-50 rounded-lg transition-colors'
-                            title='Delete Order'
-                          >
-                            <Trash2 className='w-4 h-4 text-red-500' />
-                          </button>
+                          {import.meta.env.DEV && (
+                            <button
+                              onClick={() => setOrderToDelete(order.id)}
+                              className='p-2 hover:bg-red-50 rounded-lg transition-colors'
+                              title='Delete Order (Dev Only)'
+                            >
+                              <Trash2 className='w-4 h-4 text-red-500' />
+                            </button>
+                          )}
                         </div>
                       </td>
                     </tr>

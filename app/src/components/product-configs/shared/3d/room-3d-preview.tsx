@@ -84,8 +84,10 @@ export function Room3DPreview({
         enableRotate={true}
         minDistance={minDistance}
         maxDistance={maxDistance}
-        maxPolarAngle={Math.PI / 2}
-        minPolarAngle={Math.PI / 4}
+        minPolarAngle={Math.PI / 3.5} // Prevent going too low (floor view)
+        maxPolarAngle={Math.PI / 2.05} // Prevent going behind (back wall)
+        minAzimuthAngle={-Math.PI / 2.5} // Limit left rotation
+        maxAzimuthAngle={Math.PI / 2.5} // Limit right rotation
       />
     </Canvas>
   );
