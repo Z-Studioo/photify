@@ -144,17 +144,31 @@ export function HomePage({
   const featuredProducts =
     initialFeaturedProducts.length > 0
       ? initialFeaturedProducts
-          .map((product: any) => ({
-            images: product.images || [],
-            name: product.name,
-            price: product.price,
-            oldPrice: product.old_price,
-            productId: product.slug || product.id,
-            productType: product.product_type || 'canvas',
-            active: product.active !== false,
-            isVisible: !!product.config?.configurerType,
-          }))
-          .filter(product => product.active && product.isVisible)
+          .map((product: any) => {
+            const transformed = {
+              id: product.id,
+              slug: product.slug,
+              images: product.images || [],
+              name: product.name,
+              price: product.price,
+              fixed_price: product.fixed_price,
+              oldPrice: product.old_price,
+              productId: product.slug || product.id,
+              productType: product.product_type || 'canvas',
+              active: product.active !== false,
+            };
+            console.log('Transforming product:', {
+              name: product.name,
+              hasFixedPrice: !!transformed.fixed_price,
+              fixedPrice: transformed.fixed_price,
+            });
+            return transformed;
+          })
+          .filter(product => {
+            const passes = product.active;
+            console.log('Filtering product:', product.name, '→', passes ? 'KEEP' : 'REMOVE');
+            return passes;
+          })
       : mockFeaturedProducts;
 
   const roomInspirations =
@@ -227,12 +241,13 @@ export function HomePage({
           <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4'>
             {featuredProducts.slice(0, 5).map((product, index) => (
               <ProductCard
-                key={product.productId}
-                id={product.productId}
+                key={product.id}
+                id={product.id}
                 name={product.name}
-                slug={product.productId}
+                slug={product.slug}
                 images={product.images}
                 price={product.price}
+                fixed_price={product.fixed_price}
                 isFeatured={false}
                 index={index}
               />
@@ -366,12 +381,13 @@ export function HomePage({
               <>
                 {featuredProducts.slice(0, 7).map((product, index) => (
                   <ProductCard
-                    key={product.productId}
-                    id={product.productId}
+                    key={product.id}
+                    id={product.id}
                     name={product.name}
-                    slug={product.productId}
+                    slug={product.slug}
                     images={product.images}
                     price={product.price}
+                    fixed_price={product.fixed_price}
                     isFeatured={false}
                     index={index}
                   />

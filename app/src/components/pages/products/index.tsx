@@ -19,6 +19,7 @@ interface Product {
   images: string[];
   size: string | null;
   price: number;
+  fixed_price?: number | null;
   is_featured: boolean;
   active: boolean;
   product_type: string;
@@ -299,6 +300,7 @@ export function ProductsPage({
                     slug={product.slug}
                     images={product.images}
                     price={product.price}
+                    fixed_price={product.fixed_price}
                     size={product.size}
                     isFeatured={product.is_featured}
                     index={index}
