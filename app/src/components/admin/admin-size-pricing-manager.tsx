@@ -8,7 +8,6 @@ import {
   Package,
   Check,
   X,
-  ArrowUpDown,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -94,29 +93,6 @@ export function AdminSizePricingManager() {
       )
     );
     setHasChanges(true);
-  };
-
-  const bulkUpdatePrices = (aspectRatioId: string, basePrice: number) => {
-    setSizes(prev =>
-      prev.map(size => {
-        if (size.aspect_ratio_id === aspectRatioId) {
-          // Calculate price based on area relative to smallest size
-          const smallestArea = Math.min(
-            ...prev
-              .filter(s => s.aspect_ratio_id === aspectRatioId)
-              .map(s => s.area_in2)
-          );
-          const multiplier = size.area_in2 / smallestArea;
-          return {
-            ...size,
-            fixed_price: Math.round(basePrice * multiplier * 100) / 100,
-          };
-        }
-        return size;
-      })
-    );
-    setHasChanges(true);
-    toast.success(`Bulk updated prices for this ratio`);
   };
 
   const handleSave = async () => {

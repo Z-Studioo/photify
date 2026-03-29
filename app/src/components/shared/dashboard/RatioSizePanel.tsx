@@ -25,7 +25,6 @@ const RatioSizePanel: React.FC<RatioSizePanelProps> = ({
     setSelectedRatio,
     selectedSize,
     setSelectedSize,
-    selectedProduct,
   } = useUpload();
 
   const { setSelectedView } = useView();
