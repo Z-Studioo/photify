@@ -90,6 +90,9 @@ const AdminArtCollectionEditPage = lazy(
   () => import('@/pages/admin/art-collection/edit/[id]')
 );
 const AdminSettingsPage = lazy(() => import('@/pages/admin/settings'));
+const AdminSizePricingPage = lazy(
+  () => import('@/pages/admin/settings/size-pricing')
+);
 const AdminCustomersPage = lazy(() => import('@/pages/admin/customers'));
 const Category = lazy(
   () => import('@/pages/category/[category]/CategoryPageRoute')
@@ -277,6 +280,10 @@ const App: React.FC = () => {
                       <Route
                         path='/admin/settings'
                         element={<AdminSettingsPage />}
+                      />
+                      <Route
+                        path='/admin/settings/size-pricing'
+                        element={<AdminSizePricingPage />}
                       />
                       <Route
                         path='/admin/customers'

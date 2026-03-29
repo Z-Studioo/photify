@@ -46,6 +46,7 @@ export function AdminProductContentEditor({
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
   const [price, setPrice] = useState('');
+  const [fixedPrice, setFixedPrice] = useState('');
   const [slug, setSlug] = useState('');
   const [productType, setProductType] = useState('');
   const [configStatus, setConfigStatus] = useState('');
@@ -90,6 +91,7 @@ export function AdminProductContentEditor({
         setName(data.name || '');
         setDescription(data.description || '');
         setPrice(data.price?.toString() || '');
+        setFixedPrice(data.fixed_price?.toString() || '');
         setSlug(data.slug || '');
         setProductType(data.product_type || '');
         setConfigStatus(data.config_status || '');
@@ -147,6 +149,7 @@ export function AdminProductContentEditor({
           name: name.trim(),
           description: description.trim(),
           price: parseFloat(price),
+          fixed_price: fixedPrice ? parseFloat(fixedPrice) : null,
           slug: slug.trim(),
           product_type: productType,
           active: isActive,
@@ -387,23 +390,41 @@ export function AdminProductContentEditor({
           </div>
 
           <div>
-            <Label htmlFor='product-slug'>URL Slug *</Label>
+            <Label htmlFor='product-fixed-price'>Fixed Price (£)</Label>
             <Input
-              id='product-slug'
-              value={slug}
-              onChange={e =>
-                setSlug(
-                  e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, '-')
-                )
-              }
-              placeholder='single-canvas-print'
+              id='product-fixed-price'
+              type='number'
+              step='0.01'
+              min='0'
+              value={fixedPrice}
+              onChange={e => setFixedPrice(e.target.value)}
+              placeholder='0.00'
               className='mt-2 bg-white'
-              required
             />
             <p className='text-xs text-gray-500 mt-1'>
-              URL-friendly identifier (lowercase, dashes)
+              Optional: Override with fixed price (ignores base price)
             </p>
           </div>
+        </div>
+
+        {/* Slug Row */}
+        <div className='mb-6'>
+          <Label htmlFor='product-slug'>URL Slug *</Label>
+          <Input
+            id='product-slug'
+            value={slug}
+            onChange={e =>
+              setSlug(
+                e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, '-')
+              )
+            }
+            placeholder='single-canvas-print'
+            className='mt-2 bg-white'
+            required
+          />
+          <p className='text-xs text-gray-500 mt-1'>
+            URL-friendly identifier (lowercase, dashes)
+          </p>
         </div>
 
         {/* Product Type and Status Row */}

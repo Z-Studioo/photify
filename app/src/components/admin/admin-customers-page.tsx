@@ -35,7 +35,7 @@ import { LoadingSpinner } from '@/components/shared/loading-spinner';
 interface Order {
   order_number: string;
   status: string;
-  amount: number;
+  total: number;
   created_at: string;
 }
 
@@ -67,7 +67,8 @@ export const AdminCustomersPage = () => {
     const fetchCustomers = async () => {
       setLoading(true);
 
-      const { data, error } = await supabase
+      // Fetch customers
+      const { data: customersData, error: customersError } = await supabase
         .from('customers')
         .select(
           `
@@ -75,29 +76,46 @@ export const AdminCustomersPage = () => {
           name,
           email,
           phone,
+          total_orders,
           total_spent,
           created_at
           `
         )
         .order('created_at', { ascending: false });
-        
-        // orders (
-        //   order_number,
-        //   status,
-        //   amount,
-        //   created_at
-        // )
-      if (error) {
-        console.error(error);
+
+      if (customersError) {
+        console.error('Error fetching customers:', customersError);
         setLoading(false);
         return;
       }
 
-      const mapped: Customer[] = data.map((c: any) => {
-        const orders = [...(c.orders ?? [])].sort(
-          (a, b) =>
-            new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
-        );
+      // Fetch all orders
+      const { data: ordersData, error: ordersError } = await supabase
+        .from('orders')
+        .select(
+          `
+          order_number,
+          customer_email,
+          status,
+          total,
+          created_at
+          `
+        )
+        .order('created_at', { ascending: false });
+
+      if (ordersError) {
+        console.error('Error fetching orders:', ordersError);
+      }
+
+      // Map customers with their orders by matching email
+      const mapped: Customer[] = (customersData ?? []).map((c: any) => {
+        // Find orders for this customer by email
+        const customerOrders = (ordersData ?? [])
+          .filter((o: any) => o.customer_email === c.email)
+          .sort(
+            (a, b) =>
+              new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+          );
 
         return {
           id: c.id,
@@ -105,12 +123,16 @@ export const AdminCustomersPage = () => {
           email: c.email,
           phone: c.phone,
           joined: c.created_at,
-          orders,
-          total_orders: orders.length,
+          orders: customerOrders,
+          total_orders: c.total_orders ?? 0,
           total_spent: Number(c.total_spent ?? 0),
-          last_order_at: orders[0]?.created_at ?? null,
+          last_order_at: customerOrders[0]?.created_at ?? null,
           status:
-            orders.length >= 10 ? 'VIP' : orders.length > 0 ? 'Active' : 'New',
+            (c.total_orders ?? 0) >= 10
+              ? 'VIP'
+              : (c.total_orders ?? 0) > 0
+                ? 'Active'
+                : 'New',
         };
       });
 
@@ -140,7 +162,7 @@ export const AdminCustomersPage = () => {
 
   const avgOrder =
     customerOrders.length > 0
-      ? customerOrders.reduce((sum, o) => sum + o.amount, 0) /
+      ? customerOrders.reduce((sum, o) => sum + o.total, 0) /
         customerOrders.length
       : 0;
 
@@ -354,7 +376,7 @@ export const AdminCustomersPage = () => {
                                 {o.order_number}
                               </p>
                               <p className='whitespace-nowrap text-sm font-semibold text-[#f63a9e]'>
-                                £{o.amount.toFixed(2)}
+                                £{o.total.toFixed(2)}
                               </p>
                             </div>
                             <div className='flex items-center justify-between'>

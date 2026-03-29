@@ -27,6 +27,8 @@ export function HomePage({
   // Fallback mock data
   const mockFeaturedProducts = [
     {
+      id: 'collage-3',
+      slug: 'collage-3',
       images: [
         'https://images.unsplash.com/photo-1731251447169-1be7bfdc9d0f?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxmcmFtZWQlMjBwaG90byUyMHdhbGwlMjBhcnR8ZW58MXx8fHwxNzYwNTMxMjY2fDA&ixlib=rb-4.1.0&q=80&w=1080&utm_source=figma&utm_medium=referral',
         'https://images.unsplash.com/photo-1677658992335-bfe2677dd45e?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxjYW52YXMlMjBwcmludCUyMGxpdmluZyUyMHJvb218ZW58MXx8fHwxNzYwNjQ3MzY3fDA&ixlib=rb-4.1.0&q=80&w=1080&utm_source=figma&utm_medium=referral',
@@ -35,9 +37,12 @@ export function HomePage({
       name: 'Parallel Triplet',
       size: '74cm x 28cm',
       price: '69',
+      fixed_price: null,
       productId: 'collage-3',
     },
     {
+      id: 'framed-prints',
+      slug: 'framed-prints',
       images: [
         'https://images.unsplash.com/photo-1758945631260-a0077e8cc873?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxtb2Rlcm4lMjBpbnRlcmlvciUyMHdhbGwlMjBhcnR8ZW58MXx8fHwxNzYwNjQ3MzY3fDA&ixlib=rb-4.1.0&q=80&w=1080&utm_source=figma&utm_medium=referral',
         'https://images.unsplash.com/photo-1731251447169-1be7bfdc9d0f?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxmcmFtZWQlMjBwaG90byUyMHdhbGwlMjBhcnR8ZW58MXx8fHwxNzYwNTMxMjY2fDA&ixlib=rb-4.1.0&q=80&w=1080&utm_source=figma&utm_medium=referral',
@@ -46,10 +51,13 @@ export function HomePage({
       name: 'Timeless Quartet',
       size: '69cm x 89cm',
       price: '106',
+      fixed_price: null,
       oldPrice: '140',
       productId: 'framed-prints',
     },
     {
+      id: 'single-canvas',
+      slug: 'single-canvas',
       images: [
         'https://images.unsplash.com/photo-1677658288136-5e2ff2b40f07?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxwaG90byUyMGNvbGxhZ2UlMjB3YWxsfGVufDF8fHx8MTc2MDY0NTg1OHww&ixlib=rb-4.1.0&q=80&w=1080&utm_source=figma&utm_medium=referral',
         'https://images.unsplash.com/photo-1758945631260-a0077e8cc873?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxtb2Rlcm4lMjBpbnRlcmlvciUyMHdhbGwlMjBhcnR8ZW58MXx8fHwxNzYwNjQ3MzY3fDA&ixlib=rb-4.1.0&q=80&w=1080&utm_source=figma&utm_medium=referral',
@@ -58,10 +66,13 @@ export function HomePage({
       name: 'Harmony In Four',
       size: '102cm x 119cm',
       price: '237',
+      fixed_price: null,
       oldPrice: '318',
       productId: 'single-canvas',
     },
     {
+      id: 'photo-cushions',
+      slug: 'photo-cushions',
       images: [
         'https://images.unsplash.com/photo-1677658992335-bfe2677dd45e?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxjYW52YXMlMjBwcmludCUyMGxpdmluZyUyMHJvb218ZW58MXx8fHwxNzYwNjQ3MzY3fDA&ixlib=rb-4.1.0&q=80&w=1080&utm_source=figma&utm_medium=referral',
         'https://images.unsplash.com/photo-1677658288136-5e2ff2b40f07?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxwaG90byUyMGNvbGxhZ2UlMjB3YWxsfGVufDF8fHx8MTc2MDY0NTg1OHww&ixlib=rb-4.1.0&q=80&w=1080&utm_source=figma&utm_medium=referral',
@@ -70,9 +81,12 @@ export function HomePage({
       name: 'Solo Vista',
       size: '51cm x 61cm',
       price: '51',
+      fixed_price: null,
       productId: 'photo-cushions',
     },
     {
+      id: 'collage-3-2',
+      slug: 'collage-3',
       images: [
         'https://images.unsplash.com/photo-1758945631260-a0077e8cc873?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxtb2Rlcm4lMjBpbnRlcmlvciUyMHdhbGwlMjBhcnR8ZW58MXx8fHwxNzYwNjQ3MzY3fDA&ixlib=rb-4.1.0&q=80&w=1080&utm_source=figma&utm_medium=referral',
         'https://images.unsplash.com/photo-1731251447169-1be7bfdc9d0f?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxmcmFtZWQlMjBwaG90byUyMHdhbGwlMjBhcnR8ZW58MXx8fHwxNzYwNTMxMjY2fDA&ixlib=rb-4.1.0&q=80&w=1080&utm_source=figma&utm_medium=referral',
@@ -81,10 +95,13 @@ export function HomePage({
       name: 'Dual Harmony',
       size: '81cm x 31cm',
       price: '111',
+      fixed_price: null,
       oldPrice: '144',
       productId: 'collage-3',
     },
     {
+      id: 'framed-prints-2',
+      slug: 'framed-prints',
       images: [
         'https://images.unsplash.com/photo-1677658288136-5e2ff2b40f07?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxwaG90byUyMGNvbGxhZ2UlMjB3YWxsfGVufDF8fHx8MTc2MDY0NTg1OHww&ixlib=rb-4.1.0&q=80&w=1080&utm_source=figma&utm_medium=referral',
         'https://images.unsplash.com/photo-1758945631260-a0077e8cc873?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxtb2Rlcm4lMjBpbnRlcmlvciUyMHdhbGwlMjBhcnR8ZW58MXx8fHwxNzYwNjQ3MzY3fDA&ixlib=rb-4.1.0&q=80&w=1080&utm_source=figma&utm_medium=referral',
@@ -93,10 +110,13 @@ export function HomePage({
       name: 'Classic Trio',
       size: '84cm x 52cm',
       price: '174',
+      fixed_price: null,
       oldPrice: '216',
       productId: 'framed-prints',
     },
     {
+      id: 'single-canvas-2',
+      slug: 'single-canvas',
       images: [
         'https://images.unsplash.com/photo-1560036040-7c5ce74043ff?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHx3YWxsJTIwYXJ0JTIwYWJzdHJhY3R8ZW58MXx8fHwxNzYwNzAyNjY3fDA&ixlib=rb-4.1.0&q=80&w=1080&utm_source=figma&utm_medium=referral',
         'https://images.unsplash.com/photo-1731251447169-1be7bfdc9d0f?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxmcmFtZWQlMjBwaG90byUyMHdhbGwlMjBhcnR8ZW58MXx8fHwxNzYwNTMxMjY2fDA&ixlib=rb-4.1.0&q=80&w=1080&utm_source=figma&utm_medium=referral',
@@ -105,6 +125,7 @@ export function HomePage({
       name: 'Abstract Vision',
       size: '92cm x 72cm',
       price: '89',
+      fixed_price: null,
       productId: 'single-canvas',
     },
   ];
@@ -144,17 +165,31 @@ export function HomePage({
   const featuredProducts =
     initialFeaturedProducts.length > 0
       ? initialFeaturedProducts
-          .map((product: any) => ({
-            images: product.images || [],
-            name: product.name,
-            price: product.price,
-            oldPrice: product.old_price,
-            productId: product.slug || product.id,
-            productType: product.product_type || 'canvas',
-            active: product.active !== false,
-            isVisible: !!product.config?.configurerType,
-          }))
-          .filter(product => product.active && product.isVisible)
+          .map((product: any) => {
+            const transformed = {
+              id: product.id,
+              slug: product.slug,
+              images: product.images || [],
+              name: product.name,
+              price: product.price,
+              fixed_price: product.fixed_price,
+              oldPrice: product.old_price,
+              productId: product.slug || product.id,
+              productType: product.product_type || 'canvas',
+              active: product.active !== false,
+            };
+            console.log('Transforming product:', {
+              name: product.name,
+              hasFixedPrice: !!transformed.fixed_price,
+              fixedPrice: transformed.fixed_price,
+            });
+            return transformed;
+          })
+          .filter(product => {
+            const passes = product.active;
+            console.log('Filtering product:', product.name, '→', passes ? 'KEEP' : 'REMOVE');
+            return passes;
+          })
       : mockFeaturedProducts;
 
   const roomInspirations =
@@ -227,12 +262,13 @@ export function HomePage({
           <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4'>
             {featuredProducts.slice(0, 5).map((product, index) => (
               <ProductCard
-                key={product.productId}
-                id={product.productId}
+                key={product.id}
+                id={product.id}
                 name={product.name}
-                slug={product.productId}
+                slug={product.slug}
                 images={product.images}
                 price={product.price}
+                fixed_price={product.fixed_price}
                 isFeatured={false}
                 index={index}
               />
@@ -366,12 +402,13 @@ export function HomePage({
               <>
                 {featuredProducts.slice(0, 7).map((product, index) => (
                   <ProductCard
-                    key={product.productId}
-                    id={product.productId}
+                    key={product.id}
+                    id={product.id}
                     name={product.name}
-                    slug={product.productId}
+                    slug={product.slug}
                     images={product.images}
                     price={product.price}
+                    fixed_price={product.fixed_price}
                     isFeatured={false}
                     index={index}
                   />
