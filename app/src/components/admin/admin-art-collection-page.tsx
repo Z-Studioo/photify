@@ -135,16 +135,10 @@ export function AdminArtCollectionPage() {
                       Product
                     </th>
                     <th className='px-6 py-4 text-left text-xs font-medium text-gray-600 uppercase tracking-wider'>
-                      Type
-                    </th>
-                    <th className='px-6 py-4 text-left text-xs font-medium text-gray-600 uppercase tracking-wider'>
                       Category
                     </th>
                     <th className='px-6 py-4 text-left text-xs font-medium text-gray-600 uppercase tracking-wider'>
                       Price
-                    </th>
-                    <th className='px-6 py-4 text-left text-xs font-medium text-gray-600 uppercase tracking-wider'>
-                      Stock
                     </th>
                     <th className='px-6 py-4 text-left text-xs font-medium text-gray-600 uppercase tracking-wider'>
                       Status
@@ -191,22 +185,12 @@ export function AdminArtCollectionPage() {
                         </td>
                         <td className='px-6 py-4'>
                           <span className='text-sm text-gray-900'>
-                            {product.product_type || 'Canvas'}
-                          </span>
-                        </td>
-                        <td className='px-6 py-4'>
-                          <span className='text-sm text-gray-900'>
                             {product.category}
                           </span>
                         </td>
                         <td className='px-6 py-4'>
                           <span className='text-sm font-medium text-[#f63a9e]'>
                             {product.price}
-                          </span>
-                        </td>
-                        <td className='px-6 py-4'>
-                          <span className='text-sm text-gray-900'>
-                            {product.stock_quantity || 0}
                           </span>
                         </td>
                         <td className='px-6 py-4'>

@@ -44,6 +44,15 @@ const Dashboard: React.FC = () => {
   const { selectedFeature, setSelectedFeature } = useFeature();
   const [isConfirming, setIsConfirming] = useState(false);
 
+  useEffect(() => {
+    const defaultFeature = featuresBase.find(
+      feature => feature.name === 'IMAGE SIZE AND CROP PHOTO'
+    );
+    if (defaultFeature) {
+      setSelectedFeature(defaultFeature);
+    }
+  }, [setSelectedFeature]);
+
   const handleConfirmAndApply = async () => {
     setIsConfirming(true);
     try {
@@ -214,7 +223,7 @@ const Dashboard: React.FC = () => {
     overflow-hidden 
     w-full 
     ${isEditingView ? 'h-full' : 'h-96 md:h-full'} 
-   md:w-3/4
+   md:w-[58%] lg:w-[64%] xl:w-[70%]
   `}
         >
           {selectedView === 'crop' && <ImageCropper isVisible={true} />}
@@ -296,7 +305,7 @@ const Dashboard: React.FC = () => {
         </div>
 
         {(!isEditingView || window.innerWidth >= 768) && (
-          <div className='md:w-1/4 w-full flex flex-col border-l md:h-full h-full overflow-hidden'>
+          <div className='md:w-[42%] lg:w-[36%] xl:w-[30%] w-full flex flex-col border-l md:h-full h-full overflow-hidden'>
             <AnimatePresence mode='wait'>
               {!selectedFeature && (
                 <motion.div

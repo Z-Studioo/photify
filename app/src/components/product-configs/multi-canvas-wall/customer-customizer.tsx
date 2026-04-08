@@ -4,6 +4,7 @@ import { motion } from 'framer-motion';
 import {
   Ruler,
   Upload,
+  ImagePlus,
   CheckCircle2,
   X,
   ArrowLeft,
@@ -783,6 +784,35 @@ export function MultiCanvasWallCustomizer() {
 
             {/* Canvas Container */}
             <div className='absolute inset-0 flex items-center justify-center'>
+              {/* Upload Stepper */}
+              <div className='absolute top-14 sm:top-16 md:top-20 left-1/2 -translate-x-1/2 z-20'>
+                <div className='bg-white/90 backdrop-blur-md border border-gray-200 rounded-xl shadow-lg px-2.5 py-2 sm:px-3 sm:py-2.5'>
+                  <div className='flex items-center gap-1.5 sm:gap-2'>
+                    {state.canvases.map(canvas => {
+                      const isDone = canvas.uploaded;
+                      return (
+                        <button
+                          key={`upload-step-${canvas.id}`}
+                          onClick={() => handleCanvasClick(canvas.id)}
+                          className={`inline-flex items-center gap-1.5 rounded-lg px-2 py-1.5 text-[10px] sm:text-xs font-semibold transition-all ${
+                            isDone
+                              ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                              : 'bg-gray-50 text-gray-600 border border-gray-200 hover:border-[#f63a9e]/40 hover:text-[#f63a9e]'
+                          }`}
+                        >
+                          {isDone ? (
+                            <CheckCircle2 className='h-3.5 w-3.5 sm:h-4 sm:w-4' />
+                          ) : (
+                            <ImagePlus className='h-3.5 w-3.5 sm:h-4 sm:w-4' />
+                          )}
+                          {`Canvas ${canvas.id + 1}`}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              </div>
+
               {/* Canvas Placeholders - with padding for rulers */}
               <div
                 className='relative'
@@ -798,6 +828,28 @@ export function MultiCanvasWallCustomizer() {
                 {state.canvases.map((canvas, index) => {
                   const position = canvasPositions[index];
                   const uploaded = canvas.uploaded;
+                  const scaledCanvasWidth = canvasDims.width * scale;
+                  const scaledCanvasHeight = canvasDims.height * scale;
+                  const minCanvasSide = Math.min(
+                    scaledCanvasWidth,
+                    scaledCanvasHeight
+                  );
+                  const iconWrapperSize = Math.max(
+                    20,
+                    Math.min(56, minCanvasSide * 0.34)
+                  );
+                  const iconSize = Math.max(
+                    12,
+                    Math.min(28, iconWrapperSize * 0.52)
+                  );
+                  const titleFontSize = Math.max(
+                    8,
+                    Math.min(16, minCanvasSide * 0.11)
+                  );
+                  const subtitleFontSize = Math.max(
+                    7,
+                    Math.min(12, minCanvasSide * 0.075)
+                  );
 
                   return (
                     <motion.div
@@ -809,8 +861,8 @@ export function MultiCanvasWallCustomizer() {
                       style={{
                         left: (position.x + displayArea.offsetX) * scale + rulerPadding.horizontal,
                         top: (position.y + displayArea.offsetY) * scale + rulerPadding.top,
-                        width: canvasDims.width * scale,
-                        height: canvasDims.height * scale,
+                        width: scaledCanvasWidth,
+                        height: scaledCanvasHeight,
                       }}
                     >
                       {/* Canvas Shadow Layer */}
@@ -824,18 +876,16 @@ export function MultiCanvasWallCustomizer() {
 
                       {/* Canvas Image */}
                       <div
-                        onClick={() =>
-                          !uploaded && handleCanvasClick(canvas.id)
-                        }
+                        onClick={() => handleCanvasClick(canvas.id)}
                         className={`w-full h-full overflow-hidden transition-all duration-300 ${
                           uploaded
-                            ? 'shadow-2xl'
-                            : 'ring-2 ring-white/50 cursor-pointer hover:ring-white/80'
+                            ? 'shadow-2xl cursor-pointer'
+                            : 'cursor-pointer'
                         }`}
                         style={{
                           backgroundColor: uploaded
                             ? 'transparent'
-                            : 'rgba(255, 255, 255, 0.1)',
+                            : 'rgba(255, 255, 255, 0.08)',
                           boxShadow: uploaded
                             ? '0 20px 40px rgba(0, 0, 0, 0.5), 0 8px 16px rgba(0, 0, 0, 0.3)'
                             : undefined,
@@ -849,19 +899,40 @@ export function MultiCanvasWallCustomizer() {
                             className='w-full h-full object-cover'
                           />
                         ) : (
-                          // Empty Placeholder with Primary Color
-                          <div className='w-full h-full flex items-center justify-center bg-gradient-to-br from-[#f63a9e] to-[#e02d8d] backdrop-blur-sm'>
-                            <div className='text-white text-center px-1 sm:px-2'>
-                              <Upload
-                                className='w-6 h-6 sm:w-8 sm:h-8 md:w-12 md:h-12 lg:w-16 lg:h-16 mx-auto mb-0.5 sm:mb-1 md:mb-2 lg:mb-3'
-                                strokeWidth={2}
-                              />
-                              <p className='text-[8px] sm:text-[10px] md:text-xs lg:text-sm font-semibold leading-tight'>
-                                Upload Image
-                              </p>
-                              <p className='text-[6px] sm:text-[8px] md:text-[10px] lg:text-xs mt-0 sm:mt-0.5 md:mt-1 opacity-80 leading-tight'>
-                                Canvas {canvas.id + 1}
-                              </p>
+                          // Empty Placeholder
+                          <div className='relative w-full h-full'>
+                            <div className='absolute inset-0 border-2 border-dashed border-white/70 bg-white/20 backdrop-blur-[2px]' />
+                            <div className='absolute inset-0 bg-gradient-to-br from-[#f63a9e]/75 via-[#f63a9e]/60 to-[#e02d8d]/80' />
+                            <div className='relative z-10 w-full h-full flex items-center justify-center p-1.5 sm:p-2'>
+                              <div className='text-white text-center'>
+                                <div
+                                  className='rounded-full bg-white/20 border border-white/50 flex items-center justify-center mx-auto mb-1 sm:mb-1.5 md:mb-2'
+                                  style={{
+                                    width: `${iconWrapperSize}px`,
+                                    height: `${iconWrapperSize}px`,
+                                  }}
+                                >
+                                  <ImagePlus
+                                    style={{
+                                      width: `${iconSize}px`,
+                                      height: `${iconSize}px`,
+                                    }}
+                                    strokeWidth={2.5}
+                                  />
+                                </div>
+                                <p
+                                  className='font-semibold leading-tight'
+                                  style={{ fontSize: `${titleFontSize}px` }}
+                                >
+                                  {`Add photo ${canvas.id + 1}`}
+                                </p>
+                                <p
+                                  className='mt-0.5 sm:mt-1 opacity-90 leading-tight'
+                                  style={{ fontSize: `${subtitleFontSize}px` }}
+                                >
+                                  Tap to upload
+                                </p>
+                              </div>
                             </div>
                           </div>
                         )}

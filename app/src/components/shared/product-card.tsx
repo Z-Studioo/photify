@@ -1,5 +1,4 @@
 'use client';
-import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { AnimatePresence, motion } from 'framer-motion';
 import { ImageWithFallback } from '@/components/figma/image-with-fallback';
@@ -29,20 +28,7 @@ export function ProductCard({
   className = '',
 }: ProductCardProps) {
   const navigate = useNavigate();
-  const [currentImageIndex, setCurrentImageIndex] = useState(0);
-
-  useEffect(() => {
-    if (!images || images.length <= 1) {
-      setCurrentImageIndex(0);
-      return;
-    }
-
-    const interval = setInterval(() => {
-      setCurrentImageIndex(prev => (prev + 1) % images.length);
-    }, 2000);
-
-    return () => clearInterval(interval);
-  }, [images]);
+  const currentImageIndex = 0;
 
   const handleClick = () => {
     navigate(`/product/${slug || id}`);

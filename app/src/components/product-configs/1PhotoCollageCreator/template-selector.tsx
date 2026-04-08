@@ -1,7 +1,6 @@
 import { motion } from 'framer-motion';
 import { Check, Grid3x3, Maximize2, LayoutGrid } from 'lucide-react';
 import { type CollageTemplate, PREDEFINED_TEMPLATES } from './types';
-import { getCanvasDimensionsFromAspectRatio } from './config';
 
 interface TemplateSelectorProps {
   selectedTemplate: CollageTemplate | null;
@@ -30,17 +29,39 @@ export function TemplateSelector({
 
     if (type === 'grid') {
       const { rows, columns } = config as any;
+      const previewAspectRatio =
+        template.aspectRatio === '2:3'
+          ? '2 / 3'
+          : template.aspectRatio === '3:2'
+            ? '3 / 2'
+            : '1 / 1';
+      const fitByHeight =
+        template.aspectRatio === '2:3' || template.aspectRatio === '1:1';
+
       return (
-        <div
-          className='grid gap-1 p-3'
-          style={{
-            gridTemplateColumns: `repeat(${columns}, 1fr)`,
-            gridTemplateRows: `repeat(${rows}, 1fr)`,
-          }}
-        >
-          {Array.from({ length: rows * columns }).map((_, i) => (
-            <div key={i} className='bg-gray-300 rounded aspect-square' />
-          ))}
+        <div className='p-3'>
+          <div
+            className='border border-gray-200 bg-gray-50 p-2 mx-auto'
+            style={{
+              aspectRatio: previewAspectRatio,
+              width: fitByHeight ? 'auto' : '100%',
+              height: fitByHeight ? '100%' : 'auto',
+              maxWidth: '100%',
+              maxHeight: '100%',
+            }}
+          >
+            <div
+              className='grid gap-1 w-full h-full'
+              style={{
+                gridTemplateColumns: `repeat(${columns}, 1fr)`,
+                gridTemplateRows: `repeat(${rows}, 1fr)`,
+              }}
+            >
+              {Array.from({ length: rows * columns }).map((_, i) => (
+                <div key={i} className='bg-gray-300' />
+              ))}
+            </div>
+          </div>
         </div>
       );
     }
@@ -141,11 +162,7 @@ export function TemplateSelector({
                       {template.name}
                     </h3>
                     <span className='text-[10px] font-semibold text-[#f63a9e] bg-pink-50 px-1.5 py-0.5 rounded-full shrink-0'>
-                      {
-                        getCanvasDimensionsFromAspectRatio(
-                          template.aspectRatio
-                        ).label.split(' ')[0]
-                      }
+                      {template.aspectRatio}
                     </span>
                   </div>
                   {template.description && (

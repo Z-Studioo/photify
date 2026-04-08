@@ -16,7 +16,11 @@ interface Category {
   is_active: boolean;
 }
 
-export function CategoryNav() {
+interface CategoryNavProps {
+  disabled?: boolean;
+}
+
+export function CategoryNav({ disabled = false }: CategoryNavProps) {
   const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
   const supabase = createClient();
@@ -70,7 +74,16 @@ export function CategoryNav() {
               <Link
                 key={category.id}
                 to={href}
-                className="flex flex-col items-center gap-3 hover:opacity-70 transition-opacity group"
+                onClick={(e) => {
+                  if (disabled) e.preventDefault();
+                }}
+                aria-disabled={disabled}
+                tabIndex={disabled ? -1 : 0}
+                className={`flex flex-col items-center gap-3 group transition-opacity ${
+                  disabled
+                    ? 'opacity-60 cursor-not-allowed pointer-events-none'
+                    : 'hover:opacity-70'
+                }`}
               >
                 <div className="w-full aspect-square rounded-lg overflow-hidden relative">
                   {category.image_url ? (

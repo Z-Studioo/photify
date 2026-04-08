@@ -77,15 +77,24 @@ export function FeaturedCollections() {
 
       if (data && data.length > 0) {
         // Transform database products to FeaturedCollection format
-        const transformedCollections = data.map(product => ({
-          image: product.featured_image || '',
-          badge: 'Featured',
-          badgeColor: 'bg-[#f63a9e]',
-          title: product.name,
-          price: `£${product.price}`,
-          productId: product.slug || product.id,
-          isVisible: !!product.config?.configurerType,
-        }));
+        const transformedCollections = data.map(product => {
+          const numericPrice =
+            typeof product.price === 'number'
+              ? product.price
+              : Number.parseFloat(
+                  String(product.price ?? '').replace(/[^0-9.]/g, '')
+                ) || 0;
+
+          return {
+            image: product.featured_image || '',
+            badge: 'Featured',
+            badgeColor: 'bg-[#f63a9e]',
+            title: product.name,
+            price: `£${numericPrice.toFixed(2)}`,
+            productId: product.slug || product.id,
+            isVisible: !!product.config?.configurerType,
+          };
+        });
 
         const visibleCollections = transformedCollections.filter(
           item => item.isVisible
@@ -163,7 +172,6 @@ export function FeaturedCollections() {
               <p className='text-sm xs:text-base sm:text-lg md:text-xl text-left' style={{ fontWeight: '700' }}>
                 From {displayCollections[0].price}
               </p>
-              <span className='text-[10px] xs:text-xs sm:text-sm opacity-80'>/sq in</span>
             </div>
             <ArrowRight className='w-4 h-4 xs:w-5 xs:h-5 sm:w-5.5 sm:h-5.5 md:w-6 md:h-6' />
           </div>
@@ -207,7 +215,6 @@ export function FeaturedCollections() {
                     >
                       From {collection.price}
                     </p>
-                    <span className='text-[8px] xs:text-[9px] sm:text-[10px] md:text-xs opacity-80'>/sq in</span>
                   </div>
                   <ArrowRight className='w-3 h-3 xs:w-3.5 xs:h-3.5 sm:w-4 sm:h-4 md:w-5 md:h-5' />
                 </div>
@@ -250,7 +257,6 @@ export function FeaturedCollections() {
                 >
                   From {displayCollections[3].price}
                 </p>
-                <span className='text-[9px] xs:text-[10px] sm:text-xs opacity-80'>/sq in</span>
               </div>
               <ArrowRight className='w-3.5 h-3.5 xs:w-4 xs:h-4 sm:w-4.5 sm:h-4.5 md:w-5 md:h-5' />
             </div>

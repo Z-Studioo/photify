@@ -8,6 +8,7 @@ import {
   Loader2,
   Upload,
   Check,
+  AlertCircle,
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
@@ -29,6 +30,8 @@ interface Product {
   isArtProduct?: boolean;
   sizeId?: string;
   sizeName?: string;
+  artBasePrice?: number;
+  canvasPrice?: number;
 }
 
 interface Hotspot {
@@ -129,9 +132,12 @@ export function RoomInspirationPage({
             const isArtProduct = !!h.art_products;
             const selectedSize = h.sizes; // From sizes table
 
-            // For art products, get the price from available_sizes JSONB
+            // For art products, get the total price from available_sizes JSONB
+            // and compute a UI-friendly price breakdown.
             let price = 0;
             let sizeName = '';
+            let artBasePrice = 0;
+            let canvasPrice = 0;
 
             if (
               isArtProduct &&
@@ -143,6 +149,14 @@ export function RoomInspirationPage({
                 (s: any) => s.size_id === selectedSize.id
               );
               price = priceInfo?.price || 0;
+              const parsedBasePrice =
+                typeof h.art_products?.price === 'string'
+                  ? parseFloat(h.art_products.price)
+                  : Number(h.art_products?.price || 0);
+              artBasePrice = Number.isFinite(parsedBasePrice)
+                ? Math.max(parsedBasePrice, 0)
+                : 0;
+              canvasPrice = Math.max(price - artBasePrice, 0);
 
               // Convert inches to cm for display
               const widthCm = Math.round(selectedSize.width_in * 2.54);
@@ -170,6 +184,8 @@ export function RoomInspirationPage({
                     isArtProduct,
                     sizeId: selectedSize?.id,
                     sizeName: sizeName || selectedSize?.display_label,
+                    artBasePrice,
+                    canvasPrice,
                   }
                 : {
                     id: 'unknown',
@@ -585,6 +601,7 @@ export function RoomInspirationPage({
                   </div>
                 </div>
               </motion.div>
+
             </div>
           </div>
 
@@ -766,7 +783,7 @@ export function RoomInspirationPage({
         open={!!selectedHotspot}
         onOpenChange={open => !open && setSelectedHotspot(null)}
       >
-        <DialogContent className='w-[95vw] max-w-2xl p-0 overflow-hidden'>
+        <DialogContent className='w-[99vw] md:w-[78vw] max-w-[68rem] sm:max-w-[68rem] p-0 overflow-hidden rounded-2xl border border-gray-200'>
           <DialogTitle className='sr-only'>
             {selectedHotspot?.product.name}
           </DialogTitle>
@@ -775,39 +792,34 @@ export function RoomInspirationPage({
             const priceOk = hasPriceValid(p.price);
             const isAdded = addedProductIds.has(p.id);
             return (
-              <div className='flex flex-col sm:grid sm:grid-cols-2 gap-0'>
+              <div className='grid grid-cols-1 md:grid-cols-[1.3fr_1fr] md:h-[78vh] md:max-h-[760px]'>
                 {/* Product Image */}
-                <div className='bg-gray-50 aspect-square sm:aspect-auto max-h-48 sm:max-h-none overflow-hidden'>
-                  <ImageWithFallback
-                    src={p.image}
-                    alt={p.name}
-                    className='w-full h-full object-cover'
-                  />
+                <div className='bg-gray-100 p-4 sm:p-5 md:p-8 flex items-center justify-center'>
+                  <div className='relative w-full max-w-[560px] aspect-square overflow-hidden rounded-xl shadow-sm mx-auto'>
+                    <ImageWithFallback
+                      src={p.image}
+                      alt={p.name}
+                      className='w-full h-full object-cover'
+                    />
+                    <div className='absolute inset-x-0 bottom-0 p-4 bg-gradient-to-t from-black/55 to-transparent'>
+                      <span className='inline-flex items-center rounded-full bg-white/95 px-3 py-1 text-xs text-gray-900'>
+                        {p.isArtProduct ? 'Art Print' : 'Custom Product'}
+                      </span>
+                    </div>
+                  </div>
                 </div>
 
                 {/* Product Details */}
-                <div className='p-5 sm:p-8 flex flex-col max-h-[70vh] sm:max-h-none overflow-y-auto'>
-                  <div className='flex-1'>
+                <div className='p-6 sm:p-8 md:p-10 flex flex-col overflow-y-auto'>
+                  <div>
                     <h2
-                      className="font-['Bricolage_Grotesque',_sans-serif] text-gray-900 mb-3 sm:mb-4 text-lg sm:text-2xl"
+                      className="font-['Bricolage_Grotesque',_sans-serif] text-gray-900 mb-2 text-xl sm:text-2xl md:text-[2rem] leading-tight"
                       style={{ fontWeight: '700' }}
                     >
                       {p.name}
                     </h2>
 
-                    <div className='flex items-baseline gap-2 mb-3 sm:mb-4 flex-wrap'>
-                      <p
-                        className={`text-xl sm:text-3xl ${priceOk ? 'text-gray-900' : 'text-gray-400 text-base sm:text-lg italic'}`}
-                        style={{ fontWeight: '700' }}
-                      >
-                        {priceOk ? `$${p.price.toFixed(2)}` : 'Price Not Available'}
-                      </p>
-                      {p.sizeName && (
-                        <span className='text-gray-500 text-xs sm:text-sm'>{p.sizeName}</span>
-                      )}
-                    </div>
-
-                    <p className='text-gray-600 mb-4 sm:mb-6 text-xs sm:text-sm leading-relaxed'>
+                    <p className='text-gray-600 mb-6 text-sm leading-relaxed max-w-[52ch]'>
                       {p.isArtProduct
                         ? `Premium art print${p.sizeName ? ` available in ${p.sizeName}` : ''}. Museum-quality printing.`
                         : 'Create your own custom product with your photos. Choose size, style, and more in our editor.'}
@@ -816,22 +828,18 @@ export function RoomInspirationPage({
                     {p.isArtProduct ? (
                       <>
                         {p.sizeName && (
-                          <div className='mb-3 sm:mb-4'>
+                          <div className='mb-4'>
                             <label className='text-xs sm:text-sm text-gray-900 mb-1.5 sm:mb-2 block' style={{ fontWeight: '600' }}>
                               Size
                             </label>
-                            <div className='px-3 py-2 sm:px-4 sm:py-3 border-2 border-[#f63a9e] bg-pink-50 rounded text-xs sm:text-sm text-gray-900'>
+                            <div className='px-3 py-2.5 sm:px-4 sm:py-3 border border-[#f63a9e]/40 bg-pink-50 rounded-lg text-xs sm:text-sm text-gray-900'>
                               <span style={{ fontWeight: '600' }}>{p.sizeName}</span>
                             </div>
                           </div>
                         )}
-                        {priceOk && (
-                          <div className='mb-4 sm:mb-6 flex items-center gap-2 text-xs sm:text-sm text-green-700'>
-                            <span style={{ fontWeight: '600' }}>● In stock - Ready to ship</span>
-                          </div>
-                        )}
                         {!priceOk && (
-                          <div className='mb-4 sm:mb-6 p-3 bg-amber-50 border border-amber-200 rounded-lg'>
+                          <div className='mb-4 sm:mb-6 p-3 bg-amber-50 border border-amber-200 rounded-lg flex items-start gap-2'>
+                            <AlertCircle className='w-4 h-4 text-amber-700 mt-0.5 flex-shrink-0' />
                             <p className='text-xs sm:text-sm text-amber-800'>
                               Pricing is not available for this item right now.
                             </p>
@@ -839,7 +847,7 @@ export function RoomInspirationPage({
                         )}
                       </>
                     ) : (
-                      <div className='mb-4 sm:mb-6 p-3 sm:p-4 bg-blue-50 border border-blue-200 rounded-lg'>
+                      <div className='mb-5 p-3 sm:p-4 bg-blue-50 border border-blue-200 rounded-lg'>
                         <p className='text-xs sm:text-sm text-blue-900'>
                           <span style={{ fontWeight: '600' }}>Customizable Product:</span>{' '}
                           Upload your photo and personalize this product in our editor.
@@ -849,13 +857,13 @@ export function RoomInspirationPage({
                   </div>
 
                   {/* Actions */}
-                  <div className='space-y-2 sm:space-y-3 mt-2'>
+                  <div className='space-y-2.5 sm:space-y-3 mt-2 pt-2 border-t border-gray-100'>
                     {p.isArtProduct ? (
                       <>
                         <Button
                           onClick={() => handleAddToCart(p)}
                           disabled={!priceOk}
-                          className={`w-full rounded h-[44px] sm:h-[50px] text-sm sm:text-base transition-all ${
+                          className={`w-full rounded-xl h-[46px] sm:h-[50px] text-sm sm:text-base transition-all ${
                             isAdded
                               ? 'bg-green-500 hover:bg-green-600 text-white'
                               : !priceOk
@@ -872,34 +880,48 @@ export function RoomInspirationPage({
                             'Price Not Available'
                           )}
                         </Button>
-                        <button
-                          onClick={() => handleProductClick(p.slug || p.id)}
-                          className='text-gray-900 text-xs sm:text-sm w-full hover:underline py-1'
-                          style={{ fontWeight: '600' }}
-                        >
-                          View Full Details
-                        </button>
                       </>
                     ) : (
                       <>
                         <Button
                           onClick={() => navigate(`/product/${p.slug || p.id}`)}
-                          className='w-full bg-[#f63a9e] hover:bg-[#e02d8d] text-white rounded h-[44px] sm:h-[50px] text-sm sm:text-base'
+                          className='w-full bg-[#f63a9e] hover:bg-[#e02d8d] text-white rounded-xl h-[46px] sm:h-[50px] text-sm sm:text-base'
                           style={{ fontWeight: '700' }}
                         >
                           <Upload className='w-4 h-4 sm:w-5 sm:h-5 mr-2' />
                           Upload Your Photo
                         </Button>
-                        <button
-                          onClick={() => handleProductClick(p.slug || p.id)}
-                          className='text-gray-900 text-xs sm:text-sm w-full hover:underline py-1'
-                          style={{ fontWeight: '600' }}
-                        >
-                          View Product Details
-                        </button>
                       </>
                     )}
                   </div>
+
+                  {p.isArtProduct && priceOk && (
+                    <div className='mt-4 rounded-xl border border-gray-200 bg-gray-50 p-3 sm:p-4'>
+                      <h4 className='text-gray-900 text-xs sm:text-sm mb-2' style={{ fontWeight: '700' }}>
+                        Price Breakdown
+                      </h4>
+                      <div className='space-y-1.5 text-xs sm:text-sm'>
+                        <div className='flex items-center justify-between text-gray-700'>
+                          <span>Art Price</span>
+                          <span>${(p.artBasePrice ?? p.price).toFixed(2)}</span>
+                        </div>
+                        <div className='flex items-center justify-between text-gray-700'>
+                          <span>Canvas {p.sizeName || 'Selected size'}</span>
+                          <span>
+                            $
+                            {(
+                              p.canvasPrice ??
+                              Math.max(p.price - (p.artBasePrice ?? p.price), 0)
+                            ).toFixed(2)}
+                          </span>
+                        </div>
+                        <div className='border-t border-gray-200 pt-2 mt-2 flex items-center justify-between text-gray-900'>
+                          <span style={{ fontWeight: '700' }}>Total</span>
+                          <span style={{ fontWeight: '700' }}>${p.price.toFixed(2)}</span>
+                        </div>
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
             );

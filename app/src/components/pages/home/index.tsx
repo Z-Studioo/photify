@@ -1,5 +1,4 @@
 import { Header } from '@/components/layout/header';
-import { CategoryNav } from '@/components/shared/category-nav';
 import { FeaturedCollections } from '@/components/shared/featured-collections';
 import { ProductCard } from '@/components/shared/product-card';
 import { RoomInspiration } from '@/components/shared/room-inspiration';
@@ -183,7 +182,7 @@ export function HomePage({
   return (
     <div className="min-h-screen font-['Mona_Sans',_sans-serif] relative">
       <Header />
-      <CategoryNav />
+      {/* CategoryNav hidden on home page */}
 
       {/* Our Best Sellers Section */}
       <section className='pt-4 xs:pt-5 sm:pt-6 md:pt-8 pb-2 xs:pb-2.5 sm:pb-3'>
@@ -328,8 +327,8 @@ export function HomePage({
           {/* Categories */}
           <div className='flex flex-wrap gap-3 mb-8'>
             <button
-              onClick={() => navigate('/art-collections')}
-              className='px-8 py-3 rounded-full bg-pink-100 text-[#f63a9e] transition-colors hover:bg-pink-200'
+              disabled
+              className='px-8 py-3 rounded-full bg-pink-100 text-[#f63a9e] opacity-60 cursor-not-allowed'
             >
               All
             </button>
@@ -339,8 +338,8 @@ export function HomePage({
             ).map(tag => (
               <button
                 key={tag}
-                onClick={() => navigate(`/art-collections?category=${encodeURIComponent(tag)}`)}
-                className='px-8 py-3 rounded-full bg-gray-100 text-gray-500 hover:bg-gray-200 transition-colors'
+                disabled
+                className='px-8 py-3 rounded-full bg-gray-100 text-gray-500 opacity-60 cursor-not-allowed'
               >
                 {tag}
               </button>

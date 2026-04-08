@@ -1,5 +1,5 @@
-import React, { useEffect, useRef } from 'react';
-import { Loader2 } from 'lucide-react';
+import React, { useEffect, useRef, useState } from 'react';
+import { Check, Loader2, WandSparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useUpload } from '@/context/UploadContext';
 import { useView } from '@/context/ViewContext';
@@ -12,6 +12,7 @@ import {
 } from '@/utils/ratio-sizes';
 import { motion } from 'framer-motion';
 import { useQuery } from '@tanstack/react-query';
+import { cn } from '@/lib/utils';
 
 interface RatioSizePanelProps {
   onSelectionChange?: (ratio: string, size: InchData | null) => void;
@@ -21,6 +22,7 @@ const RatioSizePanel: React.FC<RatioSizePanelProps> = ({
   onSelectionChange,
 }) => {
   const {
+    preview,
     selectedRatio,
     setSelectedRatio,
     selectedSize,
@@ -30,6 +32,9 @@ const RatioSizePanel: React.FC<RatioSizePanelProps> = ({
 
   const { setSelectedView } = useView();
   const sectionRefs = useRef<Record<string, HTMLDivElement | null>>({});
+  const [isAutoRatioSelected, setIsAutoRatioSelected] = useState(false);
+  const [autoResolvedRatio, setAutoResolvedRatio] = useState<string | null>(null);
+  const lastAutoAppliedPreviewRef = useRef<string | null>(null);
   
   const {
     data: ratios = [],
@@ -92,10 +97,88 @@ const RatioSizePanel: React.FC<RatioSizePanelProps> = ({
     });
   };
 
+  const getImageAspectRatio = (src: string): Promise<number | null> =>
+    new Promise(resolve => {
+      const image = new window.Image();
+      image.onload = () => {
+        if (!image.width || !image.height) {
+          resolve(null);
+          return;
+        }
+        resolve(image.width / image.height);
+      };
+      image.onerror = () => resolve(null);
+      image.src = src;
+    });
+
+  const getClosestRatio = (
+    imageAspectRatio: number,
+    availableRatios: RatioData[]
+  ): RatioData | null => {
+    const validRatios = availableRatios.filter(r => r.sizes.length > 0);
+    if (!validRatios.length) return null;
+
+    const getRatioValue = (ratio: RatioData) => {
+      if (ratio.width_ratio > 0 && ratio.height_ratio > 0) {
+        return ratio.width_ratio / ratio.height_ratio;
+      }
+      const [w, h] = ratio.label.split(':').map(Number);
+      return w > 0 && h > 0 ? w / h : 1;
+    };
+
+    return validRatios.reduce((closest, current) => {
+      const closestDiff = Math.abs(
+        Math.log(getRatioValue(closest) / imageAspectRatio)
+      );
+      const currentDiff = Math.abs(
+        Math.log(getRatioValue(current) / imageAspectRatio)
+      );
+      return currentDiff < closestDiff ? current : closest;
+    });
+  };
+
+  const applyAutoRatio = async ({
+    shouldSwitchToCrop,
+  }: { shouldSwitchToCrop: boolean }) => {
+    if (!preview || !ratios.length) return false;
+
+    const imageAspectRatio = await getImageAspectRatio(preview);
+    if (!imageAspectRatio) return false;
+
+    const closestRatio = getClosestRatio(imageAspectRatio, ratios);
+    if (!closestRatio) return false;
+
+    const autoSizes = inches
+      .filter(i => closestRatio.sizes.some(s => s.id === i.id))
+      .sort((a, b) => a.area_in2 - b.area_in2);
+    const smallest = autoSizes[0] ?? null;
+
+    setIsAutoRatioSelected(true);
+    setSelectedRatio(closestRatio.label);
+    setSelectedSize(smallest);
+    onSelectionChange?.(closestRatio.label, smallest);
+    if (shouldSwitchToCrop) {
+      setSelectedView('crop');
+    }
+    setAutoResolvedRatio(closestRatio.label);
+    return true;
+  };
+
+  const handleAutoRatioClick = async () => {
+    await applyAutoRatio({ shouldSwitchToCrop: true });
+  };
+
+  useEffect(() => {
+    if (!preview || !ratios.length || !inches.length) return;
+    if (lastAutoAppliedPreviewRef.current === preview) return;
+
+    lastAutoAppliedPreviewRef.current = preview;
+    void applyAutoRatio({ shouldSwitchToCrop: false });
+  }, [preview, ratios, inches]);
+
   const handleSizeClick = (size: InchData) => {
     setSelectedSize(size);
     onSelectionChange?.(selectedRatio!, size);
-    setSelectedView('crop');
   };
 
   if (loading)
@@ -121,31 +204,78 @@ const RatioSizePanel: React.FC<RatioSizePanelProps> = ({
     currentRatio?.sizes
       .map(s => inches.find(i => i.id === s.id))
       .filter(Boolean) ?? [];
+  const availableRatios = ratios.filter(ratio => ratio.sizes.length > 0);
 
   return (
     <>
       {/* Ratio Selector */}
       <div className='border-b bg-white sticky top-0 z-10'>
-        <div className='flex overflow-x-auto gap-2 px-3 py-3 scrollbar-hide'>
-          {ratios.map(ratio => {
-            const active = selectedRatio === ratio.label;
-            if (ratio.sizes.length === 0) return null;
+        <div className='px-3 pt-3 pb-2'>
+          <div className='flex items-center justify-between gap-3 mb-2'>
+            <p className='text-xs font-semibold uppercase tracking-wide text-gray-500'>
+              Aspect Ratio
+            </p>
+            {selectedRatio && (
+              <span className='inline-flex items-center rounded-full bg-primary/10 text-primary px-2.5 py-1 text-xs font-semibold'>
+                {selectedRatio}
+              </span>
+            )}
+          </div>
+
+          <button
+            onClick={handleAutoRatioClick}
+            aria-pressed={isAutoRatioSelected}
+            className={`w-full flex items-center justify-between gap-3 px-3.5 py-2.5 rounded-xl text-sm font-semibold transition border ${
+              isAutoRatioSelected
+                ? 'bg-primary/10 text-primary border-primary/40'
+                : 'text-gray-700 border-gray-200 hover:bg-gray-50'
+            }`}
+          >
+            <span className='inline-flex items-center gap-2'>
+              <WandSparkles size={16} />
+              Auto
+            </span>
+            <span
+              className={cn(
+                'text-xs font-medium',
+                isAutoRatioSelected ? 'text-primary' : 'text-gray-500'
+              )}
+            >
+              {autoResolvedRatio ? `Best match: ${autoResolvedRatio}` : 'Best match'}
+            </span>
+          </button>
+
+          <div className='mt-2 flex flex-wrap gap-2 w-full'>
+            {availableRatios.map(ratio => {
+            const active = !isAutoRatioSelected && selectedRatio === ratio.label;
             return (
               <button
                 key={ratio.id}
-                onClick={() => handleRatioClick(ratio)}
-                className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold transition ${
+                aria-pressed={active}
+                onClick={() => {
+                  setIsAutoRatioSelected(false);
+                  handleRatioClick(ratio);
+                }}
+                className={`flex items-center gap-2 px-3.5 py-2.5 rounded-xl text-sm font-semibold transition border ${
                   active
-                    ? 'bg-primary text-white shadow'
-                    : 'text-gray-600 hover:bg-gray-100'
+                    ? 'bg-primary text-white border-primary shadow-sm'
+                    : 'text-gray-700 border-gray-200 hover:bg-gray-50'
                 }`}
               >
-                <AspectRatioIcon ratio={ratio.label} />
+                <AspectRatioIcon ratio={ratio.label} size={18} />
                 {ratio.label}
+                {active && <Check size={14} />}
               </button>
             );
-          })}
+            })}
+          </div>
         </div>
+        {isAutoRatioSelected && autoResolvedRatio && (
+          <div className='px-4 pb-3 text-xs text-gray-500'>
+            Auto selected ratio:{' '}
+            <span className='font-semibold'>{autoResolvedRatio}</span>
+          </div>
+        )}
       </div>
 
       {/* Sizes */}

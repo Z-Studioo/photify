@@ -1,8 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { AdminLayout } from './admin-layout';
-import { AdminArtSizeManager } from './admin-art-size-manager';
-import { AdminArtContentEditor } from './admin-art-content-editor';
 import { AdminArtProductTagsEditor } from './admin-art-product-tags-editor';
 import { DeleteConfirmDialog } from '@/components/shared/delete-confirm-dialog';
 import {
@@ -10,12 +8,10 @@ import {
   Save,
   Trash2,
   Loader2,
-  FileText,
   Settings,
   Image as ImageIcon,
   Package,
   Plus,
-  Tag,
 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -32,19 +28,6 @@ import {
 import { createClient } from '@/lib/supabase/client';
 import { toast } from 'sonner';
 
-// Product types (hardcoded for now)
-const PRODUCT_TYPES = [
-  'Canvas',
-  'Framed Print',
-  'Poster',
-  'T-shirt',
-  'Mug',
-  'Phone Case',
-  'Tote Bag',
-  'Pillow',
-  'Wall Tapestry',
-];
-
 interface ArtProduct {
   id: string;
   name: string;
@@ -56,7 +39,8 @@ interface ArtProduct {
   // New fields
   images: string[];
   product_type: string;
-  customization_product_id?: string | null;
+  customization_product_id?: string | string[] | null;
+  customization_product_ids: string[];
   allow_customization: boolean;
 
   meta_title?: string | null;
@@ -105,8 +89,9 @@ export function AdminArtEditPage() {
             price: '',
             images: [],
             product_type: 'Canvas',
-            allow_customization: false,
+            allow_customization: true,
             customization_product_id: null,
+            customization_product_ids: [],
             meta_title: '',
             meta_description: '',
             meta_keywords: [],
@@ -146,7 +131,15 @@ export function AdminArtEditPage() {
               images: data.images || (data.image ? [data.image] : []), // Fallback to old 'image' field
               product_type: data.product_type || 'Canvas',
               customization_product_id: data.customization_product_id,
-              allow_customization: data.allow_customization || false,
+              customization_product_ids: Array.isArray(
+                data.customization_product_id
+              )
+                ? data.customization_product_id
+                : data.customization_product_id
+                  ? [data.customization_product_id]
+                  : [],
+              allow_customization:
+                !!data.customization_product_id || data.allow_customization || false,
 
               meta_title: data.meta_title || '',
               meta_description: data.meta_description || '',
@@ -215,7 +208,7 @@ export function AdminArtEditPage() {
 
     // Validation
     if (!product.name.trim()) {
-      toast.error('Product name is required');
+      toast.error('Art name is required');
       return;
     }
 
@@ -225,7 +218,7 @@ export function AdminArtEditPage() {
     }
 
     if (!product.price.trim() || product.price === '£') {
-      toast.error('Fixed price is required');
+      toast.error('Price is required');
       return;
     }
 
@@ -241,6 +234,12 @@ export function AdminArtEditPage() {
 
     try {
       setSaving(true);
+      const selectedCustomizationProductIds = product.customization_product_ids;
+      const customizationPayloadValue: string | null =
+        selectedCustomizationProductIds.length > 0
+          ? selectedCustomizationProductIds[0]
+          : null;
+      const hasCustomizationProducts = selectedCustomizationProductIds.length > 0;
 
       if (isNewProduct) {
         // Check slug uniqueness
@@ -269,11 +268,8 @@ export function AdminArtEditPage() {
               size: '',  // legacy NOT NULL column (superseded by available_sizes)
               images: product.images,
               product_type: product.product_type,
-              customization_product_id:
-                product.allow_customization && product.customization_product_id
-                  ? product.customization_product_id
-                  : null,
-              allow_customization: product.allow_customization,
+              customization_product_id: customizationPayloadValue,
+              allow_customization: hasCustomizationProducts,
               meta_title: product.meta_title?.trim() || null,
               meta_description: product.meta_description?.trim() || null,
               meta_keywords: product.meta_keywords ?? [],
@@ -307,11 +303,8 @@ export function AdminArtEditPage() {
             size: '',  // legacy NOT NULL column (superseded by available_sizes)
             images: product.images,
             product_type: product.product_type,
-            customization_product_id:
-              product.allow_customization && product.customization_product_id
-                ? product.customization_product_id
-                : null,
-            allow_customization: product.allow_customization,
+            customization_product_id: customizationPayloadValue,
+            allow_customization: hasCustomizationProducts,
             meta_title: product.meta_title?.trim() || null,
             meta_description: product.meta_description?.trim() || null,
             meta_keywords: product.meta_keywords ?? [],
@@ -382,6 +375,21 @@ export function AdminArtEditPage() {
     setProduct({ ...product, images: newImages });
   };
 
+  const toggleCustomizationProduct = (selectedProductId: string) => {
+    if (!product) return;
+    const alreadySelected = product.customization_product_ids.includes(
+      selectedProductId
+    );
+    const nextSelectedIds = alreadySelected
+      ? product.customization_product_ids.filter(id => id !== selectedProductId)
+      : [...product.customization_product_ids, selectedProductId];
+    setProduct({
+      ...product,
+      customization_product_ids: nextSelectedIds,
+      customization_product_id: nextSelectedIds,
+    });
+  };
+
   if (loading) {
     return (
       <AdminLayout>
@@ -417,7 +425,7 @@ export function AdminArtEditPage() {
             Back to Art Collection
           </Button>
 
-          <div className='flex items-start justify-between'>
+          <div className='flex flex-col gap-4 md:flex-row md:items-start md:justify-between'>
             <div>
               <h1
                 className="font-['Bricolage_Grotesque',_sans-serif] mb-2"
@@ -431,12 +439,12 @@ export function AdminArtEditPage() {
                   : product.name}
               </p>
             </div>
-            <div className='flex gap-2'>
+            <div className='flex items-center gap-2'>
               {!isNewProduct && (
                 <Button
                   onClick={() => setShowDeleteDialog(true)}
                   variant='outline'
-                  className='border-red-200 text-red-600 hover:bg-red-50'
+                  className='h-11 px-4 rounded-lg border-red-200 text-red-600 hover:bg-red-50 hover:text-red-700'
                   disabled={saving}
                 >
                   <Trash2 className='w-4 h-4 mr-2' />
@@ -446,8 +454,7 @@ export function AdminArtEditPage() {
               <Button
                 onClick={handleSave}
                 disabled={saving}
-                className='bg-[#f63a9e] hover:bg-[#e02d8d] gap-2'
-                style={{ height: '50px' }}
+                className='h-11 px-5 rounded-lg bg-[#f63a9e] hover:bg-[#e02d8d] gap-2 text-white shadow-sm'
               >
                 <Save className='w-4 h-4' />
                 {saving
@@ -466,47 +473,42 @@ export function AdminArtEditPage() {
           onValueChange={setCurrentTab}
           className='space-y-6'
         >
-          <TabsList className='grid w-full grid-cols-5 h-auto p-1 bg-gray-100'>
-            <TabsTrigger value='basic' className='gap-2 py-3'>
+          <TabsList className='grid w-full md:w-fit md:min-w-[360px] grid-cols-2 h-12 p-1 bg-gray-100 rounded-xl'>
+            <TabsTrigger
+              value='basic'
+              className='gap-2 rounded-lg py-2.5 px-4 text-sm font-medium data-[state=active]:bg-white data-[state=active]:shadow-sm'
+            >
               <Settings className='w-4 h-4' />
               <span className='hidden sm:inline'>Basic Info</span>
             </TabsTrigger>
-            <TabsTrigger value='images' className='gap-2 py-3'>
+            <TabsTrigger
+              value='images'
+              className='gap-2 rounded-lg py-2.5 px-4 text-sm font-medium data-[state=active]:bg-white data-[state=active]:shadow-sm'
+            >
               <ImageIcon className='w-4 h-4' />
               <span className='hidden sm:inline'>Images</span>
-            </TabsTrigger>
-            <TabsTrigger value='sizes' className='gap-2 py-3'>
-              <Package className='w-4 h-4' />
-              <span className='hidden sm:inline'>Sizes & Pricing</span>
-            </TabsTrigger>
-            <TabsTrigger value='tags' className='gap-2 py-3'>
-              <Tag className='w-4 h-4' />
-              <span className='hidden sm:inline'>Tags</span>
-            </TabsTrigger>
-            <TabsTrigger value='content' className='gap-2 py-3'>
-              <FileText className='w-4 h-4' />
-              <span className='hidden sm:inline'>SEO & Content</span>
             </TabsTrigger>
           </TabsList>
 
           {/* Tab 1: Basic Information */}
           <TabsContent value='basic' className='space-y-6'>
-            <div className='bg-white rounded-lg border border-gray-200 p-6 space-y-4'>
+            <div className='bg-white rounded-lg border border-gray-200 p-6 space-y-5'>
               <h2
-                className="font-['Bricolage_Grotesque',_sans-serif]"
+                className="font-['Bricolage_Grotesque',_sans-serif] border-b border-gray-100 pb-3"
                 style={{ fontSize: '20px', fontWeight: '600' }}
               >
                 Basic Information
               </h2>
 
-              <div className='grid grid-cols-2 gap-4'>
+              <div className='grid grid-cols-1 md:grid-cols-2 gap-4'>
                 <div>
-                  <Label htmlFor='name'>Product Name *</Label>
+                  <Label htmlFor='name'>Art Name *</Label>
                   <Input
                     id='name'
                     value={product.name}
                     onChange={e => handleNameChange(e.target.value)}
                     placeholder='e.g., Ocean Dreams'
+                    className='mt-1'
                   />
                 </div>
 
@@ -519,6 +521,7 @@ export function AdminArtEditPage() {
                       setProduct({ ...product, slug: e.target.value })
                     }
                     placeholder='ocean-dreams'
+                    className='mt-1'
                   />
                 </div>
               </div>
@@ -533,31 +536,11 @@ export function AdminArtEditPage() {
                   }
                   placeholder='Describe the artwork...'
                   rows={4}
+                  className='mt-1'
                 />
               </div>
 
-              <div className='grid grid-cols-2 gap-4'>
-                <div>
-                  <Label htmlFor='product-type'>Product Type *</Label>
-                  <Select
-                    value={product.product_type}
-                    onValueChange={value =>
-                      setProduct({ ...product, product_type: value })
-                    }
-                  >
-                    <SelectTrigger id='product-type'>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {PRODUCT_TYPES.map(type => (
-                        <SelectItem key={type} value={type}>
-                          {type}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-
+              <div className='grid grid-cols-1 gap-4'>
                 <div>
                   <Label htmlFor='category'>Category *</Label>
                   <Select
@@ -566,7 +549,7 @@ export function AdminArtEditPage() {
                       setProduct({ ...product, category: value })
                     }
                   >
-                    <SelectTrigger id='category'>
+                    <SelectTrigger id='category' className='mt-1'>
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
@@ -581,9 +564,9 @@ export function AdminArtEditPage() {
                 </div>
               </div>
 
-              <div className='grid grid-cols-3 gap-4'>
+              <div className='grid grid-cols-1 md:grid-cols-2 gap-4'>
                 <div>
-                  <Label htmlFor='base-price'>Fixed Price *</Label>
+                  <Label htmlFor='base-price'>Price *</Label>
                   <div className='relative mt-1'>
                     <span className='absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm'>£</span>
                     <Input
@@ -605,22 +588,6 @@ export function AdminArtEditPage() {
                 </div>
 
                 <div>
-                  <Label htmlFor='stock'>Stock Quantity</Label>
-                  <Input
-                    id='stock'
-                    type='number'
-                    value={product.stock_quantity}
-                    onChange={e =>
-                      setProduct({
-                        ...product,
-                        stock_quantity: parseInt(e.target.value) || 0,
-                      })
-                    }
-                    placeholder='50'
-                  />
-                </div>
-
-                <div>
                   <Label htmlFor='status'>Status *</Label>
                   <Select
                     value={product.status}
@@ -628,7 +595,7 @@ export function AdminArtEditPage() {
                       setProduct({ ...product, status: value })
                     }
                   >
-                    <SelectTrigger id='status'>
+                    <SelectTrigger id='status' className='mt-1'>
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
@@ -639,77 +606,73 @@ export function AdminArtEditPage() {
                   </Select>
                 </div>
               </div>
-
-              <div className='flex items-center gap-2'>
-                <input
-                  type='checkbox'
-                  id='bestseller'
-                  checked={product.is_bestseller}
-                  onChange={e =>
-                    setProduct({ ...product, is_bestseller: e.target.checked })
-                  }
-                  className='w-4 h-4 text-[#f63a9e] border-gray-300 rounded focus:ring-[#f63a9e]'
-                />
-                <Label htmlFor='bestseller' className='cursor-pointer'>
-                  Mark as Best Seller
-                </Label>
-              </div>
             </div>
 
             {/* Customization Section */}
             <div className='bg-white rounded-lg border border-gray-200 p-6 space-y-4'>
               <h2
-                className="font-['Bricolage_Grotesque',_sans-serif]"
+                className="font-['Bricolage_Grotesque',_sans-serif] border-b border-gray-100 pb-3"
                 style={{ fontSize: '20px', fontWeight: '600' }}
               >
                 Customization Options
               </h2>
 
-              <div className='flex items-center gap-2'>
-                <input
-                  type='checkbox'
-                  id='allow-customization'
-                  checked={product.allow_customization}
-                  onChange={e =>
-                    setProduct({
-                      ...product,
-                      allow_customization: e.target.checked,
-                    })
-                  }
-                  className='w-4 h-4 text-[#f63a9e] border-gray-300 rounded focus:ring-[#f63a9e]'
-                />
-                <Label htmlFor='allow-customization' className='cursor-pointer'>
-                  Allow customization for this art product
-                </Label>
+              <div>
+                <Label>Customization Products</Label>
+                <div className='mt-2 rounded-md border border-gray-200 divide-y divide-gray-100'>
+                  {availableProducts.length === 0 ? (
+                    <p className='p-3 text-sm text-gray-500'>
+                      No products available for customization.
+                    </p>
+                  ) : (
+                    availableProducts.map(p => (
+                      <label
+                        key={p.id}
+                        className='flex items-center justify-between p-3 hover:bg-gray-50 cursor-pointer'
+                      >
+                        <div>
+                          <p className='text-sm font-medium text-gray-900'>
+                            {p.name}
+                          </p>
+                          <p className='text-xs text-gray-500'>/{p.slug}</p>
+                        </div>
+                        <input
+                          type='checkbox'
+                          checked={product.customization_product_ids.includes(
+                            p.id
+                          )}
+                          onChange={() => toggleCustomizationProduct(p.id)}
+                          className='w-4 h-4 text-[#f63a9e] border-gray-300 rounded focus:ring-[#f63a9e]'
+                        />
+                      </label>
+                    ))
+                  )}
+                </div>
+                <p className='text-xs text-gray-500 mt-1'>
+                  Select one or more products users can choose for customization.
+                </p>
               </div>
+            </div>
 
-              {product.allow_customization && (
-                <div>
-                  <Label htmlFor='customization-product'>
-                    Customization Product
-                  </Label>
-                  <Select
-                    value={product.customization_product_id || ''}
-                    onValueChange={value =>
-                      setProduct({
-                        ...product,
-                        customization_product_id: value,
-                      })
-                    }
-                  >
-                    <SelectTrigger id='customization-product'>
-                      <SelectValue placeholder='Select a product...' />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {availableProducts.map(p => (
-                        <SelectItem key={p.id} value={p.id}>
-                          {p.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  <p className='text-xs text-gray-500 mt-1'>
-                    Users will be redirected to this product for customization
+            {/* Tags Section */}
+            <div className='bg-white rounded-lg border border-gray-200 p-6 space-y-4'>
+              <h2
+                className="font-['Bricolage_Grotesque',_sans-serif] border-b border-gray-100 pb-3"
+                style={{ fontSize: '20px', fontWeight: '600' }}
+              >
+                Tags
+              </h2>
+              {!isNewProduct ? (
+                <AdminArtProductTagsEditor artProductId={product.id} />
+              ) : (
+                <div className='bg-gray-50 rounded-lg border border-gray-200 p-8 text-center'>
+                  <Package className='w-12 h-12 text-gray-400 mx-auto mb-3' />
+                  <h3 className='font-semibold text-gray-900 mb-2'>
+                    Save Product First
+                  </h3>
+                  <p className='text-gray-600'>
+                    Save the basic information first before adding tags to this
+                    art product.
                   </p>
                 </div>
               )}
@@ -868,66 +831,6 @@ export function AdminArtEditPage() {
             </div>
           </TabsContent>
 
-          {/* Tab 3: Sizes & Pricing */}
-          <TabsContent value='sizes'>
-            <AdminArtSizeManager
-              availableSizes={product.available_sizes || []}
-              images={product.images}
-              onSizesChange={sizes =>
-                setProduct(prev => prev ? { ...prev, available_sizes: sizes } : prev)
-              }
-              aspectRatioId={product.aspect_ratio_id || undefined}
-              onAspectRatioChange={ratioId =>
-                setProduct(prev => prev ? { ...prev, aspect_ratio_id: ratioId } : prev)
-              }
-            />
-          </TabsContent>
-
-          {/* Tab 4: Tags */}
-          <TabsContent value='tags'>
-            {!isNewProduct ? (
-              <div className='bg-white rounded-lg border border-gray-200 p-6'>
-                <AdminArtProductTagsEditor artProductId={product.id} />
-              </div>
-            ) : (
-              <div className='bg-gray-50 rounded-lg border border-gray-200 p-8 text-center'>
-                <Package className='w-12 h-12 text-gray-400 mx-auto mb-3' />
-                <h3 className='font-semibold text-gray-900 mb-2'>
-                  Save Product First
-                </h3>
-                <p className='text-gray-600'>
-                  Save the basic information first before adding tags to this
-                  art product.
-                </p>
-              </div>
-            )}
-          </TabsContent>
-
-          {/* Tab 5: SEO & Content */}
-          <TabsContent value='content'>
-            <AdminArtContentEditor
-              metaTitle={product.meta_title || ''}
-              metaDescription={product.meta_description || ''}
-              metaKeywords={product.meta_keywords || []}
-              onMetaTitleChange={value =>
-                setProduct({ ...product, meta_title: value })
-              }
-              onMetaDescriptionChange={value =>
-                setProduct({ ...product, meta_description: value })
-              }
-              onMetaKeywordsChange={value =>
-                setProduct({ ...product, meta_keywords: value })
-              }
-              features={product.features || []}
-              specifications={product.specifications || []}
-              onFeaturesChange={features =>
-                setProduct({ ...product, features })
-              }
-              onSpecificationsChange={specs =>
-                setProduct({ ...product, specifications: specs })
-              }
-            />
-          </TabsContent>
         </Tabs>
       </div>
 

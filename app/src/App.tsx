@@ -12,6 +12,7 @@ import { PresetProvider } from './context/PresetContext';
 import { ScrollToTop } from '@/components/shared/ScrollToTop';
 import { WhatsAppButton } from '@/components/shared/whatsapp-floating-button';
 import { CookieConsent } from '@/components/shared/cookie-consent';
+import { LoadingSpinner } from '@/components/shared/loading-spinner';
 
 const Dashboard = lazy(() => import('@/pages/dashboard/index'));
 const UploadImage = lazy(() => import('./pages/upload'));
@@ -97,11 +98,7 @@ const Category = lazy(
 
 const queryClient = new QueryClient();
 
-const PageLoader = () => (
-  <div className='min-h-screen flex items-center justify-center'>
-    <div className='animate-spin rounded-full h-12 w-12 border-b-2 border-[#f63a9e]' />
-  </div>
-);
+const PageLoader = () => <LoadingSpinner />;
 
 const App: React.FC = () => {
   return (

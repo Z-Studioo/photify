@@ -4,14 +4,20 @@ import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Crop, Image, Info, Scan, ShoppingBag } from 'lucide-react';
+import {
+  CheckCircle2,
+  ImagePlus,
+  UploadCloud,
+} from 'lucide-react';
 import { motion, AnimatePresence, type Variants } from 'motion/react';
 import { toast } from 'sonner';
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import { Header } from '@/components/layout/header';
+import { cn } from '@/lib/utils';
 
 const Page = () => {
+  const MAX_FILE_SIZE_MB = 20;
   const {
     file: _file,
     setFile,
@@ -22,30 +28,53 @@ const Page = () => {
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const [searchParams] = useSearchParams();
   const supabase = createClient();
+  const [isDragging, setIsDragging] = useState(false);
+  const [uploadError, setUploadError] = useState<string | null>(null);
+
+  const processFile = (file: File) => {
+    if (!file.type.startsWith('image/')) {
+      const errorMessage = 'Please upload a valid image file';
+      setUploadError(errorMessage);
+      toast.error(errorMessage);
+      return;
+    }
+
+    if (file.size > MAX_FILE_SIZE_MB * 1024 * 1024) {
+      const errorMessage = `Image is too large. Please upload a file smaller than ${MAX_FILE_SIZE_MB}MB.`;
+      setUploadError(errorMessage);
+      toast.error(errorMessage);
+      return;
+    }
+
+    if (preview) {
+      URL.revokeObjectURL(preview);
+    }
+
+    const newPreview = URL.createObjectURL(file);
+    setFile(file);
+    setPreview(newPreview);
+    setUploadError(null);
+  };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const f = e.target.files?.[0];
-    if (f) {
-      if (!f.type.startsWith('image/')) {
-        toast.error('Please upload an image file');
-        return;
-      }
-
-      const newPreview = URL.createObjectURL(f);
-      setFile(f);
-      setPreview(newPreview);
-    }
+    const selectedFile = e.target.files?.[0];
+    if (!selectedFile) return;
+    processFile(selectedFile);
   };
 
   const handleContinue = () => {
     if (_file && preview) {
-      navigate('/crop');
+      navigate('/dashboard');
     }
   };
 
   const resetUpload = () => {
+    if (preview) {
+      URL.revokeObjectURL(preview);
+    }
     setFile(null);
     setPreview(null);
+    setUploadError(null);
 
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
@@ -53,6 +82,24 @@ const Page = () => {
   };
 
   const navigate = useNavigate();
+
+  const handleDrop = (e: React.DragEvent<HTMLLabelElement>) => {
+    e.preventDefault();
+    setIsDragging(false);
+    const droppedFile = e.dataTransfer.files?.[0];
+    if (!droppedFile) return;
+    processFile(droppedFile);
+  };
+
+  const handleDragOver = (e: React.DragEvent<HTMLLabelElement>) => {
+    e.preventDefault();
+    setIsDragging(true);
+  };
+
+  const handleDragLeave = (e: React.DragEvent<HTMLLabelElement>) => {
+    e.preventDefault();
+    setIsDragging(false);
+  };
 
   const containerVariants: Variants = {
     hidden: { opacity: 0 },
@@ -72,19 +119,6 @@ const Page = () => {
       y: 0,
       transition: { duration: 0.6, ease: [0.22, 1, 0.36, 1] },
     },
-  };
-
-  const stepVariants: Variants = {
-    hidden: { opacity: 0, scale: 0.8 },
-    visible: (i: number) => ({
-      opacity: 1,
-      scale: 1,
-      transition: {
-        delay: i * 0.15,
-        duration: 0.5,
-        ease: [0.34, 1.56, 0.64, 1],
-      },
-    }),
   };
 
   useEffect(() => {
@@ -113,23 +147,30 @@ const Page = () => {
   }, [searchParams, supabase, setSelectedProduct]);
 
   return (
-    <div className='min-h-screen flex flex-col'>
+    <div className='h-dvh flex flex-col overflow-hidden'>
       <Header />
       <motion.div
-        className='w-full flex-grow flex flex-col items-center justify-center font-[var(--font-heading)] p-4 m-0'
+        className='w-full flex-1 min-h-0 flex flex-col items-center justify-center font-[var(--font-heading)] px-4 py-4 md:py-6 m-0 overflow-hidden'
         variants={containerVariants}
         initial='hidden'
         animate='visible'
       >
         <motion.h1
-          className='text-2xl md:text-3xl font-bold mb-8'
+          className='text-2xl md:text-3xl font-bold mb-4 md:mb-5'
           variants={itemVariants}
         >
           Upload your photo
         </motion.h1>
+        <motion.p
+          variants={itemVariants}
+          className='text-sm md:text-base text-[var(--muted-foreground)] mb-4 md:mb-5 text-center max-w-xl'
+        >
+          Start by adding one high-quality image. You can drag and drop it or
+          browse your files.
+        </motion.p>
 
         <motion.div variants={itemVariants} className='w-full max-w-[744px]'>
-          <Card className='w-full mx-auto flex flex-col items-center border-none p-0 shadow-none'>
+          <Card className='w-full mx-auto flex flex-col items-center border border-border/60 bg-background/60 backdrop-blur-sm p-4 md:p-6 rounded-2xl shadow-sm'>
             <AnimatePresence mode='wait'>
               {!preview ? (
                 <motion.div
@@ -142,8 +183,16 @@ const Page = () => {
                 >
                   <motion.label
                     htmlFor='file-upload'
-                    className='w-full h-[220px] md:h-[300px] border-2 border-dashed border-gray-300 rounded-[var(--radius-lg)] flex flex-col items-center justify-center cursor-pointer text-gray-500 hover:border-gray-400 transition-colors bg-[#FCFCFD] relative overflow-hidden'
-                    whileHover={{ borderColor: '#9ca3af' }}
+                    className={cn(
+                      'w-full h-[180px] sm:h-[220px] md:h-[300px] border-2 border-dashed rounded-[var(--radius-lg)] flex flex-col items-center justify-center cursor-pointer text-gray-500 transition-colors bg-[#FCFCFD] relative overflow-hidden',
+                      isDragging
+                        ? 'border-primary bg-primary/5'
+                        : 'border-gray-300 hover:border-gray-400',
+                    )}
+                    whileHover={{ borderColor: isDragging ? undefined : '#9ca3af' }}
+                    onDrop={handleDrop}
+                    onDragOver={handleDragOver}
+                    onDragLeave={handleDragLeave}
                   >
                     <motion.div
                       className='absolute inset-0 bg-gradient-to-br from-transparent via-transparent to-gray-50 opacity-0'
@@ -152,7 +201,10 @@ const Page = () => {
                     />
                     <div className='flex flex-col justify-center items-center gap-4 relative z-10'>
                       <motion.div
-                        className='rounded-full p-3 bg-[var(--accent)] text-[#98A2B3]'
+                        className={cn(
+                          'rounded-full p-3 text-[#98A2B3]',
+                          isDragging ? 'bg-primary/15 text-primary' : 'bg-[var(--accent)]',
+                        )}
                         whileHover={{ scale: 1.1, rotate: 5 }}
                         transition={{
                           type: 'spring',
@@ -160,16 +212,20 @@ const Page = () => {
                           damping: 10,
                         }}
                       >
-                        <Image size={32} />
+                        {isDragging ? (
+                          <UploadCloud size={32} />
+                        ) : (
+                          <ImagePlus size={32} />
+                        )}
                       </motion.div>
                       <div className='flex flex-col items-center gap-1'>
                         <div className='flex flex-row justify-center items-center gap-1'>
                           <span className='font-bold text-[var(--primary)] text-base'>
-                            Click to upload
+                            {isDragging ? 'Drop image to upload' : 'Click to upload'}
                           </span>
                         </div>
                         <span className='font-medium text-sm text-gray-400'>
-                          or drag and drop
+                          JPG, PNG, WEBP up to {MAX_FILE_SIZE_MB}MB
                         </span>
                       </div>
                     </div>
@@ -182,13 +238,31 @@ const Page = () => {
                     className='hidden'
                     onChange={handleFileChange}
                   />
-                  <div className='flex items-center justify-center'>
+                  <div className='mt-4 flex flex-col md:flex-row md:items-center md:justify-between gap-3'>
                     <Button
-                      className={`w-full md:w-auto h-12 mt-4 px-6 md:px-14 rounded-[var(--radius-lg)] text-base font-semibold ${!preview ? 'opacity-50 cursor-not-allowed' : ''}`}
-                      onClick={handleContinue}
-                      disabled={!preview}
+                      variant='outline'
+                      type='button'
+                      onClick={() => fileInputRef.current?.click()}
+                      className='w-full md:w-auto h-11 px-6'
                     >
-                      Continue
+                      Browse files
+                    </Button>
+                    <span className='text-xs text-[var(--muted-foreground)] text-center md:text-right'>
+                      Tip: use bright, high-resolution photos for best print quality.
+                    </span>
+                  </div>
+                  {uploadError && (
+                    <Alert className='mt-4 border-destructive/30 bg-destructive/5 text-destructive'>
+                      <AlertDescription>{uploadError}</AlertDescription>
+                    </Alert>
+                  )}
+                  <div className='flex items-center justify-center mt-5'>
+                    <Button
+                      className='w-full md:w-auto h-12 px-6 md:px-14 rounded-[var(--radius-lg)] text-base font-semibold opacity-50 cursor-not-allowed'
+                      onClick={handleContinue}
+                      disabled
+                    >
+                      Select a photo to continue
                     </Button>
                   </div>
                 </motion.div>
@@ -208,7 +282,7 @@ const Page = () => {
                     <img
                       src={preview}
                       alt='Preview'
-                      className='w-full h-[220px] md:h-[300px] object-contain'
+                      className='w-full h-[180px] sm:h-[220px] md:h-[300px] object-contain'
                     />
                     <motion.div
                       className='absolute inset-0 bg-gradient-to-t from-black/10 to-transparent'
@@ -225,16 +299,14 @@ const Page = () => {
                     transition={{ delay: 0.3, duration: 0.4 }}
                   >
                     <div className='flex justify-center'>
-                      <Button
-                        variant='link'
-                        className='cursor-pointer text-[var(--foreground)] underline text-sm'
-                        onClick={() => {
-                          setFile(null);
-                          setPreview(null);
-                        }}
-                      >
-                        Change photo
-                      </Button>
+                      {_file && (
+                        <div className='inline-flex max-w-full items-center gap-2 rounded-full bg-accent px-3 py-1 text-xs text-[var(--foreground)]'>
+                          <CheckCircle2 size={14} className='text-primary shrink-0' />
+                          <span className='truncate max-w-[220px] md:max-w-[420px]'>
+                            {_file.name}
+                          </span>
+                        </div>
+                      )}
                     </div>
 
                     <motion.div
@@ -246,125 +318,27 @@ const Page = () => {
                         damping: 15,
                       }}
                     >
-                      <Button
-                        className='w-full h-12 px-6 rounded-[var(--radius-lg)] text-base font-semibold'
-                        onClick={handleContinue}
-                      >
-                        Continue
-                      </Button>
+                      <div className='flex flex-col-reverse md:flex-row gap-3 w-full'>
+                        <Button
+                          variant='outline'
+                          className='w-full md:flex-1 h-12 px-6 rounded-[var(--radius-lg)] text-base font-semibold'
+                          onClick={resetUpload}
+                        >
+                          Change photo
+                        </Button>
+                        <Button
+                          className='w-full md:flex-1 h-12 px-6 rounded-[var(--radius-lg)] text-base font-semibold'
+                          onClick={handleContinue}
+                        >
+                          Continue
+                        </Button>
+                      </div>
                     </motion.div>
                   </motion.div>
                 </motion.div>
               )}
             </AnimatePresence>
           </Card>
-        </motion.div>
-
-        <motion.div
-          variants={itemVariants}
-          className='w-full max-w-[744px] mt-16'
-        >
-          <Card className='p-0 flex flex-col justify-center items-center border-none shadow-none w-full'>
-            <span className='text-[var(--muted-foreground)] text-base mb-6'>
-              Just 3 more steps to go
-            </span>
-
-            <div className='flex w-full justify-center items-center px-4'>
-              <div className='relative flex flex-row items-center justify-between w-full gap-4 md:gap-0'>
-                <div className='absolute flex w-full h-16 top-0 items-center z-0'>
-                  <motion.hr
-                    className='w-full border-t border-[#E0E3E7] border-dashed z-0'
-                    initial={{ scaleX: 0, originX: 0 }}
-                    animate={{ scaleX: 1 }}
-                    transition={{
-                      delay: 0.8,
-                      duration: 0.8,
-                      ease: 'easeInOut',
-                    }}
-                  />
-                </div>
-
-                <motion.div
-                  className='flex flex-col items-center gap-2 z-10'
-                  custom={0}
-                  variants={stepVariants}
-                  whileHover={{ scale: 1.1 }}
-                  transition={{ type: 'spring', stiffness: 300 }}
-                >
-                  <motion.div
-                    className='w-14 h-14 md:w-16 md:h-16 flex justify-center items-center rounded-full bg-[#3AF66C] shadow-md'
-                    whileHover={{
-                      boxShadow: '0 10px 30px rgba(58, 246, 108, 0.25)',
-                    }}
-                  >
-                    <span className='!text-white'>
-                      <Scan size={24} />
-                    </span>
-                  </motion.div>
-                  <span className='text-xs font-medium text-center'>
-                    Adjust
-                  </span>
-                </motion.div>
-
-                <motion.div
-                  className='flex flex-col items-center gap-2 z-10'
-                  custom={1}
-                  variants={stepVariants}
-                  whileHover={{ scale: 1.1 }}
-                  transition={{ type: 'spring', stiffness: 300 }}
-                >
-                  <motion.div
-                    className='w-14 h-14 md:w-16 md:h-16 flex justify-center items-center rounded-full bg-[#B625FE] shadow-md'
-                    whileHover={{
-                      boxShadow: '0 10px 30px rgba(182, 37, 254, 0.25)',
-                    }}
-                  >
-                    <span className='!text-white'>
-                      <Crop size={24} />
-                    </span>
-                  </motion.div>
-                  <span className='text-xs font-medium text-center'>
-                    Select size
-                  </span>
-                </motion.div>
-
-                <motion.div
-                  className='flex flex-col items-center gap-2 z-10'
-                  custom={2}
-                  variants={stepVariants}
-                  whileHover={{ scale: 1.1 }}
-                  transition={{ type: 'spring', stiffness: 300 }}
-                >
-                  <motion.div
-                    className='w-14 h-14 md:w-16 md:h-16 flex justify-center items-center rounded-full bg-[#F63A53] shadow-md'
-                    whileHover={{
-                      boxShadow: '0 10px 30px rgba(246, 58, 83, 0.25)',
-                    }}
-                  >
-                    <span className='!text-white'>
-                      <ShoppingBag size={24} />
-                    </span>
-                  </motion.div>
-                  <span className='text-xs font-medium'>Checkout</span>
-                </motion.div>
-              </div>
-            </div>
-          </Card>
-        </motion.div>
-
-        <motion.div
-          variants={itemVariants}
-          className='w-full max-w-[744px] mt-12'
-        >
-          <Alert className='bg-[#FFF9DA] text-yellow-700 border-[#FFF9DA] w-full flex gap-2 px-4 py-3 rounded-lg'>
-            <span className='text-[var(--chart-4)] mt-0.5'>
-              <Info size={18} />
-            </span>
-            <AlertDescription className='text-[var(--foreground)] text-xs leading-relaxed'>
-              The area inside pink borders is primarily visible and the area in
-              the shadow will be used to fold the canvas.
-            </AlertDescription>
-          </Alert>
         </motion.div>
       </motion.div>
     </div>

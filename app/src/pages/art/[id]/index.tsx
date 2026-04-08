@@ -3,6 +3,7 @@ import { useParams, Navigate } from 'react-router-dom';
 import { ArtDetailPage } from '@/components/pages/art/detail';
 import { createClient } from '@/lib/supabase/client';
 import { Helmet } from '@dr.pogodin/react-helmet';
+import { LoadingSpinner } from '@/components/shared/loading-spinner';
 
 export default function ArtPage() {
   const { id } = useParams<{ id: string }>();
@@ -55,12 +56,7 @@ export default function ArtPage() {
           />
           <meta name="robots" content="noindex,nofollow" />
         </Helmet>
-        <div className='min-h-screen flex items-center justify-center'>
-          <div className='text-center'>
-            <div className='animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900 mx-auto' />
-            <p className='mt-4 text-gray-600'>Loading...</p>
-          </div>
-        </div>
+        <LoadingSpinner />
       </>
       
     );

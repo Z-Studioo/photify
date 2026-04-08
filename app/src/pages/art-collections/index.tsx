@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { ArtCollectionPage } from '@/components/pages/art-collection';
 import { createClient } from '@/lib/supabase/client';
 import { Helmet } from '@dr.pogodin/react-helmet';
+import { LoadingSpinner } from '@/components/shared/loading-spinner';
 
 interface ArtTag {
   id: string;
@@ -71,14 +72,7 @@ export default function ArtCollections() {
   }, []);
 
   if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900 mx-auto" />
-          <p className="mt-4 text-gray-600">Loading art collection...</p>
-        </div>
-      </div>
-    );
+    return <LoadingSpinner />;
   }
 
   return (

@@ -40,7 +40,7 @@ export default function CropPage() {
           </div>
         </div>
 
-        <div className='h-1/2 md:h-full w-full md:w-[320px] lg:w-[380px] bg-white flex flex-col border-t md:border-t-0 md:border-l rounded-b-xl md:rounded-r-xl md:rounded-bl-none'>
+        <div className='h-1/2 md:h-full w-full md:w-[400px] lg:w-[460px] xl:w-[520px] bg-white flex flex-col border-t md:border-t-0 md:border-l rounded-b-xl md:rounded-r-xl md:rounded-bl-none'>
           <div className='flex-1 overflow-y-auto pb-16 sm:pb-20 md:pb-4'>
             <CropPanel />
           </div>
@@ -52,7 +52,7 @@ export default function CropPage() {
               paddingBottom: 'calc(0.75rem + env(safe-area-inset-bottom, 0px))',
             }}
           >
-            <div className='max-w-[380px] mx-auto md:mx-0'>
+            <div className='max-w-[520px] mx-auto md:mx-0'>
               <Button
                 size='lg'
                 className='w-full bg-primary text-white hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed h-11 sm:h-12 text-sm sm:text-base'

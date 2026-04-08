@@ -19,6 +19,7 @@ interface CropPanelProps {
 
 const CropPanel: React.FC<CropPanelProps> = ({ onSelectionChange }) => {
   const {
+    preview,
     selectedRatio,
     setSelectedRatio,
     selectedSize,
@@ -28,6 +29,8 @@ const CropPanel: React.FC<CropPanelProps> = ({ onSelectionChange }) => {
   const { setSelectedView } = useView();
   const sectionRefs = useRef<Record<string, HTMLDivElement | null>>({});
   const [_expandedRatio, setExpandedRatio] = useState<string | null>(null);
+  const [isAutoRatioSelected, setIsAutoRatioSelected] = useState<boolean>(false);
+  const [autoResolvedRatio, setAutoResolvedRatio] = useState<string | null>(null);
   const [ratiosLoading, setRatiosLoading] = useState<boolean>(false);
   const [ratiosError, setRatiosError] = useState<Error | null>(null);
   const [ratios, setRatios] = useState<RatioData[]>([]);
@@ -76,8 +79,82 @@ const CropPanel: React.FC<CropPanelProps> = ({ onSelectionChange }) => {
   const calculateDiscount = (actual: number, sell: number) =>
     Math.round(((actual - sell) / actual) * 100);
 
+  const getSmallestSize = (sizes: InchData[]): InchData | null =>
+    [...sizes].sort((a, b) => a.area_in2 - b.area_in2)[0] || null;
+
+  const getImageAspectRatio = (src: string): Promise<number | null> =>
+    new Promise(resolve => {
+      const img = new window.Image();
+      img.onload = () => {
+        if (!img.width || !img.height) {
+          resolve(null);
+          return;
+        }
+        resolve(img.width / img.height);
+      };
+      img.onerror = () => resolve(null);
+      img.src = src;
+    });
+
+  const getClosestRatio = (
+    imageAspectRatio: number,
+    availableRatios: RatioData[]
+  ): RatioData | null => {
+    const validRatios = availableRatios.filter(r => r.sizes.length > 0);
+    if (!validRatios.length) return null;
+
+    const getRatioValue = (ratioData: RatioData) => {
+      if (ratioData.width_ratio > 0 && ratioData.height_ratio > 0) {
+        return ratioData.width_ratio / ratioData.height_ratio;
+      }
+      const [w, h] = ratioData.label.split(':').map(Number);
+      return w > 0 && h > 0 ? w / h : 1;
+    };
+
+    return validRatios.reduce((closest, current) => {
+      const closestDiff = Math.abs(
+        Math.log(getRatioValue(closest) / imageAspectRatio)
+      );
+      const currentDiff = Math.abs(
+        Math.log(getRatioValue(current) / imageAspectRatio)
+      );
+      return currentDiff < closestDiff ? current : closest;
+    });
+  };
+
+  const applyAutoRatioSelection = async () => {
+    if (!preview || !ratios.length) {
+      toast.error('Please upload an image first');
+      return;
+    }
+
+    const imageAspectRatio = await getImageAspectRatio(preview);
+    if (!imageAspectRatio) {
+      toast.error('Unable to detect image ratio');
+      return;
+    }
+
+    const closestRatio = getClosestRatio(imageAspectRatio, ratios);
+    if (!closestRatio) {
+      toast.error('No ratio options available');
+      return;
+    }
+
+    const smallest = getSmallestSize(closestRatio.sizes);
+    if (!smallest) {
+      toast.error('No sizes available for selected ratio');
+      return;
+    }
+
+    setSelectedRatio(closestRatio.label);
+    setSelectedSize(smallest);
+    setSelectedView('crop');
+    onSelectionChange?.(closestRatio.label, smallest);
+    setAutoResolvedRatio(closestRatio.label);
+  };
+
   const handleRatioClick = (ratioData: RatioData) => {
-    const smallest = ratioData.sizes[0] || null;
+    const smallest = getSmallestSize(ratioData.sizes);
     setSelectedRatio(ratioData.label);
     setSelectedSize(smallest);
     onSelectionChange?.(ratioData.label, smallest);
@@ -136,29 +213,48 @@ const CropPanel: React.FC<CropPanelProps> = ({ onSelectionChange }) => {
   return (
     <>
       <div className='border-b border-gray-100 bg-white'>
-        <div className='flex overflow-x-auto gap-1 px-2 py-3 scrollbar-hide'>
+        <div className='flex md:flex-wrap overflow-x-auto md:overflow-x-visible gap-2 px-3 py-3.5 md:py-4 scrollbar-hide w-full'>
+          <button
+            onClick={async () => {
+              setIsAutoRatioSelected(true);
+              await applyAutoRatioSelection();
+            }}
+            className={`flex items-center gap-2 px-3.5 md:px-4 py-2.5 md:py-3 rounded-xl whitespace-nowrap text-sm md:text-base font-semibold transition-all shrink-0 md:shrink ${
+              isAutoRatioSelected
+                ? 'bg-primary text-white shadow-sm'
+                : 'text-gray-600 hover:bg-gray-50 active:bg-gray-100'
+            }`}
+          >
+            <span>Auto</span>
+          </button>
           {ratios.map(ratio => {
-            const isActive = selectedRatio === ratio.label;
-            if(ratio.sizes.length === 0) return null;
+            const isActive = !isAutoRatioSelected && selectedRatio === ratio.label;
+            if (ratio.sizes.length === 0) return null;
             return (
               <button
                 key={ratio.id}
                 onClick={() => {
+                  setIsAutoRatioSelected(false);
                   handleRatioClick(ratio);
                   setExpandedRatio(ratio.id);
                 }}
-                className={`flex items-center gap-1.5 px-3 py-2 rounded-lg whitespace-nowrap text-sm font-medium transition-all shrink-0 ${
+                className={`flex items-center gap-2 px-3.5 md:px-4 py-2.5 md:py-3 rounded-xl whitespace-nowrap text-sm md:text-base font-semibold transition-all shrink-0 md:shrink ${
                   isActive
                     ? 'bg-primary text-white shadow-sm'
                     : 'text-gray-600 hover:bg-gray-50 active:bg-gray-100'
                 }`}
               >
-                <AspectRatioIcon ratio={ratio.label} />
+                <AspectRatioIcon ratio={ratio.label} size={24} />
                 <span>{ratio.label}</span>
               </button>
             );
           })}
         </div>
+        {isAutoRatioSelected && autoResolvedRatio && (
+          <div className='px-4 pb-3 text-xs text-gray-500'>
+            Auto selected ratio: <span className='font-semibold'>{autoResolvedRatio}</span>
+          </div>
+        )}
       </div>
 
       <div className='p-4 md:p-5 space-y-3 bg-gray-50/50'>

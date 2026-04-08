@@ -1,0 +1,14 @@
+---
+description: Keep development focused on UI improvements only
+alwaysApply: true
+---
+
+# UI Development Focus
+
+This project session is focused on frontend UI work.
+
+- Prioritize visual/interface improvements in `app` (layout, styling, spacing, responsiveness, UX clarity, accessibility, and component presentation).
+- Do not change backend/server code, API contracts, database behavior, authentication logic, or business rules unless explicitly requested.
+- Avoid introducing logic-heavy refactors when a UI-scoped change solves the request.
+- Keep behavior unchanged while improving look-and-feel and interaction polish.
+- If a task requires backend changes to complete, pause and ask for explicit approval before proceeding.

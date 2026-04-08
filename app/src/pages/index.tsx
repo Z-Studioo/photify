@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react';
 import { HomePage } from '@/components/pages/home';
 import { createClient } from '@/lib/supabase/client';
 import { Helmet } from '@dr.pogodin/react-helmet';
+import { LoadingSpinner } from '@/components/shared/loading-spinner';
 
 export default function Home() {
   const [featuredProducts, setFeaturedProducts] = useState<any[]>([]);
@@ -60,9 +61,7 @@ export default function Home() {
             />
             <meta name="robots" content="index,follow" />
         </Helmet>
-        <div className="min-h-screen flex items-center justify-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#f63a9e]" />
-        </div>
+        <LoadingSpinner />
       </>
     );
   }

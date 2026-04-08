@@ -333,8 +333,6 @@ export function ArtCollectionPage({
                 name={product.name}
                 image={product.image}
                 price={product.price}
-                size={product.size}
-                sizeCount={product.sizeCount}
                 isBestSeller={product.isBestSeller}
                 index={index}
               />

@@ -21,8 +21,6 @@ import {
   Ruler as RulerIcon,
   X,
   LayoutGrid,
-  Download,
-  Share2,
   Home,
   AlertTriangle,
   Check,
@@ -189,6 +187,7 @@ export function CollageCustomizer() {
 
   // Photo selection modal state
   const [showPhotoModal, setShowPhotoModal] = useState(false);
+  const [isUploadDragActive, setIsUploadDragActive] = useState(false);
   const [pendingSlotForModal, setPendingSlotForModal] = useState<{
     slotId: string | null;
     targetSlot: { x: number; y: number; width: number; height: number };
@@ -293,99 +292,107 @@ export function CollageCustomizer() {
     fetchSizeOptions();
   }, [selectedTemplate]);
 
-  // Handle file upload - if there's a pending slot, trigger crop modal immediately
-  const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const files = event.target.files;
-    if (!files || files.length === 0) {
-      return;
-    }
+  const createPhotoFromFile = (file: File): Promise<CollagePhoto> => {
+    return new Promise((resolve, reject) => {
+      if (!file.type.startsWith('image/')) {
+        reject(new Error(`${file.name} is not an image`));
+        return;
+      }
 
-    const file = files[0]; // Take only first file when slot is pending
+      const maxSize = 10 * 1024 * 1024; // 10MB
+      if (file.size > maxSize) {
+        reject(new Error('Image too large. Please use an image under 10MB.'));
+        return;
+      }
 
-    // Validate file type
-    if (!file.type.startsWith('image/')) {
-      toast.error(`${file.name} is not an image`);
-      return;
-    }
-
-    // Check file size (max 10MB for mobile compatibility)
-    const maxSize = 10 * 1024 * 1024; // 10MB
-    if (file.size > maxSize) {
-      toast.error('Image too large. Please use an image under 10MB.');
-      return;
-    }
-
-    const reader = new FileReader();
-
-    // Handle FileReader errors
-    reader.onerror = () => {
-      toast.error('Failed to read image file. Please try again.');
-    };
-
-    reader.onload = e => {
-      try {
+      const reader = new FileReader();
+      reader.onerror = () =>
+        reject(new Error('Failed to read image file. Please try again.'));
+      reader.onload = e => {
         if (!e.target?.result) {
-          throw new Error('No result from FileReader');
+          reject(new Error('No result from FileReader'));
+          return;
         }
 
         const img = new Image();
-
-        // Handle image load errors
-        img.onerror = () => {
-          toast.error('Failed to load image. Please try a different image.');
-        };
-
+        img.onerror = () =>
+          reject(new Error('Failed to load image. Please try a different image.'));
         img.onload = () => {
-          try {
-            const photoId = `photo-${Date.now()}`;
-            const photo: CollagePhoto = {
-              id: photoId,
-              instanceId: photoId,
-              file,
-              url: e.target?.result as string,
-              rotation: 0,
-              isPlaced: false,
-              originalWidth: img.width,
-              originalHeight: img.height,
-            };
-
-            // If there's a pending slot, trigger placement flow
-            if (pendingSlotForModal && onPhotoSelectedForSlot) {
-              setShowPhotoModal(false);
-              onPhotoSelectedForSlot(photo, pendingSlotForModal);
-              setPendingSlotForModal(null);
-            } else {
-              // Otherwise just add to photos list
-              setSelection(prev => ({
-                ...prev,
-                photos: [...prev.photos, photo],
-              }));
-              toast.success('Photo uploaded!');
-              setShowPhotoModal(false);
-            }
-          } catch (error) {
-            console.error('Error processing loaded image:', error);
-            toast.error('Failed to process image. Please try again.');
-          }
+          const photoId = `photo-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
+          resolve({
+            id: photoId,
+            instanceId: photoId,
+            file,
+            url: e.target?.result as string,
+            rotation: 0,
+            isPlaced: false,
+            originalWidth: img.width,
+            originalHeight: img.height,
+          });
         };
+        img.src = e.target.result as string;
+      };
 
-        img.src = e.target?.result as string;
-      } catch (error) {
-        console.error('Error in FileReader onload:', error);
-        toast.error('Failed to process image file. Please try again.');
+      try {
+        reader.readAsDataURL(file);
+      } catch {
+        reject(new Error('Failed to read image file. Please try again.'));
       }
-    };
+    });
+  };
 
-    try {
-      reader.readAsDataURL(file);
-    } catch (error) {
-      console.error('Error reading file:', error);
-      toast.error('Failed to read image file. Please try again.');
+  const processFiles = async (files: File[]) => {
+    if (files.length === 0) return;
+
+    const filesToProcess = pendingSlotForModal ? [files[0]] : files;
+    let successCount = 0;
+
+    for (const file of filesToProcess) {
+      try {
+        const photo = await createPhotoFromFile(file);
+
+        if (pendingSlotForModal && onPhotoSelectedForSlot) {
+          setShowPhotoModal(false);
+          onPhotoSelectedForSlot(photo, pendingSlotForModal);
+          setPendingSlotForModal(null);
+          successCount += 1;
+          break;
+        }
+
+        setSelection(prev => ({
+          ...prev,
+          photos: [...prev.photos, photo],
+        }));
+        successCount += 1;
+      } catch (error) {
+        toast.error(
+          error instanceof Error
+            ? error.message
+            : 'Failed to process image. Please try again.'
+        );
+      }
     }
 
+    if (!pendingSlotForModal && successCount > 0) {
+      toast.success(
+        successCount === 1
+          ? '1 photo uploaded'
+          : `${successCount} photos uploaded`
+      );
+    }
+  };
+
+  // Handle file upload - if there's a pending slot, trigger crop modal immediately
+  const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(event.target.files || []);
+    await processFiles(files);
     // Reset input to allow selecting the same file again
     event.target.value = '';
   };
+
+  const uploadedPhotos = Array.from(
+    new Map(selection.photos.map(p => [p.id, p])).values()
+  );
 
   // Generate unique ID (mobile-compatible fallback)
   const generateUniqueId = () => {
@@ -551,26 +558,6 @@ export function CollageCustomizer() {
   // Handle canvas update for 3D preview
   const handleCanvasUpdate = (dataURL: string) => {
     setCollageDataURL(dataURL);
-  };
-
-  // Download collage
-  const handleDownload = () => {
-    if (!collageDataURL) {
-      toast.error('Please add photos to your collage first');
-      return;
-    }
-
-    try {
-      // Create a temporary link and trigger download
-      const link = document.createElement('a');
-      link.download = `collage-${Date.now()}.png`;
-      link.href = collageDataURL;
-      link.click();
-      toast.success('Collage downloaded successfully!');
-    } catch (error) {
-      console.error('Failed to download:', error);
-      toast.error('Failed to download collage');
-    }
   };
 
   // Handle Next button - upload collage and navigate to 3D view
@@ -1011,28 +998,13 @@ export function CollageCustomizer() {
               Untitled Collage
             </h1>
             <p className='text-[10px] md:text-xs text-gray-500'>
-              {selection.canvasWidth}&quot; × {selection.canvasHeight}&quot;
+              Ratio {selectedTemplate?.aspectRatio || '1:1'}
             </p>
           </div>
         </div>
 
         {/* Desktop Actions */}
         <div className='hidden md:flex items-center gap-2'>
-          <Button
-            variant='ghost'
-            size='sm'
-            onClick={handleDownload}
-            disabled={!collageDataURL}
-          >
-            <Download className='w-4 h-4 mr-2' />
-            Download
-          </Button>
-
-          <Button variant='ghost' size='sm' disabled>
-            <Share2 className='w-4 h-4 mr-2' />
-            Share
-          </Button>
-
           {hasSelectedTemplate && (
             <Button
               variant='ghost'
@@ -2028,6 +2000,7 @@ export function CollageCustomizer() {
           ref={fileInputRef}
           type='file'
           accept='image/*'
+          multiple={!pendingSlotForModal}
           onChange={handleFileUpload}
           className='hidden'
         />
@@ -2059,66 +2032,48 @@ export function CollageCustomizer() {
                       whileHover={{ scale: 1.03, y: -5 }}
                       whileTap={{ scale: 0.98 }}
                     >
-                      {/* Template Preview - Responsive */}
+                      {/* Template Preview - Match real collage aspect/shape */}
                       <div className='bg-white p-4 md:p-8 h-40 md:h-64 flex items-center justify-center'>
                         {template.type === 'grid' &&
                           (() => {
                             const { rows, columns } = template.config as any;
+                            const previewAspectRatio =
+                              template.aspectRatio === '2:3'
+                                ? '2 / 3'
+                                : template.aspectRatio === '3:2'
+                                  ? '3 / 2'
+                                  : '1 / 1';
+                            const fitByHeight =
+                              template.aspectRatio === '2:3' ||
+                              template.aspectRatio === '1:1';
+
                             return (
                               <div
-                                className='grid gap-2 w-full h-full max-w-xs'
+                                className='border border-gray-200 bg-gray-50 p-2 md:p-3'
                                 style={{
-                                  gridTemplateColumns: `repeat(${columns}, 1fr)`,
-                                  gridTemplateRows: `repeat(${rows}, 1fr)`,
+                                  aspectRatio: previewAspectRatio,
+                                  width: fitByHeight ? 'auto' : '100%',
+                                  height: fitByHeight ? '100%' : 'auto',
+                                  maxWidth: '100%',
+                                  maxHeight: '100%',
                                 }}
                               >
-                                {Array.from({ length: rows * columns }).map(
-                                  (_, i) => (
-                                    <div
-                                      key={i}
-                                      className='bg-gradient-to-br from-pink-100 to-pink-200 rounded-lg'
-                                    />
-                                  )
-                                )}
-                              </div>
-                            );
-                          })()}
-
-                        {template.type === 'freeform' && (
-                          <div className='relative w-full h-full'>
-                            <div className='absolute top-4 left-4 w-24 h-24 bg-gradient-to-br from-pink-100 to-pink-200 rounded-xl transform rotate-6' />
-                            <div className='absolute top-8 right-6 w-20 h-20 bg-gradient-to-br from-purple-100 to-purple-200 rounded-xl transform -rotate-12' />
-                            <div className='absolute bottom-6 left-8 w-28 h-20 bg-gradient-to-br from-blue-100 to-blue-200 rounded-xl transform rotate-3' />
-                          </div>
-                        )}
-
-                        {template.type === 'fixed-slots' &&
-                          (() => {
-                            const { slots } = template.config as any;
-                            if (slots.length === 3) {
-                              return (
-                                <div className='grid grid-cols-2 gap-3 w-full h-full max-w-xs'>
-                                  <div className='bg-gradient-to-br from-pink-100 to-pink-200 rounded-xl row-span-2' />
-                                  <div className='bg-gradient-to-br from-purple-100 to-purple-200 rounded-xl' />
-                                  <div className='bg-gradient-to-br from-blue-100 to-blue-200 rounded-xl' />
+                                <div
+                                  className='grid w-full h-full gap-1.5 md:gap-2'
+                                  style={{
+                                    gridTemplateColumns: `repeat(${columns}, 1fr)`,
+                                    gridTemplateRows: `repeat(${rows}, 1fr)`,
+                                  }}
+                                >
+                                  {Array.from({ length: rows * columns }).map(
+                                    (_, i) => (
+                                      <div
+                                        key={i}
+                                        className='bg-gradient-to-br from-pink-100 to-pink-200'
+                                      />
+                                    )
+                                  )}
                                 </div>
-                              );
-                            }
-                            return (
-                              <div className='relative w-full h-full'>
-                                {slots.slice(0, 4).map((_: any, i: number) => (
-                                  <div
-                                    key={i}
-                                    className='absolute bg-gradient-to-br from-pink-100 to-purple-200 rounded-xl'
-                                    style={{
-                                      top: `${15 + i * 12}%`,
-                                      left: `${10 + i * 15}%`,
-                                      width: '35%',
-                                      height: '35%',
-                                      transform: `rotate(${i * 5}deg)`,
-                                    }}
-                                  />
-                                ))}
                               </div>
                             );
                           })()}
@@ -2131,11 +2086,7 @@ export function CollageCustomizer() {
                             {template.name}
                           </h3>
                           <span className='text-xs font-semibold text-[#f63a9e] bg-pink-50 px-2 py-1 rounded-full shrink-0'>
-                            {
-                              getCanvasDimensionsFromAspectRatio(
-                                template.aspectRatio
-                              ).label.split(' ')[0]
-                            }
+                            {template.aspectRatio}
                           </span>
                         </div>
                         {template.description && (
@@ -2310,7 +2261,7 @@ export function CollageCustomizer() {
           if (!open) setPendingSlotForModal(null);
         }}
       >
-        <DialogContent className='sm:max-w-2xl max-h-[80vh]'>
+        <DialogContent className='sm:max-w-3xl max-h-[85vh]'>
           <DialogHeader>
             <DialogTitle className='text-2xl'>Add Photos</DialogTitle>
             <DialogDescription>
@@ -2322,44 +2273,72 @@ export function CollageCustomizer() {
 
           <div className='space-y-6 py-4 overflow-y-auto max-h-[60vh]'>
             {/* Upload Section */}
-            <div>
-              <h3 className='font-semibold text-gray-900 mb-3 flex items-center gap-2'>
+            <div className='rounded-xl border border-gray-200 bg-white p-4 md:p-5'>
+              <h3 className='font-semibold text-gray-900 mb-3 flex items-center gap-2 text-lg'>
                 <Upload className='w-5 h-5 text-[#f63a9e]' />
                 Upload New Photos
               </h3>
-              <Button
+              <button
+                type='button'
                 onClick={() => fileInputRef.current?.click()}
-                variant='outline'
-                className='w-full h-24 border-2 border-dashed border-gray-300 hover:border-[#f63a9e] hover:bg-pink-50 transition-colors'
+                onDragEnter={e => {
+                  e.preventDefault();
+                  setIsUploadDragActive(true);
+                }}
+                onDragOver={e => {
+                  e.preventDefault();
+                  setIsUploadDragActive(true);
+                }}
+                onDragLeave={e => {
+                  e.preventDefault();
+                  setIsUploadDragActive(false);
+                }}
+                onDrop={async e => {
+                  e.preventDefault();
+                  setIsUploadDragActive(false);
+                  const files = Array.from(e.dataTransfer.files || []);
+                  await processFiles(files);
+                }}
+                className={`w-full rounded-xl border-2 border-dashed p-5 md:p-7 transition-colors ${
+                  isUploadDragActive
+                    ? 'border-[#f63a9e] bg-pink-50'
+                    : 'border-gray-300 hover:border-[#f63a9e] hover:bg-pink-50'
+                }`}
+                aria-label='Upload photos by clicking or dragging files'
               >
-                <div className='flex flex-col items-center gap-2'>
-                  <Upload className='w-8 h-8 text-gray-400' />
+                <div className='flex flex-col items-center gap-3 text-center'>
+                  <Upload
+                    className={`w-9 h-9 ${isUploadDragActive ? 'text-[#f63a9e]' : 'text-gray-400'}`}
+                  />
                   <div>
-                    <p className='font-medium text-gray-700'>Click to upload</p>
-                    <p className='text-xs text-gray-500'>or drag and drop</p>
+                    <p className='font-semibold text-gray-800'>
+                      {isUploadDragActive ? 'Drop photos to upload' : 'Click to upload or drag and drop'}
+                    </p>
+                    <p className='text-xs text-gray-500 mt-1'>
+                      PNG, JPG, WEBP up to 10MB each
+                    </p>
                   </div>
+                  <span className='inline-flex items-center rounded-full border border-gray-200 bg-white px-3 py-1 text-xs font-medium text-gray-600'>
+                    Browse files
+                  </span>
                 </div>
-              </Button>
+              </button>
+              {pendingSlotForModal && (
+                <p className='text-xs text-[#f63a9e] mt-3 font-medium'>
+                  Slot placement mode: the next uploaded photo opens crop for this selected slot.
+                </p>
+              )}
             </div>
 
             {/* Already Uploaded Section */}
-            {Array.from(new Map(selection.photos.map(p => [p.id, p])).values())
-              .length > 0 && (
-              <div>
-                <h3 className='font-semibold text-gray-900 mb-3 flex items-center gap-2'>
+            {uploadedPhotos.length > 0 && (
+              <div className='rounded-xl border border-gray-200 bg-white p-4 md:p-5'>
+                <h3 className='font-semibold text-gray-900 mb-3 flex items-center gap-2 text-lg'>
                   <ImageIcon className='w-5 h-5 text-[#f63a9e]' />
-                  Already Uploaded (
-                  {
-                    Array.from(
-                      new Map(selection.photos.map(p => [p.id, p])).values()
-                    ).length
-                  }
-                  )
+                  Choose from Uploaded Photos ({uploadedPhotos.length})
                 </h3>
-                <div className='grid grid-cols-3 gap-3'>
-                  {Array.from(
-                    new Map(selection.photos.map(p => [p.id, p])).values()
-                  ).map(photo => {
+                <div className='grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3'>
+                  {uploadedPhotos.map(photo => {
                     const placedCount = selection.photos.filter(
                       p => p.id === photo.id && p.isPlaced
                     ).length;
@@ -2409,12 +2388,11 @@ export function CollageCustomizer() {
             )}
 
             {/* Empty state */}
-            {Array.from(new Map(selection.photos.map(p => [p.id, p])).values())
-              .length === 0 && (
-              <div className='text-center py-8 text-gray-400'>
-                <ImageIcon className='w-16 h-16 mx-auto mb-3 opacity-50' />
-                <p className='text-sm'>No photos uploaded yet</p>
-                <p className='text-xs mt-1'>Upload your first photo above!</p>
+            {uploadedPhotos.length === 0 && (
+              <div className='text-center py-10 text-gray-400 border border-dashed border-gray-200 rounded-xl bg-gray-50'>
+                <ImageIcon className='w-14 h-14 mx-auto mb-3 opacity-50' />
+                <p className='text-sm font-medium'>No uploaded photos yet</p>
+                <p className='text-xs mt-1'>Start by dragging files into the upload area above.</p>
               </div>
             )}
           </div>
