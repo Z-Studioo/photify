@@ -411,10 +411,6 @@ export function RoomInspirationPage({
     setSelectedHotspot(null);
   };
 
-  const handleProductClick = (productId: string) => {
-    navigate(`/product/${productId}`);
-  };
-
   // Loading state
   if (loading) {
     return (
