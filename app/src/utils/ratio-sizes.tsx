@@ -8,6 +8,7 @@ export interface InchData {
   area_in2: number;
   long_side_in: number;
   short_side_in: number;
+  fixed_price: number | null;
   active: boolean;
   created_at: string;
 }

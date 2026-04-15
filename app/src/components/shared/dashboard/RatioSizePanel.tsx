@@ -27,7 +27,6 @@ const RatioSizePanel: React.FC<RatioSizePanelProps> = ({
     setSelectedRatio,
     selectedSize,
     setSelectedSize,
-    selectedProduct,
   } = useUpload();
 
   const { setSelectedView } = useView();
@@ -282,9 +281,9 @@ const RatioSizePanel: React.FC<RatioSizePanelProps> = ({
       <div className='p-4 space-y-3 bg-gray-50'>
         {sizes.map(size => {
           const isSelected = selectedSize?.id === size?.id;
-          const price = selectedProduct
-            ? (+selectedProduct.price * size!.area_in2).toFixed(2)
-            : '0.00';
+          // Use fixed_price if available, otherwise show placeholder
+          const price =
+            size!.fixed_price !== null ? size!.fixed_price.toFixed(2) : null;
 
           return (
             <motion.button
@@ -295,7 +294,8 @@ const RatioSizePanel: React.FC<RatioSizePanelProps> = ({
                 isSelected
                   ? 'border-primary bg-primary/10 ring-2 ring-primary/20'
                   : 'bg-white border-gray-100 hover:border-primary/40'
-              }`}
+              } ${price === null ? 'opacity-50' : ''}`}
+              disabled={price === null}
             >
               <div className='flex justify-between items-center'>
                 <div>
@@ -306,7 +306,15 @@ const RatioSizePanel: React.FC<RatioSizePanelProps> = ({
                     {size!.display_label}
                   </div>
                 </div>
-                <div className='font-bold text-lg text-primary'>£{price}</div>
+                <div className='text-right'>
+                  {price !== null ? (
+                    <div className='font-bold text-lg text-primary'>£{price}</div>
+                  ) : (
+                    <div className='text-xs text-gray-400'>
+                      Pricing not set
+                    </div>
+                  )}
+                </div>
               </div>
             </motion.button>
           );

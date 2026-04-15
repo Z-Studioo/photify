@@ -67,7 +67,7 @@ export function FeaturedCollections() {
       const supabase = createClient();
       const { data, error } = await supabase
         .from('products')
-        .select('id, name, slug, price, featured_index, featured_image, config')
+        .select('id, name, slug, price, fixed_price, featured_index, featured_image, config')
         .eq('is_featured', true)
         .not('featured_index', 'is', null)
         .order('featured_index', { ascending: true })
@@ -78,33 +78,23 @@ export function FeaturedCollections() {
       if (data && data.length > 0) {
         // Transform database products to FeaturedCollection format
         const transformedCollections = data.map(product => {
-          const numericPrice =
-            typeof product.price === 'number'
-              ? product.price
-              : Number.parseFloat(
-                  String(product.price ?? '').replace(/[^0-9.]/g, '')
-                ) || 0;
-
+          // Use fixed_price if available, otherwise fall back to base price
+          const displayPrice = product.fixed_price ?? product.price;
           return {
             image: product.featured_image || '',
             badge: 'Featured',
             badgeColor: 'bg-[#f63a9e]',
             title: product.name,
-            price: `£${numericPrice.toFixed(2)}`,
+            price: `£${displayPrice}`,
             productId: product.slug || product.id,
-            isVisible: !!product.config?.configurerType,
           };
         });
-
-        const visibleCollections = transformedCollections.filter(
-          item => item.isVisible
-        );
 
         const repeatedCollections: FeaturedCollection[] = [];
         while (repeatedCollections.length < 4) {
           repeatedCollections.push(
-            visibleCollections[
-              repeatedCollections.length % visibleCollections.length
+            transformedCollections[
+              repeatedCollections.length % transformedCollections.length
             ]
           );
         }

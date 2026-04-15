@@ -18,12 +18,12 @@ export default function Home() {
       // Fetch featured products client-side
       const { data: productsData } = await supabase
         .from('products')
-        .select('*')
+        .select('id, name, slug, images, price, fixed_price, is_featured, active, product_type')
         .eq('is_featured', true)
         .eq('active', true)
         .order('created_at', { ascending: false })
         .limit(8);
-      
+
       // Fetch rooms client-side
       const { data: roomsData } = await supabase
         .from('rooms')
@@ -31,7 +31,7 @@ export default function Home() {
         .eq('active', true)
         .order('display_order', { ascending: true })
         .limit(4);
-      
+
       // Fetch art products client-side
       const { data: artData } = await supabase
         .from('art_products')
@@ -39,7 +39,7 @@ export default function Home() {
         .eq('status', 'active')
         .order('created_at', { ascending: false })
         .limit(8);
-      
+
       setFeaturedProducts(productsData || []);
       setRooms(roomsData || []);
       setArtProducts(artData || []);

@@ -1,5 +1,6 @@
 'use client';
 import { useNavigate } from 'react-router-dom';
+import { useEffect, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { ImageWithFallback } from '@/components/figma/image-with-fallback';
 import { Ruler } from 'lucide-react';
@@ -10,6 +11,7 @@ export interface ProductCardProps {
   slug: string;
   images: string[];
   price: number;
+  fixed_price?: number | null;
   size?: string | null;
   isFeatured?: boolean;
   index?: number;
@@ -22,13 +24,30 @@ export function ProductCard({
   slug,
   images,
   price,
+  fixed_price,
   size,
   isFeatured = false,
   index = 0,
   className = '',
 }: ProductCardProps) {
   const navigate = useNavigate();
-  const currentImageIndex = 0;
+  const [currentImageIndex, setCurrentImageIndex] = useState(0);
+
+  // Use fixed_price if available, otherwise fall back to base price
+  const displayPrice = fixed_price ?? price;
+
+  useEffect(() => {
+    if (!images || images.length <= 1) {
+      setCurrentImageIndex(0);
+      return;
+    }
+
+    const interval = setInterval(() => {
+      setCurrentImageIndex(prev => (prev + 1) % images.length);
+    }, 2000);
+
+    return () => clearInterval(interval);
+  }, [images]);
 
   const handleClick = () => {
     navigate(`/product/${slug || id}`);
@@ -128,13 +147,13 @@ export function ProductCard({
                 <span className='font-bold text-lg mt-2 mr-0.5'>£</span>
 
                 <span className='font-extrabold text-4xl tracking-tighter leading-none font-bricolage'>
-                  {typeof price === 'number' ? Math.floor(price) : price}
+                  {typeof displayPrice === 'number' ? Math.floor(displayPrice) : displayPrice}
                 </span>
 
                 <span className='font-bold text-xl mt-2'>
                   .
-                  {typeof price === 'number'
-                    ? price.toFixed(2).split('.')[1]
+                  {typeof displayPrice === 'number'
+                    ? displayPrice.toFixed(2).split('.')[1]
                     : '00'}
                 </span>
               </div>

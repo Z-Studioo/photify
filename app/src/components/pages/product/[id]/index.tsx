@@ -99,7 +99,7 @@ export function ProductDetailPage({
       if (!initialProduct?.id) return;
       const { data } = await supabase
         .from('products')
-        .select('id,name,slug,images,price,is_featured')
+        .select('id,name,slug,images,price,fixed_price,is_featured')
         .neq('id', initialProduct.id)
         .eq('active', true)
         .limit(4);
@@ -112,7 +112,8 @@ export function ProductDetailPage({
   const product = {
     id: initialProduct.id,
     title: initialProduct.name,
-    price: initialProduct.price,
+    price: initialProduct.fixed_price ?? initialProduct.price,
+    fixed_price: initialProduct.fixed_price,
     description:
       initialProduct.description ||
       'Transform your favorite memories into stunning canvas art. Our premium quality canvas prints are professionally stretched and ready to hang.',
@@ -494,7 +495,7 @@ export function ProductDetailPage({
 
                   {/* Price */}
                   <div className='flex items-baseline gap-2'>
-                    <span className='text-gray-400 text-sm font-medium'>From</span>
+                    <span className='text-gray-400 text-sm font-medium'>Starting at</span>
                     <span
                       className='text-[#f63a9e] text-3xl sm:text-4xl'
                       style={{ fontWeight: '800' }}
@@ -986,19 +987,18 @@ export function ProductDetailPage({
                               </span>
 
                               <span className='font-extrabold text-xl xs:text-2xl sm:text-3xl md:text-4xl tracking-tighter leading-none font-bricolage'>
-                                {typeof relProduct.price === 'number'
-                                  ? Math.floor(relProduct.price)
+                                {typeof (relProduct.fixed_price ?? relProduct.price) === 'number'
+                                  ? Math.floor(relProduct.fixed_price ?? relProduct.price)
                                   : relProduct.price}
                               </span>
 
                               <span className='font-bold text-sm xs:text-base sm:text-lg md:text-xl mt-1 xs:mt-1.5 sm:mt-2'>
                                 .
-                                {typeof relProduct.price === 'number'
-                                  ? relProduct.price.toFixed(2).split('.')[1]
+                                {typeof (relProduct.fixed_price ?? relProduct.price) === 'number'
+                                  ? (relProduct.fixed_price ?? relProduct.price).toFixed(2).split('.')[1]
                                   : '00'}
                               </span>
                             </div>
-
                           </div>
                         </div>
 

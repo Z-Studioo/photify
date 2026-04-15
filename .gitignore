@@ -105,3 +105,5 @@ pnpm-lock.yaml
 # TernJS port file
 .tern-port
 
+
+.claude

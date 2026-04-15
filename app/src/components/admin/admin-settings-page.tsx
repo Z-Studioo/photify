@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { AdminLayout } from './admin-layout';
 import {
   Save,
@@ -9,6 +10,7 @@ import {
   Edit,
   Eye,
   Trash2,
+  DollarSign,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -54,6 +56,7 @@ interface Tag {
 }
 
 export function AdminSettingsPage() {
+  const navigate = useNavigate();
   const supabase = createClient();
   const [loading, setLoading] = useState(false);
   const [ratios, setRatios] = useState<AspectRatio[]>([]);
@@ -366,6 +369,9 @@ export function AdminSettingsPage() {
                   <TabsTrigger value='tags' className='px-6'>
                     Tags
                   </TabsTrigger>
+                  <TabsTrigger value='pricing' className='px-6'>
+                    Pricing
+                  </TabsTrigger>
                   <TabsTrigger value='canvas' className='px-6'>
                     Canvas
                   </TabsTrigger>
@@ -566,6 +572,40 @@ export function AdminSettingsPage() {
                     <p className='text-gray-600'>
                       Frame configuration coming soon...
                     </p>
+                  </div>
+                </TabsContent>
+
+                {/* Pricing Tab */}
+                <TabsContent value='pricing' className='mt-0'>
+                  <div className='bg-white rounded-lg border border-gray-200 p-6'>
+                    <div className='flex items-start justify-between mb-6'>
+                      <div>
+                        <h2
+                          className="font-['Bricolage_Grotesque',_sans-serif] mb-1"
+                          style={{ fontSize: '20px', fontWeight: '600' }}
+                        >
+                          Size Pricing Manager
+                        </h2>
+                        <p className='text-sm text-gray-600'>
+                          Set fixed prices for each canvas size globally
+                        </p>
+                      </div>
+                      <Button
+                        onClick={() => navigate('/admin/settings/size-pricing')}
+                        className='bg-[#f63a9e] hover:bg-[#e02d8d] gap-2'
+                      >
+                        <DollarSign className='w-4 h-4' />
+                        Manage Pricing
+                      </Button>
+                    </div>
+
+                    <div className='rounded-lg border border-blue-200 bg-blue-50 p-4'>
+                      <p className='text-sm text-blue-800'>
+                        <strong>Fixed Pricing:</strong> Set specific prices for each size
+                        that apply across all products. This replaces the base price per square
+                        inch calculation.
+                      </p>
+                    </div>
                   </div>
                 </TabsContent>
               </Tabs>

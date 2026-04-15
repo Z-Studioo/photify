@@ -5,6 +5,69 @@ import { sendOrderConfirmationEmail, sendAdminNewOrderEmail, getDeliveryInfo } f
 import Stripe from 'stripe';
 
 /**
+ * Helper function to upert customer record
+ * Creates new customer or updates existing customer's order stats
+ */
+async function upsertCustomer(order: any): Promise<void> {
+  try {
+    // Check if customer exists by email
+    const { data: existing, error: fetchError } = await supabase
+      .from('customers')
+      .select('id, total_orders, total_spent')
+      .eq('email', order.customer_email)
+      .single();
+
+    if (fetchError && fetchError.code !== 'PGRST116') {
+      // PGRST116 is "not found" - expected for new customers
+      console.error('Error fetching customer:', fetchError);
+      return;
+    }
+
+    const orderTotal = parseFloat(order.total) || 0;
+
+    if (existing) {
+      // Update existing customer
+      const { error: updateError } = await supabase
+        .from('customers')
+        .update({
+          total_orders: (existing.total_orders || 0) + 1,
+          total_spent: (existing.total_spent || 0) + orderTotal,
+          updated_at: new Date().toISOString(),
+        })
+        .eq('id', existing.id);
+
+      if (updateError) {
+        console.error('Error updating customer:', updateError);
+      } else {
+        console.log('Customer updated:', existing.id);
+      }
+    } else {
+      // Insert new customer
+      const { data: newCustomer, error: insertError } = await supabase
+        .from('customers')
+        .insert({
+          email: order.customer_email,
+          name: order.customer_name,
+          phone: order.customer_phone || null,
+          total_orders: 1,
+          total_spent: orderTotal,
+        })
+        .select()
+        .single();
+
+      if (insertError) {
+        console.error('Error creating customer:', insertError);
+      } else {
+        console.log('New customer created:', newCustomer.id);
+      }
+    }
+  } catch (error) {
+    console.error('Error in upsertCustomer:', error);
+    // Don't throw - customer upsert failure shouldn't block webhook processing
+  }
+}
+
+/**
  * Helper function to send order confirmation email
  */
 async function sendConfirmationEmailForOrder(order: any): Promise<void> {
@@ -12,15 +75,15 @@ async function sendConfirmationEmailForOrder(order: any): Promise<void> {
     // Get delivery info based on shipping cost
     const shippingCost = parseFloat(order.shipping_cost || 0);
     const deliveryInfo = getDeliveryInfo(shippingCost);
-    
+
     // Calculate estimated delivery date based on delivery type
     const estimatedDelivery = new Date();
     const daysToAdd = deliveryInfo.delivery_type === 'Express Shipping' ? 3 : 7;
     estimatedDelivery.setDate(estimatedDelivery.getDate() + daysToAdd);
-    
+
     // Format shipping address
-    const shippingAddress = typeof order.shipping_address === 'string' 
-      ? order.shipping_address 
+    const shippingAddress = typeof order.shipping_address === 'string'
+      ? order.shipping_address
       : order.shipping_address?.address || 'N/A';
 
     // Prepare email data
@@ -56,7 +119,7 @@ async function sendConfirmationEmailForOrder(order: any): Promise<void> {
 
     // Send email to customer
     await sendOrderConfirmationEmail(emailData);
-    
+
     // Send email to admin
     await sendAdminNewOrderEmail(emailData);
   } catch (emailError) {
@@ -118,7 +181,10 @@ export async function handleStripeWebhook(
           console.error('Error updating order:', error);
         } else if (order) {
           console.log('Payment successful for session:', session.id);
-          
+
+          // Upsert customer record
+          await upsertCustomer(order);
+
           // Send order confirmation email
           await sendConfirmationEmailForOrder(order);
         }

@@ -434,7 +434,7 @@ export function OrderTrackPage() {
                       <Input
                         id='orderNumber'
                         type='text'
-                        placeholder='e.g., PH-20251028-1234'
+                        placeholder='e.g., PH-123456'
                         value={orderNumber}
                         onChange={e => setOrderNumber(e.target.value)}
                         onKeyPress={e => e.key === 'Enter' && handleSearch()}
