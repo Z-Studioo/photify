@@ -1,7 +1,6 @@
 import { type ReactNode, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAdmin } from '@/context/AdminContext';
-import { NoIndex } from '@/components/shared/no-index';
 import {
   LayoutDashboard,
   ShoppingBag,
@@ -71,7 +70,6 @@ export function AdminLayout({ children }: AdminLayoutProps) {
 
   return (
     <div className="min-h-screen bg-gray-50 font-['Mona_Sans',_sans-serif]">
-      <NoIndex title='Admin | Photify' />
       {/* Top Header */}
       <header className='bg-white border-b border-gray-200 sticky top-0 z-50'>
         <div className='px-6 py-4 flex items-center justify-between'>

@@ -12,8 +12,6 @@ interface Config {
   LOG_LEVEL: string;
   SUPABASE_URL: string | undefined;
   SUPABASE_SERVICE_KEY: string | undefined;
-  SUPABASE_ANON_KEY: string | undefined;
-  PUBLIC_APP_URL: string | undefined;
   STRIPE_SECRET_KEY: string | undefined;
   STRIPE_WEBHOOK_SECRET: string | undefined;
   OPENAI_API_KEY: string | undefined;
@@ -32,8 +30,6 @@ export const config: Config = {
   LOG_LEVEL: process.env.LOG_LEVEL || 'info',
   SUPABASE_URL: process.env.SUPABASE_URL,
   SUPABASE_SERVICE_KEY: process.env.SUPABASE_SERVICE_KEY,
-  SUPABASE_ANON_KEY: process.env.SUPABASE_ANON_KEY,
-  PUBLIC_APP_URL: process.env.PUBLIC_APP_URL,
   STRIPE_SECRET_KEY: process.env.STRIPE_SECRET_KEY,
   STRIPE_WEBHOOK_SECRET: process.env.STRIPE_WEBHOOK_SECRET,
   OPENAI_API_KEY: process.env.OPENAI_API_KEY,

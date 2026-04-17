@@ -13,21 +13,11 @@ import routes from '@/routes';
 // import webhookRoutes from '@/routes/webhook';
 import { handleStripeWebhook } from './controllers/webhookController';
 import bodyParser from 'body-parser';
-import { mountSSR } from './ssr';
-import seoRoutes from '@/routes/seo';
 
 const app = express();
 
-// Security middleware. CSP is disabled because this server also serves
-// SSR HTML that embeds inline `window.__INITIAL_DATA__` + JSON-LD scripts.
-// Cross-origin policies are relaxed so Supabase + external image CDNs work.
-app.use(
-  helmet({
-    contentSecurityPolicy: false,
-    crossOriginEmbedderPolicy: false,
-    crossOriginResourcePolicy: false,
-  })
-);
+// Security middleware
+app.use(helmet());
 
 // CORS configuration
 app.use(
@@ -39,7 +29,7 @@ app.use(
   })
 );
 
-// Rate limiting (API only \u2014 we don't want to throttle frontend HTML requests).
+// Rate limiting
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
   max: 100, // limit each IP to 100 requests per windowMs
@@ -49,7 +39,7 @@ const limiter = rateLimit({
   standardHeaders: true,
   legacyHeaders: false,
 });
-app.use('/api', limiter);
+app.use(limiter);
 
 // Webhook route MUST be mounted before JSON body parser
 // Stripe webhooks require raw body for signature verification
@@ -92,28 +82,10 @@ app.use('/api-docs', swaggerUi.serve as any, swaggerUi.setup(swaggerSpec, {
 // API routes
 app.use('/api', routes);
 
-// SEO endpoints (sitemap.xml, robots.txt) \u2014 mounted at root so that
-// crawlers can discover them at the canonical `/sitemap.xml` path.
-app.use('/', seoRoutes);
+// 404 handler
+app.use(notFoundHandler);
 
-/**
- * Initialize the app asynchronously. SSR middleware (which boots Vite in
- * dev) must be registered AFTER API routes so that `/api/*` is still
- * handled by Express, and BEFORE the 404 / error handlers.
- *
- * The server entry (`index.ts`) must await this before calling listen().
- */
-export async function initializeApp(): Promise<express.Express> {
-  await mountSSR(app);
-
-  // API-only 404 handler. SSR middleware always responds with HTML for
-  // any other request (falling back to the SPA shell for unknown paths).
-  app.use('/api', notFoundHandler);
-
-  // Global error handler
-  app.use(errorHandler);
-
-  return app;
-}
+// Global error handler
+app.use(errorHandler);
 
 export { app };

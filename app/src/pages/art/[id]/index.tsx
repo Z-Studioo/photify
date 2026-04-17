@@ -4,34 +4,30 @@ import { ArtDetailPage } from '@/components/pages/art/detail';
 import { createClient } from '@/lib/supabase/client';
 import { Helmet } from '@dr.pogodin/react-helmet';
 import { LoadingSpinner } from '@/components/shared/loading-spinner';
-import { useConsumedInitialData } from '@/ssr/InitialDataContext';
-import { useCanonicalUrl } from '@/lib/seo';
 
 export default function ArtPage() {
   const { id } = useParams<{ id: string }>();
-  const ssrProduct = useConsumedInitialData<Record<string, any>>('artDetail');
-
-  const [product, setProduct] = useState<Record<string, any> | null>(
-    ssrProduct ?? null
-  );
-  const [loading, setLoading] = useState(!ssrProduct);
+  const [product, setProduct] = useState<Record<string, any> | null>(null);
+  const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
 
   useEffect(() => {
-    if (ssrProduct) return;
-    if (!id) {
-      setNotFound(true);
-      setLoading(false);
-      return;
-    }
-
     const fetchProduct = async () => {
+      if (!id) {
+        setNotFound(true);
+        setLoading(false);
+        return;
+      }
+
       const supabase = createClient();
+
+      // Check if id is a UUID or slug
       const isUUID =
         /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
           id
         );
 
+      // Fetch from art_products table
       const { data, error } = await supabase
         .from('art_products')
         .select('*, art_product_tags(tag_id, tags(id, name, slug))')
@@ -47,66 +43,40 @@ export default function ArtPage() {
     };
 
     fetchProduct();
-  }, [id, ssrProduct]);
+  }, [id]);
 
-  const canonical = useCanonicalUrl();
-  const title = product?.name ? `${product.name} | Photify` : 'Art | Photify';
-  const description =
-    product?.description ||
-    'Explore this amazing art product on Photify \u2014 curated wall art and prints.';
-  const image = product?.image ?? product?.images?.[0] ?? '';
+  if (loading) {
+    return (
+      <>
+        <Helmet>
+          <title>Art | Photify</title>
+          <meta
+            name="description"
+            content="Explore the amazing art product on Photify."
+          />
+          <meta name="robots" content="noindex,nofollow" />
+        </Helmet>
+        <LoadingSpinner />
+      </>
+      
+    );
+  }
 
-  const jsonLd = product
-    ? {
-        '@context': 'https://schema.org',
-        '@type': 'Product',
-        name: product.name,
-        description,
-        image: product.images ?? (product.image ? [product.image] : []),
-        sku: product.id,
-        offers: product.price
-          ? {
-              '@type': 'Offer',
-              priceCurrency: 'USD',
-              price: product.price,
-              availability: 'https://schema.org/InStock',
-            }
-          : undefined,
-      }
-    : null;
-
-  if (notFound || (!loading && !product && !id)) {
+  if (notFound || !id) {
     return <Navigate to='/404' replace />;
   }
 
   return (
     <>
       <Helmet>
-        <title>{title}</title>
-        <meta name='description' content={description} />
+        <title>{product?.name} | Photify</title>
         <meta
-          name='robots'
-          content={product ? 'index,follow' : 'noindex,nofollow'}
+          name="description"
+          content={product?.description || 'Explore this amazing art product on Photify.'}
         />
-        <link rel='canonical' href={canonical} />
-        <meta property='og:type' content='product' />
-        <meta property='og:url' content={canonical} />
-        <meta property='og:title' content={title} />
-        <meta property='og:description' content={description} />
-        {image ? <meta property='og:image' content={image} /> : null}
-        <meta name='twitter:card' content='summary_large_image' />
-        <meta name='twitter:title' content={title} />
-        <meta name='twitter:description' content={description} />
-        {image ? <meta name='twitter:image' content={image} /> : null}
-        {jsonLd ? (
-          <script type='application/ld+json'>{JSON.stringify(jsonLd)}</script>
-        ) : null}
+        <meta name="robots" content="index,follow" />
       </Helmet>
-      {loading ? (
-        <LoadingSpinner />
-      ) : product ? (
-        <ArtDetailPage artProduct={product} />
-      ) : null}
+      <ArtDetailPage artProduct={product!} />
     </>
-  );
+);
 }
