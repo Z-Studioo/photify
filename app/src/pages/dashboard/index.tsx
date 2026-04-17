@@ -1,8 +1,7 @@
 import type React from 'react';
 import { useState, useRef, useEffect } from 'react';
-import { ChevronRight } from 'lucide-react';
+import { ChevronRight, Loader2, Lock } from 'lucide-react';
 import { motion, AnimatePresence, type Variants } from 'motion/react';
-import { useMutation } from '@tanstack/react-query';
 import Wall from '@/assets/images/wall.jpg';
 import Wall1 from '@/assets/images/wall1.jpg';
 import Wall2 from '@/assets/images/wall2.jpg';
@@ -12,7 +11,6 @@ import { useFeature } from '@/context/dashboard/FeatureContext';
 import { useUpload } from '@/context/UploadContext';
 import { useView } from '@/context/ViewContext';
 import { useEdge } from '@/context/EdgeContext';
-import { useGlobalReset } from '@/hooks/useGlobalReset';
 import { useWallCarousel } from '@/hooks/useWallCarousel';
 import TourGuide from '@/components/shared/dashboard/TourGuide';
 import { Button } from '@/components/ui/button';
@@ -29,6 +27,20 @@ import QuantityControl from '@/components/shared/dashboard/QuantityControl';
 import ApplyChangesControl from '@/components/shared/dashboard/ApplyChangesControl';
 import { Room3DView } from '@/components/shared/dashboard/Room3DView';
 import { handleConfirmChanges } from '@/utils/uploadHandler';
+import { resolveCanvasSizePrice } from '@/lib/canvas-size-price';
+import { useProductCanvasPricingProduct } from '@/hooks/use-product-canvas-pricing';
+import { cn } from '@/lib/utils';
+
+/** Sentence-case labels for the main feature list (constants stay ALL CAPS for logic). */
+const FEATURE_LIST_LABEL: Record<string, string> = {
+  'SELECT PHOTO': 'Photo and crop',
+  'IMAGE SIZE AND CROP PHOTO': 'Canvas size',
+  'SIDE APPEARANCE': 'Side appearance',
+  'IMAGE OPTIMIZATION': 'Image optimization',
+  'ROUND FORMATS AND SHAPES': 'Round formats & shapes',
+  CORNERS: 'Corners',
+  MULTIPANEL: 'Multipanel',
+};
 
 interface MenuFeature {
   id: number;
@@ -43,6 +55,7 @@ const Dashboard: React.FC = () => {
   const wallImageInputRef = useRef<HTMLInputElement>(null);
   const { selectedFeature, setSelectedFeature } = useFeature();
   const [isConfirming, setIsConfirming] = useState(false);
+  const [isApplyingEditView, setIsApplyingEditView] = useState(false);
 
   useEffect(() => {
     const defaultFeature = featuresBase.find(
@@ -70,8 +83,6 @@ const Dashboard: React.FC = () => {
       setIsConfirming(false);
     }
   };
-
-  const { resetAll } = useGlobalReset();
 
   const {
     // currentWallIndex,
@@ -115,8 +126,6 @@ const Dashboard: React.FC = () => {
 
   const {
     quantity,
-    setQuantity,
-    setPendingQuantity,
     shape,
     setFile,
     setPreview,
@@ -127,15 +136,21 @@ const Dashboard: React.FC = () => {
     selectedProduct,
   } = useUpload();
 
+  const pricingProduct = useProductCanvasPricingProduct(selectedProduct);
+
   const { selectedView, setSelectedView } = useView();
   const { edgeType, applyPendingEdgeType } = useEdge();
   const [pricePerItem, setPricePerItem] = useState<number>(0);
 
   useEffect(() => {
+    if (!pricingProduct || !selectedSize) {
+      setPricePerItem(0);
+      return;
+    }
     setPricePerItem(
-      +(selectedProduct?.price || 0) * +(selectedSize?.area_in2 || 0)
+      resolveCanvasSizePrice(selectedSize, pricingProduct) ?? 0
     );
-  }, [selectedProduct, selectedSize]);
+  }, [pricingProduct, selectedSize]);
 
   const features = featuresBase.map(feature => {
     if (feature.name === 'ROUND FORMATS AND SHAPES') {
@@ -167,18 +182,6 @@ const Dashboard: React.FC = () => {
     return feature;
   });
 
-  const handleIncrement = () => {
-    const newQuantity = quantity + 1;
-    setQuantity(newQuantity);
-    setPendingQuantity(newQuantity);
-  };
-
-  const handleDecrement = () => {
-    const newQuantity = Math.max(1, quantity - 1);
-    setQuantity(newQuantity);
-    setPendingQuantity(newQuantity);
-  };
-
   const handleFeatureClick = (item: MenuFeature) => {
     setSelectedFeature(selectedFeature?.id === item.id ? null : item);
   };
@@ -207,26 +210,37 @@ const Dashboard: React.FC = () => {
   const isEditingView =
     selectedView === 'crop' || selectedView === 'optimization';
 
-  const { mutateAsync, isPending } = useMutation({
-    mutationFn: resetAll,
-    onError: () => {},
-    onSuccess: () => {},
-  });
+  const handleDoneEditingView = async () => {
+    setIsApplyingEditView(true);
+    try {
+      await applyPendingChanges();
+      applyPendingEdgeType();
+      setSelectedView('3droom');
+      setSelectedFeature(null);
+    } finally {
+      setIsApplyingEditView(false);
+    }
+  };
 
   return (
     <div className='h-[calc(var(--vh,1vh)*100)] flex flex-col overflow-hidden'>
-      <Navbar onReset={() => mutateAsync()} isResetting={isPending} />
-      <div className='flex-1 w-full flex flex-col md:flex-row-reverse gap-0 overflow-hidden'>
+      <Navbar immersive />
+      <div className='flex min-h-0 flex-1 w-full flex-col gap-0 overflow-hidden md:flex-row-reverse'>
         <div
           className={`
     relative 
+    flex min-h-0 flex-col
     overflow-hidden 
     w-full 
-    ${isEditingView ? 'h-full' : 'h-96 md:h-full'} 
+    ${isEditingView ? 'min-h-0 flex-1 md:h-full' : 'h-96 md:h-full'} 
    md:w-[58%] lg:w-[64%] xl:w-[70%]
   `}
         >
-          {selectedView === 'crop' && <ImageCropper isVisible={true} />}
+          {selectedView === 'crop' && (
+            <div className='flex min-h-0 flex-1 flex-col'>
+              <ImageCropper isVisible={true} />
+            </div>
+          )}
           {selectedView === 'optimization' && (
             <OptimizationView isVisible={true} />
           )}
@@ -305,7 +319,7 @@ const Dashboard: React.FC = () => {
         </div>
 
         {(!isEditingView || window.innerWidth >= 768) && (
-          <div className='md:w-[42%] lg:w-[36%] xl:w-[30%] w-full flex flex-col border-l md:h-full h-full overflow-hidden'>
+          <div className='flex h-full w-full flex-col overflow-hidden border-l border-zinc-200/80 bg-zinc-50/90 md:h-full md:w-[42%] lg:w-[36%] xl:w-[30%]'>
             <AnimatePresence mode='wait'>
               {!selectedFeature && (
                 <motion.div
@@ -320,24 +334,27 @@ const Dashboard: React.FC = () => {
                     paddingBottom: 0,
                   }}
                   transition={{ duration: 0.25, ease: [0.22, 1, 0.36, 1] }}
-                  className='flex flex-col sm:flex-row items-start sm:items-center justify-between p-4 sm:p-6 overflow-visible min-h-[80px] md:min-h-[auto] w-full flex-shrink-0'
+                  className='w-full flex-shrink-0 border-b border-zinc-100 bg-white/90 px-4 pb-4 pt-5 sm:px-5'
                 >
-                  <div className='flex-1 min-w-0'>
+                  <div className='min-w-0'>
                     <motion.h2
                       initial={{ opacity: 0 }}
                       animate={{ opacity: 1 }}
                       transition={{ delay: 0.1, duration: 0.3 }}
-                      className='text-base md:text-lg font-bold leading-tight truncate'
+                      className='truncate text-lg font-semibold leading-snug tracking-tight text-zinc-900'
                     >
-                      Photo Print Under Acrylic Glass
+                      Photo print under acrylic glass
                     </motion.h2>
+                    <p className='mt-1.5 text-xs leading-relaxed text-zinc-500'>
+                      Choose each step to configure your print.
+                    </p>
                   </div>
                 </motion.div>
               )}
             </AnimatePresence>
 
             <motion.div
-              className='border-b border-gray-300 w-full flex-shrink-0'
+              className='w-full flex-shrink-0 border-b border-zinc-100'
               animate={{
                 opacity: selectedFeature ? 0 : 1,
                 height: selectedFeature ? 0 : 'auto',
@@ -359,252 +376,114 @@ const Dashboard: React.FC = () => {
                   <div className='flex-1 min-h-0 overflow-hidden'>
                     <ScrollArea className='h-full'>
                       <motion.div
-                        className='space-y-0'
+                        className='space-y-2 p-3 sm:p-4'
                         initial='hidden'
                         animate='visible'
                         variants={{
                           visible: {
                             transition: {
-                              staggerChildren: 0.05,
+                              staggerChildren: 0.04,
                             },
                           },
                         }}
                       >
-                        {features.map((item, index) => (
-                          <motion.div
-                            key={item.id}
-                            custom={index}
-                            variants={listItemVariants}
-                          >
+                        {features.map((item, index) => {
+                          const label =
+                            FEATURE_LIST_LABEL[item.name] ?? item.name;
+                          const isActive = selectedFeature?.id === item.id;
+                          return (
                             <motion.div
-                              className={`flex items-center justify-between p-4 md:p-6 relative overflow-hidden group ${
-                                selectedFeature?.id === item.id
-                                  ? 'bg-blue-50 border-l-4 border-primary'
-                                  : ''
-                              } ${
-                                item.disabled
-                                  ? 'cursor-not-allowed bg-gray-50/50'
-                                  : 'cursor-pointer'
-                              }`}
-                              onClick={() =>
-                                !item.disabled && handleFeatureClick(item)
-                              }
-                              whileHover={
-                                !item.disabled
-                                  ? {
-                                      scale: 1.005,
-                                      transition: {
-                                        duration: 0.2,
-                                        ease: [0.4, 0, 0.2, 1],
-                                      },
-                                    }
-                                  : {}
-                              }
-                              whileTap={
-                                !item.disabled
-                                  ? {
-                                      scale: 0.995,
-                                      transition: { duration: 0.1 },
-                                    }
-                                  : {}
-                              }
-                              transition={{
-                                type: 'spring',
-                                stiffness: 400,
-                                damping: 25,
-                              }}
+                              key={item.id}
+                              custom={index}
+                              variants={listItemVariants}
                             >
-                              {item.disabled && (
-                                <motion.div
-                                  className='absolute inset-0 bg-gradient-to-r from-gray-100/30 via-transparent to-gray-100/30 pointer-events-none'
-                                  initial={{ x: '-100%' }}
-                                  animate={{ x: '100%' }}
-                                  transition={{
-                                    duration: 3,
-                                    repeat: Number.POSITIVE_INFINITY,
-                                    ease: 'linear',
-                                  }}
-                                />
-                              )}
-
-                              {!item.disabled && (
-                                <>
-                                  <motion.div
-                                    className='absolute inset-0 opacity-0 pointer-events-none'
-                                    style={{
-                                      background:
-                                        'linear-gradient(90deg, rgba(var(--primary-rgb, 59, 130, 246), 0.08) 0%, rgba(var(--primary-rgb, 59, 130, 246), 0.03) 50%, transparent 100%)',
-                                    }}
-                                    whileHover={{ opacity: 1 }}
-                                    transition={{
-                                      duration: 0.3,
-                                      ease: [0.22, 1, 0.36, 1],
-                                    }}
-                                  />
-                                  <motion.div
-                                    className='absolute left-0 top-0 bottom-0 w-1 bg-primary opacity-0 pointer-events-none'
-                                    whileHover={{ opacity: 1 }}
-                                    transition={{
-                                      duration: 0.3,
-                                      ease: [0.22, 1, 0.36, 1],
-                                    }}
-                                  />
-                                  <motion.div
-                                    className='absolute inset-0 opacity-0 pointer-events-none'
-                                    style={{
-                                      background:
-                                        'radial-gradient(600px circle at 20% 50%, rgba(var(--primary-rgb, 59, 130, 246), 0.04), transparent 60%)',
-                                    }}
-                                    whileHover={{ opacity: 1 }}
-                                    transition={{
-                                      duration: 0.4,
-                                      ease: 'easeOut',
-                                    }}
-                                  />
-                                </>
-                              )}
-
-                              <div className='flex items-center space-x-2 flex-1 min-w-0 relative z-10'>
-                                <motion.div
-                                  whileHover={
-                                    !item.disabled
-                                      ? {
-                                          rotate: 8,
-                                          scale: 1.15,
-                                          filter:
-                                            'drop-shadow(0 4px 12px rgba(var(--primary-rgb, 59, 130, 246), 0.4))',
-                                          transition: {
-                                            duration: 0.2,
-                                            ease: [0.4, 0, 0.2, 1],
-                                          },
-                                        }
-                                      : {}
-                                  }
-                                  transition={{
-                                    type: 'spring',
-                                    stiffness: 300,
-                                    damping: 15,
-                                  }}
+                              <motion.button
+                                type='button'
+                                disabled={item.disabled}
+                                onClick={() =>
+                                  !item.disabled && handleFeatureClick(item)
+                                }
+                                className={cn(
+                                  'group relative flex w-full items-center gap-3 rounded-xl border px-3 py-3 text-left transition-colors md:px-3.5 md:py-3.5',
+                                  'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/35 focus-visible:ring-offset-2',
+                                  item.disabled &&
+                                    'cursor-not-allowed border-zinc-100/90 bg-zinc-100/40 opacity-[0.72]',
+                                  !item.disabled &&
+                                    !isActive &&
+                                    'border-zinc-100 bg-white shadow-sm hover:border-zinc-200 hover:bg-white',
+                                  !item.disabled &&
+                                    isActive &&
+                                    'border-primary/40 bg-primary/[0.07] shadow-sm ring-1 ring-primary/15'
+                                )}
+                                whileTap={
+                                  item.disabled
+                                    ? undefined
+                                    : { scale: 0.992 }
+                                }
+                              >
+                                <div
+                                  className={cn(
+                                    'flex h-10 w-10 shrink-0 items-center justify-center rounded-lg transition-colors',
+                                    item.disabled && 'bg-zinc-100/80 text-zinc-300',
+                                    !item.disabled &&
+                                      'bg-zinc-100 text-zinc-600 group-hover:bg-zinc-200/80',
+                                    !item.disabled &&
+                                      isActive &&
+                                      'bg-primary/15 text-primary'
+                                  )}
                                 >
-                                  <item.icon
-                                    className={`h-5 w-5 flex-shrink-0 transition-all duration-300 ${
-                                      item.disabled
-                                        ? 'text-gray-300'
-                                        : selectedFeature?.id === item.id
-                                          ? 'text-primary'
-                                          : 'text-gray-500 group-hover:text-primary'
-                                    }`}
-                                  />
-                                </motion.div>
+                                  <item.icon className='h-[1.125rem] w-[1.125rem]' />
+                                </div>
                                 <div className='min-w-0 flex-1'>
-                                  <div className='flex items-center gap-2'>
-                                    <motion.p
-                                      className={`font-semibold text-sm leading-tight transition-all duration-300 ${
-                                        item.disabled
-                                          ? 'text-gray-400'
-                                          : selectedFeature?.id === item.id
-                                            ? 'text-primary'
-                                            : 'text-gray-900 group-hover:text-primary'
-                                      }`}
-                                      whileHover={
-                                        !item.disabled
-                                          ? {
-                                              textShadow:
-                                                '0 0 8px rgba(var(--primary-rgb, 59, 130, 246), 0.3)',
-                                            }
-                                          : {}
-                                      }
+                                  <div className='flex flex-wrap items-center gap-2'>
+                                    <p
+                                      className={cn(
+                                        'text-sm font-medium leading-snug',
+                                        item.disabled && 'text-zinc-400',
+                                        !item.disabled &&
+                                          !isActive &&
+                                          'text-zinc-900',
+                                        !item.disabled &&
+                                          isActive &&
+                                          'text-primary'
+                                      )}
                                     >
-                                      {item.name}
-                                    </motion.p>
+                                      {label}
+                                    </p>
                                     {item.disabled && (
-                                      <motion.span
-                                        initial={{ scale: 0, opacity: 0 }}
-                                        animate={{ scale: 1, opacity: 1 }}
-                                        transition={{
-                                          delay: index * 0.05 + 0.3,
-                                          type: 'spring',
-                                          stiffness: 500,
-                                          damping: 15,
-                                        }}
-                                        className='inline-flex text-center items-center px-1 py-0.5 rounded-full text-[9px] font-medium bg-gradient-to-r from-amber-100 to-orange-100 text-amber-700 border border-amber-200 shadow-sm'
-                                      >
-                                        Coming Soon
-                                      </motion.span>
+                                      <span className='inline-flex items-center rounded-full border border-amber-200/90 bg-amber-50 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-amber-800'>
+                                        Soon
+                                      </span>
                                     )}
                                   </div>
-                                  <motion.p
-                                    className={`text-xs leading-tight transition-colors duration-300 ${
+                                  <p
+                                    className={cn(
+                                      'mt-0.5 text-xs leading-relaxed',
                                       item.disabled
-                                        ? 'text-gray-300'
-                                        : 'text-gray-500 group-hover:text-gray-600'
-                                    }`}
+                                        ? 'text-zinc-400'
+                                        : 'text-zinc-500'
+                                    )}
                                   >
                                     {item.subtitle}
-                                  </motion.p>
+                                  </p>
                                 </div>
-                              </div>
-
-                              {!item.disabled ? (
-                                <motion.div
-                                  className='relative z-10'
-                                  whileHover={{
-                                    x: 6,
-                                    scale: 1.2,
-                                    filter:
-                                      'drop-shadow(0 4px 10px rgba(var(--primary-rgb, 59, 130, 246), 0.3))',
-                                    transition: {
-                                      duration: 0.2,
-                                      ease: [0.4, 0, 0.2, 1],
-                                    },
-                                  }}
-                                  transition={{
-                                    type: 'spring',
-                                    stiffness: 300,
-                                    damping: 15,
-                                  }}
-                                >
-                                  <ChevronRight className='h-4 w-4 text-gray-400 flex-shrink-0 cursor-pointer transition-all duration-300 group-hover:text-primary' />
-                                </motion.div>
-                              ) : (
-                                <motion.div
-                                  className='relative z-10'
-                                  initial={{ rotate: 0 }}
-                                  animate={{ rotate: [0, -10, 10, -10, 0] }}
-                                  transition={{
-                                    duration: 0.5,
-                                    delay: index * 0.05 + 0.5,
-                                  }}
-                                >
-                                  <svg
-                                    className='h-4 w-4 text-gray-300'
-                                    fill='none'
-                                    stroke='currentColor'
-                                    viewBox='0 0 24 24'
-                                  >
-                                    <path
-                                      strokeLinecap='round'
-                                      strokeLinejoin='round'
-                                      strokeWidth={2}
-                                      d='M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z'
-                                    />
-                                  </svg>
-                                </motion.div>
-                              )}
+                                {!item.disabled ? (
+                                  <ChevronRight
+                                    className={cn(
+                                      'h-4 w-4 shrink-0 text-zinc-300 transition-colors group-hover:text-primary',
+                                      isActive && 'text-primary'
+                                    )}
+                                  />
+                                ) : (
+                                  <Lock
+                                    className='h-4 w-4 shrink-0 text-zinc-300'
+                                    aria-hidden
+                                  />
+                                )}
+                              </motion.button>
                             </motion.div>
-                            {index !== features.length - 1 && (
-                              <motion.div
-                                className='border-b border-gray-200 w-full'
-                                initial={{ scaleX: 0 }}
-                                animate={{ scaleX: 1 }}
-                                transition={{
-                                  delay: index * 0.05 + 0.2,
-                                  duration: 0.3,
-                                }}
-                              />
-                            )}
-                          </motion.div>
-                        ))}
+                          );
+                        })}
                       </motion.div>
                     </ScrollArea>
                   </div>
@@ -614,10 +493,10 @@ const Dashboard: React.FC = () => {
               </motion.div>
             </div>
 
-            <div className='border-b border-gray-300 w-full flex-shrink-0' />
+            <div className='h-px w-full flex-shrink-0 bg-zinc-100' />
 
             <motion.div
-              className='flex-shrink-0 p-4 bg-white border-t border-gray-200 md:border-t-0 md:bg-transparent'
+              className='flex-shrink-0 border-t border-zinc-200/80 bg-white px-3 pb-[max(0.5rem,env(safe-area-inset-bottom,0px))] pt-2 shadow-[0_-4px_20px_rgba(15,23,42,0.05)] sm:px-4 sm:pb-3 sm:pt-2.5 md:border-t-0 md:p-3 md:shadow-none'
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{
@@ -627,11 +506,41 @@ const Dashboard: React.FC = () => {
               }}
             >
               <AnimatePresence mode='wait'>
-                {!selectedFeature ? (
+                {isEditingView ? (
+                  <motion.div
+                    key='editing-view-footer'
+                    initial={{ opacity: 0, y: 12 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: 12 }}
+                    transition={{ duration: 0.2 }}
+                    className='flex w-full flex-col gap-2 sm:flex-row sm:items-center sm:justify-between sm:gap-4'
+                  >
+                    <p className='text-[11px] leading-snug text-zinc-500 sm:text-sm sm:text-zinc-600'>
+                      {selectedView === 'crop'
+                        ? 'Save your crop to update the print preview. This does not place an order.'
+                        : 'Save your enhancement settings to return to the room view.'}
+                    </p>
+                    <Button
+                      type='button'
+                      variant='default'
+                      disabled={isApplyingEditView}
+                      className='h-9 shrink-0 rounded-lg px-4 text-xs font-semibold shadow-sm sm:h-11 sm:min-w-[10rem] sm:rounded-xl sm:px-6 sm:text-sm'
+                      onClick={() => void handleDoneEditingView()}
+                    >
+                      {isApplyingEditView ? (
+                        <>
+                          <Loader2 className='mr-2 h-4 w-4 animate-spin' />
+                          Saving…
+                        </>
+                      ) : selectedView === 'crop' ? (
+                        'Apply crop'
+                      ) : (
+                        'Save enhancement'
+                      )}
+                    </Button>
+                  </motion.div>
+                ) : !selectedFeature ? (
                   <QuantityControl
-                    quantity={quantity}
-                    onIncrement={handleIncrement}
-                    onDecrement={handleDecrement}
                     onConfirm={handleConfirmAndApply}
                     isConfirming={isConfirming}
                   />
@@ -644,7 +553,7 @@ const Dashboard: React.FC = () => {
                       sell_price: pricePerItem,
                     }}
                     onApply={() => {
-                      applyPendingChanges();
+                      void applyPendingChanges();
                       applyPendingEdgeType();
                       if (
                         selectedView === 'crop' ||
@@ -665,20 +574,20 @@ const Dashboard: React.FC = () => {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: 20 }}
-            className='fixed bottom-0 left-0 right-0 bg-white border-t p-4 z-50'
+            className='fixed bottom-0 left-0 right-0 z-50 border-t border-zinc-200/80 bg-white px-3 py-2'
             style={{
               bottom: 'env(safe-area-inset-bottom, 0px)',
-              paddingBottom: 'calc(1rem + env(safe-area-inset-bottom, 0px))',
+              paddingBottom: 'calc(0.5rem + env(safe-area-inset-bottom, 0px))',
             }}
           >
-            <div className='flex justify-between items-center'>
+            <div className='flex items-center justify-between gap-2'>
               <motion.div
-                className='flex flex-col'
+                className='flex min-w-0 flex-col'
                 initial={{ opacity: 0, x: -20 }}
                 animate={{ opacity: 1, x: 0 }}
               >
                 <motion.span
-                  className='text-xl font-semibold'
+                  className='text-base font-semibold tabular-nums sm:text-lg'
                   initial={{ scale: 0.9 }}
                   animate={{ scale: 1 }}
                 >
@@ -713,15 +622,20 @@ const Dashboard: React.FC = () => {
               >
                 <Button
                   variant='default'
-                  className='px-6 py-2 rounded-none whitespace-nowrap transition-all duration-200'
-                  onClick={() => {
-                    applyPendingChanges();
-                    applyPendingEdgeType();
-                    setSelectedView('3droom');
-                    setSelectedFeature(null);
-                  }}
+                  className='h-9 shrink-0 whitespace-nowrap rounded-lg px-4 text-xs font-semibold transition-all duration-200 sm:h-11 sm:rounded-xl sm:px-5 sm:text-sm'
+                  disabled={isApplyingEditView}
+                  onClick={() => void handleDoneEditingView()}
                 >
-                  Apply Changes
+                  {isApplyingEditView ? (
+                    <>
+                      <Loader2 className='mr-2 inline h-4 w-4 animate-spin' />
+                      Saving…
+                    </>
+                  ) : selectedView === 'crop' ? (
+                    'Apply crop'
+                  ) : (
+                    'Save enhancement'
+                  )}
                 </Button>
               </motion.div>
             </div>

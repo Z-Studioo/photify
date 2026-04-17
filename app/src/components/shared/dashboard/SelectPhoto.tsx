@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { AlertCircle, HardDrive, ImagePlus } from 'lucide-react';
+import { AlertCircle, Crop, HardDrive, ImagePlus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import MyPhotos from '@/components/shared/dashboard/MyPhotos';
 import { useUpload } from '@/context/UploadContext';
+import { useView } from '@/context/ViewContext';
+import { useFeature } from '@/context/dashboard/FeatureContext';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
 interface UploadedImage {
@@ -31,8 +33,23 @@ const SelectPhoto: React.FC<SelectPhotoProps> = ({ onPhotoSelected }) => {
     usedSize: string;
     maxSize: string;
   } | null>(null);
-  const { setPendingFile, setPendingPreview, applyPendingChanges } =
-    useUpload();
+  const {
+    setPendingFile,
+    setPendingPreview,
+    applyPendingChanges,
+    preview,
+    pendingPreview,
+    file,
+  } = useUpload();
+  const { setSelectedView } = useView();
+  const { setSelectedFeature } = useFeature();
+
+  const displaySrc = pendingPreview ?? preview;
+
+  const handleOpenCropEditor = () => {
+    setSelectedView('crop');
+    setSelectedFeature(null);
+  };
 
   const STORAGE_KEY = 'photify_uploaded_images';
   const MAX_STORAGE_SIZE = 8 * 1024 * 1024; // 8MB in bytes
@@ -400,9 +417,45 @@ const SelectPhoto: React.FC<SelectPhotoProps> = ({ onPhotoSelected }) => {
     setStorageAlert(null);
   };
 
+  /** Preview + action to open the shared full-stage cropper (`ImageCropper` / `ImageCrop`). */
+  const currentPhotoSection =
+    displaySrc ? (
+      <div className='mb-4 overflow-hidden rounded-xl border border-zinc-200/90 bg-white shadow-sm'>
+        <div className='relative aspect-[4/3] w-full bg-zinc-100'>
+          <img
+            src={displaySrc}
+            alt='Your photo'
+            className='h-full w-full object-contain'
+          />
+        </div>
+        <div className='flex flex-col gap-2 border-t border-zinc-100 p-3'>
+          <p className='text-xs leading-relaxed text-zinc-500'>
+            Opens the crop editor on the canvas. The crop frame matches your
+            selected aspect ratio.
+          </p>
+          <Button
+            type='button'
+            variant='default'
+            className='h-11 w-full gap-2 rounded-lg text-sm font-semibold shadow-sm'
+            onClick={handleOpenCropEditor}
+            disabled={!file}
+          >
+            <Crop className='h-4 w-4 shrink-0' />
+            Crop image
+          </Button>
+          {!file && (
+            <p className='text-xs text-amber-800'>
+              A photo file is required for cropping. Upload an image first.
+            </p>
+          )}
+        </div>
+      </div>
+    ) : null;
+
   if (uploadedImages.length > 0) {
     return (
       <div className='relative overflow-auto p-4'>
+        {currentPhotoSection}
         {storageAlert?.show && (
           <Alert
             variant={storageAlert.type === 'error' ? 'destructive' : 'default'}
@@ -495,6 +548,7 @@ const SelectPhoto: React.FC<SelectPhotoProps> = ({ onPhotoSelected }) => {
 
   return (
     <div className='relative overflow-auto p-4'>
+      {currentPhotoSection}
       {storageAlert?.show && (
         <Alert
           variant={storageAlert.type === 'error' ? 'destructive' : 'default'}
@@ -555,7 +609,7 @@ const SelectPhoto: React.FC<SelectPhotoProps> = ({ onPhotoSelected }) => {
         </Alert>
       )}
       <div className='flex flex-col space-y-6'>
-        <div className='border-2 border-dashed border-gray-300 rounded-lg p-6 flex flex-col items-center space-y-4 bg-white'>
+        <div className='flex flex-col items-center space-y-4 rounded-xl border-2 border-dashed border-zinc-200 bg-white p-6'>
           <ImagePlus className='h-10 w-10 text-gray-400' />
           <p className='text-lg font-light text-gray-700'>
             Drag and Drop Your Files Here

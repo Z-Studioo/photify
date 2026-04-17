@@ -1,4 +1,4 @@
-import { SINGLE_CANVAS_PRODUCT } from './single-canvas/config';
+import { SINGLE_CANVAS_PRODUCT, COLLAGE_ON_SINGLE_CANVAS_PRODUCT } from './single-canvas/config';
 import { COLLAGE_CANVAS_PRODUCT } from './1PhotoCollageCreator/config';
 import { POSTER_COLLAGE_PRODUCT } from './poster-collage/config';
 
@@ -14,53 +14,88 @@ export const PRODUCT_REGISTRY: Record<string, ProductConfig> = {
   [SINGLE_CANVAS_PRODUCT.id]: {
     product: SINGLE_CANVAS_PRODUCT,
     configType: 'single-canvas',
-    hasCustomizer: true
+    hasCustomizer: true,
   },
   [SINGLE_CANVAS_PRODUCT.slug]: {
     product: SINGLE_CANVAS_PRODUCT,
     configType: 'single-canvas',
-    hasCustomizer: true
+    hasCustomizer: true,
+  },
+  [COLLAGE_ON_SINGLE_CANVAS_PRODUCT.id]: {
+    product: SINGLE_CANVAS_PRODUCT,
+    configType: 'single-canvas',
+    hasCustomizer: true,
+  },
+  [COLLAGE_ON_SINGLE_CANVAS_PRODUCT.slug]: {
+    product: SINGLE_CANVAS_PRODUCT,
+    configType: 'single-canvas',
+    hasCustomizer: true,
   },
   [COLLAGE_CANVAS_PRODUCT.id]: {
     product: COLLAGE_CANVAS_PRODUCT,
     configType: '1PhotoCollageCreator',
-    hasCustomizer: true
+    hasCustomizer: true,
   },
   [COLLAGE_CANVAS_PRODUCT.slug]: {
     product: COLLAGE_CANVAS_PRODUCT,
     configType: '1PhotoCollageCreator',
-    hasCustomizer: true
+    hasCustomizer: true,
   },
   [POSTER_COLLAGE_PRODUCT.id]: {
     product: POSTER_COLLAGE_PRODUCT,
     configType: 'poster-collage',
-    hasCustomizer: true
+    hasCustomizer: true,
   },
   [POSTER_COLLAGE_PRODUCT.slug]: {
     product: POSTER_COLLAGE_PRODUCT,
     configType: 'poster-collage',
-    hasCustomizer: true
-  }
+    hasCustomizer: true,
+  },
 };
 
-// Helper to get product config by ID or slug
-export function getProductConfig(identifier: string) {
-  return PRODUCT_REGISTRY[identifier];
+export type ProductRegistryProduct = ProductConfig;
+
+/** Resolve registry entry by DB id first, then by slug (for stable UUIDs not duplicated as keys). */
+export function resolveProductRegistryEntry(product: {
+  id: string;
+  slug?: string | null;
+}): ProductConfig | undefined {
+  const byId = PRODUCT_REGISTRY[product.id];
+  if (byId) return byId;
+  if (product.slug) {
+    return PRODUCT_REGISTRY[product.slug];
+  }
+  return undefined;
 }
 
-// Helper to check if a product has a custom configurator
-export function hasCustomConfigurator(identifier: string): boolean {
-  return identifier in PRODUCT_REGISTRY;
+export function getProductConfig(product: {
+  id: string;
+  slug?: string | null;
+}): ProductConfig | undefined {
+  return resolveProductRegistryEntry(product);
 }
 
-// Helper to check if a product has a customer customizer
-export function hasCustomerCustomizer(identifier: string): boolean {
-  const config = PRODUCT_REGISTRY[identifier];
-  return config?.hasCustomizer === true;
+export function hasCustomConfigurator(product: {
+  id: string;
+  slug?: string | null;
+}): boolean {
+  return !!resolveProductRegistryEntry(product);
+}
+
+export function hasCustomerCustomizer(product: {
+  id: string;
+  slug?: string | null;
+}): boolean {
+  return resolveProductRegistryEntry(product)?.hasCustomizer === true;
+}
+
+/** True when this product id uses the single-canvas admin editor + upload / 3D flow */
+export function usesSingleCanvasConfigurator(productId: string): boolean {
+  return PRODUCT_REGISTRY[productId]?.configType === 'single-canvas';
 }
 
 // Export product configs
-export { SINGLE_CANVAS_PRODUCT } from './single-canvas/config';
+export { SINGLE_CANVAS_PRODUCT, COLLAGE_ON_SINGLE_CANVAS_PRODUCT } from './single-canvas/config';
 export { COLLAGE_CANVAS_PRODUCT } from './1PhotoCollageCreator/config';
 export { POSTER_COLLAGE_PRODUCT } from './poster-collage/config';
 export type { SingleCanvasConfig } from './single-canvas/types';
@@ -75,4 +110,3 @@ export * from './shared';
 // import { CollageConfigEditor } from '@/components/product-configs/1PhotoCollageCreator/ConfigEditor';
 // import { CollageCustomizer } from '@/components/product-configs/1PhotoCollageCreator/CustomerCustomizer';
 // import { PosterCollageCustomizer } from '@/components/product-configs/poster-collage/CustomerCustomizer';
-

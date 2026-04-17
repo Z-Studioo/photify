@@ -3,7 +3,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { Plus, X, Save, Loader2, Upload, Info } from 'lucide-react';
+import { Plus, X, Save, Loader2, Info } from 'lucide-react';
 import {
   Select,
   SelectContent,
@@ -14,6 +14,11 @@ import {
 import { Switch } from '@/components/ui/switch';
 import { createClient } from '@/lib/supabase/client';
 import { toast } from 'sonner';
+import {
+  PRODUCT_FEATURE_ICON_OPTIONS,
+  getFeatureLucideIcon,
+  isFeatureIconUrl,
+} from '@/lib/product-feature-icons';
 
 interface Feature {
   text: string;
@@ -45,8 +50,6 @@ export function AdminProductContentEditor({
   // Basic Product Fields
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
-  const [price, setPrice] = useState('');
-  const [fixedPrice, setFixedPrice] = useState('');
   const [slug, setSlug] = useState('');
   const [productType, setProductType] = useState('');
   const [configStatus, setConfigStatus] = useState('');
@@ -90,8 +93,6 @@ export function AdminProductContentEditor({
         // Basic Product Fields
         setName(data.name || '');
         setDescription(data.description || '');
-        setPrice(data.price?.toString() || '');
-        setFixedPrice(data.fixed_price?.toString() || '');
         setSlug(data.slug || '');
         setProductType(data.product_type || '');
         setConfigStatus(data.config_status || '');
@@ -130,11 +131,6 @@ export function AdminProductContentEditor({
       return;
     }
 
-    if (!price || parseFloat(price) <= 0) {
-      toast.error('Price must be greater than 0');
-      return;
-    }
-
     if (!slug.trim()) {
       toast.error('Slug is required');
       return;
@@ -148,8 +144,6 @@ export function AdminProductContentEditor({
         .update({
           name: name.trim(),
           description: description.trim(),
-          price: parseFloat(price),
-          fixed_price: fixedPrice ? parseFloat(fixedPrice) : null,
           slug: slug.trim(),
           product_type: productType,
           active: isActive,
@@ -200,41 +194,6 @@ export function AdminProductContentEditor({
 
   const removeFeature = (index: number) => {
     setFeatures(features.filter((_, i) => i !== index));
-  };
-
-  const handleIconUpload = async (index: number, file: File) => {
-    try {
-      // Upload to Supabase Storage
-      const fileExt = file.name.split('.').pop();
-      const fileName = `feature-icon-${Date.now()}.${fileExt}`;
-      const filePath = `product-icons/${fileName}`;
-
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
-      const { error: uploadError } = await supabase.storage
-        .from('photify')
-        .upload(filePath, file, {
-          cacheControl: '3600',
-          upsert: false,
-        });
-
-      if (uploadError) throw uploadError;
-
-      // Get public URL
-      const {
-        data: { publicUrl },
-      } = supabase.storage.from('photify').getPublicUrl(filePath);
-
-      // Update feature with icon URL
-      updateFeature(index, 'icon', publicUrl);
-      toast.success('Icon uploaded successfully');
-    } catch (error: any) {
-      console.error('Error uploading icon:', error);
-      toast.error('Failed to upload icon');
-    }
-  };
-
-  const removeIcon = (index: number) => {
-    updateFeature(index, 'icon', null);
   };
 
   // Specifications Management
@@ -371,42 +330,6 @@ export function AdminProductContentEditor({
           </p>
         </div>
 
-        {/* Price and Slug Row */}
-        <div className='grid grid-cols-1 md:grid-cols-2 gap-6 mb-6'>
-          <div>
-            <Label htmlFor='product-price'>Base Price (£/sq in) *</Label>
-            <Input
-              id='product-price'
-              type='number'
-              step='0.01'
-              min='0'
-              value={price}
-              onChange={e => setPrice(e.target.value)}
-              placeholder='0.00'
-              className='mt-2 bg-white'
-              required
-            />
-            <p className='text-xs text-gray-500 mt-1'>Price per square inch</p>
-          </div>
-
-          <div>
-            <Label htmlFor='product-fixed-price'>Fixed Price (£)</Label>
-            <Input
-              id='product-fixed-price'
-              type='number'
-              step='0.01'
-              min='0'
-              value={fixedPrice}
-              onChange={e => setFixedPrice(e.target.value)}
-              placeholder='0.00'
-              className='mt-2 bg-white'
-            />
-            <p className='text-xs text-gray-500 mt-1'>
-              Optional: Override with fixed price (ignores base price)
-            </p>
-          </div>
-        </div>
-
         {/* Slug Row */}
         <div className='mb-6'>
           <Label htmlFor='product-slug'>URL Slug *</Label>
@@ -425,42 +348,6 @@ export function AdminProductContentEditor({
           <p className='text-xs text-gray-500 mt-1'>
             URL-friendly identifier (lowercase, dashes)
           </p>
-        </div>
-
-        {/* Product Type and Status Row */}
-        <div className='grid grid-cols-1 md:grid-cols-2 gap-6'>
-          <div>
-            <Label htmlFor='product-type'>Product Type *</Label>
-            <Select value={productType} onValueChange={setProductType}>
-              <SelectTrigger className='mt-2 bg-white'>
-                <SelectValue placeholder='Select product type' />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value='canvas'>Canvas Print</SelectItem>
-                <SelectItem value='framed_canvas'>Framed Canvas</SelectItem>
-                <SelectItem value='metal_print'>Metal Print</SelectItem>
-              </SelectContent>
-            </Select>
-            <p className='text-xs text-gray-500 mt-1'>
-              Type of product (affects configuration options)
-            </p>
-          </div>
-
-          <div>
-            <Label htmlFor='config-status'>Configuration Status *</Label>
-            <Select value={configStatus} onValueChange={setConfigStatus}>
-              <SelectTrigger className='mt-2 bg-white'>
-                <SelectValue placeholder='Select status' />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value='active'>Active (Ready for Sale)</SelectItem>
-                <SelectItem value='draft'>Draft (Work in Progress)</SelectItem>
-              </SelectContent>
-            </Select>
-            <p className='text-xs text-gray-500 mt-1'>
-              Product availability status
-            </p>
-          </div>
         </div>
       </div>
 
@@ -616,7 +503,7 @@ export function AdminProductContentEditor({
           <div>
             <h3 className='text-lg font-semibold'>Features</h3>
             <p className='text-sm text-gray-500 mt-1'>
-              Add custom icons (PNG, 64x64px recommended)
+              Pick an icon for each line (shown on the product page trust row)
             </p>
           </div>
           <Button type='button' onClick={addFeature} size='sm' variant='outline'>
@@ -626,68 +513,101 @@ export function AdminProductContentEditor({
         </div>
 
         <div className='space-y-4'>
-          {features.map((feature, index) => (
-            <div key={index} className='rounded-lg border border-gray-200 bg-gray-50 p-4'>
-              <div className='flex flex-col gap-3 md:flex-row'>
-                {/* Icon Upload Section */}
-                <div className='flex-shrink-0'>
-                  {feature.icon ? (
-                    <div className='relative w-32 h-32 border-2 border-gray-200 rounded-lg overflow-hidden group'>
-                      <img
-                        src={feature.icon}
-                        alt='Feature icon'
-                        className='w-full h-full object-contain p-3'
-                      />
-                      <button
-                        onClick={() => removeIcon(index)}
-                        className='absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center'
-                      >
-                        <X className='w-6 h-6 text-white' />
-                      </button>
+          {features.map((feature, index) => {
+            const PickedIcon = getFeatureLucideIcon(feature.icon);
+            const legacyUrl =
+              feature.icon && isFeatureIconUrl(feature.icon)
+                ? feature.icon
+                : null;
+            return (
+              <div
+                key={index}
+                className='rounded-lg border border-gray-200 bg-gray-50 p-4'
+              >
+                <div className='flex flex-col gap-3 md:flex-row md:items-start'>
+                  <div className='flex flex-shrink-0 gap-3'>
+                    <div className='flex h-20 w-20 flex-shrink-0 items-center justify-center rounded-lg border-2 border-gray-200 bg-white'>
+                      {legacyUrl ? (
+                        <img
+                          src={legacyUrl}
+                          alt=''
+                          className='max-h-16 max-w-16 object-contain'
+                        />
+                      ) : PickedIcon ? (
+                        <PickedIcon className='h-9 w-9 text-[#f63a9e]' />
+                      ) : (
+                        <span className='text-xs text-gray-400 text-center px-1'>
+                          No icon
+                        </span>
+                      )}
                     </div>
-                  ) : (
-                    <label className='w-32 h-32 border-2 border-dashed border-gray-300 rounded-lg flex items-center justify-center cursor-pointer hover:border-[#f63a9e] hover:bg-pink-50 transition-colors'>
-                      <input
-                        type='file'
-                        accept='image/png,image/jpeg,image/svg+xml'
-                        className='hidden'
-                        onChange={e => {
-                          const file = e.target.files?.[0];
-                          if (file) handleIconUpload(index, file);
+                    <div className='min-w-[200px] space-y-1'>
+                      <Label className='text-xs text-gray-600'>Icon</Label>
+                      <Select
+                        value={
+                          legacyUrl
+                            ? '_legacy_url'
+                            : feature.icon || 'none'
+                        }
+                        onValueChange={value => {
+                          if (value === 'none') {
+                            updateFeature(index, 'icon', null);
+                          } else if (value === '_legacy_url') {
+                            return;
+                          } else {
+                            updateFeature(index, 'icon', value);
+                          }
                         }}
-                      />
-                      <Upload className='w-8 h-8 text-gray-400' />
-                    </label>
-                  )}
-                </div>
+                      >
+                        <SelectTrigger className='h-10 bg-white'>
+                          <SelectValue placeholder='Choose icon' />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value='none'>No icon</SelectItem>
+                          {legacyUrl && (
+                            <SelectItem value='_legacy_url' disabled>
+                              Uploaded image (legacy) — pick an icon to replace
+                            </SelectItem>
+                          )}
+                          {PRODUCT_FEATURE_ICON_OPTIONS.map(opt => (
+                            <SelectItem key={opt.value} value={opt.value}>
+                              {opt.label}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      {legacyUrl && (
+                        <p className='text-xs text-amber-700'>
+                          This row uses an old uploaded image. Select an icon
+                          above to replace it.
+                        </p>
+                      )}
+                    </div>
+                  </div>
 
-                {/* Feature Text Input */}
-                <div className='flex-1 flex gap-2'>
-                  <Input
-                    value={feature.text}
-                    onChange={e => updateFeature(index, 'text', e.target.value)}
-                    placeholder='e.g., Museum-quality canvas material'
-                    className='flex-1 bg-white'
-                  />
-                  <Button
-                    type='button'
-                    variant='outline'
-                    size='icon'
-                    onClick={() => removeFeature(index)}
-                    className='flex-shrink-0'
-                  >
-                    <X className='w-4 h-4' />
-                  </Button>
+                  <div className='flex flex-1 gap-2 min-w-0'>
+                    <Input
+                      value={feature.text}
+                      onChange={e =>
+                        updateFeature(index, 'text', e.target.value)
+                      }
+                      placeholder='e.g., Free UK shipping'
+                      className='flex-1 bg-white'
+                    />
+                    <Button
+                      type='button'
+                      variant='outline'
+                      size='icon'
+                      onClick={() => removeFeature(index)}
+                      className='flex-shrink-0'
+                    >
+                      <X className='w-4 h-4' />
+                    </Button>
+                  </div>
                 </div>
               </div>
-
-              {feature.icon && (
-                <p className='mt-2 text-xs text-gray-500'>
-                  Icon uploaded. Hover and click to remove.
-                </p>
-              )}
-            </div>
-          ))}
+            );
+          })}
           {features.length === 0 && (
             <p className='text-sm text-gray-500 text-center py-4'>
               No features added yet. Click &quot;Add Feature&quot; to start.

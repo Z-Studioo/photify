@@ -5,6 +5,7 @@ import { createClient } from '@/lib/supabase/client';
 import { Search, X, TrendingUp, Clock, ArrowRight } from 'lucide-react';
 import { ImageWithFallback } from '@/components/figma/image-with-fallback';
 import { motion, AnimatePresence } from 'framer-motion';
+import { getListingDisplayAmount } from '@/lib/product-starting-price';
 
 interface Product {
   id: string;
@@ -12,6 +13,8 @@ interface Product {
   slug: string;
   images: string[];
   price: number;
+  fixed_price?: number | null;
+  config?: unknown;
   is_featured: boolean;
   similarity?: number; // Relevance score from semantic search (0-1)
 }
@@ -82,7 +85,7 @@ export function SearchModal({ isOpen, onClose }: SearchModalProps) {
         const supabase = createClient();
         const { data } = await supabase
           .from('products')
-          .select('id, name, slug, images, price, is_featured')
+          .select('id, name, slug, images, price, fixed_price, config, is_featured')
           .eq('active', true)
           .eq('is_featured', true)
           .limit(6);
@@ -125,6 +128,8 @@ export function SearchModal({ isOpen, onClose }: SearchModalProps) {
             slug: item.slug,
             images: item.images || [],
             price: item.price,
+            fixed_price: item.fixed_price ?? null,
+            config: item.config,
             is_featured: item.is_featured,
             similarity: item.similarity, // Add relevance score
           }));
@@ -139,7 +144,7 @@ export function SearchModal({ isOpen, onClose }: SearchModalProps) {
           const supabase = createClient();
           const { data } = await supabase
             .from('products')
-            .select('id, name, slug, images, price, is_featured')
+            .select('id, name, slug, images, price, fixed_price, config, is_featured')
             .eq('active', true)
             .ilike('name', `%${searchQuery}%`)
             .limit(8);
@@ -295,7 +300,13 @@ export function SearchModal({ isOpen, onClose }: SearchModalProps) {
                       </div>
                     ) : searchResults.length > 0 ? (
                       <div className='grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4'>
-                        {searchResults.map(product => (
+                        {searchResults.map(product => {
+                          const displayAmount = getListingDisplayAmount({
+                            config: product.config,
+                            fixed_price: product.fixed_price,
+                            price: product.price,
+                          });
+                          return (
                           <motion.div
                             key={product.id}
                             initial={{ opacity: 0, y: 20 }}
@@ -334,7 +345,10 @@ export function SearchModal({ isOpen, onClose }: SearchModalProps) {
 
                             <div className='flex items-center justify-between'>
                               <p className='text-sm text-[#f63a9e] font-semibold'>
-                                From £{product.price.toFixed(2)}
+                                From{' '}
+                                {displayAmount != null
+                                  ? `£${displayAmount.toFixed(2)}`
+                                  : '—'}
                               </p>
                               {/* Relevance percentage indicator */}
                               {product.similarity && (
@@ -344,7 +358,8 @@ export function SearchModal({ isOpen, onClose }: SearchModalProps) {
                               )}
                             </div>
                           </motion.div>
-                        ))}
+                          );
+                        })}
                       </div>
                     ) : (
                       <div className='text-center py-16 px-4'>
@@ -378,7 +393,13 @@ export function SearchModal({ isOpen, onClose }: SearchModalProps) {
                     </div>
 
                     <div className='grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-3 gap-4'>
-                      {recommendedProducts.map((product, idx) => (
+                      {recommendedProducts.map((product, idx) => {
+                        const displayAmount = getListingDisplayAmount({
+                          config: product.config,
+                          fixed_price: product.fixed_price,
+                          price: product.price,
+                        });
+                        return (
                         <motion.div
                           key={product.id}
                           initial={{ opacity: 0, y: 20 }}
@@ -411,22 +432,26 @@ export function SearchModal({ isOpen, onClose }: SearchModalProps) {
 
                               <div className='flex items-start'>
                                 <div className='flex items-start text-[#f63a9e]'>
-                                  <span className='font-bold text-lg mt-2 mr-0.5'>
-                                    £
-                                  </span>
+                                  {displayAmount != null ? (
+                                    <>
+                                      <span className='font-bold text-lg mt-2 mr-0.5'>
+                                        £
+                                      </span>
 
-                                  <span className='font-extrabold text-4xl tracking-tighter leading-none font-bricolage'>
-                                    {typeof product.price === 'number'
-                                      ? Math.floor(product.price)
-                                      : product.price}
-                                  </span>
+                                      <span className='font-extrabold text-4xl tracking-tighter leading-none font-bricolage'>
+                                        {Math.floor(displayAmount)}
+                                      </span>
 
-                                  <span className='font-bold text-xl mt-2'>
-                                    .
-                                    {typeof product.price === 'number'
-                                      ? product.price.toFixed(2).split('.')[1]
-                                      : '00'}
-                                  </span>
+                                      <span className='font-bold text-xl mt-2'>
+                                        .
+                                        {displayAmount.toFixed(2).split('.')[1]}
+                                      </span>
+                                    </>
+                                  ) : (
+                                    <span className='font-extrabold text-2xl tracking-tight font-bricolage'>
+                                      —
+                                    </span>
+                                  )}
                                 </div>
 
                                 <div className='ml-3 flex flex-col justify-center border-l border-gray-200 pl-3'>
@@ -442,7 +467,8 @@ export function SearchModal({ isOpen, onClose }: SearchModalProps) {
                             </div>
                           </div>
                         </motion.div>
-                      ))}
+                        );
+                      })}
                     </div>
                   </div>
                 )}

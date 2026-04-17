@@ -1,7 +1,7 @@
 User-agent: *
 Allow: /
 
-Disallow: /dashboard/*
+Disallow: /canvas-configurer/*
 Disallow: /admin/*
 
 Sitemap: https://photify.co/sitemap.xml

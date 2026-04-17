@@ -18,7 +18,9 @@ export default function Home() {
       // Fetch featured products client-side
       const { data: productsData } = await supabase
         .from('products')
-        .select('id, name, slug, images, price, fixed_price, is_featured, active, product_type')
+        .select(
+          'id, name, slug, images, price, fixed_price, config, is_featured, active, product_type'
+        )
         .eq('is_featured', true)
         .eq('active', true)
         .order('created_at', { ascending: false })

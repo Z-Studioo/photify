@@ -64,7 +64,7 @@ const Page = () => {
 
   const handleContinue = () => {
     if (_file && preview) {
-      navigate('/dashboard');
+      navigate('/canvas-configurer');
     }
   };
 

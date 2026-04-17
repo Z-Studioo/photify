@@ -1,7 +1,6 @@
--- Update Search Function Threshold
--- Run this in Supabase SQL Editor to update the default threshold to 0.1
--- This makes search more lenient and returns more results
--- (Keeps parity with migration 034_search_products_semantic_add_config.sql)
+-- Extend semantic search to return config + fixed_price for correct storefront pricing.
+
+BEGIN;
 
 CREATE OR REPLACE FUNCTION search_products_semantic(
   query_embedding vector(1536),
@@ -49,3 +48,5 @@ AS $$
   ORDER BY p.name_embedding <=> query_embedding ASC
   LIMIT match_count;
 $$;
+
+COMMIT;

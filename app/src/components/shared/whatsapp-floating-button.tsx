@@ -11,7 +11,7 @@ export function WhatsAppButton() {
   const hidden =
     pathname.startsWith('/admin') ||
     pathname.startsWith('/customize') ||
-    pathname.startsWith('/dashboard');
+    pathname.startsWith('/canvas-configurer');
 
   return (
     <AnimatePresence>

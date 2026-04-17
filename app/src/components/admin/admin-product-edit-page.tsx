@@ -1,4 +1,4 @@
-import { useState, useEffect, lazy, Suspense } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { AdminLayout } from './admin-layout';
 import { AdminProductConfigEditor } from './admin-product-config-editor';
@@ -9,21 +9,7 @@ import { AdminProductImageManager } from './admin-product-image-manager';
 import { AdminProductTagsEditor } from './admin-product-tags-editor';
 import { AdminConfigurerSelector } from './admin-configurer-selector';
 import { AdminProductRoomBackgroundsEditor } from './admin-product-room-backgrounds-editor';
-import {
-  getProductConfig,
-  hasCustomConfigurator,
-} from '@/components/product-configs';
 import { Button } from '@/components/ui/button';
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from '@/components/ui/alert-dialog';
 import {
   ArrowLeft,
   Loader2,
@@ -31,8 +17,6 @@ import {
   Settings as SettingsIcon,
   Tag,
   Images,
-  Trash2,
-  TriangleAlert,
 } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 import { ImageWithFallback } from '@/components/figma/image-with-fallback';
@@ -40,22 +24,11 @@ import { Separator } from '@/components/ui/separator';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { toast } from 'sonner';
 
-// Lazy load config editor to optimize bundle size
-const SingleCanvasConfigEditor = lazy(() =>
-  import('@/components/product-configs/single-canvas/config-editor').then(
-    m => ({
-      default: m.SingleCanvasConfigEditor,
-    })
-  )
-);
-
 export function AdminProductEditPage() {
   const navigate = useNavigate();
   const { productId } = useParams<{ productId: string }>();
   const [product, setProduct] = useState<any>(null);
   const [loading, setLoading] = useState(true);
-  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
-  const [deleting, setDeleting] = useState(false);
 
   // Fetch product data
   useEffect(() => {
@@ -105,25 +78,6 @@ export function AdminProductEditPage() {
       fetchProduct();
     }
   }, [productId]);
-
-  const handleDeleteProduct = async () => {
-    setDeleting(true);
-    try {
-      const supabase = createClient();
-      const { error } = await supabase
-        .from('products')
-        .delete()
-        .eq('id', product.id);
-      if (error) throw error;
-      toast.success(`"${product.name}" has been deleted.`);
-      navigate('/admin/products');
-    } catch {
-      toast.error('Failed to delete product. Please try again.');
-    } finally {
-      setDeleting(false);
-      setShowDeleteDialog(false);
-    }
-  };
 
   const handleConfigSave = () => {
     // Refresh product data after save
@@ -287,16 +241,6 @@ export function AdminProductEditPage() {
                       </span>
                     </div>
                     <div>
-                      <span className='text-gray-600'>Base Price:</span>{' '}
-                      <span className='font-medium text-[#f63a9e]'>
-                        £
-                        {typeof product.price === 'number'
-                          ? product.price.toFixed(2)
-                          : product.price}
-                        /sq in
-                      </span>
-                    </div>
-                    <div>
                       <span
                         className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
                           product.config_status === 'active'
@@ -356,13 +300,6 @@ export function AdminProductEditPage() {
               <Tag className='w-4 h-4' />
               Tags
             </TabsTrigger>
-            <TabsTrigger
-              value='danger'
-              className='inline-flex min-h-10 items-center gap-2 rounded-lg border border-transparent px-3 py-2 text-sm text-red-600 transition-colors hover:bg-red-50 data-[state=active]:border-red-200 data-[state=active]:bg-red-50 data-[state=active]:text-red-700 data-[state=active]:shadow-sm'
-            >
-              <TriangleAlert className='w-4 h-4' />
-              Danger Zone
-            </TabsTrigger>
           </TabsList>
 
           {/* Product Info & Content Tab */}
@@ -403,65 +340,29 @@ export function AdminProductEditPage() {
                 Size & Pricing Configuration
               </h2>
               <p className='mb-6 text-sm text-gray-500'>
-                Configure available formats and purchasable sizes
+                Enable aspect ratios, select sizes, and set a GBP price for each
+                size. Applies to all products in this shop.
               </p>
 
-              {/* Check if product has a custom configurator */}
-              {hasCustomConfigurator(product.id) ? (
-                // Use product-specific configurator
-                (() => {
-                  const productConfig = getProductConfig(product.id);
+              <div className='mb-5 rounded-lg border border-gray-100 bg-gray-50/90 px-4 py-3'>
+                <p className='text-sm text-gray-600'>
+                  Toggle each ratio on, use <strong>Select All</strong> or tap
+                  individual sizes, then enter <strong>Price (GBP)</strong> for
+                  every selected size before saving.
+                </p>
+              </div>
 
-                  // Map config types to dynamic components
-                  const ConfigEditorComponent =
-                    productConfig?.configType === 'single-canvas'
-                      ? SingleCanvasConfigEditor
-                      : null;
-
-                  return ConfigEditorComponent ? (
-                    <>
-                      <div className='mb-5 rounded-lg border border-green-200 bg-green-50 px-4 py-3'>
-                        <p className='text-sm text-green-700'>
-                          Using custom configurator for{' '}
-                          <strong>{productConfig.product.name}</strong>
-                        </p>
-                      </div>
-                      <Suspense
-                        fallback={
-                          <div className='p-4 flex items-center justify-center'>
-                            <Loader2 className='w-6 h-6 animate-spin text-[#f63a9e]' />
-                          </div>
-                        }
-                      >
-                        <ConfigEditorComponent
-                          currentConfig={product.config}
-                          onSave={handleConfigSave}
-                        />
-                      </Suspense>
-                    </>
-                  ) : null;
-                })()
-              ) : (
-                // Use generic configurator
-                <>
-                  <div className='mb-5 rounded-lg border border-gray-200 bg-gray-50 px-4 py-3'>
-                    <p className='text-sm text-gray-600'>
-                      Using generic configurator. Create a custom configurator
-                      in{' '}
-                      <code className='bg-gray-200 px-1 rounded'>
-                        components/product-configs/{product.slug}/
-                      </code>{' '}
-                      for product-specific options.
-                    </p>
-                  </div>
-                  <AdminProductConfigEditor
-                    productId={product.id}
-                    productType={product.product_type}
-                    currentConfig={product.config}
-                    onSave={handleConfigSave}
-                  />
-                </>
-              )}
+              <AdminProductConfigEditor
+                productId={product.id}
+                productType={
+                  product.product_type === 'framed_canvas' ||
+                  product.product_type === 'metal_print'
+                    ? product.product_type
+                    : 'canvas'
+                }
+                currentConfig={product.config}
+                onSave={handleConfigSave}
+              />
             </div>
           </TabsContent>
 
@@ -489,73 +390,8 @@ export function AdminProductEditPage() {
               <AdminProductTagsEditor productId={product.id} />
             </div>
           </TabsContent>
-
-          {/* Danger Zone Tab */}
-          <TabsContent value='danger' className='mt-6'>
-            <div className='bg-white rounded-lg border-2 border-red-200 p-8'>
-              <div className='flex items-center gap-3 mb-6'>
-                <div className='w-12 h-12 rounded-xl bg-red-100 flex items-center justify-center'>
-                  <TriangleAlert className='w-6 h-6 text-red-600' />
-                </div>
-                <div>
-                  <h2 className="font-['Bricolage_Grotesque',_sans-serif] text-xl font-semibold text-red-700">
-                    Danger Zone
-                  </h2>
-                  <p className='text-sm text-red-500'>Actions here are irreversible. Proceed with caution.</p>
-                </div>
-              </div>
-
-              <div className='border border-red-200 rounded-xl p-6 flex items-start justify-between gap-6'>
-                <div>
-                  <h3 className='font-semibold text-gray-900 mb-1'>Delete this product</h3>
-                  <p className='text-sm text-gray-500'>
-                    Permanently deletes <strong>{product.name}</strong> and all its configuration, images,
-                    and size data. This action <strong>cannot be undone</strong>.
-                  </p>
-                </div>
-                <Button
-                  variant='destructive'
-                  className='flex-shrink-0 gap-2'
-                  onClick={() => setShowDeleteDialog(true)}
-                >
-                  <Trash2 className='w-4 h-4' />
-                  Delete Product
-                </Button>
-              </div>
-            </div>
-          </TabsContent>
         </Tabs>
       </div>
-
-      {/* Delete Confirmation Dialog */}
-      <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle className='flex items-center gap-2 text-red-600'>
-              <TriangleAlert className='w-5 h-5' />
-              Delete &quot;{product.name}&quot;?
-            </AlertDialogTitle>
-            <AlertDialogDescription>
-              This will permanently delete the product and all associated configuration, size options, and
-              image data from the database. This action <strong>cannot be undone</strong>.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel disabled={deleting}>Cancel</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={handleDeleteProduct}
-              disabled={deleting}
-              className='bg-red-600 hover:bg-red-700 focus:ring-red-600 gap-2'
-            >
-              {deleting ? (
-                <><Loader2 className='w-4 h-4 animate-spin' /> Deleting...</>
-              ) : (
-                <><Trash2 className='w-4 h-4' /> Yes, delete it</>
-              )}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
     </AdminLayout>
   );
 }

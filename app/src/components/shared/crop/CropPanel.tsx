@@ -12,6 +12,8 @@ import {
 } from '@/utils/ratio-sizes';
 import { motion } from 'framer-motion';
 import { toast } from 'sonner';
+import { resolveCanvasSizePrice } from '@/lib/canvas-size-price';
+import { useProductCanvasPricingProduct } from '@/hooks/use-product-canvas-pricing';
 
 interface CropPanelProps {
   onSelectionChange?: (ratio: string, size: InchData | null) => void;
@@ -26,6 +28,7 @@ const CropPanel: React.FC<CropPanelProps> = ({ onSelectionChange }) => {
     setSelectedSize,
     selectedProduct,
   } = useUpload();
+  const pricingProduct = useProductCanvasPricingProduct(selectedProduct);
   const { setSelectedView } = useView();
   const sectionRefs = useRef<Record<string, HTMLDivElement | null>>({});
   const [_expandedRatio, setExpandedRatio] = useState<string | null>(null);
@@ -291,6 +294,11 @@ const CropPanel: React.FC<CropPanelProps> = ({ onSelectionChange }) => {
             }
 
             return sizes.map(size => {
+              const listPrice =
+                pricingProduct != null
+                  ? resolveCanvasSizePrice(size, pricingProduct) ??
+                    Number(pricingProduct.price || 0) * size.area_in2
+                  : 0;
               const discount = calculateDiscount(
                 +(selectedProduct?.price ?? 0) * size.area_in2,
                 +(selectedProduct?.price ?? 0) * size.area_in2
@@ -354,10 +362,7 @@ const CropPanel: React.FC<CropPanelProps> = ({ onSelectionChange }) => {
                       <div
                         className={`font-bold text-lg leading-tight ${isSelected ? 'text-primary' : 'text-gray-900'}`}
                       >
-                        £
-                        {selectedProduct
-                          ? (+selectedProduct.price * size.area_in2).toFixed(2)
-                          : '0.00'}
+                        £{listPrice.toFixed(2)}
                       </div>
                       {discount > 0 && (
                         <>

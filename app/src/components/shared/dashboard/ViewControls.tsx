@@ -1,5 +1,5 @@
 import { motion } from 'motion/react';
-import { Box, /* Eye, */ ImagePlus, Home } from 'lucide-react';
+import { /* Box, Eye, */ ImagePlus, Home } from 'lucide-react';
 
 interface ViewControlsProps {
   selectedView: string;
@@ -14,7 +14,7 @@ const ViewControls: React.FC<ViewControlsProps> = ({
 }) => {
   return (
     <div
-      className='fixed flex justify-between items-start md:w-9/12 top-16 md:top-18 md:px-4 pointer-events-none z-20'
+      className='fixed flex justify-between items-start md:w-9/12 top-14 md:top-[3.75rem] md:px-4 pointer-events-none z-20'
       style={{ pointerEvents: 'none' }}
     >
       <motion.button
@@ -89,37 +89,7 @@ const ViewControls: React.FC<ViewControlsProps> = ({
             </motion.div>
             <span className='hidden md:inline ml-1'>3D Room</span>
           </motion.button>
-          <motion.button
-            onClick={() => onViewChange('3d')}
-            className={`flex items-center justify-center px-2 py-2 md:px-5 md:py-3 text-xs md:text-sm font-medium rounded-none cursor-pointer transition-all flex-shrink-0 whitespace-nowrap ${
-              selectedView === '3d'
-                ? 'bg-primary text-white'
-                : 'bg-white text-gray-700 hover:bg-gray-100'
-            }`}
-            type='button'
-            whileHover={{ scale: 1.02 }}
-            whileTap={{ scale: 0.98 }}
-          >
-            <motion.div
-              animate={{
-                rotateY: selectedView === '3d' ? 360 : 0,
-                scale: selectedView === '3d' ? 1.1 : 1,
-              }}
-              transition={{
-                rotateY: { duration: 0.3, ease: [0.22, 1, 0.36, 1] },
-                scale: { duration: 0.2 },
-              }}
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                flexShrink: 0,
-              }}
-            >
-              <Box className='h-4 w-4 md:h-5 md:w-5' />
-            </motion.div>
-            <span className='hidden md:inline ml-1'>3D View</span>
-          </motion.button>
+          {/* 3D View button temporarily disabled */}
         </div>
       </motion.div>
     </div>

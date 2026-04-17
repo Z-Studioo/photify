@@ -191,7 +191,7 @@ export function ArtDetailPage({ artProduct }: ArtDetailPageProps) {
         setNavigating(false);
       }
 
-      navigate('/dashboard');
+      navigate('/canvas-configurer');
     } else if (configurerType === 'multi-canvas-wall') {
       navigate(
         `/customize/multi-canvas-wall?artImageUrl=${encodedArt}${product ? `&productId=${product.id}` : ''}`

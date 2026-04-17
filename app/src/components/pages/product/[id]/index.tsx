@@ -31,6 +31,14 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { getConfigurerById } from '@/lib/configures/registry';
 import { createClient } from '@/lib/supabase/client';
 import { Helmet } from '@dr.pogodin/react-helmet';
+import {
+  getFeatureLucideIcon,
+  isFeatureIconUrl,
+} from '@/lib/product-feature-icons';
+import {
+  formatGbpAmount,
+  getLowestSizePriceFromConfig,
+} from '@/lib/product-starting-price';
 
 const mockReviews = [
   {
@@ -70,6 +78,26 @@ interface ProductDetailPageProps {
   productSlug: string;
 }
 
+type FeatureRow = { text: string; icon: string | null };
+
+function normalizeFeatureRows(raw: unknown): FeatureRow[] {
+  if (!raw || !Array.isArray(raw)) return [];
+  return raw.map((f: any) =>
+    typeof f === 'string'
+      ? { text: f, icon: null }
+      : { text: f?.text || '', icon: f?.icon || null }
+  );
+}
+
+const DEFAULT_QUICK_TRUST_SIGNALS: FeatureRow[] = [
+  { text: 'Free UK Shipping', icon: null },
+  { text: '7-Day Returns', icon: null },
+  { text: 'Quality Guarantee', icon: null },
+  { text: 'Ships in 3–6 Days', icon: null },
+];
+
+const QUICK_TRUST_FALLBACK_ICONS = [Truck, RotateCcw, Shield, Clock] as const;
+
 export function ProductDetailPage({
   initialProduct,
   productSlug,
@@ -99,7 +127,7 @@ export function ProductDetailPage({
       if (!initialProduct?.id) return;
       const { data } = await supabase
         .from('products')
-        .select('id,name,slug,images,price,fixed_price,is_featured')
+        .select('id,name,slug,images,is_featured,config')
         .neq('id', initialProduct.id)
         .eq('active', true)
         .limit(4);
@@ -109,11 +137,13 @@ export function ProductDetailPage({
   }, [initialProduct?.id]);
 
   const productData = initialProduct;
+  /** Lowest configured size price (same source as generic admin, e.g. dual-metal-harmony) */
+  const startingPrice = getLowestSizePriceFromConfig(initialProduct.config);
+
   const product = {
     id: initialProduct.id,
     title: initialProduct.name,
-    price: initialProduct.fixed_price ?? initialProduct.price,
-    fixed_price: initialProduct.fixed_price,
+    startingPrice,
     description:
       initialProduct.description ||
       'Transform your favorite memories into stunning canvas art. Our premium quality canvas prints are professionally stretched and ready to hang.',
@@ -147,8 +177,19 @@ export function ProductDetailPage({
     ],
     isFeatured: initialProduct.is_featured,
     averageRating: 4.9,
-    reviewCount: 128,
+    reviewCount:
+      typeof initialProduct.review_count === 'number'
+        ? initialProduct.review_count
+        : 0,
   };
+
+  const adminQuickTrustFeatures = normalizeFeatureRows(
+    initialProduct.features
+  ).filter(f => f.text.trim().length > 0);
+  const quickTrustSignals =
+    adminQuickTrustFeatures.length > 0
+      ? adminQuickTrustFeatures
+      : DEFAULT_QUICK_TRUST_SIGNALS;
 
   const hasConfigurer = productData?.config?.configurerType;
   const configurerType = productData?.config?.configurerType;
@@ -231,7 +272,9 @@ export function ProductDetailPage({
                         {product.title}
                       </h3>
                       <p className='text-[#f63a9e] font-bold text-sm sm:text-base'>
-                        From £{product.price}
+                        {product.startingPrice != null
+                          ? `From £${formatGbpAmount(product.startingPrice)}`
+                          : 'From —'}
                       </p>
                     </div>
                   </div>
@@ -493,15 +536,24 @@ export function ProductDetailPage({
                     </span>
                   </div>
 
-                  {/* Price */}
+                  {/* Price — lowest from config.sizePrices (admin), not products.price */}
                   <div className='flex items-baseline gap-2'>
                     <span className='text-gray-400 text-sm font-medium'>Starting at</span>
-                    <span
-                      className='text-[#f63a9e] text-3xl sm:text-4xl'
-                      style={{ fontWeight: '800' }}
-                    >
-                      £{product.price}
-                    </span>
+                    {product.startingPrice != null ? (
+                      <span
+                        className='text-[#f63a9e] text-3xl sm:text-4xl'
+                        style={{ fontWeight: '800' }}
+                      >
+                        £{formatGbpAmount(product.startingPrice)}
+                      </span>
+                    ) : (
+                      <span
+                        className='text-gray-400 text-2xl sm:text-3xl'
+                        style={{ fontWeight: '800' }}
+                      >
+                        —
+                      </span>
+                    )}
                   </div>
                 </div>
 
@@ -510,27 +562,41 @@ export function ProductDetailPage({
                   {product.description}
                 </p>
 
-                {/* Quick Trust Signals */}
+                {/* Quick Trust Signals — copy + icons from admin Features */}
                 <div className='grid grid-cols-2 gap-x-4 gap-y-2.5 mb-4 sm:mb-6'>
-                  {[
-                    { icon: Truck, text: 'Free UK Shipping' },
-                    { icon: RotateCcw, text: '7-Day Returns' },
-                    { icon: Shield, text: 'Quality Guarantee' },
-                    { icon: Clock, text: 'Ships in 3–6 Days' },
-                  ].map((item, index) => (
-                    <motion.div
-                      key={index}
-                      initial={{ opacity: 0, x: -8 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      transition={{ delay: 0.3 + index * 0.07 }}
-                      className='flex items-center gap-2.5 text-gray-600'
-                    >
-                      <div className='w-7 h-7 rounded-full bg-[#f63a9e]/10 flex items-center justify-center flex-shrink-0'>
-                        <item.icon className='w-3.5 h-3.5 text-[#f63a9e]' />
-                      </div>
-                      <span className='text-xs sm:text-sm font-medium'>{item.text}</span>
-                    </motion.div>
-                  ))}
+                  {quickTrustSignals.map((item, index) => {
+                    const FallbackIcon =
+                      QUICK_TRUST_FALLBACK_ICONS[
+                        index % QUICK_TRUST_FALLBACK_ICONS.length
+                      ];
+                    const PickedLucide = getFeatureLucideIcon(item.icon);
+                    return (
+                      <motion.div
+                        key={index}
+                        initial={{ opacity: 0, x: -8 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        transition={{ delay: 0.3 + index * 0.07 }}
+                        className='flex items-center gap-2.5 text-gray-600'
+                      >
+                        <div className='w-7 h-7 rounded-full bg-[#f63a9e]/10 flex items-center justify-center flex-shrink-0 overflow-hidden'>
+                          {item.icon && isFeatureIconUrl(item.icon) ? (
+                            <img
+                              src={item.icon}
+                              alt=''
+                              className='w-4 h-4 object-contain'
+                            />
+                          ) : PickedLucide ? (
+                            <PickedLucide className='w-3.5 h-3.5 text-[#f63a9e]' />
+                          ) : (
+                            <FallbackIcon className='w-3.5 h-3.5 text-[#f63a9e]' />
+                          )}
+                        </div>
+                        <span className='text-xs sm:text-sm font-medium'>
+                          {item.text}
+                        </span>
+                      </motion.div>
+                    );
+                  })}
                 </div>
 
                 {/* CTA Section */}
@@ -618,7 +684,7 @@ export function ProductDetailPage({
                     className="font-['Bricolage_Grotesque',_sans-serif] text-gray-900 mb-3 sm:mb-4 text-2xl sm:text-3xl"
                     style={{ fontWeight: '700' }}
                   >
-                    Why Choose Our Canvas Prints
+                    Why Choose Our Prints
                   </h2>
                   <p className='text-gray-600 text-base sm:text-lg max-w-2xl lg:max-w-none mx-auto lg:mx-0'>
                     Premium quality materials and craftsmanship in every detail
@@ -630,7 +696,7 @@ export function ProductDetailPage({
                     {
                       icon: Palette,
                       title: 'Museum Quality',
-                      desc: 'Gallery-grade canvas',
+                      desc: 'Gallery-grade prints',
                     },
                     {
                       icon: Sparkles,
@@ -942,7 +1008,11 @@ export function ProductDetailPage({
               </motion.div>
 
               <div className='grid grid-cols-2 md:grid-cols-4 gap-2 xs:gap-2.5 sm:gap-4 md:gap-6'>
-                {relatedProducts.map((relProduct, index) => (
+                {relatedProducts.map((relProduct, index) => {
+                  const relStarting = getLowestSizePriceFromConfig(
+                    relProduct.config
+                  );
+                  return (
                   <motion.div
                     key={relProduct.id}
                     initial={{ opacity: 0, y: 20 }}
@@ -987,16 +1057,16 @@ export function ProductDetailPage({
                               </span>
 
                               <span className='font-extrabold text-xl xs:text-2xl sm:text-3xl md:text-4xl tracking-tighter leading-none font-bricolage'>
-                                {typeof (relProduct.fixed_price ?? relProduct.price) === 'number'
-                                  ? Math.floor(relProduct.fixed_price ?? relProduct.price)
-                                  : relProduct.price}
+                                {relStarting != null
+                                  ? formatGbpAmount(relStarting).split('.')[0]
+                                  : '—'}
                               </span>
 
                               <span className='font-bold text-sm xs:text-base sm:text-lg md:text-xl mt-1 xs:mt-1.5 sm:mt-2'>
-                                .
-                                {typeof (relProduct.fixed_price ?? relProduct.price) === 'number'
-                                  ? (relProduct.fixed_price ?? relProduct.price).toFixed(2).split('.')[1]
-                                  : '00'}
+                                {relStarting != null &&
+                                formatGbpAmount(relStarting).includes('.')
+                                  ? `.${formatGbpAmount(relStarting).split('.')[1]}`
+                                  : ''}
                               </span>
                             </div>
                           </div>
@@ -1008,7 +1078,8 @@ export function ProductDetailPage({
                       </div>
                     </div>
                   </motion.div>
-                ))}
+                );
+                })}
               </div>
             </div>
           </div>

@@ -3,7 +3,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
-import { Save, Loader2 } from 'lucide-react';
+import { Save, Loader2, Lock, PencilLine } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 import { toast } from 'sonner';
 
@@ -45,6 +45,8 @@ export function AdminProductConfigEditor({
   const [allSizes, setAllSizes] = useState<Size[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  /** When false, ratio/size toggles and price fields are read-only to avoid accidental edits */
+  const [aspectSectionUnlocked, setAspectSectionUnlocked] = useState(false);
   const supabase = createClient();
 
   // Fetch aspect ratios and sizes from database
@@ -252,6 +254,7 @@ export function AdminProductConfigEditor({
       if (error) throw error;
 
       toast.success('Configuration saved successfully');
+      setAspectSectionUnlocked(false);
       if (onSave) onSave(mergedConfig);
     } catch (error: any) {
       console.error('Error saving config:', error);
@@ -299,15 +302,55 @@ export function AdminProductConfigEditor({
       </div>
 
       {/* Aspect Ratios Selection */}
-      <div className='rounded-lg border border-gray-200 bg-white p-5'>
-        <div className='mb-4'>
-          <h3 className='mb-1 text-lg font-semibold'>Aspect Ratios & Sizes</h3>
-          <p className='text-sm text-gray-600'>
-            Enable a ratio to configure its available sizes
-          </p>
+      <div
+        className={`rounded-lg border bg-white p-5 transition-colors ${
+          aspectSectionUnlocked
+            ? 'border-gray-200'
+            : 'border-gray-200 ring-1 ring-gray-100'
+        }`}
+      >
+        <div className='mb-4 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between'>
+          <div className='min-w-0 flex-1'>
+            <h3 className='mb-1 text-lg font-semibold'>Aspect Ratios & Sizes</h3>
+            <p className='text-sm text-gray-600'>
+              Enable a ratio to configure its available sizes
+            </p>
+            {!aspectSectionUnlocked && (
+              <p className='mt-2 text-xs text-gray-500'>
+                Section is locked. Click{' '}
+                <span className='font-medium text-gray-700'>Edit</span> to
+                change ratios, sizes, or prices.
+              </p>
+            )}
+          </div>
+          <Button
+            type='button'
+            variant={aspectSectionUnlocked ? 'outline' : 'default'}
+            size='sm'
+            className={
+              aspectSectionUnlocked
+                ? 'shrink-0 border-gray-300'
+                : 'shrink-0 bg-[#f63a9e] hover:bg-[#e02d8d] text-white font-medium'
+            }
+            onClick={() => setAspectSectionUnlocked(u => !u)}
+          >
+            {aspectSectionUnlocked ? (
+              <>
+                <Lock className='mr-2 h-4 w-4' aria-hidden />
+                Lock section
+              </>
+            ) : (
+              <>
+                <PencilLine className='mr-2 h-4 w-4' aria-hidden />
+                Edit configuration
+              </>
+            )}
+          </Button>
         </div>
 
-        <div className='space-y-3'>
+        <div
+          className={`space-y-3 ${!aspectSectionUnlocked ? 'select-none' : ''}`}
+        >
           {aspectRatios.map(ratio => {
             const isSelected = config.allowedRatios?.includes(ratio.id);
             const sizesCount = getSizesCountForRatio(ratio.id);
@@ -352,6 +395,7 @@ export function AdminProductConfigEditor({
                     </span>
                     <Switch
                       checked={isSelected}
+                      disabled={!aspectSectionUnlocked}
                       onCheckedChange={() => toggleRatio(ratio.id)}
                     />
                   </div>
@@ -369,6 +413,7 @@ export function AdminProductConfigEditor({
                           <Button
                             variant='outline'
                             size='sm'
+                            disabled={!aspectSectionUnlocked}
                             onClick={() => selectAllSizesForRatio(ratio.id)}
                           >
                             {allSelected ? 'Deselect All' : 'Select All'}
@@ -384,12 +429,24 @@ export function AdminProductConfigEditor({
                             return (
                               <div
                                 key={size.id}
-                                className={`cursor-pointer rounded-lg border p-3 text-center transition-all ${
+                                role={aspectSectionUnlocked ? 'button' : undefined}
+                                tabIndex={aspectSectionUnlocked ? 0 : undefined}
+                                className={`rounded-lg border p-3 text-center transition-all ${
+                                  aspectSectionUnlocked
+                                    ? 'cursor-pointer'
+                                    : 'cursor-default'
+                                } ${
                                   isSizeSelected
                                     ? 'border-[#f63a9e] bg-pink-50 shadow-sm'
-                                    : 'border-gray-200 bg-white hover:border-gray-300'
-                                }`}
-                                onClick={() => toggleSize(size.id)}
+                                    : `border-gray-200 bg-white${
+                                        aspectSectionUnlocked
+                                          ? ' hover:border-gray-300'
+                                          : ''
+                                      }`
+                                } ${!aspectSectionUnlocked && !isSizeSelected ? 'opacity-75' : ''}`}
+                                onClick={() =>
+                                  aspectSectionUnlocked && toggleSize(size.id)
+                                }
                               >
                                 <div className='text-sm font-medium'>
                                   {size.display_label}
@@ -405,21 +462,31 @@ export function AdminProductConfigEditor({
                                     <Label className='text-[11px] font-medium text-gray-600'>
                                       Price (GBP)
                                     </Label>
-                                    <Input
-                                      type='number'
-                                      min='0'
-                                      step='0.01'
-                                      placeholder='0.00'
-                                      value={
-                                        config.sizePrices?.[size.id] !== undefined
-                                          ? String(config.sizePrices[size.id])
-                                          : ''
-                                      }
-                                      onChange={e =>
-                                        updateSizePrice(size.id, e.target.value)
-                                      }
-                                      className='mt-1 h-8 bg-white text-xs'
-                                    />
+                                    {aspectSectionUnlocked ? (
+                                      <Input
+                                        type='number'
+                                        min='0'
+                                        step='0.01'
+                                        placeholder='0.00'
+                                        value={
+                                          config.sizePrices?.[size.id] !== undefined
+                                            ? String(config.sizePrices[size.id])
+                                            : ''
+                                        }
+                                        onChange={e =>
+                                          updateSizePrice(size.id, e.target.value)
+                                        }
+                                        className='mt-1 h-8 bg-white text-xs'
+                                      />
+                                    ) : (
+                                      <div className='mt-1.5 rounded-md border border-gray-100 bg-white px-2 py-1.5 text-left text-sm font-semibold tabular-nums text-gray-900'>
+                                        {typeof config.sizePrices?.[size.id] ===
+                                          'number' &&
+                                        config.sizePrices[size.id] > 0
+                                          ? `£${config.sizePrices[size.id].toFixed(2)}`
+                                          : '—'}
+                                      </div>
+                                    )}
                                   </div>
                                 )}
                               </div>

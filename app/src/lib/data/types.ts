@@ -7,6 +7,11 @@ export interface Product {
   oldPrice?: string;
   category: string;
   description?: string;
+  /** From DB; includes per-product canvas size prices from admin */
+  config?: {
+    sizePrices?: Record<string, number>;
+    [key: string]: unknown;
+  };
 }
 
 export interface ArtProduct {

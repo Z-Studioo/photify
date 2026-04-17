@@ -123,11 +123,18 @@ const OptimizationView: React.FC<OptimizationViewProps> = ({ isVisible }) => {
   return (
     <div className='flex flex-col w-full h-full bg-white overflow-y-auto'>
       <div className='relative flex items-center p-4 flex-shrink-0 border-b border-gray-200'>
-        <ChevronLeft
-          className='h-4 w-4 text-gray-600 cursor-pointer'
+        <button
+          type='button'
           onClick={handleGoBack}
-        />
-        <h3 className='absolute left-1/2 transform -translate-x-1/2 text-lg font-bold text-center whitespace-nowrap px-2'>
+          className='group relative z-10 flex h-12 w-12 shrink-0 items-center justify-center rounded-full border border-zinc-200/90 bg-white text-zinc-700 shadow-sm transition hover:border-primary/45 hover:bg-primary/[0.08] hover:text-primary hover:shadow-md active:scale-[0.96] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-2'
+          aria-label='Back'
+        >
+          <ChevronLeft
+            className='h-7 w-7 transition-transform group-hover:-translate-x-0.5'
+            strokeWidth={2.25}
+          />
+        </button>
+        <h3 className='absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 text-lg font-bold text-center whitespace-nowrap px-12'>
           Image Optimization
         </h3>
       </div>
