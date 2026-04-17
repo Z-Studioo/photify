@@ -17,7 +17,6 @@ import {
   Home,
   ShoppingBag,
   Video,
-  Sparkles,
   Heart,
   Star,
   Clock,
@@ -688,74 +687,6 @@ export function ConfirmationPage() {
                   </div>
                 </div>
               </motion.div>
-
-              {/* Video Permission */}
-              {orderData.videoPermission && (
-                <motion.div
-                  initial={{ opacity: 0, y: 30 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 1.3 }}
-                >
-                  <div className='bg-gradient-to-br from-[#f63a9e]/5 to-gray-50 rounded-3xl p-8 border border-[#f63a9e]/20 shadow-lg'>
-                    <div className='flex items-start gap-5'>
-                      <motion.div
-                        className='w-16 h-16 rounded-2xl bg-[#f63a9e] flex items-center justify-center flex-shrink-0 shadow-xl'
-                        animate={{
-                          y: [0, -5, 0],
-                        }}
-                        transition={{ duration: 3, repeat: Infinity }}
-                      >
-                        <Video className='w-8 h-8 text-white' />
-                      </motion.div>
-
-                      <div className='flex-1'>
-                        <div className='flex items-center gap-2 mb-3'>
-                          <h3
-                            className='text-gray-900'
-                            style={{ fontWeight: '700' }}
-                          >
-                            Your Behind-the-Scenes Video is Coming!
-                          </h3>
-                          <Sparkles className='w-5 h-5 text-[#f63a9e]' />
-                        </div>
-
-                        <p className='text-gray-600 mb-4'>
-                          We&apos;re creating a special video of your prints being crafted — perfect for sharing on social media! 📱✨
-                          We&apos;ll send it to <strong>{orderData.email}</strong> once ready.
-                        </p>
-
-                        <div className='flex flex-wrap gap-3'>
-                          {[
-                            { icon: '📸', label: 'Social Ready' },
-                            { icon: '🎨', label: 'Crafting Process' },
-                            { icon: '✨', label: 'Shareable Content' },
-                          ].map((feature, i) => (
-                            <motion.div
-                              key={feature.label}
-                              className='flex items-center gap-2 px-4 py-2 bg-white rounded-full shadow-sm border border-gray-100'
-                              initial={{ opacity: 0, scale: 0.8 }}
-                              animate={{ opacity: 1, scale: 1 }}
-                              transition={{ delay: 1.4 + i * 0.1 }}
-                            >
-                                <span className='text-sm'>{feature.icon}</span>
-                                <span
-                                  className='text-sm text-gray-700'
-                                  style={{ fontWeight: '600' }}
-                                >
-                                  {feature.label}
-                                </span>
-                              </motion.div>
-                          ))}
-                        </div>
-
-                        <p className='text-xs text-gray-500 mt-3'>
-                          💡 Get ready to share your print journey with the world! 🌍
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                </motion.div>
-              )}
 
               {/* Order Items */}
               <motion.div
