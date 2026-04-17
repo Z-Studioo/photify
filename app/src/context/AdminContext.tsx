@@ -69,11 +69,6 @@ export function AdminProvider({ children }: { children: ReactNode }) {
     setIsAuthenticated(false);
   };
 
-  // Don't render children until we've checked auth status
-  if (loading) {
-    return null;
-  }
-
   return (
     <AdminContext.Provider value={{ isAuthenticated, login, logout, loading }}>
       {children}
