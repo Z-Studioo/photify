@@ -149,11 +149,35 @@ async function loadServerEntry(): Promise<ServerEntry> {
 }
 
 /**
+ * Minimal structural type for the parts of Vite's dev server we use. Keeps
+ * `vite` out of the server workspace's compile-time deps (it's resolved at
+ * runtime from the app workspace via node module resolution).
+ */
+type ViteDevServer = {
+  middlewares: express.RequestHandler;
+  transformIndexHtml: (url: string, html: string) => Promise<string>;
+  ssrLoadModule: (url: string) => Promise<unknown>;
+  ssrFixStacktrace: (err: Error) => void;
+};
+type ViteModule = {
+  createServer: (config: {
+    root: string;
+    server: { middlewareMode: boolean };
+    appType: 'custom';
+  }) => Promise<ViteDevServer>;
+};
+
+/**
  * Development mode: return an Express sub-app that proxies through Vite.
  */
 async function createDevSSRMiddleware() {
-  // Dynamic import to keep Vite out of production deps.
-  const { createServer: createViteServer } = (await import('vite')) as typeof import('vite');
+  // Dynamic import with a string variable so `tsc` doesn't try to resolve
+  // 'vite' from the server's node_modules — Vite only lives in the app
+  // workspace and is only needed in development.
+  const viteModuleId = 'vite';
+  const { createServer: createViteServer } = (await import(
+    viteModuleId
+  )) as ViteModule;
 
   const vite = await createViteServer({
     root: APP_ROOT,
