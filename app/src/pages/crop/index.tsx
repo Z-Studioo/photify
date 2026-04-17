@@ -27,7 +27,7 @@ export default function CropPage() {
 
   const handleApply = () => {
     // applyPendingChanges();
-    navigate(`/dashboard`, { replace: true });
+    navigate(`/canvas-configurer`, { replace: true });
   };
 
   return (

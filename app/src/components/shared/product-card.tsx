@@ -1,16 +1,17 @@
 'use client';
 import { useNavigate } from 'react-router-dom';
-import { useEffect, useState } from 'react';
-import { AnimatePresence, motion } from 'framer-motion';
+import { motion } from 'framer-motion';
 import { ImageWithFallback } from '@/components/figma/image-with-fallback';
 import { Ruler } from 'lucide-react';
+import { getListingDisplayAmount } from '@/lib/product-starting-price';
 
 export interface ProductCardProps {
   id: string;
   name: string;
   slug: string;
   images: string[];
-  price: number;
+  price: number | string;
+  config?: unknown;
   fixed_price?: number | null;
   size?: string | null;
   isFeatured?: boolean;
@@ -24,6 +25,7 @@ export function ProductCard({
   slug,
   images,
   price,
+  config,
   fixed_price,
   size,
   isFeatured = false,
@@ -31,23 +33,15 @@ export function ProductCard({
   className = '',
 }: ProductCardProps) {
   const navigate = useNavigate();
-  const [currentImageIndex, setCurrentImageIndex] = useState(0);
 
-  // Use fixed_price if available, otherwise fall back to base price
-  const displayPrice = fixed_price ?? price;
+  const displayAmount = getListingDisplayAmount({
+    config,
+    fixed_price,
+    price,
+  });
 
-  useEffect(() => {
-    if (!images || images.length <= 1) {
-      setCurrentImageIndex(0);
-      return;
-    }
-
-    const interval = setInterval(() => {
-      setCurrentImageIndex(prev => (prev + 1) % images.length);
-    }, 2000);
-
-    return () => clearInterval(interval);
-  }, [images]);
+  const primaryImage =
+    images && images.length > 0 ? images[0] : '/assets/placeholder.png';
 
   const handleClick = () => {
     navigate(`/product/${slug || id}`);
@@ -73,26 +67,11 @@ export function ProductCard({
 
         {/* Product Image */}
         <div className='relative aspect-square overflow-hidden bg-gray-100'>
-          <AnimatePresence>
-            <motion.div
-              key={`${id}-${currentImageIndex}`}
-              initial={{ opacity: 0, scale: 1.03 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.98 }}
-              transition={{ duration: 0.65, ease: 'easeInOut' }}
-              className='absolute inset-0'
-            >
-              <ImageWithFallback
-                src={
-                  images && images.length > 0
-                    ? images[currentImageIndex] || images[0]
-                    : '/assets/placeholder.png'
-                }
-                alt={name}
-                className='w-full h-full object-cover group-hover:scale-110 transition-transform duration-700'
-              />
-            </motion.div>
-          </AnimatePresence>
+          <ImageWithFallback
+            src={primaryImage}
+            alt={name}
+            className='w-full h-full object-cover group-hover:scale-110 transition-transform duration-700'
+          />
 
           {/* Overlay on hover */}
           <div className='absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-end p-4'>
@@ -101,22 +80,6 @@ export function ProductCard({
             </span>
           </div>
         </div>
-
-        {/* Carousel Dots */}
-        {images && images.length > 1 && (
-          <div className='absolute bottom-3 left-1/2 -translate-x-1/2 flex gap-1.5 z-10'>
-            {images.slice(0, 5).map((_, idx) => (
-              <div
-                key={idx}
-                className={`w-1.5 h-1.5 rounded-full shadow-sm transition-all ${
-                  idx === currentImageIndex
-                    ? 'bg-white'
-                    : 'bg-white/50'
-                }`}
-              />
-            ))}
-          </div>
-        )}
       </div>
 
       {/* Product Info */}
@@ -144,18 +107,24 @@ export function ProductCard({
             <div className='flex items-start'>
               {/* Price */}
               <div className='flex items-start text-[#f63a9e]'>
-                <span className='font-bold text-lg mt-2 mr-0.5'>£</span>
+                {displayAmount != null ? (
+                  <>
+                    <span className='font-bold text-lg mt-2 mr-0.5'>£</span>
 
-                <span className='font-extrabold text-4xl tracking-tighter leading-none font-bricolage'>
-                  {typeof displayPrice === 'number' ? Math.floor(displayPrice) : displayPrice}
-                </span>
+                    <span className='font-extrabold text-4xl tracking-tighter leading-none font-bricolage'>
+                      {Math.floor(displayAmount)}
+                    </span>
 
-                <span className='font-bold text-xl mt-2'>
-                  .
-                  {typeof displayPrice === 'number'
-                    ? displayPrice.toFixed(2).split('.')[1]
-                    : '00'}
-                </span>
+                    <span className='font-bold text-xl mt-2'>
+                      .
+                      {displayAmount.toFixed(2).split('.')[1]}
+                    </span>
+                  </>
+                ) : (
+                  <span className='font-extrabold text-2xl tracking-tight font-bricolage'>
+                    —
+                  </span>
+                )}
               </div>
             </div>
           </div>

@@ -1,6 +1,6 @@
 import { Header } from '@/components/layout/header';
 import { FeaturedCollections } from '@/components/shared/featured-collections';
-import { ProductCard } from '@/components/shared/product-card';
+import { ProductCard, type ProductCardProps } from '@/components/shared/product-card';
 import { RoomInspiration } from '@/components/shared/room-inspiration';
 import { ArtProductCard } from '@/components/shared/art-product-card';
 // import { AIToolsSection } from '@/components/ai-tools/ai-tools-section';
@@ -171,6 +171,7 @@ export function HomePage({
               images: product.images || [],
               name: product.name,
               price: product.price,
+              config: product.config,
               fixed_price: product.fixed_price,
               oldPrice: product.old_price,
               productId: product.slug || product.id,
@@ -267,7 +268,8 @@ export function HomePage({
                 slug={product.slug}
                 images={product.images}
                 price={product.price}
-                fixed_price={product.fixed_price}
+                config={(product as ProductCardProps).config}
+                fixed_price={(product as ProductCardProps).fixed_price}
                 isFeatured={false}
                 index={index}
               />
@@ -407,7 +409,8 @@ export function HomePage({
                     slug={product.slug}
                     images={product.images}
                     price={product.price}
-                    fixed_price={product.fixed_price}
+                    config={(product as ProductCardProps).config}
+                    fixed_price={(product as ProductCardProps).fixed_price}
                     isFeatured={false}
                     index={index}
                   />

@@ -7,6 +7,7 @@ import {
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { get, set, del } from 'idb-keyval';
 import type { Product } from '@/lib/data';
+import { createClient } from '@/lib/supabase/client';
 
 export type CornerStyle = 'rounded' | 'sharp';
 
@@ -327,9 +328,38 @@ export const UploadProvider = ({ children }: { children: React.ReactNode }) => {
       if (metadata.cornerStyle) setCornerStyle(metadata.cornerStyle);
       if (metadata.quantity) setQuantity(metadata.quantity);
       if (metadata.quality) setQuality(metadata.quality);
-      if (metadata.selectedProduct) {
-        setSelectedProduct(metadata.selectedProduct);
-      }
+
+      const supabase = createClient();
+      const hydrateSelectedProduct = async (
+        stored: Product | undefined
+      ): Promise<void> => {
+        if (stored?.id) {
+          const { data } = await supabase
+            .from('products')
+            .select('*')
+            .eq('id', stored.id)
+            .maybeSingle();
+          if (data) {
+            setSelectedProduct(data as Product);
+            return;
+          }
+        }
+        if (stored) {
+          setSelectedProduct(stored);
+          return;
+        }
+        const { data } = await supabase
+          .from('products')
+          .select('*')
+          .eq('slug', 'single-canvas')
+          .eq('active', true)
+          .maybeSingle();
+        if (data) {
+          setSelectedProduct(data as Product);
+        }
+      };
+
+      await hydrateSelectedProduct(metadata.selectedProduct ?? undefined);
     };
 
     restore();

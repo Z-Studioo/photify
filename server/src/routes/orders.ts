@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import { sendOrderStatusNotification } from '@/controllers/orderStatusController';
 import { cancelOrder } from '@/controllers/cancelOrderController';
+import { updateVideoPermission } from '@/controllers/videoPermissionController';
 import { adminAuth } from '@/middleware/adminAuth';
 
 const router = Router();
@@ -106,5 +107,43 @@ router.post('/:orderNumber/status-notification', adminAuth, sendOrderStatusNotif
  *         description: Failed to cancel order
  */
 router.post('/:orderNumber/cancel', adminAuth, cancelOrder);
+
+/**
+ * @swagger
+ * /api/orders/{orderId}/video-permission:
+ *   patch:
+ *     summary: Update filming consent for an order
+ *     description: Stores the customer's yes/no consent to filming the making of their order. Called publicly from the confirmation page.
+ *     tags: [Orders]
+ *     parameters:
+ *       - in: path
+ *         name: orderId
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: The order UUID
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - videoPermission
+ *             properties:
+ *               videoPermission:
+ *                 type: boolean
+ *                 description: true if the customer consents, false otherwise
+ *     responses:
+ *       200:
+ *         description: Consent updated successfully
+ *       400:
+ *         description: Invalid request
+ *       404:
+ *         description: Order not found
+ *       500:
+ *         description: Failed to update consent
+ */
+router.patch('/:orderId/video-permission', updateVideoPermission);
 
 export default router;

@@ -9,6 +9,8 @@ interface SemanticSearchResult {
   description: string | null;
   images: string[];
   price: number;
+  fixed_price: number | null;
+  config: unknown;
   is_featured: boolean;
   category_name: string | null;
   similarity: number;
@@ -66,6 +68,9 @@ export async function searchSemantic(req: Request, res: Response): Promise<void>
       description: item.description,
       images: item.images || [],
       price: parseFloat(item.price),
+      fixed_price:
+        item.fixed_price != null ? parseFloat(item.fixed_price) : null,
+      config: item.config ?? null,
       is_featured: item.is_featured,
       category_name: item.category_name,
       similarity: parseFloat(item.similarity.toFixed(4)),
@@ -122,6 +127,9 @@ export async function searchSemanticPost(req: Request, res: Response): Promise<v
       description: item.description,
       images: item.images || [],
       price: parseFloat(item.price),
+      fixed_price:
+        item.fixed_price != null ? parseFloat(item.fixed_price) : null,
+      config: item.config ?? null,
       is_featured: item.is_featured,
       category_name: item.category_name,
       similarity: parseFloat(item.similarity.toFixed(4)),

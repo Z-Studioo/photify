@@ -18,10 +18,18 @@ export default function ImageCropper({ isVisible = true }: ImageCropperProps) {
     if (!file) return;
 
     const img = new Image();
-    img.onload = () => setImageSize({ width: img.width, height: img.height });
-    img.src = URL.createObjectURL(file);
+    const objectUrl = URL.createObjectURL(file);
+    img.onload = () => {
+      setImageSize({ width: img.width, height: img.height });
+    };
+    img.onerror = () => {
+      setImageSize(null);
+    };
+    img.src = objectUrl;
 
-    return () => URL.revokeObjectURL(img.src);
+    return () => {
+      URL.revokeObjectURL(objectUrl);
+    };
   }, [file]);
 
   const aspect = selectedRatio
@@ -35,32 +43,18 @@ export default function ImageCropper({ isVisible = true }: ImageCropperProps) {
 
   if (!file || !isVisible || !imageSize) return null;
 
-  const maxWidth = 800;
-  const maxHeight = 600;
-  let displayedWidth = imageSize.width;
-  let displayedHeight = imageSize.height;
-  if (displayedWidth > maxWidth) {
-    displayedHeight = (maxWidth / displayedWidth) * displayedHeight;
-    displayedWidth = maxWidth;
-  }
-  if (displayedHeight > maxHeight) {
-    displayedWidth = (maxHeight / displayedHeight) * displayedWidth;
-    displayedHeight = maxHeight;
-  }
-
   return (
-    <div className='flex flex-col items-center justify-center w-full h-full px-2 md:px-4 overflow-hidden'>
-      <div className='flex flex-col items-center justify-center w-full px-2 md:px-4 overflow-hidden'>
-        {imageSize && (
-          <div
-            className='relative flex items-center justify-center w-full'
-            style={{
-              height: displayedHeight,
-              maxHeight: displayedHeight,
-              maxWidth: displayedWidth,
-              overflow: 'hidden',
-            }}
-          >
+    <div className='flex h-full min-h-0 w-full flex-col overflow-hidden'>
+      {/* Fill flex parent; min-h-0 lets flex children shrink. Max height uses dynamic viewport so it works before/without exact parent height. */}
+      <div className='flex min-h-0 w-full flex-1 flex-col items-center justify-center overflow-auto px-2 py-1 md:px-4 md:py-2'>
+        <div
+          className='flex w-full max-w-full items-center justify-center'
+          style={{
+            maxHeight:
+              'min(82dvh, calc(100dvh - 10rem), calc(100svh - 10rem))',
+          }}
+        >
+          <div className='relative inline-flex max-h-full max-w-full'>
             <ImageCrop
               key={aspect}
               file={file}
@@ -70,23 +64,22 @@ export default function ImageCropper({ isVisible = true }: ImageCropperProps) {
                 setPendingFile(file);
                 setPendingPreview(croppedImage);
               }}
-              className='flex items-center justify-center w-full h-full'
+              className='flex max-h-full max-w-full items-center justify-center'
             >
               <ImageCropContent
-                className='rounded-xl'
+                className='max-h-[min(82dvh,calc(100dvh-10rem))] w-auto max-w-full rounded-xl md:max-h-[min(78dvh,calc(100dvh-11rem))]'
                 style={{
-                  maxWidth: '100%',
-                  maxHeight: '100%',
-                  objectFit: 'contain',
+                  maxWidth: 'min(96vw, 1200px)',
                   width: 'auto',
                   height: 'auto',
+                  objectFit: 'contain',
                 }}
               />
             </ImageCrop>
           </div>
-        )}
+        </div>
       </div>
-      <p className='text-xs md:text-sm mt-2 text-muted-foreground text-center'>
+      <p className='flex-shrink-0 px-2 pb-2 pt-1 text-center text-xs text-muted-foreground md:text-sm'>
         Drag the corners to crop the image
       </p>
     </div>

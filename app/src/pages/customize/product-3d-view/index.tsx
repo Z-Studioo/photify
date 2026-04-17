@@ -2,7 +2,7 @@ import { Suspense } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import { Product3DView } from '@/components/product-configs/shared/product-3d-view';
 import { SingleCanvasSizeSelector } from '@/components/product-configs/single-canvas/single-canvas-size-selector';
-import { SINGLE_CANVAS_PRODUCT } from '@/components/product-configs/single-canvas/config';
+import { usesSingleCanvasConfigurator } from '@/components/product-configs';
 import { Loader2, AlertCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
@@ -38,9 +38,9 @@ function Product3DViewContent() {
     );
   }
 
-  // Determine which size selector to use based on product type
-  const customSizeSelector = productId === SINGLE_CANVAS_PRODUCT.id 
-    ? SingleCanvasSizeSelector 
+  // Single-canvas family (including collage-on-single-canvas) uses DB-backed size selector
+  const customSizeSelector = usesSingleCanvasConfigurator(productId)
+    ? SingleCanvasSizeSelector
     : undefined;
 
   return (

@@ -121,6 +121,44 @@ export function ConfirmationPage() {
   const [filmingConsent, setFilmingConsent] = useState<'yes' | 'no' | null>(
     null
   );
+  const [savingConsent, setSavingConsent] = useState(false);
+
+  const handleFilmingConsent = async (choice: 'yes' | 'no') => {
+    if (savingConsent) return;
+    if (!orderId) {
+      toast.error('Missing order reference');
+      return;
+    }
+    setSavingConsent(true);
+    try {
+      const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+      const response = await fetch(
+        `${apiUrl}/api/orders/${orderId}/video-permission`,
+        {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ videoPermission: choice === 'yes' }),
+        }
+      );
+
+      if (!response.ok) {
+        const details = await response.json().catch(() => ({}));
+        console.error('Error saving consent:', details);
+        toast.error('Could not save your choice. Please try again.');
+        return;
+      }
+
+      setOrderData(prev =>
+        prev ? { ...prev, videoPermission: choice === 'yes' } : prev
+      );
+      setFilmingConsent(choice);
+    } catch (err) {
+      console.error('Error saving consent:', err);
+      toast.error('Could not save your choice. Please try again.');
+    } finally {
+      setSavingConsent(false);
+    }
+  };
 
   const testimonials = [
     { text: 'The prints arrived beautifully packaged!', author: 'Sarah M.' },
@@ -322,19 +360,29 @@ export function ConfirmationPage() {
 
             <div className='grid grid-cols-1 sm:grid-cols-2 gap-3'>
               <Button
-                onClick={() => setFilmingConsent('yes')}
-                className='h-12 rounded-xl bg-[#f63a9e] hover:bg-[#e02d8d] text-white'
+                onClick={() => handleFilmingConsent('yes')}
+                disabled={savingConsent}
+                className='h-12 rounded-xl bg-[#f63a9e] hover:bg-[#e02d8d] text-white disabled:opacity-70'
                 style={{ fontWeight: '700' }}
               >
-                Yes, I consent
+                {savingConsent ? (
+                  <Loader2 className='w-5 h-5 animate-spin' />
+                ) : (
+                  'Yes, I consent'
+                )}
               </Button>
               <Button
-                onClick={() => setFilmingConsent('no')}
+                onClick={() => handleFilmingConsent('no')}
+                disabled={savingConsent}
                 variant='outline'
-                className='h-12 rounded-xl border-2 border-gray-200 hover:border-gray-300 bg-white'
+                className='h-12 rounded-xl border-2 border-gray-200 hover:border-gray-300 bg-white disabled:opacity-70'
                 style={{ fontWeight: '700' }}
               >
-                No, I do not consent
+                {savingConsent ? (
+                  <Loader2 className='w-5 h-5 animate-spin' />
+                ) : (
+                  'No, I do not consent'
+                )}
               </Button>
             </div>
           </motion.div>

@@ -35,7 +35,7 @@ const EdgeSelector = () => {
   const displayEdgeType = pendingEdgeType || edgeType;
 
   useEffect(() => {
-    setSelectedView('3d');
+    setSelectedView('3droom');
   }, []);
 
   const handleSetEdgeType = (type: EdgeType) => {

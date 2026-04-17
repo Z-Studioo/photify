@@ -21,6 +21,8 @@ interface Product {
   images: string[];
   size: string | null;
   price: number;
+  config?: unknown;
+  fixed_price?: number | null;
   is_featured: boolean;
   active: boolean;
   tags: Tag[];
@@ -77,6 +79,8 @@ export default function Category() {
     slug,
     images,
     price,
+    fixed_price,
+    config,
     is_featured,
     active,
     created_at,

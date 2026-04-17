@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { AdminLayout } from './admin-layout';
 import {
@@ -11,6 +11,8 @@ import {
   Eye,
   Trash2,
   DollarSign,
+  Loader2,
+  Ruler,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -24,9 +26,19 @@ import {
   DialogHeader,
   DialogTitle,
   DialogDescription,
+  DialogFooter,
 } from '@/components/ui/dialog';
 import { toast } from 'sonner';
 import { createClient } from '@/lib/supabase/client';
+import {
+  AlertDialog,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 
 interface AspectRatio {
   id: string;
@@ -72,8 +84,11 @@ export function AdminSettingsPage() {
     orientation: 'portrait',
   });
   const [newSize, setNewSize] = useState({ height: '', unit: 'inches' });
-  const [calculatedWidth, setCalculatedWidth] = useState<number | null>(null);
-  const [showConfirmSize, setShowConfirmSize] = useState(false);
+  const [savingNewSize, setSavingNewSize] = useState(false);
+  const [deletingSizeId, setDeletingSizeId] = useState<string | null>(null);
+  const [deleteSizeTarget, setDeleteSizeTarget] = useState<Size | null>(null);
+  const [deleteTagId, setDeleteTagId] = useState<string | null>(null);
+  const [tagDeleteBusy, setTagDeleteBusy] = useState(false);
 
   // Tags state
   const [tags, setTags] = useState<Tag[]>([]);
@@ -93,7 +108,7 @@ export function AdminSettingsPage() {
     fetchTags();
   }, []);
 
-  const fetchRatios = async () => {
+  const fetchRatios = async (): Promise<AspectRatio[] | undefined> => {
     setRatiosLoading(true);
     try {
       // Fetch aspect ratios
@@ -114,14 +129,18 @@ export function AdminSettingsPage() {
       if (sizesError) throw sizesError;
 
       // Group sizes by aspect_ratio_id
-      const ratiosWithSizes = ratiosData.map(ratio => ({
+      const ratiosWithSizes = (ratiosData ?? []).map(ratio => ({
         ...ratio,
-        sizes: sizesData.filter(size => size.aspect_ratio_id === ratio.id),
+        sizes: (sizesData ?? []).filter(
+          size => size.aspect_ratio_id === ratio.id
+        ),
       }));
 
       setRatios(ratiosWithSizes);
+      return ratiosWithSizes;
     } catch (error: any) {
       toast.error('Failed to load ratios: ' + error.message);
+      return undefined;
     } finally {
       setRatiosLoading(false);
     }
@@ -186,53 +205,77 @@ export function AdminSettingsPage() {
     }
   };
 
-  const calculateWidth = (height: string, ratio: AspectRatio) => {
-    const heightNum = parseFloat(height);
-    if (!isNaN(heightNum) && ratio.width_ratio && ratio.height_ratio) {
-      const width = (heightNum * ratio.width_ratio) / ratio.height_ratio;
-      setCalculatedWidth(Math.round(width * 100) / 100); // Round to 2 decimals
-      setShowConfirmSize(true);
-    }
+  const newSizePreview = useMemo(() => {
+    if (!selectedRatio?.width_ratio || !selectedRatio?.height_ratio) return null;
+    const h = parseFloat(newSize.height);
+    if (Number.isNaN(h) || h <= 0) return null;
+    const wRaw =
+      (h * selectedRatio.width_ratio) / selectedRatio.height_ratio;
+    const wIn = Math.round(wRaw);
+    const hIn = Math.round(h);
+    return {
+      wIn,
+      hIn,
+      displayLabel: `${wIn}" × ${hIn}"`,
+    };
+  }, [newSize.height, selectedRatio]);
+
+  const resetAddSizeForm = () => {
+    setNewSize({ height: '', unit: 'inches' });
+    setSavingNewSize(false);
   };
 
   const handleConfirmSize = async () => {
-    if (selectedRatio && newSize.height && calculatedWidth) {
-      try {
-        const displayLabel =
-          `${calculatedWidth}" × ${newSize.height}" ${newSize.unit === 'inches' ? '' : newSize.unit}`.trim();
+    if (!selectedRatio || !newSizePreview) return;
 
-        // eslint-disable-next-line @typescript-eslint/no-unused-vars
-        const { error } = await supabase
-          .from('sizes')
-          .insert([
-            {
-              aspect_ratio_id: selectedRatio.id,
-              width_in: Math.round(calculatedWidth),
-              height_in: Math.round(parseFloat(newSize.height)),
-              display_label: displayLabel,
-            },
-          ])
-          .select()
-          .single();
+    setSavingNewSize(true);
+    try {
+      const { error } = await supabase
+        .from('sizes')
+        .insert([
+          {
+            aspect_ratio_id: selectedRatio.id,
+            width_in: newSizePreview.wIn,
+            height_in: newSizePreview.hIn,
+            display_label: newSizePreview.displayLabel,
+          },
+        ])
+        .select()
+        .single();
 
-        if (error) throw error;
+      if (error) throw error;
 
-        await fetchRatios();
+      const nextRatios = await fetchRatios();
+      const updatedRatio = nextRatios?.find(r => r.id === selectedRatio.id);
+      if (updatedRatio) setSelectedRatio(updatedRatio);
 
-        // Update selected ratio with new sizes
-        const updatedRatio = ratios.find(r => r.id === selectedRatio.id);
-        if (updatedRatio) {
-          setSelectedRatio(updatedRatio);
-        }
+      resetAddSizeForm();
+      setShowAddSize(false);
+      toast.success('Size added successfully!');
+    } catch (error: any) {
+      toast.error('Failed to add size: ' + error.message);
+    } finally {
+      setSavingNewSize(false);
+    }
+  };
 
-        setNewSize({ height: '', unit: 'inches' });
-        setCalculatedWidth(null);
-        setShowConfirmSize(false);
-        setShowAddSize(false);
-        toast.success('Size added successfully!');
-      } catch (error: any) {
-        toast.error('Failed to add size: ' + error.message);
+  const executeDeleteSize = async (size: Size) => {
+    setDeletingSizeId(size.id);
+    try {
+      const { error } = await supabase.from('sizes').delete().eq('id', size.id);
+      if (error) throw error;
+
+      const nextRatios = await fetchRatios();
+      if (selectedRatio && nextRatios) {
+        const updated = nextRatios.find(r => r.id === selectedRatio.id);
+        if (updated) setSelectedRatio(updated);
       }
+      toast.success('Size removed');
+      setDeleteSizeTarget(null);
+    } catch (error: any) {
+      toast.error('Failed to remove size: ' + error.message);
+    } finally {
+      setDeletingSizeId(null);
     }
   };
 
@@ -290,22 +333,20 @@ export function AdminSettingsPage() {
     }
   };
 
-  const handleDeleteTag = async (tagId: string) => {
-    if (
-      confirm(
-        'Are you sure you want to delete this tag? It will be removed from all products.'
-      )
-    ) {
-      try {
-        const { error } = await supabase.from('tags').delete().eq('id', tagId);
+  const executeDeleteTag = async (tagId: string) => {
+    setTagDeleteBusy(true);
+    try {
+      const { error } = await supabase.from('tags').delete().eq('id', tagId);
 
-        if (error) throw error;
+      if (error) throw error;
 
-        await fetchTags();
-        toast.success('Tag deleted successfully!');
-      } catch (error: any) {
-        toast.error('Failed to delete tag: ' + error.message);
-      }
+      await fetchTags();
+      toast.success('Tag deleted successfully!');
+      setDeleteTagId(null);
+    } catch (error: any) {
+      toast.error('Failed to delete tag: ' + error.message);
+    } finally {
+      setTagDeleteBusy(false);
     }
   };
 
@@ -530,7 +571,7 @@ export function AdminSettingsPage() {
                                   <Edit className='w-4 h-4' />
                                 </button>
                                 <button
-                                  onClick={() => handleDeleteTag(tag.id)}
+                                  onClick={() => setDeleteTagId(tag.id)}
                                   className='p-2 text-gray-600 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors'
                                   title='Delete'
                                 >
@@ -722,103 +763,103 @@ export function AdminSettingsPage() {
       </div>
 
       {/* Add Size Dialog */}
-      <Dialog open={showAddSize} onOpenChange={setShowAddSize}>
-        <DialogContent className='max-w-md'>
-          <DialogHeader>
-            <DialogTitle
-              className="font-['Bricolage_Grotesque',_sans-serif]"
-              style={{ fontSize: '24px', fontWeight: '600' }}
-            >
-              Add Size to {selectedRatio?.label}
+      <Dialog
+        open={showAddSize}
+        onOpenChange={open => {
+          setShowAddSize(open);
+          if (!open) resetAddSizeForm();
+        }}
+      >
+        <DialogContent className='max-w-md gap-0 p-0 overflow-hidden sm:rounded-xl z-[100]'>
+          <DialogHeader className='px-5 pt-5 pb-4 border-b border-gray-100 space-y-1.5 text-left'>
+            <DialogTitle className="font-['Bricolage_Grotesque',_sans-serif] text-xl font-semibold text-gray-900 pr-8">
+              Add size
             </DialogTitle>
-            <DialogDescription>
-              Enter the height and we&apos;ll calculate the width based on{' '}
-              {selectedRatio?.width_ratio}:{selectedRatio?.height_ratio} ratio
+            <DialogDescription className='text-sm text-gray-600'>
+              <span className='font-medium text-gray-800'>
+                {selectedRatio?.label}
+              </span>
+              {' · '}
+              {selectedRatio?.width_ratio}:{selectedRatio?.height_ratio} aspect
+              ratio. Enter the{' '}
+              <span className='font-medium text-gray-800'>height</span>; width
+              updates live.
             </DialogDescription>
           </DialogHeader>
-          <div className='space-y-4 mt-4'>
+
+          <div className='px-5 py-4 space-y-5'>
             <div>
-              <Label htmlFor='height'>Height (inches)</Label>
-              <div className='flex gap-2'>
-                <Input
-                  id='height'
-                  type='number'
-                  placeholder='Enter height (e.g., 12)'
-                  value={newSize.height}
-                  onChange={e =>
-                    setNewSize({ ...newSize, height: e.target.value })
-                  }
-                  className='flex-1'
-                />
-              </div>
-              <p className='text-xs text-gray-500 mt-1'>
-                Width will be calculated automatically
+              <Label
+                htmlFor='add-size-height'
+                className='text-sm font-medium text-gray-800'
+              >
+                Height (inches)
+              </Label>
+              <Input
+                id='add-size-height'
+                type='number'
+                inputMode='decimal'
+                min={0.01}
+                step={0.25}
+                placeholder='e.g. 12'
+                value={newSize.height}
+                onChange={e =>
+                  setNewSize({ ...newSize, height: e.target.value })
+                }
+                className='mt-2 h-11 border-gray-200 bg-white shadow-sm focus-visible:border-[#f63a9e] focus-visible:ring-[#f63a9e]/25 [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none'
+              />
+              <p className='text-xs text-gray-500 mt-2'>
+                Use the longest edge in inches for portrait or landscape sizes.
               </p>
             </div>
 
-            {calculatedWidth && showConfirmSize && (
-              <div className='p-4 bg-blue-50 border border-blue-200 rounded-lg'>
-                <p className='text-sm font-medium text-blue-900 mb-2'>
-                  📐 Calculated Dimensions:
+            {newSizePreview ? (
+              <div className='rounded-xl border border-pink-100 bg-gradient-to-br from-pink-50/90 to-white px-4 py-3.5 shadow-sm'>
+                <div className='flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-[#c21e6b]'>
+                  <Ruler className='w-3.5 h-3.5' aria-hidden />
+                  Resulting print size
+                </div>
+                <p className='mt-2 text-2xl font-semibold tabular-nums tracking-tight text-gray-900'>
+                  {newSizePreview.displayLabel}
                 </p>
-                <p className='text-lg font-semibold text-blue-700'>
-                  {calculatedWidth}&quot; × {newSize.height}&quot;
-                </p>
-                <p className='text-xs text-blue-600 mt-1'>
-                  Based on {selectedRatio?.width_ratio}:
-                  {selectedRatio?.height_ratio} aspect ratio
+                <p className='text-xs text-gray-500 mt-1'>
+                  Stored as {newSizePreview.wIn}&quot; × {newSizePreview.hIn}
+                  &quot; (whole inches)
                 </p>
               </div>
-            )}
+            ) : newSize.height.trim() !== '' ? (
+              <p className='text-sm text-amber-800 bg-amber-50 border border-amber-100 rounded-lg px-3 py-2'>
+                Enter a positive number for height (inches).
+              </p>
+            ) : null}
+          </div>
 
-            <div className='flex gap-3 pt-4'>
-              {!showConfirmSize ? (
+          <DialogFooter className='flex-row justify-end gap-2 px-5 py-4 border-t border-gray-100 bg-gray-50/80 sm:justify-end'>
+            <Button
+              type='button'
+              variant='outline'
+              className='border-gray-200 text-gray-800 hover:bg-gray-100'
+              onClick={() => setShowAddSize(false)}
+              disabled={savingNewSize}
+            >
+              Cancel
+            </Button>
+            <Button
+              type='button'
+              className='min-w-[7.5rem] bg-[#f63a9e] hover:bg-[#e02d8d] text-white font-semibold shadow-sm disabled:opacity-50'
+              disabled={!newSizePreview || savingNewSize}
+              onClick={handleConfirmSize}
+            >
+              {savingNewSize ? (
                 <>
-                  <Button
-                    onClick={() =>
-                      selectedRatio &&
-                      calculateWidth(newSize.height, selectedRatio)
-                    }
-                    disabled={!newSize.height || !selectedRatio}
-                    className='flex-1 bg-[#f63a9e] hover:bg-[#e02d8d]'
-                  >
-                    Calculate Width
-                  </Button>
-                  <Button
-                    variant='outline'
-                    onClick={() => {
-                      setShowAddSize(false);
-                      setNewSize({ height: '', unit: 'inches' });
-                      setCalculatedWidth(null);
-                      setShowConfirmSize(false);
-                    }}
-                    className='flex-1'
-                  >
-                    Cancel
-                  </Button>
+                  <Loader2 className='w-4 h-4 mr-2 animate-spin' />
+                  Saving…
                 </>
               ) : (
-                <>
-                  <Button
-                    onClick={handleConfirmSize}
-                    className='flex-1 bg-green-600 hover:bg-green-700'
-                  >
-                    ✓ Confirm & Add
-                  </Button>
-                  <Button
-                    variant='outline'
-                    onClick={() => {
-                      setCalculatedWidth(null);
-                      setShowConfirmSize(false);
-                    }}
-                    className='flex-1'
-                  >
-                    ← Back
-                  </Button>
-                </>
+                'Add size'
               )}
-            </div>
-          </div>
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
 
@@ -925,83 +966,198 @@ export function AdminSettingsPage() {
 
       {/* Ratio Detail Dialog */}
       <Dialog open={showRatioDetail} onOpenChange={setShowRatioDetail}>
-        <DialogContent className='max-w-3xl max-h-[90vh] overflow-y-auto'>
-          <DialogHeader>
-            <DialogTitle
-              className="font-['Bricolage_Grotesque',_sans-serif]"
-              style={{ fontSize: '24px', fontWeight: '600' }}
-            >
-              {selectedRatio?.label}
-            </DialogTitle>
-            <DialogDescription>
-              All available sizes for this aspect ratio (
-              {selectedRatio?.width_ratio}:{selectedRatio?.height_ratio})
-            </DialogDescription>
-          </DialogHeader>
-          <div className='mt-4'>
-            <div className='mb-4 flex justify-end'>
+        <DialogContent className='max-w-xl max-h-[85vh] flex flex-col gap-0 p-0 overflow-hidden sm:rounded-xl'>
+          <DialogHeader className='px-5 pt-5 pb-3 border-b border-gray-100 space-y-1'>
+            <div className='flex flex-wrap items-start justify-between gap-3 pr-8'>
+              <div>
+                <DialogTitle className="font-['Bricolage_Grotesque',_sans-serif] text-xl font-semibold text-gray-900 tracking-tight">
+                  {selectedRatio?.label}
+                </DialogTitle>
+                <DialogDescription className='text-sm text-gray-500 mt-1'>
+                  {selectedRatio?.width_ratio}:{selectedRatio?.height_ratio}{' '}
+                  aspect ratio
+                  {selectedRatio?.sizes && selectedRatio.sizes.length > 0
+                    ? ` · ${selectedRatio.sizes.length} size${selectedRatio.sizes.length === 1 ? '' : 's'}`
+                    : ''}
+                </DialogDescription>
+              </div>
               <Button
+                size='sm'
                 onClick={() => {
                   setShowRatioDetail(false);
                   setShowAddSize(true);
                 }}
-                className='bg-[#f63a9e] hover:bg-[#e02d8d] gap-2'
+                className='bg-[#f63a9e] hover:bg-[#e02d8d] shrink-0 gap-1.5 h-9'
               >
-                <Plus className='w-4 h-4' />
-                Add Size
+                <Plus className='w-3.5 h-3.5' />
+                Add size
               </Button>
             </div>
+          </DialogHeader>
 
+          <div className='flex-1 min-h-0 overflow-y-auto px-5 py-4'>
             {selectedRatio?.sizes && selectedRatio.sizes.length > 0 ? (
-              <div className='bg-white border border-gray-200 rounded-lg divide-y divide-gray-200'>
-                {selectedRatio.sizes.map((size: Size, idx: number) => (
-                  <div
-                    key={size.id}
-                    className='flex items-center justify-between p-4 hover:bg-gray-50 transition-colors'
-                  >
-                    <div className='flex items-center gap-3'>
-                      <span className='text-sm text-gray-500 font-mono w-8'>
-                        #{idx + 1}
-                      </span>
-                      <div>
-                        <span className='font-medium text-lg'>
-                          {size.display_label}
+              <div className='rounded-lg border border-gray-200 bg-gray-50/80 overflow-hidden'>
+                <div className='grid grid-cols-[2.5rem_1fr_auto_2.5rem] gap-2 items-center px-3 py-2 text-[11px] font-semibold uppercase tracking-wide text-gray-500 bg-gray-100/90 border-b border-gray-200'>
+                  <span className='text-center'>#</span>
+                  <span>Dimensions</span>
+                  <span className='text-right tabular-nums'>Area</span>
+                  <span className='sr-only'>Remove</span>
+                </div>
+                <ul className='divide-y divide-gray-100 bg-white'>
+                  {selectedRatio.sizes.map((size: Size, idx: number) => (
+                    <li
+                      key={size.id}
+                      className='grid grid-cols-[2.5rem_1fr_auto_2.5rem] gap-2 items-center px-2 py-2 sm:px-3 hover:bg-gray-50/80 transition-colors'
+                    >
+                      <span className='flex justify-center'>
+                        <span className='inline-flex h-6 min-w-[1.5rem] items-center justify-center rounded-md bg-gray-100 px-1.5 text-xs font-medium text-gray-600 tabular-nums'>
+                          {idx + 1}
                         </span>
-                        <p className='text-xs text-gray-500 mt-0.5'>
-                          {size.width_in}&quot; × {size.height_in}&quot; • Area:{' '}
-                          {size.area_in2} in²
+                      </span>
+                      <div className='min-w-0'>
+                        <p className='text-sm font-medium text-gray-900 truncate'>
+                          {size.display_label}
                         </p>
                       </div>
-                    </div>
-                  </div>
-                ))}
+                      <span className='text-xs text-gray-600 tabular-nums text-right whitespace-nowrap'>
+                        {size.area_in2 != null ? `${size.area_in2} in²` : '—'}
+                      </span>
+                      <div className='flex justify-end'>
+                        <button
+                          type='button'
+                          title='Remove size'
+                          disabled={deletingSizeId === size.id}
+                          onClick={() => setDeleteSizeTarget(size)}
+                          className='inline-flex h-8 w-8 items-center justify-center rounded-md text-gray-400 hover:text-red-600 hover:bg-red-50 disabled:opacity-50 transition-colors'
+                        >
+                          {deletingSizeId === size.id ? (
+                            <Loader2 className='w-4 h-4 animate-spin' />
+                          ) : (
+                            <Trash2 className='w-4 h-4' />
+                          )}
+                        </button>
+                      </div>
+                    </li>
+                  ))}
+                </ul>
               </div>
             ) : (
-              <div className='text-center py-12 bg-gray-50 rounded-lg border border-gray-200'>
-                <p className='text-gray-600 mb-4'>No sizes added yet</p>
+              <div className='text-center py-10 px-4 rounded-lg border border-dashed border-gray-200 bg-gray-50/50'>
+                <p className='text-sm text-gray-600 mb-3'>No sizes for this ratio yet.</p>
                 <Button
+                  size='sm'
                   onClick={() => {
                     setShowRatioDetail(false);
                     setShowAddSize(true);
                   }}
                   className='bg-[#f63a9e] hover:bg-[#e02d8d] gap-2'
                 >
-                  <Plus className='w-4 h-4' />
-                  Add First Size
+                  <Plus className='w-3.5 h-3.5' />
+                  Add first size
                 </Button>
               </div>
             )}
-
-            <Button
-              onClick={() => setShowRatioDetail(false)}
-              variant='outline'
-              className='w-full mt-6'
-            >
-              Close
-            </Button>
           </div>
+
+          <DialogFooter className='px-5 py-3 border-t border-gray-100 bg-gray-50/50 sm:justify-end gap-2'>
+            <Button
+              type='button'
+              variant='outline'
+              size='sm'
+              onClick={() => setShowRatioDetail(false)}
+            >
+              Done
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <AlertDialog
+        open={deleteSizeTarget !== null}
+        onOpenChange={open => {
+          if (!open) setDeleteSizeTarget(null);
+        }}
+      >
+        <AlertDialogContent className='z-[100] sm:max-w-md border-gray-200'>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="font-['Bricolage_Grotesque',_sans-serif] text-xl">
+              Remove this size?
+            </AlertDialogTitle>
+            <AlertDialogDescription className='text-gray-600'>
+              Remove{' '}
+              <span className='font-medium text-gray-900'>
+                {deleteSizeTarget?.display_label}
+              </span>
+              ? Product configs that reference this size may need updating.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter className='gap-2 sm:gap-2'>
+            <AlertDialogCancel
+              className='mt-0'
+              disabled={deletingSizeId !== null}
+            >
+              Cancel
+            </AlertDialogCancel>
+            <Button
+              type='button'
+              className='bg-[#f63a9e] hover:bg-[#e02d8d] text-white'
+              disabled={!deleteSizeTarget || deletingSizeId !== null}
+              onClick={() =>
+                deleteSizeTarget && executeDeleteSize(deleteSizeTarget)
+              }
+            >
+              {deletingSizeId === deleteSizeTarget?.id ? (
+                <>
+                  <Loader2 className='w-4 h-4 mr-2 animate-spin' />
+                  Removing…
+                </>
+              ) : (
+                'Remove size'
+              )}
+            </Button>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog
+        open={deleteTagId !== null}
+        onOpenChange={open => {
+          if (!open) setDeleteTagId(null);
+        }}
+      >
+        <AlertDialogContent className='z-[100] sm:max-w-md border-gray-200'>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="font-['Bricolage_Grotesque',_sans-serif] text-xl">
+              Delete this tag?
+            </AlertDialogTitle>
+            <AlertDialogDescription className='text-gray-600'>
+              This tag will be removed from all products that use it. This
+              cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter className='gap-2 sm:gap-2'>
+            <AlertDialogCancel className='mt-0' disabled={tagDeleteBusy}>
+              Cancel
+            </AlertDialogCancel>
+            <Button
+              type='button'
+              className='bg-[#f63a9e] hover:bg-[#e02d8d] text-white'
+              disabled={!deleteTagId || tagDeleteBusy}
+              onClick={() => deleteTagId && executeDeleteTag(deleteTagId)}
+            >
+              {tagDeleteBusy ? (
+                <>
+                  <Loader2 className='w-4 h-4 mr-2 animate-spin' />
+                  Deleting…
+                </>
+              ) : (
+                'Delete tag'
+              )}
+            </Button>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       {/* Add Tag Dialog */}
       <Dialog open={showAddTag} onOpenChange={setShowAddTag}>

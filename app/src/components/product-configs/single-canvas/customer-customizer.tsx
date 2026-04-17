@@ -41,25 +41,35 @@ export function SingleCanvasCustomizer() {
     ? decodeURIComponent(searchParams.get('artImageUrl')!)
     : null;
 
+  const productIdFromQuery = searchParams.get('productId');
+  const effectiveProductId =
+    productIdFromQuery || SINGLE_CANVAS_PRODUCT.id;
+
   // State
   const [aspectRatios, setAspectRatios] = useState<AspectRatio[]>([]);
   const [sizes, setSizes] = useState<Size[]>([]);
   const [loading, setLoading] = useState(true);
   const [isDragging, setIsDragging] = useState(false);
+  const [productDisplayName, setProductDisplayName] = useState(
+    SINGLE_CANVAS_PRODUCT.name
+  );
 
   // Fetch product configuration
   useEffect(() => {
     const fetchData = async () => {
       setLoading(true);
       try {
-        // Fetch product configuration
         const { data: productData, error: productError } = await supabase
           .from('products')
-          .select('config, price')
-          .eq('id', SINGLE_CANVAS_PRODUCT.id)
+          .select('config, price, name')
+          .eq('id', effectiveProductId)
           .single();
 
         if (productError) throw productError;
+
+        if (productData?.name) {
+          setProductDisplayName(productData.name);
+        }
 
         if (productData?.config?.allowedRatios) {
           // Fetch allowed aspect ratios
@@ -92,8 +102,10 @@ export function SingleCanvasCustomizer() {
               image: encodeURIComponent(artImageUrl),
               width: bestSize.width_in.toString(),
               height: bestSize.height_in.toString(),
-              productId: SINGLE_CANVAS_PRODUCT.id,
-              productName: encodeURIComponent(SINGLE_CANVAS_PRODUCT.name),
+              productId: effectiveProductId,
+              productName: encodeURIComponent(
+                productData.name || SINGLE_CANVAS_PRODUCT.name
+              ),
               aspectRatioId: bestRatio.id,
               wrapImage: 'true',
               enableImageEditor: 'true',
@@ -111,7 +123,7 @@ export function SingleCanvasCustomizer() {
     };
 
     fetchData();
-  }, []);
+  }, [effectiveProductId]);
 
   // Handle image upload - upload to storage, auto-detect size, and navigate to 3D viewer
   const handleImageUpload = async (file: File) => {
@@ -206,8 +218,8 @@ export function SingleCanvasCustomizer() {
               image: encodeURIComponent(publicUrl), // Use the uploaded public URL
               width: bestSize.width_in.toString(),
               height: bestSize.height_in.toString(),
-              productId: SINGLE_CANVAS_PRODUCT.id,
-              productName: encodeURIComponent(SINGLE_CANVAS_PRODUCT.name),
+              productId: effectiveProductId,
+              productName: encodeURIComponent(productDisplayName),
               aspectRatioId: bestRatio.id,
               wrapImage: 'true', // Single canvas wraps image around edges
               enableImageEditor: 'true', // Enable crop editor for single canvas

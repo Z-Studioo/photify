@@ -176,7 +176,7 @@ export const PresetProvider: React.FC<{ children: ReactNode }> = ({
       setPendingImportData(null);
 
       addToast('Configuration imported successfully!', 'success');
-      navigate('/dashboard');
+      navigate('/canvas-configurer');
     } catch (error) {
       const errorMessage =
         error instanceof Error

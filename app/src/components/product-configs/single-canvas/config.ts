@@ -1,6 +1,12 @@
 // Single Canvas Product - Configuration Constants
 // Product ID: 00845beb-23c6-4d3b-8f55-a62eb956f182
 
+/** Distinct DB row sharing the same single-canvas admin + upload flow (seed UUID must match) */
+export const COLLAGE_ON_SINGLE_CANVAS_PRODUCT = {
+  id: '7f3b2a9c-4d5e-6f70-8a9b-0c1d2e3f4a5b',
+  slug: 'collage-on-single-canvas',
+} as const;
+
 export const SINGLE_CANVAS_PRODUCT = {
   id: '00845beb-23c6-4d3b-8f55-a62eb956f182',
   slug: 'single-canvas',
@@ -37,7 +43,11 @@ export const SINGLE_CANVAS_PRODUCT = {
 
 // Helper to check if this product matches a given ID or slug
 export function isSingleCanvasProduct(identifier: string): boolean {
-  return identifier === SINGLE_CANVAS_PRODUCT.id || 
-         identifier === SINGLE_CANVAS_PRODUCT.slug;
+  return (
+    identifier === SINGLE_CANVAS_PRODUCT.id ||
+    identifier === SINGLE_CANVAS_PRODUCT.slug ||
+    identifier === COLLAGE_ON_SINGLE_CANVAS_PRODUCT.id ||
+    identifier === COLLAGE_ON_SINGLE_CANVAS_PRODUCT.slug
+  );
 }
 

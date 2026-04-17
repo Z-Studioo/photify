@@ -37,16 +37,16 @@ const ApplyChangesControl: React.FC<ApplyChangesControlProps> = ({
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: -20 }}
       transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
-      className='flex items-center justify-between gap-3 w-full'
+      className='flex w-full min-w-0 items-center justify-between gap-2 sm:gap-3'
     >
       <motion.div
-        className='flex flex-col flex-shrink-0'
+        className='flex min-w-0 flex-1 flex-col gap-0 text-left'
         initial={{ opacity: 0, x: -20 }}
         animate={{ opacity: 1, x: 0 }}
         transition={{ delay: 0.1, duration: 0.3 }}
       >
         <motion.span
-          className='text-xl font-semibold whitespace-nowrap'
+          className='flex items-baseline font-semibold tabular-nums tracking-tight text-zinc-900'
           initial={{ scale: 0.9 }}
           animate={{ scale: 1 }}
           transition={{
@@ -55,12 +55,15 @@ const ApplyChangesControl: React.FC<ApplyChangesControlProps> = ({
             stiffness: 300,
           }}
         >
-          £{totalPrice.toFixed(2)}
+          <span className='text-base sm:text-lg'>£{Math.trunc(totalPrice)}</span>
+          <span className='text-[10px] text-zinc-500 sm:text-xs'>
+            .{totalPrice.toFixed(2).split('.')[1]}
+          </span>
         </motion.span>
 
         {hasDiscount && (
           <motion.div
-            className='text-sm whitespace-nowrap'
+            className='text-[10px] whitespace-nowrap sm:text-xs'
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ delay: 0.2, duration: 0.3 }}
@@ -81,14 +84,14 @@ const ApplyChangesControl: React.FC<ApplyChangesControlProps> = ({
         transition={{ delay: 0.1, duration: 0.3 }}
         whileHover={{ scale: 1.02 }}
         whileTap={{ scale: 0.98 }}
-        style={{ flex: 1, minWidth: 0 }}
+        className='shrink-0'
       >
         <Button
           variant='default'
-          className='w-full px-6 py-2 rounded-none whitespace-nowrap transition-all duration-200'
+          className='h-10 min-w-[10rem] rounded-xl px-5 text-sm font-semibold shadow-sm transition-all duration-200 sm:h-11 sm:min-w-[11rem] sm:px-6'
           onClick={onApply}
         >
-          Apply Changes
+          Apply changes
         </Button>
       </motion.div>
     </motion.div>

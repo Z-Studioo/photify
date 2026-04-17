@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { Check, Loader2, WandSparkles } from 'lucide-react';
+import { Loader2, WandSparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useUpload } from '@/context/UploadContext';
 import { useView } from '@/context/ViewContext';
@@ -13,9 +13,30 @@ import {
 import { motion } from 'framer-motion';
 import { useQuery } from '@tanstack/react-query';
 import { cn } from '@/lib/utils';
+import { resolveCanvasSizePrice } from '@/lib/canvas-size-price';
+import { useProductCanvasPricingProduct } from '@/hooks/use-product-canvas-pricing';
 
 interface RatioSizePanelProps {
   onSelectionChange?: (ratio: string, size: InchData | null) => void;
+}
+
+/** Hide secondary line when it only repeats the print dimensions (common DB duplication). */
+function dimensionsDuplicateDisplay(
+  widthIn: number,
+  heightIn: number,
+  displayLabel: string | undefined
+): boolean {
+  if (!displayLabel?.trim()) return true;
+  const norm = (s: string) =>
+    s
+      .toLowerCase()
+      .replace(/\s/g, '')
+      .replace(/[""'″`]/g, '')
+      .replace(/×/g, 'x');
+  const label = norm(displayLabel);
+  const a = norm(`${widthIn}"x${heightIn}"`);
+  const b = norm(`${widthIn}x${heightIn}`);
+  return label === a || label === b;
 }
 
 const RatioSizePanel: React.FC<RatioSizePanelProps> = ({
@@ -27,6 +48,7 @@ const RatioSizePanel: React.FC<RatioSizePanelProps> = ({
     setSelectedRatio,
     selectedSize,
     setSelectedSize,
+    selectedProduct,
   } = useUpload();
 
   const { setSelectedView } = useView();
@@ -54,6 +76,9 @@ const RatioSizePanel: React.FC<RatioSizePanelProps> = ({
     enabled: ratios.length > 0,
     staleTime: 1000 * 60 * 30,
   });
+
+  const productForCanvasPricing =
+    useProductCanvasPricingProduct(selectedProduct);
 
   // Default selection
   useEffect(() => {
@@ -206,113 +231,127 @@ const RatioSizePanel: React.FC<RatioSizePanelProps> = ({
   const availableRatios = ratios.filter(ratio => ratio.sizes.length > 0);
 
   return (
-    <>
-      {/* Ratio Selector */}
-      <div className='border-b bg-white sticky top-0 z-10'>
-        <div className='px-3 pt-3 pb-2'>
-          <div className='flex items-center justify-between gap-3 mb-2'>
-            <p className='text-xs font-semibold uppercase tracking-wide text-gray-500'>
-              Aspect Ratio
-            </p>
-            {selectedRatio && (
-              <span className='inline-flex items-center rounded-full bg-primary/10 text-primary px-2.5 py-1 text-xs font-semibold'>
-                {selectedRatio}
-              </span>
+    <div className='flex flex-col gap-0 pb-2'>
+      {/* Ratio selector — scrolls with sizes on small screens; sticky only md+ for tall side panels */}
+      <div className='border-b border-zinc-100 bg-zinc-50/95 pb-3 pt-1 md:sticky md:top-0 md:z-10'>
+        <div className='flex items-baseline justify-between gap-2 px-0.5 pt-2'>
+          <p className='text-[13px] font-medium text-zinc-800'>Aspect ratio</p>
+          {selectedRatio && (
+            <span className='rounded-md bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary'>
+              {selectedRatio}
+            </span>
+          )}
+        </div>
+
+        <button
+          type='button'
+          onClick={handleAutoRatioClick}
+          aria-pressed={isAutoRatioSelected}
+          className={cn(
+            'mt-3 flex w-full items-center justify-between gap-2 rounded-lg border px-3 py-2 text-left text-sm transition',
+            isAutoRatioSelected
+              ? 'border-primary/35 bg-primary/[0.07] text-zinc-900'
+              : 'border-zinc-200/90 bg-white text-zinc-800 hover:bg-zinc-50'
+          )}
+        >
+          <span className='inline-flex items-center gap-2 font-medium'>
+            <WandSparkles className='h-4 w-4 shrink-0 text-primary' />
+            Match my photo
+          </span>
+          <span
+            className={cn(
+              'truncate text-xs',
+              autoResolvedRatio ? 'text-zinc-600' : 'text-zinc-400'
             )}
-          </div>
-
-          <button
-            onClick={handleAutoRatioClick}
-            aria-pressed={isAutoRatioSelected}
-            className={`w-full flex items-center justify-between gap-3 px-3.5 py-2.5 rounded-xl text-sm font-semibold transition border ${
-              isAutoRatioSelected
-                ? 'bg-primary/10 text-primary border-primary/40'
-                : 'text-gray-700 border-gray-200 hover:bg-gray-50'
-            }`}
           >
-            <span className='inline-flex items-center gap-2'>
-              <WandSparkles size={16} />
-              Auto
-            </span>
-            <span
-              className={cn(
-                'text-xs font-medium',
-                isAutoRatioSelected ? 'text-primary' : 'text-gray-500'
-              )}
-            >
-              {autoResolvedRatio ? `Best match: ${autoResolvedRatio}` : 'Best match'}
-            </span>
-          </button>
+            {autoResolvedRatio ? autoResolvedRatio : 'Pick closest ratio'}
+          </span>
+        </button>
 
-          <div className='mt-2 flex flex-wrap gap-2 w-full'>
-            {availableRatios.map(ratio => {
+        <div className='mt-3 grid grid-cols-3 gap-2'>
+          {availableRatios.map(ratio => {
             const active = !isAutoRatioSelected && selectedRatio === ratio.label;
             return (
               <button
                 key={ratio.id}
+                type='button'
                 aria-pressed={active}
                 onClick={() => {
                   setIsAutoRatioSelected(false);
                   handleRatioClick(ratio);
                 }}
-                className={`flex items-center gap-2 px-3.5 py-2.5 rounded-xl text-sm font-semibold transition border ${
+                className={cn(
+                  'flex min-h-[44px] flex-col items-center justify-center gap-0.5 rounded-lg border px-1 py-2 text-xs font-semibold transition',
                   active
-                    ? 'bg-primary text-white border-primary shadow-sm'
-                    : 'text-gray-700 border-gray-200 hover:bg-gray-50'
-                }`}
+                    ? 'border-primary bg-primary text-white shadow-sm'
+                    : 'border-zinc-200/90 bg-white text-zinc-700 hover:border-zinc-300 hover:bg-zinc-50'
+                )}
               >
-                <AspectRatioIcon ratio={ratio.label} size={18} />
-                {ratio.label}
-                {active && <Check size={14} />}
+                <span
+                  className={
+                    active ? 'text-white' : 'text-zinc-500'
+                  }
+                >
+                  <AspectRatioIcon ratio={ratio.label} size={16} />
+                </span>
+                <span>{ratio.label}</span>
               </button>
             );
-            })}
-          </div>
+          })}
         </div>
-        {isAutoRatioSelected && autoResolvedRatio && (
-          <div className='px-4 pb-3 text-xs text-gray-500'>
-            Auto selected ratio:{' '}
-            <span className='font-semibold'>{autoResolvedRatio}</span>
-          </div>
-        )}
       </div>
 
-      {/* Sizes */}
-      <div className='p-4 space-y-3 bg-gray-50'>
+      {/* Print sizes */}
+      <div className='space-y-2 pt-4'>
+        <p className='px-0.5 text-[13px] font-medium text-zinc-800'>
+          Print size
+        </p>
         {sizes.map(size => {
           const isSelected = selectedSize?.id === size?.id;
-          // Use fixed_price if available, otherwise show placeholder
-          const price =
-            size!.fixed_price !== null ? size!.fixed_price.toFixed(2) : null;
+          const resolved = resolveCanvasSizePrice(
+            size!,
+            productForCanvasPricing
+          );
+          const price = resolved !== null ? resolved.toFixed(2) : null;
+          const hideSecondary = dimensionsDuplicateDisplay(
+            size!.width_in,
+            size!.height_in,
+            size!.display_label
+          );
 
           return (
             <motion.button
               key={size!.id}
-              whileTap={{ scale: 0.97 }}
+              type='button'
+              whileTap={{ scale: 0.99 }}
               onClick={() => handleSizeClick(size!)}
-              className={`w-full p-4 rounded-xl text-left transition border-2 ${
+              className={cn(
+                'w-full rounded-xl border px-3.5 py-3 text-left transition',
                 isSelected
-                  ? 'border-primary bg-primary/10 ring-2 ring-primary/20'
-                  : 'bg-white border-gray-100 hover:border-primary/40'
-              } ${price === null ? 'opacity-50' : ''}`}
+                  ? 'border-primary/45 bg-primary/[0.06] ring-1 ring-primary/20'
+                  : 'border-zinc-200/90 bg-white hover:border-zinc-300 hover:bg-zinc-50/80',
+                price === null && 'opacity-50'
+              )}
               disabled={price === null}
             >
-              <div className='flex justify-between items-center'>
-                <div>
-                  <div className='font-bold text-gray-900'>
+              <div className='flex items-center justify-between gap-3'>
+                <div className='min-w-0'>
+                  <div className='text-[15px] font-semibold tracking-tight text-zinc-900'>
                     {size!.width_in}" × {size!.height_in}"
                   </div>
-                  <div className='text-xs text-gray-500'>
-                    {size!.display_label}
-                  </div>
-                </div>
-                <div className='text-right'>
-                  {price !== null ? (
-                    <div className='font-bold text-lg text-primary'>£{price}</div>
-                  ) : (
-                    <div className='text-xs text-gray-400'>
-                      Pricing not set
+                  {!hideSecondary && (
+                    <div className='mt-0.5 truncate text-xs text-zinc-500'>
+                      {size!.display_label}
                     </div>
+                  )}
+                </div>
+                <div className='shrink-0 text-right'>
+                  {price !== null ? (
+                    <span className='text-[15px] font-semibold tabular-nums text-primary'>
+                      £{price}
+                    </span>
+                  ) : (
+                    <span className='text-xs text-zinc-400'>No price</span>
                   )}
                 </div>
               </div>
@@ -320,7 +359,7 @@ const RatioSizePanel: React.FC<RatioSizePanelProps> = ({
           );
         })}
       </div>
-    </>
+    </div>
   );
 };
 

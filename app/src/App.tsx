@@ -118,7 +118,7 @@ const App: React.FC = () => {
                   <Suspense fallback={<PageLoader />}>
                     <Routes>
                       <Route
-                        path='/dashboard'
+                        path='/canvas-configurer'
                         element={
                           <FeatureProvider>
                             <ViewProvider>

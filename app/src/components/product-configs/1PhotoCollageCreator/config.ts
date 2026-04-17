@@ -1,8 +1,8 @@
 // 1Photo Collage Creator Product - Configuration Constants
-// Product ID: To be generated when adding to database
+// Use this UUID when inserting the product in Supabase (see seeds / admin)
 
 export const COLLAGE_CANVAS_PRODUCT = {
-  id: '1PhotoCollageCreator', // Temporary - replace with UUID from database
+  id: '33445566-7788-99aa-bbcc-ddeeff001122',
   slug: 'photo-collage-creator',
   name: 'Photo Collage Creator',
   type: 'canvas' as const,

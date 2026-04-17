@@ -117,5 +117,95 @@ DO UPDATE SET
   average_rating = EXCLUDED.average_rating,
   review_count = EXCLUDED.review_count;
 
+-- Collage on single canvas: same flow as single-canvas; UUID must match app registry (COLLAGE_ON_SINGLE_CANVAS_PRODUCT.id)
+INSERT INTO products (
+  id,
+  name,
+  slug,
+  description,
+  price,
+  old_price,
+  images,
+  is_featured,
+  product_type,
+  active,
+  config_status,
+  seo_title,
+  seo_description,
+  seo_keywords,
+  meta_robots,
+  canonical_url,
+  og_title,
+  og_description,
+  og_image,
+  features,
+  specifications,
+  trust_badges,
+  average_rating,
+  review_count
+) VALUES (
+  '7f3b2a9c-4d5e-6f70-8a9b-0c1d2e3f4a5b',
+  'Collage on Single Canvas',
+  'collage-on-single-canvas',
+  'Combine multiple photos into one stunning canvas print. Same museum-quality materials and sizing as our single canvas line.',
+  0.15,
+  NULL,
+  ARRAY[
+    'https://images.unsplash.com/photo-1686644472082-75dd48820a5d?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&w=1080',
+    'https://images.unsplash.com/photo-1677658992335-bfe2677dd45e?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&w=1080'
+  ],
+  true,
+  'canvas',
+  true,
+  'draft',
+  'Collage on Single Canvas | Photify',
+  'Create a multi-photo collage printed on one premium canvas. Custom sizes and free UK delivery.',
+  ARRAY['photo collage', 'canvas collage', 'multi photo canvas', 'custom canvas'],
+  'index,follow',
+  'https://photify.com/product/collage-on-single-canvas',
+  'Collage on Single Canvas | Photify',
+  'Multiple photos, one beautiful canvas print.',
+  'https://images.unsplash.com/photo-1686644472082-75dd48820a5d?w=1200',
+  '[
+    {"text": "Multiple photos on one canvas"},
+    {"text": "Museum-quality print"},
+    {"text": "Free UK delivery"}
+  ]'::jsonb,
+  '[
+    {"label": "Material", "value": "100% Cotton Canvas"},
+    {"label": "Shipping", "value": "Free UK delivery"}
+  ]'::jsonb,
+  '[
+    {"icon": "Shield", "title": "Quality", "subtitle": "Guaranteed"},
+    {"icon": "Truck", "title": "Free", "subtitle": "Shipping"}
+  ]'::jsonb,
+  4.8,
+  0
+)
+ON CONFLICT (id)
+DO UPDATE SET
+  name = EXCLUDED.name,
+  slug = EXCLUDED.slug,
+  description = EXCLUDED.description,
+  price = EXCLUDED.price,
+  old_price = EXCLUDED.old_price,
+  images = EXCLUDED.images,
+  is_featured = EXCLUDED.is_featured,
+  product_type = EXCLUDED.product_type,
+  active = EXCLUDED.active,
+  seo_title = EXCLUDED.seo_title,
+  seo_description = EXCLUDED.seo_description,
+  seo_keywords = EXCLUDED.seo_keywords,
+  meta_robots = EXCLUDED.meta_robots,
+  canonical_url = EXCLUDED.canonical_url,
+  og_title = EXCLUDED.og_title,
+  og_description = EXCLUDED.og_description,
+  og_image = EXCLUDED.og_image,
+  features = EXCLUDED.features,
+  specifications = EXCLUDED.specifications,
+  trust_badges = EXCLUDED.trust_badges,
+  average_rating = EXCLUDED.average_rating,
+  review_count = EXCLUDED.review_count;
+
 COMMIT;
 

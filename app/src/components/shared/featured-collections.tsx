@@ -3,6 +3,10 @@ import { ImageWithFallback } from '@/components/figma/image-with-fallback';
 import { ArrowRight, Loader2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { createClient } from '@/lib/supabase/client';
+import {
+  formatGbpAmount,
+  getListingDisplayAmount,
+} from '@/lib/product-starting-price';
 
 interface FeaturedCollection {
   image: string;
@@ -78,14 +82,19 @@ export function FeaturedCollections() {
       if (data && data.length > 0) {
         // Transform database products to FeaturedCollection format
         const transformedCollections = data.map(product => {
-          // Use fixed_price if available, otherwise fall back to base price
-          const displayPrice = product.fixed_price ?? product.price;
+          const amount = getListingDisplayAmount({
+            config: product.config,
+            fixed_price: product.fixed_price,
+            price: product.price,
+          });
+          const priceLabel =
+            amount != null ? `£${formatGbpAmount(amount)}` : '—';
           return {
             image: product.featured_image || '',
             badge: 'Featured',
             badgeColor: 'bg-[#f63a9e]',
             title: product.name,
-            price: `£${displayPrice}`,
+            price: priceLabel,
             productId: product.slug || product.id,
           };
         });
