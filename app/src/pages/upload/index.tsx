@@ -15,7 +15,6 @@ import { useEffect, useRef, useState } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import { Header } from '@/components/layout/header';
 import { cn } from '@/lib/utils';
-import { NoIndex } from '@/components/shared/no-index';
 
 const Page = () => {
   const MAX_FILE_SIZE_MB = 20;
@@ -345,11 +344,4 @@ const Page = () => {
     </div>
   );
 };
-const UploadRoute = () => (
-  <>
-    <NoIndex title='Upload Image | Photify' />
-    <Page />
-  </>
-);
-
-export default UploadRoute;
+export default Page;

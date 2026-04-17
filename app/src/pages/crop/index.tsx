@@ -5,7 +5,6 @@ import { Check } from 'lucide-react';
 import CropPanel from '@/components/shared/crop/CropPanel';
 import { useEffect } from 'react';
 import { Header } from '@/components/layout/header';
-import { NoIndex } from '@/components/shared/no-index';
 
 export default function CropPage() {
   const navigate = useNavigate();
@@ -33,7 +32,6 @@ export default function CropPage() {
 
   return (
     <>
-      <NoIndex title='Crop Image | Photify' />
       <Header />
       <div className='flex flex-col md:flex-row h-[calc(var(--vh,1vh)*100-64px)] sm:h-[calc(var(--vh,1vh)*100-100px)] w-full bg-gray-100 overflow-hidden mx-auto'>
         <div className='flex flex-col h-1/2 md:h-full md:flex-1 items-center justify-center p-2 sm:p-4 md:p-8 bg-white/80 backdrop-blur-sm overflow-hidden rounded-t-xl md:rounded-l-xl md:rounded-tr-none'>

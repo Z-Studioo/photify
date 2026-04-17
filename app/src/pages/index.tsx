@@ -1,64 +1,21 @@
+'use client';
 import { useState, useEffect } from 'react';
 import { HomePage } from '@/components/pages/home';
 import { createClient } from '@/lib/supabase/client';
 import { Helmet } from '@dr.pogodin/react-helmet';
 import { LoadingSpinner } from '@/components/shared/loading-spinner';
-import { useConsumedInitialData } from '@/ssr/InitialDataContext';
-import { useCanonicalUrl } from '@/lib/seo';
-
-interface HomeInitialData {
-  featuredProducts: any[];
-  rooms: any[];
-  artProducts: any[];
-}
-
-function HomeMeta() {
-  const canonical = useCanonicalUrl();
-  return (
-    <Helmet>
-      <title>Home | Photify</title>
-      <meta name='title' content='Home | Photify' />
-      <meta
-        name='description'
-        content='Discover stunning photo products and art collections at Photify. Transform your memories into beautiful wall art and decor.'
-      />
-      <meta name='robots' content='index,follow' />
-      <link rel='canonical' href={canonical} />
-      <meta property='og:type' content='website' />
-      <meta property='og:url' content={canonical} />
-      <meta property='og:title' content='Home | Photify' />
-      <meta
-        property='og:description'
-        content='Discover stunning photo products and art collections at Photify. Transform your memories into beautiful wall art and decor.'
-      />
-      <meta name='twitter:card' content='summary_large_image' />
-      <meta name='twitter:title' content='Home | Photify' />
-      <meta
-        name='twitter:description'
-        content='Discover stunning photo products and art collections at Photify.'
-      />
-    </Helmet>
-  );
-}
 
 export default function Home() {
-  const ssr = useConsumedInitialData<HomeInitialData>('home');
-
-  const [featuredProducts, setFeaturedProducts] = useState<any[]>(
-    ssr?.featuredProducts ?? []
-  );
-  const [rooms, setRooms] = useState<any[]>(ssr?.rooms ?? []);
-  const [artProducts, setArtProducts] = useState<any[]>(
-    ssr?.artProducts ?? []
-  );
-  const [loading, setLoading] = useState(!ssr);
+  const [featuredProducts, setFeaturedProducts] = useState<any[]>([]);
+  const [rooms, setRooms] = useState<any[]>([]);
+  const [artProducts, setArtProducts] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (ssr) return;
-
     const fetchData = async () => {
       const supabase = createClient();
-
+      
+      // Fetch featured products client-side
       const { data: productsData } = await supabase
         .from('products')
         .select(
@@ -69,6 +26,7 @@ export default function Home() {
         .order('created_at', { ascending: false })
         .limit(8);
 
+      // Fetch rooms client-side
       const { data: roomsData } = await supabase
         .from('rooms')
         .select('*')
@@ -76,6 +34,7 @@ export default function Home() {
         .order('display_order', { ascending: true })
         .limit(4);
 
+      // Fetch art products client-side
       const { data: artData } = await supabase
         .from('art_products')
         .select('*')
@@ -90,12 +49,20 @@ export default function Home() {
     };
 
     fetchData();
-  }, [ssr]);
+  }, []);
 
   if (loading) {
     return (
       <>
-        <HomeMeta />
+        <Helmet>
+            <title>Home | Photify</title>
+            <meta name='title' content='Home | Photify' />
+            <meta
+              name="description"
+              content="Discover stunning photo products and art collections at Photify. Transform your memories into beautiful wall art and decor."
+            />
+            <meta name="robots" content="index,follow" />
+        </Helmet>
         <LoadingSpinner />
       </>
     );
@@ -103,12 +70,18 @@ export default function Home() {
 
   return (
     <>
-      <HomeMeta />
-      <HomePage
-        initialFeaturedProducts={featuredProducts}
-        initialRooms={rooms}
-        initialArtProducts={artProducts}
+    <Helmet>
+          <title>Home | Photify</title>
+          <meta
+            name="description"
+            content="Discover stunning photo products and art collections at Photify. Transform your memories into beautiful wall art and decor."
+          />
+        </Helmet>
+    <HomePage 
+      initialFeaturedProducts={featuredProducts} 
+      initialRooms={rooms} 
+      initialArtProducts={artProducts}
       />
-    </>
+      </>
   );
 }

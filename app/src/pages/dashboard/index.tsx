@@ -28,7 +28,6 @@ import ApplyChangesControl from '@/components/shared/dashboard/ApplyChangesContr
 import { Room3DView } from '@/components/shared/dashboard/Room3DView';
 import { handleConfirmChanges } from '@/utils/uploadHandler';
 import { resolveCanvasSizePrice } from '@/lib/canvas-size-price';
-import { NoIndex } from '@/components/shared/no-index';
 import { useProductCanvasPricingProduct } from '@/hooks/use-product-canvas-pricing';
 import { cn } from '@/lib/utils';
 
@@ -658,11 +657,4 @@ const Dashboard: React.FC = () => {
   );
 };
 
-const DashboardRoute: React.FC = () => (
-  <>
-    <NoIndex title='Canvas Configurer | Photify' />
-    <Dashboard />
-  </>
-);
-
-export default DashboardRoute;
+export default Dashboard;

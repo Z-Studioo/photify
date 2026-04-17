@@ -1,3 +1,15 @@
-// Entry-point shim: actual bootstrap happens in `entry-client.tsx`.
-// Kept for backward compatibility with index.html which references /src/main.tsx.
-import './entry-client';
+import { createRoot } from 'react-dom/client';
+import './index.css';
+import App from './App.tsx';
+import { HelmetProvider } from '@dr.pogodin/react-helmet';
+import { StrictMode } from 'react';
+import { Toaster } from 'sonner';
+
+createRoot(document.getElementById('root')!).render(
+  <StrictMode>
+    <HelmetProvider>
+      <App />
+    </HelmetProvider>
+    <Toaster richColors />
+  </StrictMode>
+);
