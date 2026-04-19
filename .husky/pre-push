@@ -1,0 +1,26 @@
+#!/usr/bin/env sh
+. "$(dirname -- "$0")/_/husky.sh"
+
+protected_branches="main master"
+
+while read -r local_ref local_sha remote_ref remote_sha; do
+  # Extract the remote branch name (e.g. refs/heads/main -> main)
+  remote_branch=${remote_ref##refs/heads/}
+
+  for protected in $protected_branches; do
+    if [ "$remote_branch" = "$protected" ]; then
+      echo ""
+      echo "\033[31m✖ Direct push to '$protected' is blocked.\033[0m"
+      echo ""
+      echo "  Create a feature branch and open a pull request instead:"
+      echo "    git switch -c feat/your-change"
+      echo "    git push -u origin feat/your-change"
+      echo ""
+      echo "  To override in an emergency, use: git push --no-verify"
+      echo ""
+      exit 1
+    fi
+  done
+done
+
+exit 0
