@@ -82,6 +82,11 @@ export function buildMeta(opts: BuildMetaOptions): MetaDescriptor[] {
   const safeDescription = clampDescription(description);
 
   const tags: MetaDescriptor[] = [
+    { charSet: 'utf-8' },
+    {
+      name: 'viewport',
+      content: 'width=device-width, initial-scale=1.0, viewport-fit=cover',
+    },
     { title: safeTitle },
     {
       name: 'robots',
