@@ -16,7 +16,6 @@ import {
   ChevronRight,
   Check,
   Heart,
-  Share2,
   Star,
   Truck,
   RotateCcw,
@@ -97,6 +96,8 @@ const DEFAULT_QUICK_TRUST_SIGNALS: FeatureRow[] = [
 
 const QUICK_TRUST_FALLBACK_ICONS = [Truck, RotateCcw, Shield, Clock] as const;
 
+const WISHLIST_STORAGE_KEY = 'photify:wishlist';
+
 export function ProductDetailPage({
   initialProduct,
   productSlug,
@@ -104,7 +105,17 @@ export function ProductDetailPage({
   const navigate = useNavigate();
   const supabase = createClient();
   const [mainImage, setMainImage] = useState(0);
-  const [isWishlisted, setIsWishlisted] = useState(false);
+  const productId = initialProduct?.id as string | undefined;
+  const [isWishlisted, setIsWishlisted] = useState(() => {
+    if (typeof window === 'undefined' || !productId) return false;
+    try {
+      const raw = window.localStorage.getItem(WISHLIST_STORAGE_KEY);
+      const ids: string[] = raw ? JSON.parse(raw) : [];
+      return Array.isArray(ids) && ids.includes(productId);
+    } catch {
+      return false;
+    }
+  });
   const [showStickyBar, setShowStickyBar] = useState(false);
   const [relatedProducts, setRelatedProducts] = useState<any[]>([]);
   const heroRef = useRef<HTMLDivElement>(null);
@@ -120,6 +131,23 @@ export function ProductDetailPage({
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
+
+  useEffect(() => {
+    if (typeof window === 'undefined' || !productId) return;
+    try {
+      const raw = window.localStorage.getItem(WISHLIST_STORAGE_KEY);
+      const ids: string[] = raw ? JSON.parse(raw) : [];
+      const set = new Set(Array.isArray(ids) ? ids : []);
+      if (isWishlisted) set.add(productId);
+      else set.delete(productId);
+      window.localStorage.setItem(
+        WISHLIST_STORAGE_KEY,
+        JSON.stringify(Array.from(set))
+      );
+    } catch {
+      /* ignore storage errors */
+    }
+  }, [isWishlisted, productId]);
 
   useEffect(() => {
     async function fetchRelated() {
@@ -222,17 +250,6 @@ export function ProductDetailPage({
       );
     }
   };
-  const handleShare = async () => {
-    if (navigator.share) {
-      await navigator.share({
-        title: product.title,
-        url: window.location.href,
-      });
-    } else {
-      navigator.clipboard.writeText(window.location.href);
-    }
-  };
-
   return (
     <>
       <div className="min-h-screen font-['Mona_Sans',_sans-serif] bg-white">
@@ -337,21 +354,13 @@ export function ProductDetailPage({
                     className={`w-5 h-5 ${isWishlisted ? 'fill-current' : ''}`}
                   />
                 </motion.button>
-                <motion.button
-                  onClick={handleShare}
-                  whileHover={{ scale: 1.1 }}
-                  whileTap={{ scale: 0.9 }}
-                  className='w-10 h-10 rounded-full bg-white border-2 border-gray-200 flex items-center justify-center text-gray-500 hover:border-[#f63a9e] hover:text-[#f63a9e] transition-all shadow-sm'
-                >
-                  <Share2 className='w-5 h-5' />
-                </motion.button>
               </div>
             </div>
           </div>
 
           {/* Main Hero Content */}
           <div className='max-w-[1400px] mx-auto px-4 sm:px-6 py-4 sm:py-8 lg:py-12'>
-            <div className='grid lg:grid-cols-[1.2fr_1fr] gap-4 sm:gap-8 lg:gap-16'>
+            <div className='grid lg:grid-cols-[1.2fr_1fr] gap-4 sm:gap-8 lg:gap-16 min-w-0'>
               {/* Left: Image Gallery */}
               <motion.div
                 initial={{ opacity: 0, x: -30 }}
@@ -485,18 +494,18 @@ export function ProductDetailPage({
                 initial={{ opacity: 0, x: 30 }}
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ duration: 0.6, delay: 0.2 }}
-                className='flex flex-col'
+                className='flex flex-col min-w-0'
               >
                 {/* Title & Rating */}
-                <div className='mb-4 sm:mb-6'>
-                  <div className='mb-3 sm:mb-4 flex items-start justify-between gap-3'>
+                <div className='mb-4 sm:mb-6 min-w-0'>
+                  <div className='mb-3 sm:mb-4 flex items-start justify-between gap-3 min-w-0'>
                     <h1
-                      className="font-['Bricolage_Grotesque',_sans-serif] text-gray-900 text-2xl sm:text-3xl lg:text-4xl"
+                      className="font-['Bricolage_Grotesque',_sans-serif] text-gray-900 text-2xl sm:text-3xl lg:text-4xl min-w-0 break-words"
                       style={{ fontWeight: '700', lineHeight: '1.1' }}
                     >
                       {product.title}
                     </h1>
-                    <div className='flex items-center gap-1.5 text-[11px] sm:text-sm text-gray-500 whitespace-nowrap pt-1'>
+                    <div className='flex items-center gap-1.5 text-[11px] sm:text-sm text-gray-500 whitespace-nowrap pt-1 flex-shrink-0'>
                       <span className='relative flex h-2.5 w-2.5 flex-shrink-0'>
                         <span className='animate-ping absolute inline-flex h-full w-full rounded-full bg-[#f63a9e] opacity-50' />
                         <span className='relative inline-flex h-2.5 w-2.5 rounded-full bg-[#f63a9e] shadow-[0_0_10px_rgba(246,58,158,0.65)]' />
@@ -597,36 +606,38 @@ export function ProductDetailPage({
                 >
                   {(isCollageProduct || hasConfigurer) && (
                     <motion.div>
-                      <div className='flex items-center gap-3'>
+                      <div className='flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3 min-w-0'>
                         <Button
                           onClick={
                             isCollageProduct
                               ? handleOpenCollageCreator
                               : handleCustomize
                           }
-                          className='flex-1 bg-[#f63a9e] hover:bg-[#e02d8d] text-white h-12 sm:h-14 rounded-2xl text-base sm:text-lg shadow-xl shadow-pink-500/30 transition-all'
+                          className='w-full sm:flex-1 min-w-0 bg-[#f63a9e] hover:bg-[#e02d8d] text-white h-12 sm:h-14 rounded-2xl text-base sm:text-lg shadow-xl shadow-pink-500/30 transition-all'
                           style={{ fontWeight: '700' }}
                         >
-                          <Sparkles className='w-5 h-5 mr-2' />
-                          {isCollageProduct
-                            ? 'Create Your Photo Collage'
-                            : (() => {
-                                const configurer = getConfigurerById(
-                                  configurerType || ''
-                                );
-                                return configurer
-                                  ? configurer.name === 'Single Canvas Editor'
-                                    ? 'Upload Your Photo'
-                                    : `Start ${configurer.name}`
-                                  : 'Customize Your Canvas';
-                              })()}
+                          <Sparkles className='w-5 h-5 mr-2 flex-shrink-0' />
+                          <span className='truncate'>
+                            {isCollageProduct
+                              ? 'Create Your Photo Collage'
+                              : (() => {
+                                  const configurer = getConfigurerById(
+                                    configurerType || ''
+                                  );
+                                  return configurer
+                                    ? configurer.name === 'Single Canvas Editor'
+                                      ? 'Upload Your Photo'
+                                      : `Start ${configurer.name}`
+                                    : 'Customize Your Canvas';
+                                })()}
+                          </span>
                         </Button>
                         <button
                           type='button'
                           onClick={() => navigate('/art-collections')}
-                          className='text-xs sm:text-sm text-gray-500 hover:text-gray-700 transition-colors whitespace-nowrap'
+                          className='text-xs sm:text-sm text-gray-500 hover:text-gray-700 transition-colors text-center sm:text-left sm:whitespace-nowrap'
                         >
-                          or Choose a art from art collection
+                          or choose art from our collection
                         </button>
                       </div>
                     </motion.div>

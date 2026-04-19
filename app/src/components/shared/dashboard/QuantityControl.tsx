@@ -104,12 +104,17 @@ const QuantityControl: React.FC<QuantityControlProps> = ({
           return;
         }
       }
+      const productName = selectedProduct?.name?.trim() || 'Custom Canvas';
+      const ratioLabel = selectedRatio || 'Custom Ratio';
+      const sizeLabel = selectedSize?.display_label || 'Custom Size';
+      const cartName = artName
+        ? `${artName} — ${productName} — ${ratioLabel} ${sizeLabel}`
+        : `${productName} — ${ratioLabel} — ${sizeLabel}`;
+
       addToCart({
         quantity: 1,
-        id: `${selectedRatio || 'custom'}-${selectedSize?.display_label || 'custom'}-${shape || 'rectangular'}`,
-        name: artName
-          ? `${artName} — ${selectedRatio || 'Custom Ratio'} ${selectedSize?.display_label || 'Custom Size'}`
-          : `${selectedRatio || 'Custom Ratio'} - ${selectedSize?.display_label || 'Custom Size'} - ${shape || 'Rectangular'}`,
+        id: `${selectedProduct?.id || 'custom'}-${selectedRatio || 'custom'}-${selectedSize?.display_label || 'custom'}-${shape || 'rectangular'}`,
+        name: cartName,
         image: finalImageUrl,
         price: priceData.sellPrice,
         size: selectedSize?.display_label || 'Custom Size',
@@ -214,7 +219,7 @@ const QuantityControl: React.FC<QuantityControlProps> = ({
                 Please wait
               </>
             ) : (
-              'Confirm changes'
+              'Next'
             )}
           </Button>
         </motion.div>

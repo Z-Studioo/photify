@@ -15,7 +15,6 @@ import { AdminProvider } from '@/context/AdminContext';
 import { UploadProvider } from '@/context/UploadContext';
 import { PresetProvider } from '@/context/PresetContext';
 import { ToastProvider } from '@/components/shared/common/toast';
-import { WhatsAppButton } from '@/components/shared/whatsapp-floating-button';
 import { CookieConsent } from '@/components/shared/cookie-consent';
 import stylesheet from './index.css?url';
 import {
@@ -133,7 +132,6 @@ export default function Root() {
               <UploadProvider>
                 <PresetProvider>
                   <Outlet />
-                  <WhatsAppButton />
                   <CookieConsent />
                 </PresetProvider>
               </UploadProvider>

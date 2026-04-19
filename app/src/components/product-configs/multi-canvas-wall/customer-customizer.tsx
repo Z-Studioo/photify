@@ -516,7 +516,7 @@ export function MultiCanvasWallCustomizer() {
     // Create cart item
     const cartItem = {
       id: `multi-canvas-wall-${Date.now()}`,
-      name: `Multi-Canvas Wall - ${selectedSize.display_label}`,
+      name: `${MULTI_CANVAS_WALL_PRODUCT.name} — ${selectedSize.display_label}`,
       price: parseFloat(totalPrice),
       image: state.canvases[0].imageUrl || '/placeholder.jpg',
       images: state.canvases.map(c => c.imageUrl || '/placeholder.jpg'),

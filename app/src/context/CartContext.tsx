@@ -1,7 +1,31 @@
 'use client';
 
-import { createContext, useContext, useState, type ReactNode } from 'react';
+import { createContext, useContext, useEffect, useState, type ReactNode } from 'react';
 import { uploadDataURLToStorage } from '@/lib/supabase/storage';
+
+const CART_STORAGE_KEY = 'photify_cart_v1';
+
+interface PersistedCart {
+  cartItems: CartItem[];
+  deliveryMethod: DeliveryMethod;
+  shippingCost: number;
+  discount: number;
+  appliedPromoCode: string;
+  promoApplied: boolean;
+}
+
+/** Best-effort restore from localStorage. Returns null on SSR or parse errors. */
+function loadPersistedCart(): Partial<PersistedCart> | null {
+  if (typeof window === 'undefined') return null;
+  try {
+    const raw = window.localStorage.getItem(CART_STORAGE_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw) as Partial<PersistedCart>;
+    return parsed && typeof parsed === 'object' ? parsed : null;
+  } catch {
+    return null;
+  }
+}
 
 export interface CartItemCustomization {
   edgeType?: string;     // 'wrapped' | 'mirrored'
@@ -49,13 +73,67 @@ interface CartContextType {
 const CartContext = createContext<CartContextType | undefined>(undefined);
 
 export function CartProvider({ children }: { children: ReactNode }) {
-  const [cartItems, setCartItems] = useState<CartItem[]>([]);
+  // Initial render always uses defaults so SSR markup matches the first
+  // client paint. Real persisted state is hydrated below in an effect to
+  // avoid hydration mismatches.
+  // Seed cart state lazily from localStorage so the very first render
+  // already has the persisted values. This avoids a race where a subsequent
+  // "persist" effect could observe the initial empty state before the
+  // hydration effect has applied the stored data, and accidentally wipe
+  // localStorage.
+  const [cartItems, setCartItems] = useState<CartItem[]>(() => {
+    const stored = loadPersistedCart();
+    return Array.isArray(stored?.cartItems) ? stored!.cartItems! : [];
+  });
   const [isCartOpen, setIsCartOpen] = useState(false);
-  const [deliveryMethod, setDeliveryMethod] = useState<DeliveryMethod>('standard');
-  const [shippingCost, setShippingCost] = useState(9.99);
-  const [discount, setDiscount] = useState(0);
-  const [appliedPromoCode, setAppliedPromoCode] = useState('');
-  const [promoApplied, setPromoApplied] = useState(false);
+  const [deliveryMethod, setDeliveryMethod] = useState<DeliveryMethod>(() => {
+    const stored = loadPersistedCart();
+    return stored?.deliveryMethod === 'express' ? 'express' : 'standard';
+  });
+  const [shippingCost, setShippingCost] = useState<number>(() => {
+    const stored = loadPersistedCart();
+    return typeof stored?.shippingCost === 'number' ? stored.shippingCost : 9.99;
+  });
+  const [discount, setDiscount] = useState<number>(() => {
+    const stored = loadPersistedCart();
+    return typeof stored?.discount === 'number' ? stored.discount : 0;
+  });
+  const [appliedPromoCode, setAppliedPromoCode] = useState<string>(() => {
+    const stored = loadPersistedCart();
+    return typeof stored?.appliedPromoCode === 'string' ? stored.appliedPromoCode : '';
+  });
+  const [promoApplied, setPromoApplied] = useState<boolean>(() => {
+    const stored = loadPersistedCart();
+    return typeof stored?.promoApplied === 'boolean' ? stored.promoApplied : false;
+  });
+
+  // Persist on every meaningful change. Safe to run immediately because
+  // the initial state above already reflects what's in localStorage, so
+  // writing it back on first mount is a no-op.
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    try {
+      const payload: PersistedCart = {
+        cartItems,
+        deliveryMethod,
+        shippingCost,
+        discount,
+        appliedPromoCode,
+        promoApplied,
+      };
+      window.localStorage.setItem(CART_STORAGE_KEY, JSON.stringify(payload));
+    } catch {
+      // Quota exceeded or storage disabled — ignore; cart still works
+      // in-memory for this session.
+    }
+  }, [
+    cartItems,
+    deliveryMethod,
+    shippingCost,
+    discount,
+    appliedPromoCode,
+    promoApplied,
+  ]);
 
   const clearPromo = () => {
     setDiscount(0);

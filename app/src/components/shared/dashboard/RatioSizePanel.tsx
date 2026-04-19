@@ -44,17 +44,35 @@ const RatioSizePanel: React.FC<RatioSizePanelProps> = ({
 }) => {
   const {
     preview,
+    originalPreview,
     selectedRatio,
     setSelectedRatio,
     selectedSize,
     setSelectedSize,
     selectedProduct,
+    hasUserOverriddenRatio,
+    setHasUserOverriddenRatio,
   } = useUpload();
+  /**
+   * "Match my photo" should always match the *original uploaded* photo's
+   * aspect ratio, not whatever the current preview is (which becomes the
+   * cropped image after the user applies a crop). Fall back to `preview`
+   * when `originalPreview` isn't yet populated.
+   */
+  const sourceForAutoRatio = originalPreview || preview;
 
   const { setSelectedView } = useView();
   const sectionRefs = useRef<Record<string, HTMLDivElement | null>>({});
-  const [isAutoRatioSelected, setIsAutoRatioSelected] = useState(false);
-  const [autoResolvedRatio, setAutoResolvedRatio] = useState<string | null>(null);
+  // Auto-match state derives from the persistent override flag: if the user
+  // has overridden, we're not in auto mode. Initial `autoResolvedRatio` is
+  // hydrated from the current `selectedRatio` when auto mode is still active,
+  // so the "Match my photo" label remains stable across remounts.
+  const [isAutoRatioSelected, setIsAutoRatioSelected] = useState(
+    () => !hasUserOverriddenRatio
+  );
+  const [autoResolvedRatio, setAutoResolvedRatio] = useState<string | null>(
+    () => (hasUserOverriddenRatio ? null : selectedRatio)
+  );
   const lastAutoAppliedPreviewRef = useRef<string | null>(null);
   
   const {
@@ -110,6 +128,8 @@ const RatioSizePanel: React.FC<RatioSizePanelProps> = ({
 
     const smallest = sizes[0] ?? null;
 
+    setHasUserOverriddenRatio(true);
+    setIsAutoRatioSelected(false);
     setSelectedRatio(ratio.label);
     setSelectedSize(smallest);
     onSelectionChange?.(ratio.label, smallest);
@@ -164,9 +184,9 @@ const RatioSizePanel: React.FC<RatioSizePanelProps> = ({
   const applyAutoRatio = async ({
     shouldSwitchToCrop,
   }: { shouldSwitchToCrop: boolean }) => {
-    if (!preview || !ratios.length) return false;
+    if (!sourceForAutoRatio || !ratios.length) return false;
 
-    const imageAspectRatio = await getImageAspectRatio(preview);
+    const imageAspectRatio = await getImageAspectRatio(sourceForAutoRatio);
     if (!imageAspectRatio) return false;
 
     const closestRatio = getClosestRatio(imageAspectRatio, ratios);
@@ -189,18 +209,25 @@ const RatioSizePanel: React.FC<RatioSizePanelProps> = ({
   };
 
   const handleAutoRatioClick = async () => {
+    setHasUserOverriddenRatio(false);
     await applyAutoRatio({ shouldSwitchToCrop: true });
   };
 
   useEffect(() => {
-    if (!preview || !ratios.length || !inches.length) return;
-    if (lastAutoAppliedPreviewRef.current === preview) return;
+    if (!sourceForAutoRatio || !ratios.length || !inches.length) return;
+    if (lastAutoAppliedPreviewRef.current === sourceForAutoRatio) return;
+    if (hasUserOverriddenRatio) {
+      lastAutoAppliedPreviewRef.current = sourceForAutoRatio;
+      return;
+    }
 
-    lastAutoAppliedPreviewRef.current = preview;
+    lastAutoAppliedPreviewRef.current = sourceForAutoRatio;
     void applyAutoRatio({ shouldSwitchToCrop: false });
-  }, [preview, ratios, inches]);
+  }, [sourceForAutoRatio, ratios, inches, hasUserOverriddenRatio]);
 
   const handleSizeClick = (size: InchData) => {
+    setHasUserOverriddenRatio(true);
+    setIsAutoRatioSelected(false);
     setSelectedSize(size);
     onSelectionChange?.(selectedRatio!, size);
   };
