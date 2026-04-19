@@ -83,6 +83,15 @@ interface UploadContextType {
   setPendingQuantity: (q: number) => void;
   applyPendingChanges: () => void;
   cancelPendingCropChanges: () => void;
+  /**
+   * True once the user has explicitly chosen a specific aspect ratio or print
+   * size (as opposed to the auto "Match my photo" pick). Persists across
+   * feature-panel unmounts so the ratio selector UI keeps the correct chip
+   * highlighted when the user returns to the Canvas size panel after
+   * cropping.
+   */
+  hasUserOverriddenRatio: boolean;
+  setHasUserOverriddenRatio: (v: boolean) => void;
   reset: () => Promise<void>;
   // Art collection fixed price (set when navigating from art detail page)
   artFixedPrice: number;
@@ -191,6 +200,8 @@ export const UploadProvider = ({ children }: { children: React.ReactNode }) => {
     () => getStoredMetadata().quantity || 1
   );
   const [pendingQuantity, setPendingQuantity] = useState<number | null>(null);
+
+  const [hasUserOverriddenRatio, setHasUserOverriddenRatio] = useState(false);
 
   const fileToBase64 = (file: File): Promise<string> =>
     new Promise((resolve, reject) => {
@@ -487,6 +498,7 @@ export const UploadProvider = ({ children }: { children: React.ReactNode }) => {
     setPendingEdgeType(null);
     setPendingQuantity(null);
     setPendingCornerStyle(null);
+    setHasUserOverriddenRatio(false);
     setShape('rectangle');
     setQuality([70]);
     setCornerStyle('rounded');
@@ -533,6 +545,8 @@ export const UploadProvider = ({ children }: { children: React.ReactNode }) => {
         setPendingSize,
         applyPendingChanges,
         cancelPendingCropChanges,
+        hasUserOverriddenRatio,
+        setHasUserOverriddenRatio,
         reset,
         quality,
         setQuality,

@@ -80,7 +80,7 @@ function FrameMesh() {
 
 export function Room3DView({ isVisible }: Room3DViewProps) {
   const { selectedSize } = useUpload();
-  const [showRuler, setShowRuler] = useState(true);
+  const [showRuler, setShowRuler] = useState(false);
 
   if (!isVisible || !selectedSize) return null;
 

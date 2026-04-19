@@ -1,6 +1,6 @@
 import type React from 'react';
 import { useState, useRef, useEffect } from 'react';
-import { ChevronRight, Loader2, Lock } from 'lucide-react';
+import { ChevronRight, Loader2, Lock, X } from 'lucide-react';
 import { motion, AnimatePresence, type Variants } from 'motion/react';
 import Wall from '@/assets/images/wall.jpg';
 import Wall1 from '@/assets/images/wall1.jpg';
@@ -140,6 +140,9 @@ const Dashboard: React.FC = () => {
     setFile,
     setPreview,
     applyPendingChanges,
+    cancelPendingCropChanges,
+    setPendingFile,
+    setPendingPreview,
     selectedRatio,
     selectedSize,
     quality,
@@ -149,7 +152,7 @@ const Dashboard: React.FC = () => {
   const pricingProduct = useProductCanvasPricingProduct(selectedProduct);
 
   const { selectedView, setSelectedView } = useView();
-  const { edgeType, applyPendingEdgeType } = useEdge();
+  const { edgeType, applyPendingEdgeType, cancelPendingEdgeType } = useEdge();
   const [pricePerItem, setPricePerItem] = useState<number>(0);
 
   useEffect(() => {
@@ -226,10 +229,25 @@ const Dashboard: React.FC = () => {
       await applyPendingChanges();
       applyPendingEdgeType();
       setSelectedView('3droom');
-      setSelectedFeature(null);
+      // Intentionally keep `selectedFeature` set: after applying a crop the
+      // user should return to the feature panel they came from (e.g. Canvas
+      // size) so they can continue adjusting, rather than being kicked back
+      // to the top-level feature list.
     } finally {
       setIsApplyingEditView(false);
     }
+  };
+
+  const handleCancelEditingView = () => {
+    if (selectedView === 'crop') {
+      cancelPendingCropChanges();
+      setPendingFile(null);
+      setPendingPreview(null);
+    }
+    cancelPendingEdgeType();
+    setSelectedView('3droom');
+    // Same reasoning as above: stay on the feature panel so cancelling a
+    // crop doesn't also close Canvas size.
   };
 
   return (
@@ -353,7 +371,7 @@ const Dashboard: React.FC = () => {
                       transition={{ delay: 0.1, duration: 0.3 }}
                       className='truncate text-lg font-semibold leading-snug tracking-tight text-zinc-900'
                     >
-                      Photo print under acrylic glass
+                      Single Frame Stretched Canvas
                     </motion.h2>
                     <p className='mt-1.5 text-xs leading-relaxed text-zinc-500'>
                       Choose each step to configure your print.
@@ -530,24 +548,35 @@ const Dashboard: React.FC = () => {
                         ? 'Save your crop to update the print preview. This does not place an order.'
                         : 'Save your enhancement settings to return to the room view.'}
                     </p>
-                    <Button
-                      type='button'
-                      variant='default'
-                      disabled={isApplyingEditView}
-                      className='h-9 shrink-0 rounded-lg px-4 text-xs font-semibold shadow-sm sm:h-11 sm:min-w-[10rem] sm:rounded-xl sm:px-6 sm:text-sm'
-                      onClick={() => void handleDoneEditingView()}
-                    >
-                      {isApplyingEditView ? (
-                        <>
-                          <Loader2 className='mr-2 h-4 w-4 animate-spin' />
-                          Saving…
-                        </>
-                      ) : selectedView === 'crop' ? (
-                        'Apply crop'
-                      ) : (
-                        'Save enhancement'
-                      )}
-                    </Button>
+                    <div className='flex shrink-0 items-center gap-2 sm:gap-3'>
+                      <Button
+                        type='button'
+                        variant='outline'
+                        disabled={isApplyingEditView}
+                        className='h-9 shrink-0 rounded-lg px-3 text-xs font-semibold sm:h-11 sm:rounded-xl sm:px-5 sm:text-sm'
+                        onClick={handleCancelEditingView}
+                      >
+                        Cancel
+                      </Button>
+                      <Button
+                        type='button'
+                        variant='default'
+                        disabled={isApplyingEditView}
+                        className='h-9 shrink-0 rounded-lg px-4 text-xs font-semibold shadow-sm sm:h-11 sm:min-w-[10rem] sm:rounded-xl sm:px-6 sm:text-sm'
+                        onClick={() => void handleDoneEditingView()}
+                      >
+                        {isApplyingEditView ? (
+                          <>
+                            <Loader2 className='mr-2 h-4 w-4 animate-spin' />
+                            Saving…
+                          </>
+                        ) : selectedView === 'crop' ? (
+                          'Apply crop'
+                        ) : (
+                          'Save enhancement'
+                        )}
+                      </Button>
+                    </div>
                   </motion.div>
                 ) : !selectedFeature ? (
                   <QuantityControl
@@ -620,11 +649,20 @@ const Dashboard: React.FC = () => {
                   )}
               </motion.div>
               <motion.div
+                className='flex items-center gap-2'
                 initial={{ opacity: 0, x: 20 }}
                 animate={{ opacity: 1, x: 0 }}
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
               >
+                <Button
+                  variant='outline'
+                  size='icon'
+                  className='h-9 w-9 shrink-0 rounded-lg sm:h-11 sm:w-11 sm:rounded-xl'
+                  disabled={isApplyingEditView}
+                  onClick={handleCancelEditingView}
+                  aria-label='Cancel'
+                >
+                  <X className='h-4 w-4' />
+                </Button>
                 <Button
                   variant='default'
                   className='h-9 shrink-0 whitespace-nowrap rounded-lg px-4 text-xs font-semibold transition-all duration-200 sm:h-11 sm:rounded-xl sm:px-5 sm:text-sm'

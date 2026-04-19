@@ -291,7 +291,7 @@ export function PosterCollageCustomizer() {
       const canvasPrice = calculateCanvasPrice();
       const totalPrice = parseFloat((canvasPrice + artFixedPrice).toFixed(2));
       const itemName = artName
-        ? `${artName} — Poster ${state.posterWidth}" × ${state.posterHeight}"`
+        ? `${artName} — ${POSTER_COLLAGE_PRODUCT.name} — ${state.posterWidth}" × ${state.posterHeight}"`
         : `${POSTER_COLLAGE_PRODUCT.name} - ${state.posterWidth}" × ${state.posterHeight}"`;
 
       await addToCart({
