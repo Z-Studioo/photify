@@ -15,6 +15,16 @@ import { useEffect, useRef, useState } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import { Header } from '@/components/layout/header';
 import { cn } from '@/lib/utils';
+import { buildMeta } from '@/lib/seo';
+import type { Route } from './+types/index';
+
+export const meta: Route.MetaFunction = () =>
+  buildMeta({
+    title: 'Upload Your Photo | Photify',
+    description: 'Upload a photo to start designing your custom print on Photify.',
+    path: '/upload',
+    noindex: true,
+  });
 
 const Page = () => {
   const MAX_FILE_SIZE_MB = 20;

@@ -218,6 +218,10 @@ export function HomePage({
   return (
     <div className="min-h-screen font-['Mona_Sans',_sans-serif] relative">
       <Header />
+      <h1 className='sr-only'>
+        Photify — Personalised canvas prints, framed wall art, and photo gifts in
+        the UK
+      </h1>
       {/* CategoryNav hidden on home page */}
 
       {/* Our Best Sellers Section */}

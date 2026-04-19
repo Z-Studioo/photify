@@ -1,10 +1,22 @@
-// Note: This file was originally for Next.js server-side rendering.
-// In a Vite/React app, use the client.ts file instead.
-// This re-exports the client for compatibility.
+import { createClient } from '@supabase/supabase-js';
 
-import { createClient as createBrowserClient } from './client';
+/**
+ * Supabase client for server-side usage (build-time loaders, prerender).
+ * Reads env from import.meta.env (Vite-injected at build time) or process.env
+ * (available in Node contexts like react-router.config.ts).
+ */
+export function createServerClient() {
+  const url =
+    (typeof import.meta !== 'undefined' && import.meta.env?.VITE_SUPABASE_URL) ||
+    process.env.VITE_SUPABASE_URL ||
+    '';
+  const key =
+    (typeof import.meta !== 'undefined' &&
+      import.meta.env?.VITE_SUPABASE_ANON_KEY) ||
+    process.env.VITE_SUPABASE_ANON_KEY ||
+    '';
 
-export async function createClient() {
-  // In Vite, we use the browser client instead of server client
-  return createBrowserClient();
+  return createClient(url, key, {
+    auth: { persistSession: false, autoRefreshToken: false },
+  });
 }

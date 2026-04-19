@@ -1,10 +1,20 @@
 import { Suspense } from 'react';
-import { useSearchParams, useNavigate } from 'react-router-dom';
+import { useSearchParams, useNavigate } from 'react-router';
 import { Product3DView } from '@/components/product-configs/shared/product-3d-view';
 import { SingleCanvasSizeSelector } from '@/components/product-configs/single-canvas/single-canvas-size-selector';
 import { usesSingleCanvasConfigurator } from '@/components/product-configs';
 import { Loader2, AlertCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { buildMeta } from '@/lib/seo';
+import type { Route } from './+types/index';
+
+export const meta: Route.MetaFunction = () =>
+  buildMeta({
+    title: '3D Product Preview | Photify',
+    description: 'Preview your custom canvas in an interactive 3D view.',
+    path: '/customize/product-3d-view',
+    noindex: true,
+  });
 
 function Product3DViewContent() {
   const [searchParams] = useSearchParams();
@@ -77,4 +87,3 @@ export default function Product3DViewPage() {
     </Suspense>
   );
 }
-

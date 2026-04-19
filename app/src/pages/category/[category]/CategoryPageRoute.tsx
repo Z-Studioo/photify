@@ -1,9 +1,13 @@
-import { useEffect, useState } from 'react';
-import { useParams } from 'react-router-dom';
-import { createClient } from '@/lib/supabase/client';
 import { CategoryPage } from '@/pages/category/[category]';
-import NotFound from '@/pages/not-found';
-import { LoadingSpinner } from '@/components/shared/loading-spinner';
+import { createServerClient } from '@/lib/supabase/server';
+import {
+  breadcrumbJsonLd,
+  buildMeta,
+  clampDescription,
+  itemListJsonLd,
+  type ItemListEntry,
+} from '@/lib/seo';
+import type { Route } from './+types/CategoryPageRoute';
 
 interface Category {
   id: string;
@@ -14,20 +18,6 @@ interface Category {
   is_active: boolean;
 }
 
-interface Product {
-  id: string;
-  name: string;
-  slug: string;
-  images: string[];
-  size: string | null;
-  price: number;
-  config?: unknown;
-  fixed_price?: number | null;
-  is_featured: boolean;
-  active: boolean;
-  tags: Tag[];
-}
-
 interface Tag {
   id: string;
   name: string;
@@ -36,96 +26,119 @@ interface Tag {
   color: string;
 }
 
-export default function Category() {
-  const supabase = createClient();
-  const { category } = useParams();
+export async function loader({ params }: Route.LoaderArgs) {
+  const category = params.category;
+  const supabase = createServerClient();
 
-  const [categoryData, setCategoryData] = useState<Category | null>(null);
-  const [products, setProducts] = useState<Product[]>([]);
-  const [tags, setTags] = useState<Tag[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [notFound, setNotFound] = useState(false);
+  const { data: categoryData, error: categoryError } = await supabase
+    .from('categories')
+    .select('*')
+    .eq('slug', category)
+    .eq('is_active', true)
+    .single();
 
-  useEffect(() => {
-    if (!category) return;
+  if (categoryError || !categoryData) {
+    throw new Response('Not Found', { status: 404 });
+  }
 
-    const fetchCategoryAndProducts = async () => {
-      setLoading(true);
-
-      const { data: categoryData, error: categoryError } = await supabase
-        .from('categories')
-        .select('*')
-        .eq('slug', category)
-        .eq('is_active', true)
-        .single();
-
-      const { data: tagsData } = await supabase.from('tags').select('*');
-      setTags(tagsData || []);
-
-      if (categoryError || !categoryData) {
-        setNotFound(true);
-        setLoading(false);
-        return;
-      }
-
-      setCategoryData(categoryData);
-
-      const { data: productsData } = await supabase
-        .from('products')
-        .select(
-          `
-    id,
-    name,
-    slug,
-    images,
-    price,
-    fixed_price,
-    config,
-    is_featured,
-    active,
-    created_at,
-    product_categories!inner(category_id),
-    product_tags(
-      tags (
-        id,
-        name,
-        slug,
-        description,
-        color
+  const [tagsRes, productsRes] = await Promise.all([
+    supabase.from('tags').select('*'),
+    supabase
+      .from('products')
+      .select(
+        `
+          id,
+          name,
+          slug,
+          images,
+          price,
+          fixed_price,
+          config,
+          is_featured,
+          active,
+          created_at,
+          product_categories!inner(category_id),
+          product_tags(
+            tags (
+              id,
+              name,
+              slug,
+              description,
+              color
+            )
+          )
+        `
       )
-    )
-    `
-        )
-        .eq('product_categories.category_id', categoryData.id)
-        .eq('active', true)
-        .order('created_at', { ascending: false });
+      .eq('product_categories.category_id', categoryData.id)
+      .eq('active', true)
+      .order('created_at', { ascending: false }),
+  ]);
 
-      const normalizedProducts =
-        productsData?.map(product => ({
-          ...product,
-          tags: product.product_tags?.map((pt: any) => pt.tags) ?? [],
-        })) ?? [];
+  const normalizedProducts =
+    productsRes.data?.map(product => ({
+      ...product,
+      tags: product.product_tags?.map((pt: any) => pt.tags) ?? [],
+    })) ?? [];
 
-      setProducts(normalizedProducts as any);
-      setLoading(false);
-    };
+  return {
+    categoryData: categoryData as Category,
+    products: normalizedProducts as any[],
+    tags: (tagsRes.data as Tag[]) ?? [],
+  };
+}
 
-    fetchCategoryAndProducts();
-  }, [category]);
+export const meta: Route.MetaFunction = ({ data, params }) => {
+  const slug = params?.category || data?.categoryData?.slug || '';
+  const path = `/category/${slug}`;
 
-  if (loading) {
-    return <LoadingSpinner />;
+  if (!data?.categoryData) {
+    return buildMeta({
+      title: 'Category | Photify',
+      description: 'Explore product categories on Photify.',
+      path,
+    });
   }
 
-  if (notFound || !categoryData) {
-    return <NotFound />;
-  }
+  const category = data.categoryData;
+  const name = category.name;
+  const title = `${name} — Canvas Prints & Wall Art | Photify`;
+  const description =
+    clampDescription(category.description) ||
+    `Shop ${name} on Photify — premium canvas prints and wall art with free UK shipping over £50.`;
 
+  const items: ItemListEntry[] = (data.products ?? [])
+    .filter((p: any) => p?.slug && p?.name)
+    .slice(0, 24)
+    .map((p: any) => ({
+      name: p.name,
+      path: `/product/${p.slug}`,
+      image: Array.isArray(p.images) ? p.images[0] : null,
+    }));
+
+  const jsonLd: Record<string, unknown>[] = [
+    breadcrumbJsonLd([
+      { name: 'Home', path: '/' },
+      { name: 'Products', path: '/products' },
+      { name, path },
+    ]),
+  ];
+  if (items.length) jsonLd.push(itemListJsonLd(items, `${name} products`));
+
+  return buildMeta({
+    title,
+    description,
+    path,
+    image: category.image_url ?? (data.products?.[0]?.images?.[0] ?? null),
+    jsonLd,
+  });
+};
+
+export default function Category({ loaderData }: Route.ComponentProps) {
   return (
     <CategoryPage
-      initialCategoryData={categoryData}
-      initialProducts={products}
-      tags={tags}
+      initialCategoryData={loaderData.categoryData}
+      initialProducts={loaderData.products}
+      tags={loaderData.tags}
     />
   );
 }

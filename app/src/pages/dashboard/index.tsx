@@ -30,6 +30,16 @@ import { handleConfirmChanges } from '@/utils/uploadHandler';
 import { resolveCanvasSizePrice } from '@/lib/canvas-size-price';
 import { useProductCanvasPricingProduct } from '@/hooks/use-product-canvas-pricing';
 import { cn } from '@/lib/utils';
+import { buildMeta } from '@/lib/seo';
+import type { Route } from './+types/index';
+
+export const meta: Route.MetaFunction = () =>
+  buildMeta({
+    title: 'Canvas Configurer | Photify',
+    description: 'Configure your custom photo canvas on Photify.',
+    path: '/canvas-configurer',
+    noindex: true,
+  });
 
 /** Sentence-case labels for the main feature list (constants stay ALL CAPS for logic). */
 const FEATURE_LIST_LABEL: Record<string, string> = {

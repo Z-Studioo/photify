@@ -1,87 +1,86 @@
-'use client';
-import { useState, useEffect } from 'react';
 import { HomePage } from '@/components/pages/home';
-import { createClient } from '@/lib/supabase/client';
-import { Helmet } from '@dr.pogodin/react-helmet';
-import { LoadingSpinner } from '@/components/shared/loading-spinner';
+import { createServerClient } from '@/lib/supabase/server';
+import {
+  buildMeta,
+  breadcrumbJsonLd,
+  itemListJsonLd,
+  type ItemListEntry,
+} from '@/lib/seo';
+import type { Route } from './+types/index';
 
-export default function Home() {
-  const [featuredProducts, setFeaturedProducts] = useState<any[]>([]);
-  const [rooms, setRooms] = useState<any[]>([]);
-  const [artProducts, setArtProducts] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
+const HOME_TITLE = 'Photify — Personalised Canvas & Art Prints';
+const HOME_DESCRIPTION =
+  'Turn your photos into premium canvas prints, framed art, and personalised wall decor. Museum-quality printing, fade-resistant inks, free UK shipping over £50.';
 
-  useEffect(() => {
-    const fetchData = async () => {
-      const supabase = createClient();
-      
-      // Fetch featured products client-side
-      const { data: productsData } = await supabase
-        .from('products')
-        .select(
-          'id, name, slug, images, price, fixed_price, config, is_featured, active, product_type'
-        )
-        .eq('is_featured', true)
-        .eq('active', true)
-        .order('created_at', { ascending: false })
-        .limit(8);
+export const meta: Route.MetaFunction = ({ data }) => {
+  const featured = (data?.featuredProducts ?? []) as Array<{
+    name?: string;
+    slug?: string | null;
+    images?: string[] | null;
+  }>;
 
-      // Fetch rooms client-side
-      const { data: roomsData } = await supabase
-        .from('rooms')
-        .select('*')
-        .eq('active', true)
-        .order('display_order', { ascending: true })
-        .limit(4);
+  const items: ItemListEntry[] = featured
+    .filter(p => p.slug && p.name)
+    .map(p => ({
+      name: p.name!,
+      path: `/product/${p.slug}`,
+      image: p.images?.[0] ?? null,
+    }));
 
-      // Fetch art products client-side
-      const { data: artData } = await supabase
-        .from('art_products')
-        .select('*')
-        .eq('status', 'active')
-        .order('created_at', { ascending: false })
-        .limit(8);
+  const jsonLd: Record<string, unknown>[] = [
+    breadcrumbJsonLd([{ name: 'Home', path: '/' }]),
+  ];
+  if (items.length) jsonLd.push(itemListJsonLd(items, 'Featured products'));
 
-      setFeaturedProducts(productsData || []);
-      setRooms(roomsData || []);
-      setArtProducts(artData || []);
-      setLoading(false);
-    };
+  return buildMeta({
+    title: HOME_TITLE,
+    description: HOME_DESCRIPTION,
+    path: '/',
+    image: featured[0]?.images?.[0] ?? null,
+    jsonLd,
+  });
+};
 
-    fetchData();
-  }, []);
+export async function loader() {
+  const supabase = createServerClient();
 
-  if (loading) {
-    return (
-      <>
-        <Helmet>
-            <title>Home | Photify</title>
-            <meta name='title' content='Home | Photify' />
-            <meta
-              name="description"
-              content="Discover stunning photo products and art collections at Photify. Transform your memories into beautiful wall art and decor."
-            />
-            <meta name="robots" content="index,follow" />
-        </Helmet>
-        <LoadingSpinner />
-      </>
-    );
-  }
+  const [productsRes, roomsRes, artRes] = await Promise.all([
+    supabase
+      .from('products')
+      .select(
+        'id, name, slug, images, price, fixed_price, config, is_featured, active, product_type'
+      )
+      .eq('is_featured', true)
+      .eq('active', true)
+      .order('created_at', { ascending: false })
+      .limit(8),
+    supabase
+      .from('rooms')
+      .select('*')
+      .eq('active', true)
+      .order('display_order', { ascending: true })
+      .limit(4),
+    supabase
+      .from('art_products')
+      .select('*')
+      .eq('status', 'active')
+      .order('created_at', { ascending: false })
+      .limit(8),
+  ]);
 
+  return {
+    featuredProducts: productsRes.data ?? [],
+    rooms: roomsRes.data ?? [],
+    artProducts: artRes.data ?? [],
+  };
+}
+
+export default function Home({ loaderData }: Route.ComponentProps) {
   return (
-    <>
-    <Helmet>
-          <title>Home | Photify</title>
-          <meta
-            name="description"
-            content="Discover stunning photo products and art collections at Photify. Transform your memories into beautiful wall art and decor."
-          />
-        </Helmet>
-    <HomePage 
-      initialFeaturedProducts={featuredProducts} 
-      initialRooms={rooms} 
-      initialArtProducts={artProducts}
-      />
-      </>
+    <HomePage
+      initialFeaturedProducts={loaderData.featuredProducts}
+      initialRooms={loaderData.rooms}
+      initialArtProducts={loaderData.artProducts}
+    />
   );
 }

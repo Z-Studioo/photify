@@ -1,19 +1,17 @@
 import { OrderTrackPage } from '@/components/pages/track-order';
-import { Helmet } from '@dr.pogodin/react-helmet';
+import { buildMeta } from '@/lib/seo';
+import type { Route } from './+types/index';
+
+export const meta: Route.MetaFunction = () =>
+  buildMeta({
+    title: 'Track Your Order | Photify',
+    description:
+      'Track your Photify order status and get real-time updates on your shipment. Enter your order details to stay informed.',
+    path: '/track-order',
+    // User-specific page — keep out of index to avoid thin / duplicate content.
+    noindex: true,
+  });
 
 export default function TrackOrder() {
-  return (
-  <>
-    <Helmet>
-      <title>Track Order | Photify</title>
-      <meta
-        name="description"
-        content="Track your Photify order status and get real-time updates on your shipment. Enter your order details to stay informed."
-      />
-      <meta name="robots" content="index,follow" />
-    </Helmet>
-    <OrderTrackPage />
-  </>
-);
+  return <OrderTrackPage />;
 }
-

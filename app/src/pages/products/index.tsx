@@ -1,59 +1,84 @@
 import { ProductsPage } from '@/components/pages/products';
-import { useState, useEffect } from 'react';
-import { createClient } from '@/lib/supabase/client';
-import { LoadingSpinner } from '@/components/shared/loading-spinner';
-import { Helmet } from '@dr.pogodin/react-helmet';
+import { createServerClient } from '@/lib/supabase/server';
+import {
+  breadcrumbJsonLd,
+  buildMeta,
+  itemListJsonLd,
+  type ItemListEntry,
+} from '@/lib/seo';
+import type { Route } from './+types/index';
 
-export default function Products() {
-  const [products, setProducts] = useState<any[]>([]);
-  const [categories, setCategories] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
+const TITLE = 'All Products — Canvas Prints & Wall Art | Photify';
+const DESCRIPTION =
+  'Browse every Photify product: single canvases, multi-canvas walls, collages, posters, and framed prints. Free UK shipping over £50.';
 
-  useEffect(() => {
-    const fetchData = async () => {
-      const supabase = createClient();
-      
-      // Fetch all active products with categories
-      const { data: productsData } = await supabase
-        .from('products')
-        .select(`
+export const meta: Route.MetaFunction = ({ data }) => {
+  const products = (data?.products ?? []) as Array<{
+    name?: string;
+    slug?: string | null;
+    images?: string[] | null;
+  }>;
+
+  const items: ItemListEntry[] = products
+    .filter(p => p.slug && p.name)
+    .slice(0, 24)
+    .map(p => ({
+      name: p.name!,
+      path: `/product/${p.slug}`,
+      image: p.images?.[0] ?? null,
+    }));
+
+  const jsonLd: Record<string, unknown>[] = [
+    breadcrumbJsonLd([
+      { name: 'Home', path: '/' },
+      { name: 'Products', path: '/products' },
+    ]),
+  ];
+  if (items.length) jsonLd.push(itemListJsonLd(items, 'Products'));
+
+  return buildMeta({
+    title: TITLE,
+    description: DESCRIPTION,
+    path: '/products',
+    image: products[0]?.images?.[0] ?? null,
+    jsonLd,
+  });
+};
+
+export async function loader() {
+  const supabase = createServerClient();
+
+  const [productsRes, categoriesRes] = await Promise.all([
+    supabase
+      .from('products')
+      .select(
+        `
           *,
           product_categories(
             category:categories(*)
           )
-        `)
-        .eq('active', true)
-        .order('created_at', { ascending: false });
+        `
+      )
+      .eq('active', true)
+      .order('created_at', { ascending: false }),
+    supabase
+      .from('categories')
+      .select('id, name, slug')
+      .eq('is_active', true)
+      .order('display_order', { ascending: true }),
+  ]);
 
-      // Fetch all active categories for filter dropdown
-      const { data: categoriesData } = await supabase
-        .from('categories')
-        .select('id, name, slug')
-        .eq('is_active', true)
-        .order('display_order', { ascending: true });
+  return {
+    products: productsRes.data ?? [],
+    categories: categoriesRes.data ?? [],
+  };
+}
 
-      setProducts(productsData || []);
-      setCategories(categoriesData || []);
-      setLoading(false);
-    };
-
-    fetchData();
-  }, []);
-
-
+export default function Products({ loaderData }: Route.ComponentProps) {
   return (
-    <>
-      <Helmet>
-        <title>Products | Photify</title>
-        <meta
-          name="description"
-          content="Browse our collection of active products and explore categories."
-        />
-        <meta name="robots" content="index,follow" />
-      </Helmet>
-      {loading ? <LoadingSpinner /> :(
-        <ProductsPage initialProducts={products} initialCategories={categories} />
-      )}
-    </>
+    <ProductsPage
+      initialProducts={loaderData.products}
+      initialCategories={loaderData.categories}
+    />
   );
 }

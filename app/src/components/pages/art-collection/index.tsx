@@ -3,8 +3,7 @@ import { useState, useEffect } from 'react';
 import { Header } from '@/components/layout/header';
 import { Footer } from '@/components/layout/footer';
 import { ArtProductCard } from '@/components/shared/art-product-card';
-import { useSearchParams } from 'react-router-dom';
-import { Helmet } from '@dr.pogodin/react-helmet';
+import { useSearchParams } from 'react-router';
 
 interface ArtProduct {
   id: string;
@@ -285,15 +284,6 @@ export function ArtCollectionPage({
 
   return (
     <>
-      <Helmet>
-        <title>Art Collection | Photify</title>
-        <meta
-          name="description"
-          content="Explore our curated collection of art pieces across various categories including Abstract, Religion, Animals, and Nepal."
-        />
-        <meta name="robots" content="index,follow" />
-        
-      </Helmet>
       <div className="min-h-screen font-['Mona_Sans',_sans-serif]">
         <Header />
 

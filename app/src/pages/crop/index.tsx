@@ -5,6 +5,16 @@ import { Check } from 'lucide-react';
 import CropPanel from '@/components/shared/crop/CropPanel';
 import { useEffect } from 'react';
 import { Header } from '@/components/layout/header';
+import { buildMeta } from '@/lib/seo';
+import type { Route } from './+types/index';
+
+export const meta: Route.MetaFunction = () =>
+  buildMeta({
+    title: 'Crop Your Photo | Photify',
+    description: 'Crop and adjust your photo before printing.',
+    path: '/crop',
+    noindex: true,
+  });
 
 export default function CropPage() {
   const navigate = useNavigate();

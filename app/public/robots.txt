@@ -1,7 +1,57 @@
+# Photify — robots.txt
+
 User-agent: *
 Allow: /
 
-Disallow: /canvas-configurer/*
-Disallow: /admin/*
+# Admin & internal tools
+Disallow: /admin
+Disallow: /admin/
+
+# Transactional / user-specific flows
+Disallow: /cart
+Disallow: /checkout
+Disallow: /confirmation
+Disallow: /track-order
+
+# Editor / configurator tools
+Disallow: /upload
+Disallow: /crop
+Disallow: /canvas-configurer
+Disallow: /customize/
+Disallow: /room/
+
+# Don't crawl build-time artefacts if ever exposed
+Disallow: /build/
+Disallow: /assets/*.map$
+
+# Common bot traps
+Disallow: /*?*utm_
+Disallow: /*?*fbclid=
+Disallow: /*?*gclid=
+
+# Block known AI scrapers (opt out of model training)
+User-agent: GPTBot
+Disallow: /
+
+User-agent: ChatGPT-User
+Disallow: /
+
+User-agent: CCBot
+Disallow: /
+
+User-agent: anthropic-ai
+Disallow: /
+
+User-agent: ClaudeBot
+Disallow: /
+
+User-agent: Google-Extended
+Disallow: /
+
+User-agent: PerplexityBot
+Disallow: /
+
+User-agent: Bytespider
+Disallow: /
 
 Sitemap: https://photify.co/sitemap.xml

@@ -2,7 +2,6 @@ import { Footer } from '@/components/layout/footer';
 import { Header } from '@/components/layout/header';
 import { ProductCard } from '@/components/shared/product-card';
 import { useState } from 'react';
-import { Helmet } from '@dr.pogodin/react-helmet';
 
 interface Category {
   id: string;
@@ -100,14 +99,6 @@ export function CategoryPage({
   if (filteredProducts.length === 0 && products.length === 0) {
     return (
       <>
-        <Helmet>
-          <title>{categoryData.name} | Photify</title>
-          <meta
-            name='description'
-            content={`Explore products in the ${categoryData.name} category on Photify.`}
-          />
-          <meta name='robots' content='index,follow' />
-        </Helmet>
         <div className="min-h-screen font-['Mona_Sans',_sans-serif]">
           <Header />
           <div className='max-w-[1400px] mx-auto px-4 py-8'>
@@ -134,14 +125,6 @@ export function CategoryPage({
 
   return (
     <>
-      <Helmet>
-        <title>{categoryData.name} | Photify</title>
-        <meta
-          name='description'
-          content={`Explore products in the ${categoryData.name} category on Photify.`}
-        />
-        <meta name='robots' content='index,follow' />
-      </Helmet>
       <div className="min-h-screen font-['Mona_Sans',_sans-serif]">
         <Header />
 

@@ -1,7 +1,17 @@
 import { motion } from 'framer-motion';
 import { Home, Package, ArrowLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router';
+import { buildMeta } from '@/lib/seo';
+import type { Route } from './+types/not-found';
+
+export const meta: Route.MetaFunction = () =>
+  buildMeta({
+    title: 'Page Not Found | Photify',
+    description: "The page you're looking for doesn't exist on Photify.",
+    path: '/404',
+    noindex: true,
+  });
 
 export default function NotFound() {
   const navigate = useNavigate();

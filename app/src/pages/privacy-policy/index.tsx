@@ -1,18 +1,19 @@
 import { PrivacyPolicyPage } from '@/components/pages/privacy-policy';
-import { Helmet } from '@dr.pogodin/react-helmet';
+import { breadcrumbJsonLd, buildMeta } from '@/lib/seo';
+import type { Route } from './+types/index';
+
+export const meta: Route.MetaFunction = () =>
+  buildMeta({
+    title: 'Privacy Policy | Photify',
+    description:
+      "Read Photify's Privacy Policy to understand how we collect, use, and protect your personal data in compliance with UK GDPR.",
+    path: '/privacy-policy',
+    jsonLd: breadcrumbJsonLd([
+      { name: 'Home', path: '/' },
+      { name: 'Privacy Policy', path: '/privacy-policy' },
+    ]),
+  });
 
 export default function PrivacyPolicy() {
-  return (
-    <>
-      <Helmet>
-        <title>Privacy Policy | Photify</title>
-        <meta
-          name="description"
-          content="Read Photify's Privacy Policy to understand how we collect, use, and protect your personal data in compliance with UK GDPR."
-        />
-        <meta name="robots" content="index,follow" />
-      </Helmet>
-      <PrivacyPolicyPage />
-    </>
-  );
+  return <PrivacyPolicyPage />;
 }

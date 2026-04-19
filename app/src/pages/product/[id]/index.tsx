@@ -1,66 +1,110 @@
+import { redirect } from 'react-router';
 import { ProductDetailPage } from '@/components/pages/product/[id]';
-import { useParams } from 'react-router-dom';
-import { useState, useEffect } from 'react';
-import { createClient } from '@/lib/supabase/client';
-import { useNavigate } from 'react-router-dom';
-import { LoadingSpinner } from '@/components/shared/loading-spinner';
-import { Helmet } from '@dr.pogodin/react-helmet';
+import { createServerClient } from '@/lib/supabase/server';
+import {
+  breadcrumbJsonLd,
+  buildMeta,
+  clampDescription,
+  productJsonLd,
+} from '@/lib/seo';
+import { getListingDisplayAmount } from '@/lib/product-starting-price';
+import type { Route } from './+types/index';
 
-export default function ProductPage() {
-  const { id: productId } = useParams<{ id: string }>();
-  const navigate = useNavigate();
-  const [product, setProduct] = useState<any>(null);
-  const [loading, setLoading] = useState(true);
+const UUID_RE =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
-  useEffect(() => {
-    const fetchProduct = async () => {
-      if (!productId) return;
-      
-      const supabase = createClient();
-      
-      // Check if productId is a UUID or slug
-      const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(productId);
-      
-      const { data, error } = await supabase
-        .from('products')
-        .select('*')
-        .or(isUUID ? `id.eq.${productId}` : `slug.eq.${productId}`)
-        .single();
+export async function loader({ params }: Route.LoaderArgs) {
+  const productId = params.id;
+  const supabase = createServerClient();
+  const isUUID = UUID_RE.test(productId);
 
-      if (error || !data) {
-        navigate('/not-found');
-        return;
-      }
+  const { data, error } = await supabase
+    .from('products')
+    .select('*')
+    .or(isUUID ? `id.eq.${productId}` : `slug.eq.${productId}`)
+    .single();
 
-      setProduct(data);
-      setLoading(false);
-    };
-
-    fetchProduct();
-  }, [productId, navigate]);
-
-  if (loading) {
-    return (
-    <>
-    <LoadingSpinner />
-    </>
-  );
+  if (error || !data) {
+    throw new Response('Not Found', { status: 404 });
   }
 
-  if (!product) {
-    return null;
+  // 301 redirect UUID → slug so only the slug URL is canonical / indexable.
+  if (isUUID && data.slug && data.slug !== productId) {
+    throw redirect(`/product/${data.slug}`, 301);
   }
 
+  return { product: data, productSlug: data.slug || productId };
+}
+
+export const meta: Route.MetaFunction = ({ data, params }) => {
+  const slug = (data?.productSlug || params?.id) as string;
+  const path = `/product/${slug}`;
+
+  if (!data?.product) {
+    return buildMeta({
+      title: 'Product | Photify',
+      description: 'Explore this product on Photify.',
+      path,
+    });
+  }
+
+  const product = data.product as Record<string, unknown> & {
+    name?: string;
+    slug?: string;
+    description?: string;
+    images?: string[] | null;
+    meta_title?: string | null;
+    meta_description?: string | null;
+    active?: boolean;
+    config?: unknown;
+    fixed_price?: number | null;
+    price?: number | string;
+  };
+
+  const name = (product.meta_title || product.name || 'Product').trim();
+  const title = name.toLowerCase().includes('photify') ? name : `${name} | Photify`;
+  const description =
+    clampDescription(product.meta_description) ??
+    clampDescription(product.description) ??
+    `Shop ${name} at Photify — premium quality print, free UK shipping over £50.`;
+  const image = product.images?.[0] ?? null;
+  const startingPrice = getListingDisplayAmount({
+    config: product.config,
+    fixed_price: product.fixed_price ?? null,
+    price: product.price ?? 0,
+  });
+
+  const jsonLd: Record<string, unknown>[] = [
+    breadcrumbJsonLd([
+      { name: 'Home', path: '/' },
+      { name: 'Products', path: '/products' },
+      { name, path },
+    ]),
+    productJsonLd({
+      name,
+      description: product.description ?? description,
+      image: product.images ?? null,
+      url: path,
+      price: startingPrice,
+      availability: product.active === false ? 'OutOfStock' : 'InStock',
+    }),
+  ];
+
+  return buildMeta({
+    title,
+    description,
+    path,
+    image,
+    type: 'product',
+    jsonLd,
+  });
+};
+
+export default function ProductPage({ loaderData }: Route.ComponentProps) {
   return (
-  <>
-    <Helmet>
-      <title>{product.name} | Photify</title>
-      <meta
-        name="description"
-        content={product.description || 'Explore this amazing product on Photify.'}
-      />
-      <meta name="robots" content="index,follow" />
-    </Helmet>
-    <ProductDetailPage initialProduct={product} productSlug={productId || ''} />
-  </>);
+    <ProductDetailPage
+      initialProduct={loaderData.product}
+      productSlug={loaderData.productSlug}
+    />
+  );
 }

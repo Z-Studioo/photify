@@ -1,8 +1,12 @@
-import { useEffect, useState } from 'react';
 import { ArtCollectionPage } from '@/components/pages/art-collection';
-import { createClient } from '@/lib/supabase/client';
-import { Helmet } from '@dr.pogodin/react-helmet';
-import { LoadingSpinner } from '@/components/shared/loading-spinner';
+import { createServerClient } from '@/lib/supabase/server';
+import {
+  breadcrumbJsonLd,
+  buildMeta,
+  itemListJsonLd,
+  type ItemListEntry,
+} from '@/lib/seo';
+import type { Route } from './+types/index';
 
 interface ArtTag {
   id: string;
@@ -19,7 +23,9 @@ interface RawArtProduct {
   images: string[];
   price: string;
   size: string;
-  available_sizes: { size_id: string; price: number; image_url: string }[] | null;
+  available_sizes:
+    | { size_id: string; price: number; image_url: string }[]
+    | null;
   category: string;
   is_bestseller: boolean;
   status: string;
@@ -27,68 +33,83 @@ interface RawArtProduct {
   art_product_tags: { tags: ArtTag | ArtTag[] | null }[];
 }
 
-export default function ArtCollections() {
-  const [artProducts, setArtProducts] = useState<RawArtProduct[]>([]);
-  const [categories, setCategories] = useState<string[]>([]);
-  const [loading, setLoading] = useState(true);
+const TITLE = 'Art Collections — Premium Wall Art Prints | Photify';
+const DESCRIPTION =
+  'Discover curated art collections on Photify: abstract, religion, nature, and more. Gallery-grade prints with free UK shipping over £50.';
 
-  useEffect(() => {
-    const fetchData = async () => {
-      const supabase = createClient();
+export const meta: Route.MetaFunction = ({ data }) => {
+  const art = (data?.artProducts ?? []) as Array<{
+    name?: string;
+    slug?: string | null;
+    image?: string | null;
+  }>;
 
-      // Fetch all art products with their tags
-      const { data: productsData } = await supabase
-        .from('art_products')
-        .select('id, slug, name, image, images, price, size, available_sizes, category, is_bestseller, status, created_at, art_product_tags(tags(id, name, slug, color))')
-        .eq('status', 'active')
-        .order('created_at', { ascending: false });
+  const items: ItemListEntry[] = art
+    .filter(a => a.slug && a.name)
+    .slice(0, 24)
+    .map(a => ({
+      name: a.name!,
+      path: `/art/${a.slug}`,
+      image: a.image ?? null,
+    }));
 
-      // Derive filter tags from all products' tags (deduplicated)
-      const tagSet = new Map<string, string>();
-      (productsData || []).forEach((p) => {
-        (p.art_product_tags || []).forEach((apt) => {
-          const t = Array.isArray(apt.tags) ? apt.tags[0] : apt.tags;
-          if (t?.name) tagSet.set(t.name, t.name);
-        });
-      });
+  const jsonLd: Record<string, unknown>[] = [
+    breadcrumbJsonLd([
+      { name: 'Home', path: '/' },
+      { name: 'Art Collections', path: '/art-collections' },
+    ]),
+  ];
+  if (items.length) jsonLd.push(itemListJsonLd(items, 'Art collections'));
 
-      // Also fetch all available tags from the tags table
-      const { data: allTagsData } = await supabase
-        .from('tags')
-        .select('name')
-        .order('name', { ascending: true });
+  return buildMeta({
+    title: TITLE,
+    description: DESCRIPTION,
+    path: '/art-collections',
+    image: art[0]?.image ?? null,
+    jsonLd,
+  });
+};
 
-      // Use all tags from tags table; fall back to tags from products
-      const tagNames = allTagsData && allTagsData.length > 0
-        ? allTagsData.map((t: { name: string }) => t.name)
-        : [...tagSet.values()].sort();
+export async function loader() {
+  const supabase = createServerClient();
 
-      setArtProducts((productsData as unknown as RawArtProduct[]) || []);
-      setCategories(['All', ...tagNames]);
-      setLoading(false);
-    };
+  const { data: productsData } = await supabase
+    .from('art_products')
+    .select(
+      'id, slug, name, image, images, price, size, available_sizes, category, is_bestseller, status, created_at, art_product_tags(tags(id, name, slug, color))'
+    )
+    .eq('status', 'active')
+    .order('created_at', { ascending: false });
 
-    fetchData();
-  }, []);
+  const tagSet = new Map<string, string>();
+  (productsData || []).forEach(p => {
+    (p.art_product_tags || []).forEach((apt: { tags: ArtTag | ArtTag[] | null }) => {
+      const t = Array.isArray(apt.tags) ? apt.tags[0] : apt.tags;
+      if (t?.name) tagSet.set(t.name, t.name);
+    });
+  });
 
-  if (loading) {
-    return <LoadingSpinner />;
-  }
+  const { data: allTagsData } = await supabase
+    .from('tags')
+    .select('name')
+    .order('name', { ascending: true });
 
+  const tagNames =
+    allTagsData && allTagsData.length > 0
+      ? allTagsData.map((t: { name: string }) => t.name)
+      : [...tagSet.values()].sort();
+
+  return {
+    artProducts: (productsData as unknown as RawArtProduct[]) ?? [],
+    categories: ['All', ...tagNames],
+  };
+}
+
+export default function ArtCollections({ loaderData }: Route.ComponentProps) {
   return (
-    <>
-    <Helmet>
-      <title>Art Collections | Photify</title>
-      <meta
-        name="description"
-        content="Explore our curated art collections at Photify. Discover stunning art products to enhance your space."
-      />
-      <meta name="robots" content="index,follow" />
-    </Helmet>
     <ArtCollectionPage
-      initialArtProducts={artProducts}
-      initialCategories={categories}
-      />
-      </>
+      initialArtProducts={loaderData.artProducts}
+      initialCategories={loaderData.categories}
+    />
   );
 }

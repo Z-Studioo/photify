@@ -1,82 +1,113 @@
-import { useEffect, useState } from 'react';
-import { useParams, Navigate } from 'react-router-dom';
+import { redirect } from 'react-router';
 import { ArtDetailPage } from '@/components/pages/art/detail';
-import { createClient } from '@/lib/supabase/client';
-import { Helmet } from '@dr.pogodin/react-helmet';
-import { LoadingSpinner } from '@/components/shared/loading-spinner';
+import { createServerClient } from '@/lib/supabase/server';
+import {
+  breadcrumbJsonLd,
+  buildMeta,
+  clampDescription,
+  productJsonLd,
+} from '@/lib/seo';
+import type { Route } from './+types/index';
 
-export default function ArtPage() {
-  const { id } = useParams<{ id: string }>();
-  const [product, setProduct] = useState<Record<string, any> | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [notFound, setNotFound] = useState(false);
+const UUID_RE =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
-  useEffect(() => {
-    const fetchProduct = async () => {
-      if (!id) {
-        setNotFound(true);
-        setLoading(false);
-        return;
-      }
+export async function loader({ params }: Route.LoaderArgs) {
+  const id = params.id;
+  const supabase = createServerClient();
+  const isUUID = UUID_RE.test(id);
 
-      const supabase = createClient();
+  const { data, error } = await supabase
+    .from('art_products')
+    .select('*, art_product_tags(tag_id, tags(id, name, slug))')
+    .or(isUUID ? `id.eq.${id}` : `slug.eq.${id}`)
+    .single();
 
-      // Check if id is a UUID or slug
-      const isUUID =
-        /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
-          id
-        );
-
-      // Fetch from art_products table
-      const { data, error } = await supabase
-        .from('art_products')
-        .select('*, art_product_tags(tag_id, tags(id, name, slug))')
-        .or(isUUID ? `id.eq.${id}` : `slug.eq.${id}`)
-        .single();
-
-      if (error || !data) {
-        setNotFound(true);
-      } else {
-        setProduct(data);
-      }
-      setLoading(false);
-    };
-
-    fetchProduct();
-  }, [id]);
-
-  if (loading) {
-    return (
-      <>
-        <Helmet>
-          <title>Art | Photify</title>
-          <meta
-            name="description"
-            content="Explore the amazing art product on Photify."
-          />
-          <meta name="robots" content="noindex,nofollow" />
-        </Helmet>
-        <LoadingSpinner />
-      </>
-      
-    );
+  if (error || !data) {
+    throw new Response('Not Found', { status: 404 });
   }
 
-  if (notFound || !id) {
-    return <Navigate to='/404' replace />;
+  // 301 redirect UUID → slug for a single canonical URL per artwork.
+  if (isUUID && data.slug && data.slug !== id) {
+    throw redirect(`/art/${data.slug}`, 301);
   }
 
-  return (
-    <>
-      <Helmet>
-        <title>{product?.name} | Photify</title>
-        <meta
-          name="description"
-          content={product?.description || 'Explore this amazing art product on Photify.'}
-        />
-        <meta name="robots" content="index,follow" />
-      </Helmet>
-      <ArtDetailPage artProduct={product!} />
-    </>
-);
+  return { product: data as Record<string, unknown> };
+}
+
+export const meta: Route.MetaFunction = ({ data, params }) => {
+  const product = (data?.product ?? null) as
+    | (Record<string, unknown> & {
+        name?: string;
+        slug?: string;
+        description?: string;
+        image?: string | null;
+        images?: string[] | null;
+        meta_title?: string | null;
+        meta_description?: string | null;
+        price?: string | number | null;
+        status?: string;
+      })
+    | null;
+
+  const slug = (product?.slug || params?.id || '') as string;
+  const path = `/art/${slug}`;
+
+  if (!product) {
+    return buildMeta({
+      title: 'Art | Photify',
+      description: 'Explore art prints on Photify.',
+      path,
+    });
+  }
+
+  const name = (product.meta_title || product.name || 'Art').trim();
+  const title = name.toLowerCase().includes('photify') ? name : `${name} | Photify`;
+  const description =
+    clampDescription(product.meta_description) ??
+    clampDescription(product.description) ??
+    `${name} — premium art print available in multiple sizes on Photify.`;
+
+  const imagesRaw: string[] = Array.isArray(product.images)
+    ? (product.images as string[])
+    : [];
+  const images = [product.image, ...imagesRaw].filter(
+    (x): x is string => typeof x === 'string' && x.length > 0
+  );
+
+  const price =
+    typeof product.price === 'number'
+      ? product.price
+      : typeof product.price === 'string'
+        ? parseFloat(product.price.replace(/[^0-9.]/g, ''))
+        : null;
+
+  const jsonLd: Record<string, unknown>[] = [
+    breadcrumbJsonLd([
+      { name: 'Home', path: '/' },
+      { name: 'Art Collections', path: '/art-collections' },
+      { name, path },
+    ]),
+    productJsonLd({
+      name,
+      description,
+      image: images,
+      url: path,
+      price: Number.isFinite(price) && (price as number) > 0 ? (price as number) : null,
+      availability: product.status === 'active' ? 'InStock' : 'OutOfStock',
+    }),
+  ];
+
+  return buildMeta({
+    title,
+    description,
+    path,
+    image: images[0] ?? null,
+    type: 'product',
+    jsonLd,
+  });
+};
+
+export default function ArtPage({ loaderData }: Route.ComponentProps) {
+  return <ArtDetailPage artProduct={loaderData.product} />;
 }
