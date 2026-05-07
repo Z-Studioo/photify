@@ -1,8 +1,6 @@
 import { Router } from 'express';
 import { Request, Response } from 'express';
 import checkoutRoutes from './checkout';
-import searchRoutes from './search';
-import embeddingsRoutes from './embeddings';
 import contactRoutes from './contact';
 import ordersRoutes from './orders';
 import addressRoutes from './address';
@@ -77,8 +75,6 @@ router.get('/', (_req: Request, res: Response) => {
     endpoints: {
       checkout: 'POST /api/checkout',
       webhook: 'POST /api/webhook',
-      search: 'GET /api/search/semantic',
-      embeddings: 'POST /api/embeddings/generate',
       contact: 'POST /api/contact',
       orderNotification: 'POST /api/orders/:orderNumber/status-notification',
     },
@@ -88,8 +84,6 @@ router.get('/', (_req: Request, res: Response) => {
 // Mount route modules
 // Note: Webhook route is mounted directly in app.ts before JSON body parser
 router.use('/checkout', checkoutRoutes);
-router.use('/search', searchRoutes);
-router.use('/embeddings', embeddingsRoutes);
 router.use('/contact', contactRoutes);
 router.use('/orders', ordersRoutes);
 router.use('/address', addressRoutes);

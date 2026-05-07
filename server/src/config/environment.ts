@@ -14,7 +14,6 @@ interface Config {
   SUPABASE_SERVICE_KEY: string | undefined;
   STRIPE_SECRET_KEY: string | undefined;
   STRIPE_WEBHOOK_SECRET: string | undefined;
-  OPENAI_API_KEY: string | undefined;
   SENDGRID_API_KEY: string | undefined;
   SENDGRID_FROM_EMAIL: string | undefined;
   SUPPORT_EMAIL: string | undefined;
@@ -32,7 +31,6 @@ export const config: Config = {
   SUPABASE_SERVICE_KEY: process.env.SUPABASE_SERVICE_KEY,
   STRIPE_SECRET_KEY: process.env.STRIPE_SECRET_KEY,
   STRIPE_WEBHOOK_SECRET: process.env.STRIPE_WEBHOOK_SECRET,
-  OPENAI_API_KEY: process.env.OPENAI_API_KEY,
   SENDGRID_API_KEY: process.env.SENDGRID_API_KEY,
   SENDGRID_FROM_EMAIL: process.env.SENDGRID_FROM_EMAIL || 'noreply@photify.co',
   SUPPORT_EMAIL: process.env.SUPPORT_EMAIL,

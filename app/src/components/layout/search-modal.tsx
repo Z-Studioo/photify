@@ -16,7 +16,6 @@ interface Product {
   fixed_price?: number | null;
   config?: unknown;
   is_featured: boolean;
-  similarity?: number; // Relevance score from semantic search (0-1)
 }
 
 interface SearchModalProps {
@@ -99,7 +98,6 @@ export function SearchModal({ isOpen, onClose }: SearchModalProps) {
     if (isOpen) loadRecommended();
   }, [isOpen]);
 
-  // Semantic search products using AI embeddings
   useEffect(() => {
     if (!searchQuery.trim()) {
       setSearchResults([]);
@@ -109,49 +107,19 @@ export function SearchModal({ isOpen, onClose }: SearchModalProps) {
     const searchProducts = async () => {
       setLoading(true);
       try {
-        // Call semantic search API with very low threshold for maximum recall
-        const response = await fetch(
-          `/api/search/semantic?q=${encodeURIComponent(searchQuery)}&limit=8&threshold=0.1`
-        );
+        const supabase = createClient();
+        const { data, error } = await supabase
+          .from('products')
+          .select('id, name, slug, images, price, fixed_price, config, is_featured')
+          .eq('active', true)
+          .ilike('name', `%${searchQuery}%`)
+          .limit(8);
 
-        if (!response.ok) {
-          throw new Error('Search failed');
-        }
-
-        const result = await response.json();
-
-        if (result.success && result.results) {
-          // Transform results to match Product interface
-          const products = result.results.map((item: any) => ({
-            id: item.id,
-            name: item.name,
-            slug: item.slug,
-            images: item.images || [],
-            price: item.price,
-            fixed_price: item.fixed_price ?? null,
-            config: item.config,
-            is_featured: item.is_featured,
-            similarity: item.similarity, // Add relevance score
-          }));
-          setSearchResults(products);
-        } else {
-          setSearchResults([]);
-        }
+        if (error) throw error;
+        setSearchResults(data || []);
       } catch (err) {
-        console.error('Semantic search failed:', err);
-        // Fallback to basic search if semantic search fails
-        try {
-          const supabase = createClient();
-          const { data } = await supabase
-            .from('products')
-            .select('id, name, slug, images, price, fixed_price, config, is_featured')
-            .eq('active', true)
-            .ilike('name', `%${searchQuery}%`)
-            .limit(8);
-          if (data) setSearchResults(data);
-        } catch (fallbackErr) {
-          console.error('Fallback search failed:', fallbackErr);
-        }
+        console.error('Search failed:', err);
+        setSearchResults([]);
       } finally {
         setLoading(false);
       }
@@ -323,16 +291,7 @@ export function SearchModal({ isOpen, onClose }: SearchModalProps) {
                                 className='w-full h-full object-cover group-hover:scale-105 transition-transform duration-300'
                               />
 
-                              {/* Relevance Score Badge */}
-
-                              {product.similarity &&
-                                product.similarity > 0.7 && (
-                                  <div className='absolute top-2 left-2 px-2 py-0.5 bg-green-500 text-white text-xs font-semibold rounded-full shadow-sm'>
-                                    Best Match
-                                  </div>
-                                )}
-
-                              {product.is_featured && !product.similarity && (
+                              {product.is_featured && (
                                 <div className='absolute top-2 right-2 px-2 py-0.5 bg-[#f63a9e] text-white text-xs font-semibold rounded-full'>
                                   Popular
                                 </div>
@@ -350,12 +309,6 @@ export function SearchModal({ isOpen, onClose }: SearchModalProps) {
                                   ? `£${displayAmount.toFixed(2)}`
                                   : '—'}
                               </p>
-                              {/* Relevance percentage indicator */}
-                              {product.similarity && (
-                                <span className='text-xs text-gray-500'>
-                                  {Math.round(product.similarity * 100)}% match
-                                </span>
-                              )}
                             </div>
                           </motion.div>
                           );
