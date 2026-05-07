@@ -4,6 +4,9 @@ import { createClient } from '@/lib/supabase/client';
 import { toast } from 'sonner';
 import { Crop } from 'lucide-react';
 import type { CustomSizeSelectorProps } from '../shared/product-3d-view';
+import { resolveCanvasSizePrice } from '@/lib/canvas-size-price';
+import type { InchData } from '@/utils/ratio-sizes';
+import type { Product as LibProduct } from '@/lib/data/types';
 
 interface AspectRatio {
   id: string;
@@ -30,7 +33,25 @@ interface Product {
   config: {
     allowedRatios: string[];
     allowedSizes: string[];
+    /**
+     * Admin-configured GBP price per size, keyed by size id. When present it
+     * overrides the `area_in2 * products.price` fallback.
+     */
+    sizePrices?: Record<string, number | string>;
   };
+}
+
+/**
+ * Resolve a display price string for a size. Prefers admin-configured
+ * `config.sizePrices`, falls back to per-size `fixed_price`, and finally to
+ * `area_in2 * products.price`. Returns `'0.00'` when nothing is available.
+ */
+function formatSizePrice(size: Size, product: Product | null | undefined): string {
+  const resolved = resolveCanvasSizePrice(
+    size as unknown as InchData,
+    product as unknown as LibProduct
+  );
+  return resolved != null ? resolved.toFixed(2) : '0.00';
 }
 
 export function SingleCanvasSizeSelector({
@@ -191,7 +212,7 @@ export function SingleCanvasSizeSelector({
           </Label>
           <div className="grid grid-cols-1 gap-2 max-h-64 overflow-y-auto">
             {getRecommendedSizes().map((size) => {
-              const price = (size.area_in2 * (product?.price || 0)).toFixed(2);
+              const price = formatSizePrice(size, product);
               const isSelected = selectedSizeId === size.id;
               return (
                 <button
@@ -231,7 +252,7 @@ export function SingleCanvasSizeSelector({
               </Label>
               <div className="grid grid-cols-1 gap-2">
                 {ratioSizes.map((size) => {
-                  const price = (size.area_in2 * (product?.price || 0)).toFixed(2);
+                  const price = formatSizePrice(size, product);
                   const isSelected = selectedSizeId === size.id;
                   return (
                     <button

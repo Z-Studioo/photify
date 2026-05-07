@@ -180,7 +180,7 @@ export function AdminOrderDetailPage() {
                     ? 'Payment Failed'
                     : 'Pending',
             deliveryMethod:
-              Math.abs(parseFloat(data.shipping_cost || 0) - 19.99) < 0.01
+              Math.abs(parseFloat(data.shipping_cost || 0) - 6.99) < 0.01
                 ? 'Express'
                 : 'Standard',
             deliveryPrice: `£${parseFloat(data.shipping_cost || 0).toFixed(2)}`,

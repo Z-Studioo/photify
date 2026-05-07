@@ -156,11 +156,14 @@ export function FeaturedCollections() {
           />
           <div className='absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent' />
           <div className='absolute bottom-0 left-0 p-3 xs:p-4 sm:p-5 md:p-6 text-white text-left'>
-            <span
-              className={`inline-block ${displayCollections[0].badgeColor} text-white text-[10px] xs:text-xs sm:text-sm px-2 xs:px-2.5 sm:px-3 py-0.5 xs:py-0.5 sm:py-1 rounded-sm mb-1.5 xs:mb-2 sm:mb-2.5 md:mb-3`}
-            >
-              {displayCollections[0].badge}
-            </span>
+            {displayCollections[0].badge &&
+              displayCollections[0].badge !== 'Featured' && (
+                <span
+                  className={`inline-block ${displayCollections[0].badgeColor} text-white text-[10px] xs:text-xs sm:text-sm px-2 xs:px-2.5 sm:px-3 py-0.5 xs:py-0.5 sm:py-1 rounded-sm mb-1.5 xs:mb-2 sm:mb-2.5 md:mb-3`}
+                >
+                  {displayCollections[0].badge}
+                </span>
+              )}
             <h3
               className="font-['Bricolage_Grotesque',_sans-serif] mb-1.5 xs:mb-2 sm:mb-2.5 md:mb-3 max-w-md text-left text-lg xs:text-xl sm:text-2xl md:text-[28px]"
               style={{ lineHeight: '1.2', fontWeight: '600' }}
@@ -193,11 +196,13 @@ export function FeaturedCollections() {
                 />
                 <div className='absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent' />
                 <div className='absolute bottom-0 left-0 p-2 xs:p-2.5 sm:p-3 md:p-4 text-white text-left'>
-                  <span
-                    className={`inline-block ${collection.badgeColor} text-white text-[8px] xs:text-[9px] sm:text-[10px] md:text-xs px-1.5 xs:px-2 py-0.5 xs:py-0.5 sm:py-1 rounded-sm mb-1 xs:mb-1.5 sm:mb-2`}
-                  >
-                    {collection.badge}
-                  </span>
+                  {collection.badge && collection.badge !== 'Featured' && (
+                    <span
+                      className={`inline-block ${collection.badgeColor} text-white text-[8px] xs:text-[9px] sm:text-[10px] md:text-xs px-1.5 xs:px-2 py-0.5 xs:py-0.5 sm:py-1 rounded-sm mb-1 xs:mb-1.5 sm:mb-2`}
+                    >
+                      {collection.badge}
+                    </span>
+                  )}
                   <h3
                     className="font-['Bricolage_Grotesque',_sans-serif] mb-1 xs:mb-1.5 sm:mb-2 line-clamp-2 text-left text-xs xs:text-sm sm:text-[15px] md:text-[16px]"
                     style={{
@@ -235,11 +240,14 @@ export function FeaturedCollections() {
             />
             <div className='absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent' />
             <div className='absolute bottom-0 left-0 p-2.5 xs:p-3 sm:p-3.5 md:p-4 text-white text-left'>
-              <span
-                className={`inline-block ${displayCollections[3].badgeColor} text-white text-[9px] xs:text-[10px] sm:text-xs px-1.5 xs:px-2 py-0.5 xs:py-0.5 sm:py-1 rounded-sm mb-1 xs:mb-1.5 sm:mb-2`}
-              >
-                {displayCollections[3].badge}
-              </span>
+              {displayCollections[3].badge &&
+                displayCollections[3].badge !== 'Featured' && (
+                  <span
+                    className={`inline-block ${displayCollections[3].badgeColor} text-white text-[9px] xs:text-[10px] sm:text-xs px-1.5 xs:px-2 py-0.5 xs:py-0.5 sm:py-1 rounded-sm mb-1 xs:mb-1.5 sm:mb-2`}
+                  >
+                    {displayCollections[3].badge}
+                  </span>
+                )}
               <h3
                 className="font-['Bricolage_Grotesque',_sans-serif] mb-1 xs:mb-1.5 sm:mb-2 text-left text-sm xs:text-base sm:text-[17px] md:text-[18px]"
                 style={{

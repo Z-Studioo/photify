@@ -1,15 +1,73 @@
-import { Canvas } from '@react-three/fiber';
+import { Canvas, useFrame, useThree } from '@react-three/fiber';
 import { OrbitControls } from '@react-three/drei';
 import { RoomEnvironment } from '@/components/product-configs/shared/3d/room-environment';
 import { RulerOverlay } from '@/components/product-configs/shared/3d/ruler-overlay';
 import { useUpload } from '@/context/UploadContext';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import * as THREE from 'three';
 import { RoundedBoxGeometry } from 'three/examples/jsm/geometries/RoundedBoxGeometry.js';
 import { Ruler } from 'lucide-react';
 import { motion } from 'motion/react';
 import { applyRoundedBoxUVs } from './ThreeDCanvas';
 import { useEdge } from '@/context/EdgeContext';
+
+const INTRO_DURATION_SECONDS = 3;
+const INTRO_ZOOM_PHASE_RATIO = 2 / 3;
+const INTRO_START_POSITION = new THREE.Vector3(0, 2.2, 11);
+const INTRO_MID_POSITION = new THREE.Vector3(0, 2.2, 4.6);
+const INTRO_END_POSITION = new THREE.Vector3(-2.4, 2.2, 4.6);
+const INTRO_TARGET = new THREE.Vector3(0, 2.2, -4.9645);
+
+function IntroCameraAnimation({ onComplete }: { onComplete: () => void }) {
+  const { camera } = useThree();
+  const startTimeRef = useRef<number | null>(null);
+  const completedRef = useRef(false);
+
+  useEffect(() => {
+    camera.position.copy(INTRO_START_POSITION);
+    camera.lookAt(INTRO_TARGET);
+  }, [camera]);
+
+  useFrame(state => {
+    if (completedRef.current) return;
+
+    if (startTimeRef.current === null) {
+      startTimeRef.current = state.clock.elapsedTime;
+    }
+
+    const elapsed = state.clock.elapsedTime - startTimeRef.current;
+    const t = Math.min(elapsed / INTRO_DURATION_SECONDS, 1);
+
+    if (t < INTRO_ZOOM_PHASE_RATIO) {
+      const zoomT = t / INTRO_ZOOM_PHASE_RATIO;
+      const eased = 1 - Math.pow(1 - zoomT, 3);
+      camera.position.lerpVectors(
+        INTRO_START_POSITION,
+        INTRO_MID_POSITION,
+        eased
+      );
+    } else {
+      const tiltT = (t - INTRO_ZOOM_PHASE_RATIO) / (1 - INTRO_ZOOM_PHASE_RATIO);
+      const eased = tiltT < 0.5
+        ? 2 * tiltT * tiltT
+        : 1 - Math.pow(-2 * tiltT + 2, 2) / 2;
+      camera.position.lerpVectors(
+        INTRO_MID_POSITION,
+        INTRO_END_POSITION,
+        eased
+      );
+    }
+
+    camera.lookAt(INTRO_TARGET);
+
+    if (t >= 1) {
+      completedRef.current = true;
+      onComplete();
+    }
+  });
+
+  return null;
+}
 
 interface Room3DViewProps {
   isVisible: boolean;
@@ -81,6 +139,7 @@ function FrameMesh() {
 export function Room3DView({ isVisible }: Room3DViewProps) {
   const { selectedSize } = useUpload();
   const [showRuler, setShowRuler] = useState(false);
+  const [introDone, setIntroDone] = useState(false);
 
   if (!isVisible || !selectedSize) return null;
 
@@ -89,13 +148,20 @@ export function Room3DView({ isVisible }: Room3DViewProps) {
       <Canvas
         shadows
         camera={{
-          position: [0, 2.2, 5],
+          position: [
+            INTRO_START_POSITION.x,
+            INTRO_START_POSITION.y,
+            INTRO_START_POSITION.z,
+          ],
           fov: 50,
           near: 0.1,
           far: 1000,
         }}
         style={{ background: '#f5f5f5' }}
       >
+        {!introDone && (
+          <IntroCameraAnimation onComplete={() => setIntroDone(true)} />
+        )}
         {/* Lighting */}
         {/* @ts-ignore react-three-fiber types */}
         <ambientLight intensity={1.2} />
@@ -130,6 +196,7 @@ export function Room3DView({ isVisible }: Room3DViewProps) {
         {/* Orbit Controls */}
         <OrbitControls
           target={[0, 2.2, -4.9645]}
+          enabled={introDone}
           enablePan={true}
           enableZoom={true}
           enableRotate={true}

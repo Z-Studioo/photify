@@ -1,15 +1,28 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
-import { Save, Loader2, Lock, PencilLine } from 'lucide-react';
+import { Save, Loader2, Lock, PencilLine, Info } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 import { toast } from 'sonner';
+import {
+  getConfigurerById,
+  getSupportedAspectRatioKeys,
+  getRequiredAspectRatioKeys,
+  ratioKey,
+} from '@/lib/configures/registry';
 
 interface ProductConfigEditorProps {
   productId: string;
   productType: 'canvas' | 'framed_canvas' | 'metal_print';
+  /**
+   * Configurer currently attached to this product (from `products.config.configurerType`).
+   * When set and the configurer declares `supportedAspectRatios`, the ratio list is
+   * filtered accordingly so the admin doesn't configure ratios the customer will
+   * never see.
+   */
+  configurerType?: string | null;
   currentConfig: any;
   onSave?: (config: any) => void;
 }
@@ -37,6 +50,7 @@ interface Size {
 export function AdminProductConfigEditor({
   productId,
   productType,
+  configurerType,
   currentConfig,
   onSave,
 }: ProductConfigEditorProps) {
@@ -48,6 +62,35 @@ export function AdminProductConfigEditor({
   /** When false, ratio/size toggles and price fields are read-only to avoid accidental edits */
   const [aspectSectionUnlocked, setAspectSectionUnlocked] = useState(false);
   const supabase = createClient();
+
+  // Configurer-driven filtering: when a configurer declares the ratios it
+  // supports, hide unrelated ones from the admin UI to avoid pointless config.
+  const supportedRatioKeys = useMemo(
+    () => getSupportedAspectRatioKeys(configurerType),
+    [configurerType]
+  );
+  const requiredRatioKeys = useMemo(
+    () => getRequiredAspectRatioKeys(configurerType),
+    [configurerType]
+  );
+  const configurerMeta = useMemo(
+    () => (configurerType ? getConfigurerById(configurerType) : null),
+    [configurerType]
+  );
+
+  const isRatioSupported = (ratio: AspectRatio): boolean => {
+    if (!supportedRatioKeys) return true;
+    return supportedRatioKeys.includes(ratioKey(ratio));
+  };
+
+  // Aspect ratios visible in the UI given the current configurer restriction.
+  // Non-supported ratios are simply not rendered — they have no effect on the
+  // customer flow and showing them is confusing.
+  const visibleAspectRatios = useMemo(
+    () => aspectRatios.filter(isRatioSupported),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [aspectRatios, supportedRatioKeys]
+  );
 
   // Fetch aspect ratios and sizes from database
   useEffect(() => {
@@ -93,6 +136,56 @@ export function AdminProductConfigEditor({
 
     fetchData();
   }, [productId]);
+
+  // When the configurer restricts ratios, auto-prune any stored ratios/sizes/prices
+  // that no longer belong to the allowed set. This prevents orphaned config from
+  // lingering after a configurer switch and keeps the summary counters honest.
+  // Nothing is persisted until the admin clicks Save, so this is a safe in-memory clean-up.
+  useEffect(() => {
+    if (loading) return;
+    if (!supportedRatioKeys) return;
+    if (aspectRatios.length === 0) return;
+
+    const allowedRatioIdSet = new Set(
+      aspectRatios.filter(isRatioSupported).map(r => r.id)
+    );
+
+    const currentAllowedRatios: string[] = config.allowedRatios || [];
+    const prunedRatios = currentAllowedRatios.filter(id =>
+      allowedRatioIdSet.has(id)
+    );
+
+    const sizeRatioMap = new Map(allSizes.map(s => [s.id, s.aspect_ratio_id]));
+    const currentAllowedSizes: string[] = config.allowedSizes || [];
+    const prunedSizes = currentAllowedSizes.filter(sizeId => {
+      const ratioId = sizeRatioMap.get(sizeId);
+      return ratioId != null && allowedRatioIdSet.has(ratioId);
+    });
+
+    const prunedSizeSet = new Set(prunedSizes);
+    const currentSizePrices: Record<string, number> = config.sizePrices || {};
+    const prunedSizePrices = Object.fromEntries(
+      Object.entries(currentSizePrices).filter(([sizeId]) =>
+        prunedSizeSet.has(sizeId)
+      )
+    );
+
+    const ratiosChanged = prunedRatios.length !== currentAllowedRatios.length;
+    const sizesChanged = prunedSizes.length !== currentAllowedSizes.length;
+    const pricesChanged =
+      Object.keys(prunedSizePrices).length !==
+      Object.keys(currentSizePrices).length;
+
+    if (ratiosChanged || sizesChanged || pricesChanged) {
+      setConfig({
+        ...config,
+        allowedRatios: prunedRatios,
+        allowedSizes: prunedSizes,
+        sizePrices: prunedSizePrices,
+      });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [loading, supportedRatioKeys, aspectRatios, allSizes]);
 
   const toggleRatio = (ratioId: string) => {
     const allowedRatios = config.allowedRatios || [];
@@ -219,6 +312,41 @@ export function AdminProductConfigEditor({
       return;
     }
 
+    // Configurer-required ratio validation: if the attached configurer locks
+    // the customer onto specific ratios (e.g. collage templates), every one of
+    // those ratios must have at least one priced size — otherwise picking the
+    // corresponding template in the customizer would hit a dead end.
+    if (requiredRatioKeys && requiredRatioKeys.length > 0) {
+      const allowedRatioById = new Map(aspectRatios.map(r => [r.id, r]));
+      const priceBySizeId: Record<string, number> = config.sizePrices || {};
+
+      const pricedRatioKeys = new Set<string>();
+      for (const sizeId of config.allowedSizes || []) {
+        const size = allSizes.find(s => s.id === sizeId);
+        if (!size) continue;
+        const ratio = allowedRatioById.get(size.aspect_ratio_id);
+        if (!ratio) continue;
+        const price = priceBySizeId[sizeId];
+        if (typeof price === 'number' && price > 0) {
+          pricedRatioKeys.add(ratioKey(ratio));
+        }
+      }
+
+      const missingRatios = requiredRatioKeys.filter(
+        key => !pricedRatioKeys.has(key)
+      );
+
+      if (missingRatios.length > 0) {
+        const configurerName = configurerMeta?.name ?? 'this configurator';
+        toast.error(
+          `${configurerName} needs at least one priced size for each of: ${missingRatios.join(
+            ', '
+          )}. Customers picking a template with one of these ratios would otherwise have no size to choose.`
+        );
+        return;
+      }
+    }
+
     setSaving(true);
     try {
       // First, fetch the current config to preserve other properties (like configurerType)
@@ -230,10 +358,17 @@ export function AdminProductConfigEditor({
 
       if (fetchError) throw fetchError;
 
-      // Merge with current config to preserve other properties
+      // Merge with current config to preserve other properties.
+      // IMPORTANT: only override the fields this editor actually owns
+      // (allowedRatios / allowedSizes / sizePrices). Spreading the entire
+      // local `config` would clobber fields owned elsewhere — most notably
+      // `configurerType`, which is written by the configurer selector above
+      // — with whatever stale value this component happened to mount with.
       const mergedConfig = {
         ...(currentProduct?.config || {}),
-        ...config,
+        allowedRatios: config.allowedRatios ?? [],
+        allowedSizes: config.allowedSizes ?? [],
+        sizePrices: config.sizePrices ?? {},
         version: (currentProduct?.config?.version || 0) + 1,
       };
 
@@ -348,10 +483,32 @@ export function AdminProductConfigEditor({
           </Button>
         </div>
 
+        {supportedRatioKeys && configurerMeta && (
+          <div className='mb-4 flex items-start gap-2 rounded-md border border-blue-100 bg-blue-50 px-3 py-2 text-xs text-blue-900'>
+            <Info className='mt-0.5 h-4 w-4 flex-shrink-0' aria-hidden />
+            <div>
+              <span className='font-semibold'>
+                Filtered for {configurerMeta.name}.
+              </span>{' '}
+              Only the aspect ratios this configurator actually uses are shown
+              ({supportedRatioKeys.join(', ')}). Other ratios are hidden because
+              they would have no effect on the customer flow.
+            </div>
+          </div>
+        )}
+
+        {supportedRatioKeys && visibleAspectRatios.length === 0 && (
+          <div className='rounded-md border border-dashed border-amber-200 bg-amber-50 px-3 py-4 text-sm text-amber-800'>
+            No aspect ratios in the database match the ratios required by this
+            configurator ({supportedRatioKeys.join(', ')}). Please add them under{' '}
+            <span className='font-medium'>Shop Settings → Aspect Ratios</span>.
+          </div>
+        )}
+
         <div
           className={`space-y-3 ${!aspectSectionUnlocked ? 'select-none' : ''}`}
         >
-          {aspectRatios.map(ratio => {
+          {visibleAspectRatios.map(ratio => {
             const isSelected = config.allowedRatios?.includes(ratio.id);
             const sizesCount = getSizesCountForRatio(ratio.id);
             const selectedSizesCount = getSelectedSizesCountForRatio(ratio.id);

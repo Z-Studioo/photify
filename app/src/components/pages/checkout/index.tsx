@@ -157,15 +157,15 @@ export function CheckoutPage() {
 
   // Get estimated delivery days based on delivery method
   const getEstimatedDays = () => {
-    // const standardPrice = standardShipping?.setting_value?.value || 9.99;
-    const expressPrice = expressShipping?.setting_value?.value || 19.99;
+    // const standardPrice = standardShipping?.setting_value?.value || 4.99;
+    const expressPrice = expressShipping?.setting_value?.value || 6.99;
 
     // Check if current shipping cost matches express delivery
     if (Math.abs(shippingCost - expressPrice) < 0.01) {
-      return '2-3 business days';
+      return '3-5 business days';
     }
     // Default to standard delivery
-    return '5-7 business days';
+    return '7-10 business days';
   };
 
   const subtotal = cartItems.reduce(

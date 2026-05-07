@@ -1,5 +1,15 @@
 // Multi-Canvas Wall Configurer - Configuration Constants
 
+/**
+ * Aspect ratio keys (width:height) that make visual sense for a 3-canvas
+ * horizontal gallery layout. Anything wider than 1:1 (landscape) renders an
+ * uncomfortably wide row of three canvases, so we restrict the admin Size &
+ * Pricing editor to portrait + square ratios. The registry consumes this list
+ * via `supportedAspectRatios` so admins can't enable ratios the configurer
+ * isn't designed for.
+ */
+export const MULTI_CANVAS_WALL_SUPPORTED_RATIOS = ['1:1', '1:2', '2:3'] as const;
+
 export const MULTI_CANVAS_WALL_PRODUCT = {
   id: 'parallel-triplet-canvas',
   slug: 'parallel-triplet-canvas',

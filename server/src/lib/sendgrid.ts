@@ -394,17 +394,17 @@ ${config.SUPPORT_EMAIL || 'support@photify.co'}
  * Helper function to determine delivery type and estimated days based on shipping cost
  */
 export function getDeliveryInfo(shippingCost: number): { delivery_type: string; estimated_days: string } {
-  // Check if shipping cost matches express delivery ($19.99)
-  if (Math.abs(shippingCost - 19.99) < 0.01) {
+  // Check if shipping cost matches express delivery (£6.99)
+  if (Math.abs(shippingCost - 6.99) < 0.01) {
     return {
       delivery_type: 'Express Shipping',
-      estimated_days: '2-3 business days'
+      estimated_days: '3-5 business days'
     };
   }
-  // Default to standard delivery ($9.99 or fallback)
+  // Default to standard delivery (£4.99 or fallback)
   return {
     delivery_type: 'Standard Delivery',
-    estimated_days: '5-7 business days'
+    estimated_days: '7-10 business days'
   };
 }
 

@@ -16,12 +16,12 @@ BEGIN;
 -- ============================================
 
 INSERT INTO site_settings (setting_key, setting_value, setting_type, category, description, is_public) VALUES
-('shipping_flat_rate', '{"value": 9.99, "currency": "GBP"}'::JSONB, 'json', 'shipping', 'Flat rate shipping cost', true),
+('shipping_flat_rate', '{"value": 4.99, "currency": "GBP"}'::JSONB, 'json', 'shipping', 'Flat rate shipping cost', true),
 ('shipping_free_threshold', '{"value": 100, "currency": "GBP"}'::JSONB, 'json', 'shipping', 'Minimum order value for free shipping', true),
 ('shipping_countries', '["UK", "US", "CA", "AU", "EU"]'::JSONB, 'json', 'shipping', 'Countries available for shipping', true),
 ('shipping_default_days', '{"value": 7}'::JSONB, 'json', 'shipping', 'Default estimated delivery days', true),
 ('shipping_express_available', '{"value": true}'::JSONB, 'boolean', 'shipping', 'Enable express shipping option', false),
-('shipping_express_cost', '{"value": 19.99, "currency": "GBP"}'::JSONB, 'json', 'shipping', 'Express shipping cost', false);
+('shipping_express_cost', '{"value": 6.99, "currency": "GBP"}'::JSONB, 'json', 'shipping', 'Express shipping cost', false);
 
 -- ============================================
 -- PAYMENT SETTINGS

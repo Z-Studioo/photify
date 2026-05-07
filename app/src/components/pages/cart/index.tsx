@@ -69,13 +69,13 @@ export function CartPage() {
   const deliveryOptions = {
     standard: {
       name: 'Standard Delivery',
-      price: standardShipping?.setting_value?.value || 9.99,
-      duration: '5-7 business days',
+      price: standardShipping?.setting_value?.value || 4.99,
+      duration: '7-10 business days',
     },
     express: {
       name: 'Express Delivery',
-      price: expressShipping?.setting_value?.value || 19.99,
-      duration: '2-3 business days',
+      price: expressShipping?.setting_value?.value || 6.99,
+      duration: '3-5 business days',
     },
   };
 

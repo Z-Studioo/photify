@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
 import ReactCrop, {
   type Crop as CropType,
-  type PixelCrop,
+  type PercentCrop,
 } from 'react-image-crop';
 import 'react-image-crop/dist/ReactCrop.css';
 
@@ -14,6 +14,8 @@ interface CropModalProps {
   imageUrl: string;
   canvasId: number;
   aspectRatio: number; // width / height (e.g., 16/32 = 0.5)
+  canvasWidthIn?: number;
+  canvasHeightIn?: number;
   onCropComplete: (canvasId: number, croppedImageUrl: string) => void;
   onClose: () => void;
 }
@@ -23,56 +25,68 @@ export function CropModal({
   imageUrl,
   canvasId,
   aspectRatio,
+  canvasWidthIn,
+  canvasHeightIn,
   onCropComplete,
   onClose,
 }: CropModalProps) {
   const imgRef = useRef<HTMLImageElement>(null);
   const [crop, setCrop] = useState<CropType>();
-  const [completedCrop, setCompletedCrop] = useState<PixelCrop>();
+  // Crop is tracked in percent units (0–100). This is the only unit that
+  // survives the image being rendered at a different size than its natural
+  // dimensions (which happens because of `max-width: 100%` / `max-height`
+  // styling). With percent units the crop overlay always lines up with the
+  // displayed image, and we convert to natural pixels at draw time.
+  const [completedCrop, setCompletedCrop] = useState<PercentCrop>();
   const [processing, setProcessing] = useState(false);
   const [imageLoaded, setImageLoaded] = useState(false);
   const [imageError, setImageError] = useState(false);
 
-  // Initialize crop when image loads
+  // Initialize crop when image loads — uses naturalWidth/naturalHeight (not
+  // the rendered CSS width, which is what `e.currentTarget.width` returns
+  // post-CSS-constraint and which previously made the crop overlay extend
+  // past the visible image).
   const onImageLoad = (e: React.SyntheticEvent<HTMLImageElement>) => {
     setImageLoaded(true);
     setImageError(false);
-    
-    const { width, height } = e.currentTarget;
 
-    // Center crop with correct aspect ratio
-    const cropWidth = width;
-    const cropHeight = width / aspectRatio;
+    const { naturalWidth, naturalHeight } = e.currentTarget;
+    if (!naturalWidth || !naturalHeight) return;
 
-    // If calculated height exceeds image height, constrain by height instead
-    let finalWidth = cropWidth;
-    let finalHeight = cropHeight;
+    const imageAspect = naturalWidth / naturalHeight;
 
-    if (cropHeight > height) {
-      finalHeight = height;
-      finalWidth = height * aspectRatio;
+    // Largest centred crop with the requested aspect ratio that still fits
+    // entirely inside the image. Computed in percent so it's resolution-
+    // independent.
+    let cropWidthPct = 100;
+    let cropHeightPct = 100;
+    if (imageAspect > aspectRatio) {
+      // Image is wider than the desired crop — full height, narrower width.
+      cropWidthPct = (aspectRatio / imageAspect) * 100;
+    } else {
+      // Image is taller than the desired crop — full width, shorter height.
+      cropHeightPct = (imageAspect / aspectRatio) * 100;
     }
-
-    const x = (width - finalWidth) / 2;
-    const y = (height - finalHeight) / 2;
+    const x = (100 - cropWidthPct) / 2;
+    const y = (100 - cropHeightPct) / 2;
 
     const initialCrop: CropType = {
-      unit: 'px',
+      unit: '%',
       x,
       y,
-      width: finalWidth,
-      height: finalHeight,
+      width: cropWidthPct,
+      height: cropHeightPct,
     };
 
     setCrop(initialCrop);
-    
-    // Initialize completedCrop so the crop can be applied immediately without user interaction
+    // Mirror into completedCrop so "Apply Crop" works without any user
+    // interaction.
     setCompletedCrop({
-      unit: 'px',
+      unit: '%',
       x,
       y,
-      width: finalWidth,
-      height: finalHeight,
+      width: cropWidthPct,
+      height: cropHeightPct,
     });
   };
 
@@ -82,7 +96,6 @@ export function CropModal({
       return;
     }
 
-    // Validate crop dimensions
     if (completedCrop.width <= 0 || completedCrop.height <= 0) {
       toast.error('Invalid crop dimensions');
       return;
@@ -99,22 +112,30 @@ export function CropModal({
         throw new Error('Failed to get canvas context');
       }
 
-      // completedCrop is in CSS/display pixels (the image is scaled by max-h CSS).
-      // We must convert to natural image pixels using the scale ratio.
-      const scaleX = image.naturalWidth / image.width;
-      const scaleY = image.naturalHeight / image.height;
+      // Percent crop → natural-pixel crop. We use naturalWidth/naturalHeight
+      // directly so the source rect is computed against the *real* image,
+      // independent of how big or small the modal is rendering it.
+      const srcX = (completedCrop.x / 100) * image.naturalWidth;
+      const srcY = (completedCrop.y / 100) * image.naturalHeight;
+      const srcW = (completedCrop.width / 100) * image.naturalWidth;
+      const srcH = (completedCrop.height / 100) * image.naturalHeight;
 
-      const srcX = completedCrop.x * scaleX;
-      const srcY = completedCrop.y * scaleY;
-      const srcW = completedCrop.width * scaleX;
-      const srcH = completedCrop.height * scaleY;
+      // Output dimensions match the canvas aspect ratio exactly. We cap the
+      // long side at 1200px (plenty for the on-screen preview) but also
+      // never *upscale* past the source crop — so a customer who zooms in on
+      // a small detail gets that detail's actual resolution rather than a
+      // blurry stretched version.
+      const MAX_LONG_SIDE = 1200;
+      let OUTPUT_WIDTH: number;
+      let OUTPUT_HEIGHT: number;
+      if (aspectRatio >= 1) {
+        OUTPUT_WIDTH = Math.min(Math.round(srcW), MAX_LONG_SIDE);
+        OUTPUT_HEIGHT = Math.round(OUTPUT_WIDTH / aspectRatio);
+      } else {
+        OUTPUT_HEIGHT = Math.min(Math.round(srcH), MAX_LONG_SIDE);
+        OUTPUT_WIDTH = Math.round(OUTPUT_HEIGHT * aspectRatio);
+      }
 
-      // Use a fixed output size with the exact aspect ratio
-      // For 16:32 ratio (0.5), output is 800×1600
-      const OUTPUT_WIDTH = 800;
-      const OUTPUT_HEIGHT = Math.round(OUTPUT_WIDTH / aspectRatio);
-
-      // Set canvas to the standardized output dimensions
       canvas.width = OUTPUT_WIDTH;
       canvas.height = OUTPUT_HEIGHT;
 
@@ -180,7 +201,7 @@ export function CropModal({
             exit={{ opacity: 0, scale: 0.95 }}
             className='fixed inset-0 z-50 flex items-center justify-center p-4'
           >
-            <div className='bg-white rounded-3xl shadow-2xl w-full max-w-5xl max-h-[90vh] flex flex-col'>
+            <div className='bg-white rounded-3xl shadow-2xl w-full max-w-5xl max-h-[88vh] flex flex-col'>
               {/* Header */}
               <div className='px-8 py-6 border-b border-gray-200 flex items-center justify-between'>
                 <div>
@@ -191,7 +212,19 @@ export function CropModal({
                     Crop Image - Canvas {canvasId + 1}
                   </h3>
                   <p className='text-sm text-gray-600 mt-1'>
-                    Crop to 16&quot; × 32&quot; aspect ratio (Portrait)
+                    {canvasWidthIn && canvasHeightIn
+                      ? `Crop to ${canvasWidthIn}" × ${canvasHeightIn}" aspect ratio (${
+                          canvasWidthIn === canvasHeightIn
+                            ? 'Square'
+                            : canvasWidthIn > canvasHeightIn
+                              ? 'Landscape'
+                              : 'Portrait'
+                        })`
+                      : `Crop to ${aspectRatio.toFixed(2)}:1 aspect ratio`}
+                  </p>
+                  <p className='text-xs text-gray-500 mt-1.5'>
+                    Drag the corners or edges to zoom in on a specific part of
+                    your photo. Drag inside the box to reposition it.
                   </p>
                 </div>
                 <button
@@ -202,8 +235,10 @@ export function CropModal({
                 </button>
               </div>
 
-              {/* Crop Area */}
-              <div className='flex-1 overflow-auto p-8 bg-gray-50 flex items-center justify-center'>
+              {/* Crop Area — generous vertical padding keeps the crop
+                  selection's dashed outline visibly inside the modal rather
+                  than flush against the header/footer borders. */}
+              <div className='flex-1 min-h-0 overflow-hidden px-6 py-12 sm:px-10 sm:py-14 bg-gray-50 flex items-center justify-center'>
                 {imageError ? (
                   <div className='text-center'>
                     <p className='text-red-600 mb-2'>Failed to load image</p>
@@ -220,17 +255,34 @@ export function CropModal({
                         </div>
                       </div>
                     )}
-                    
-                    {/* Image Crop - Always render so onLoad can fire */}
+
+                    {/* Image Crop — kept in percent units so the crop
+                        selection scales with the rendered image size. The
+                        ReactCrop wrapper is forced to inline-block + zero
+                        line-height so it shrink-wraps the image exactly,
+                        otherwise the crop selection ends up sized to the
+                        wrapper (which can be a few px larger than the image
+                        due to inherited max-height / baseline whitespace). */}
                     <ReactCrop
                       crop={crop}
-                      onChange={c => setCrop(c)}
-                      onComplete={c => setCompletedCrop(c)}
+                      onChange={(_pixel, percent) => setCrop(percent)}
+                      onComplete={(_pixel, percent) => setCompletedCrop(percent)}
                       aspect={aspectRatio}
-                      minWidth={50}
-                      minHeight={50}
+                      // Allow zooming in on a small portion of the image —
+                      // 20px lower bound is small enough to crop a face or
+                      // detail out of a wide photo, but big enough to keep
+                      // the handles draggable on touch devices.
+                      minWidth={20}
+                      minHeight={20}
                       keepSelection={true}
-                      className='max-w-full max-h-full'
+                      ruleOfThirds
+                      style={{
+                        display: 'inline-block',
+                        lineHeight: 0,
+                        fontSize: 0,
+                        maxWidth: '100%',
+                        maxHeight: '100%',
+                      }}
                     >
                       <img
                         ref={imgRef}
@@ -242,7 +294,23 @@ export function CropModal({
                           setImageLoaded(false);
                           toast.error('Failed to load image for cropping');
                         }}
-                        className='max-w-full max-h-[60vh]'
+                        // The image is the source of truth for the wrapper's
+                        // size. `display:block + margin/padding/border:0`
+                        // prevents the inline-image baseline gap and any UA
+                        // border/padding that would push the wrapper a few
+                        // pixels bigger than the image and create a visible
+                        // sliver between the image edge and the dashed crop.
+                        style={{
+                          maxWidth: '100%',
+                          maxHeight: 'min(55vh, 520px)',
+                          width: 'auto',
+                          height: 'auto',
+                          display: 'block',
+                          margin: 0,
+                          padding: 0,
+                          border: 0,
+                          verticalAlign: 'top',
+                        }}
                       />
                     </ReactCrop>
                   </div>

@@ -35,8 +35,8 @@ export default [
     'pages/customize/multi-canvas-wall/index.tsx'
   ),
   route(
-    'customize/poster-collage',
-    'pages/customize/poster-collage/index.tsx'
+    'customize/event-canvas',
+    'pages/customize/event-canvas/index.tsx'
   ),
   route(
     'customize/single-canvas',

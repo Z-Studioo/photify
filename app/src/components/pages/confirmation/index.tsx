@@ -206,13 +206,13 @@ export function ConfirmationPage() {
         const shippingCost = parseFloat(
           order.shipping_cost || order.delivery_fee || 0
         );
-        const isExpressShipping = Math.abs(shippingCost - 19.99) < 0.01;
+        const isExpressShipping = Math.abs(shippingCost - 6.99) < 0.01;
         const deliveryType = isExpressShipping
           ? 'Express Shipping'
           : 'Standard Delivery';
         const estimatedDays = isExpressShipping
-          ? '2-3 business days'
-          : '5-7 business days';
+          ? '3-5 business days'
+          : '7-10 business days';
 
         const formattedOrder: OrderData = {
           orderNumber: order.order_number,

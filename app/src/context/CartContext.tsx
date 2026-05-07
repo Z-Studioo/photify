@@ -92,7 +92,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
   });
   const [shippingCost, setShippingCost] = useState<number>(() => {
     const stored = loadPersistedCart();
-    return typeof stored?.shippingCost === 'number' ? stored.shippingCost : 9.99;
+    return typeof stored?.shippingCost === 'number' ? stored.shippingCost : 4.99;
   });
   const [discount, setDiscount] = useState<number>(() => {
     const stored = loadPersistedCart();

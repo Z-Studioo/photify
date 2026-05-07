@@ -1,6 +1,6 @@
 import { SINGLE_CANVAS_PRODUCT, COLLAGE_ON_SINGLE_CANVAS_PRODUCT } from './single-canvas/config';
 import { COLLAGE_CANVAS_PRODUCT } from './1PhotoCollageCreator/config';
-import { POSTER_COLLAGE_PRODUCT } from './poster-collage/config';
+import { EVENT_CANVAS_PRODUCT } from './event-canvas/config';
 
 // Product type for registry
 type ProductConfig = {
@@ -41,14 +41,14 @@ export const PRODUCT_REGISTRY: Record<string, ProductConfig> = {
     configType: '1PhotoCollageCreator',
     hasCustomizer: true,
   },
-  [POSTER_COLLAGE_PRODUCT.id]: {
-    product: POSTER_COLLAGE_PRODUCT,
-    configType: 'poster-collage',
+  [EVENT_CANVAS_PRODUCT.id]: {
+    product: EVENT_CANVAS_PRODUCT,
+    configType: 'event-canvas',
     hasCustomizer: true,
   },
-  [POSTER_COLLAGE_PRODUCT.slug]: {
-    product: POSTER_COLLAGE_PRODUCT,
-    configType: 'poster-collage',
+  [EVENT_CANVAS_PRODUCT.slug]: {
+    product: EVENT_CANVAS_PRODUCT,
+    configType: 'event-canvas',
     hasCustomizer: true,
   },
 };
@@ -97,7 +97,7 @@ export function usesSingleCanvasConfigurator(productId: string): boolean {
 // Export product configs
 export { SINGLE_CANVAS_PRODUCT, COLLAGE_ON_SINGLE_CANVAS_PRODUCT } from './single-canvas/config';
 export { COLLAGE_CANVAS_PRODUCT } from './1PhotoCollageCreator/config';
-export { POSTER_COLLAGE_PRODUCT } from './poster-collage/config';
+export { EVENT_CANVAS_PRODUCT } from './event-canvas/config';
 export type { SingleCanvasConfig } from './single-canvas/types';
 export type { CollageConfig } from './1PhotoCollageCreator/types';
 
@@ -109,4 +109,4 @@ export * from './shared';
 // import { SingleCanvasCustomizer } from '@/components/product-configs/single-canvas/CustomerCustomizer';
 // import { CollageConfigEditor } from '@/components/product-configs/1PhotoCollageCreator/ConfigEditor';
 // import { CollageCustomizer } from '@/components/product-configs/1PhotoCollageCreator/CustomerCustomizer';
-// import { PosterCollageCustomizer } from '@/components/product-configs/poster-collage/CustomerCustomizer';
+// import { EventCanvasCustomizer } from '@/components/product-configs/event-canvas/customer-customizer';

@@ -5,6 +5,7 @@
 -- ASPECT RATIOS - Portrait Orientations
 -- ============================================
 INSERT INTO aspect_ratios (label, width_ratio, height_ratio, orientation) VALUES
+    ('1:2 Portrait', 1, 2, 'portrait'),
     ('2:3 Portrait', 2, 3, 'portrait'),
     ('3:4 Portrait', 3, 4, 'portrait'),
     ('4:5 Portrait', 4, 5, 'portrait'),
@@ -93,6 +94,22 @@ UNION ALL
 SELECT id, 15, 21, '15" × 21"' FROM aspect_ratios WHERE label = '5:7 Portrait'
 UNION ALL
 SELECT id, 20, 28, '20" × 28"' FROM aspect_ratios WHERE label = '5:7 Portrait';
+
+-- ============================================
+-- SIZES - 1:2 Portrait (Tall canvas — used by Multi-Canvas Wall default 16×32)
+-- ============================================
+INSERT INTO sizes (aspect_ratio_id, width_in, height_in, display_label)
+SELECT id, 8, 16, '8" × 16"' FROM aspect_ratios WHERE label = '1:2 Portrait'
+UNION ALL
+SELECT id, 10, 20, '10" × 20"' FROM aspect_ratios WHERE label = '1:2 Portrait'
+UNION ALL
+SELECT id, 12, 24, '12" × 24"' FROM aspect_ratios WHERE label = '1:2 Portrait'
+UNION ALL
+SELECT id, 16, 32, '16" × 32"' FROM aspect_ratios WHERE label = '1:2 Portrait'
+UNION ALL
+SELECT id, 20, 40, '20" × 40"' FROM aspect_ratios WHERE label = '1:2 Portrait'
+UNION ALL
+SELECT id, 24, 48, '24" × 48"' FROM aspect_ratios WHERE label = '1:2 Portrait';
 
 -- ============================================
 -- SIZES - 9:16 Portrait (Instagram/Mobile)

@@ -162,6 +162,12 @@ export function CollageCustomizer() {
   const [selectedSizeId, setSelectedSizeId] = useState<string | null>(
     () => loadCollageSession()?.selectedSizeId ?? null
   );
+  /**
+   * Admin-managed price map keyed by size id (`products.config.sizePrices`).
+   * When populated, these prices override the per-sq-inch fallback so the
+   * customizer honours what the shop operator has configured.
+   */
+  const [productSizePrices, setProductSizePrices] = useState<Record<string, number>>({});
 
   // Set mounted state on client side
   useEffect(() => {
@@ -230,6 +236,43 @@ export function CollageCustomizer() {
     window.addEventListener('resize', checkDesktop);
     return () => window.removeEventListener('resize', checkDesktop);
   }, []);
+
+  // Fetch the product's admin-managed config (sizePrices) once on mount so
+  // we can price each size using the admin's values instead of a hardcoded rate.
+  useEffect(() => {
+    const fetchProductConfig = async () => {
+      const productId = urlProductId || COLLAGE_CANVAS_PRODUCT.id;
+      try {
+        const { data, error } = await supabase
+          .from('products')
+          .select('config')
+          .eq('id', productId)
+          .maybeSingle();
+
+        if (error) {
+          console.warn('Could not load product pricing config:', error.message);
+          return;
+        }
+
+        const rawPrices = (data?.config as any)?.sizePrices;
+        if (rawPrices && typeof rawPrices === 'object') {
+          const normalised: Record<string, number> = {};
+          for (const [sizeId, value] of Object.entries(rawPrices)) {
+            const n = typeof value === 'number' ? value : Number(value);
+            if (Number.isFinite(n) && n > 0) {
+              normalised[sizeId] = n;
+            }
+          }
+          setProductSizePrices(normalised);
+        }
+      } catch (err) {
+        console.warn('Unexpected error loading product pricing config:', err);
+      }
+    };
+
+    fetchProductConfig();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [urlProductId]);
 
   // Fetch aspect ratios and sizes when template is selected
   useEffect(() => {
@@ -640,14 +683,29 @@ export function CollageCustomizer() {
     setSelectedSizeId(sizeId);
   };
 
+  // Fallback rate used when the admin hasn't set an explicit price for a size.
+  // Kept for backwards-compatibility so the flow never renders £0.00.
+  const FALLBACK_PRICE_PER_SQ_IN = 0.15;
+
+  /**
+   * Resolve a numeric price for a given size. Prefers `products.config.sizePrices`
+   * (admin-configured GBP price), falls back to the per-sq-inch rate so legacy
+   * products without admin pricing still work.
+   */
+  const resolveSizePrice = (size: { id: string; area_in2: number }): number => {
+    const fromConfig = productSizePrices[size.id];
+    if (typeof fromConfig === 'number' && fromConfig > 0) {
+      return fromConfig;
+    }
+    return size.area_in2 * FALLBACK_PRICE_PER_SQ_IN;
+  };
+
   // Calculate price based on selected size
   const calculatePrice = (): string => {
     if (!selectedSizeId) return '0.00';
     const selectedSize = sizes.find(s => s.id === selectedSizeId);
     if (!selectedSize) return '0.00';
-    // Base price per square inch (can be fetched from product config)
-    const pricePerSqIn = 0.15; // Example: $0.15 per sq in
-    return (selectedSize.area_in2 * pricePerSqIn).toFixed(2);
+    return resolveSizePrice(selectedSize).toFixed(2);
   };
 
   // Confirm size and add to cart
@@ -789,12 +847,11 @@ export function CollageCustomizer() {
                     <div className='space-y-3'>
                       {sizes.map(size => {
                         const isSelected = selectedSizeId === size.id;
-                        const price = (size.area_in2 * 0.15).toFixed(2);
-                        const originalPrice = (
-                          size.area_in2 *
-                          0.15 *
-                          1.11
-                        ).toFixed(2);
+                        const priceValue = resolveSizePrice(size);
+                        const price = priceValue.toFixed(2);
+                        // "Original" (pre-discount) price is a 10%-off presentation flourish
+                        // relative to whichever price source we actually used.
+                        const originalPrice = (priceValue * 1.11).toFixed(2);
 
                         return (
                           <button
@@ -864,7 +921,7 @@ export function CollageCustomizer() {
                         <div className='text-sm text-gray-500 line-through'>
                           £
                           {selectedSize
-                            ? (selectedSize.area_in2 * 0.15 * 1.11).toFixed(2)
+                            ? (resolveSizePrice(selectedSize) * 1.11).toFixed(2)
                             : '0.00'}
                         </div>
                         <div className='text-xs text-green-600 font-semibold'>

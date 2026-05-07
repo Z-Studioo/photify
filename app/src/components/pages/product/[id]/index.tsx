@@ -223,7 +223,7 @@ export function ProductDetailPage({
   const isCollageProduct =
     configurerType === 'photo-collage-creator' ||
     configurerType === '1PhotoCollageCreator' ||
-    configurerType === 'poster-collage' ||
+    configurerType === 'event-canvas' ||
     configurerType === 'multi-canvas-wall' ||
     productSlug === 'photo-collage-creator' ||
     productSlug === '1PhotoCollageCreator';
@@ -242,13 +242,12 @@ export function ProductDetailPage({
   };
   const handleOpenCollageCreator = () => {
     if (!isCollageProduct) return;
-    if (productData.config?.configurerType === 'multi-canvas-wall') {
-      navigate(`/customize/${productData.config.configurerType}`);
-    } else {
-      navigate(
-        `/customize/${productData.config.configurerType}?productId=${productData.id}`
-      );
-    }
+    // Always pass productId so the customizer reads the configured ratios,
+    // sizes and prices from the actual product the customer landed on,
+    // instead of falling back to a hardcoded default product.
+    navigate(
+      `/customize/${productData.config.configurerType}?productId=${productData.id}`
+    );
   };
   return (
     <>

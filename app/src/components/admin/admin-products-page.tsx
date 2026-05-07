@@ -33,7 +33,6 @@ export function AdminProductsPage() {
           categories.length > 0
             ? categories.join(', ')
             : productTypeLabels[product.product_type] || 'Uncategorized',
-        basePrice: `£${typeof product.price === 'number' ? product.price.toFixed(2) : product.price}/sq in`,
         stock: 'Unlimited',
         status: product.active ? 'Active' : 'Inactive',
         image:
@@ -111,9 +110,6 @@ export function AdminProductsPage() {
                       Categories
                     </th>
                     <th className='px-6 py-4 text-left text-xs font-medium text-gray-600 uppercase tracking-wider'>
-                      Base Price
-                    </th>
-                    <th className='px-6 py-4 text-left text-xs font-medium text-gray-600 uppercase tracking-wider'>
                       Status
                     </th>
                     <th className='px-6 py-4 text-right text-xs font-medium text-gray-600 uppercase tracking-wider'>
@@ -149,11 +145,6 @@ export function AdminProductsPage() {
                       <td className='px-6 py-4'>
                         <span className='text-sm text-gray-900'>
                           {product.category}
-                        </span>
-                      </td>
-                      <td className='px-6 py-4'>
-                        <span className='text-sm font-medium text-[#f63a9e]'>
-                          {product.basePrice}
                         </span>
                       </td>
                       <td className='px-6 py-4'>

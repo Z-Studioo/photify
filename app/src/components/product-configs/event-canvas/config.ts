@@ -2,12 +2,12 @@
 // For wedding/event posters displayed on canvas stands
 // Simple upload-based flow (no editing interface)
 
-export const POSTER_COLLAGE_PRODUCT = {
-  id: 'poster-collage',
-  slug: 'poster-collage',
+export const EVENT_CANVAS_PRODUCT = {
+  id: 'event-canvas',
+  slug: 'event-canvas',
   name: 'Poster Collage for Events',
   type: 'canvas' as const,
-  description: 'Upload your event poster design - perfect for weddings, birthdays, and celebrations on canvas stands',
+  description: 'Upload your own banner or design one from a template — printed on premium canvas and displayed on a stand for weddings, birthdays, and special events',
   
   // Configuration settings
   config: {

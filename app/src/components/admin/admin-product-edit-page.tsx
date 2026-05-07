@@ -360,6 +360,7 @@ export function AdminProductEditPage() {
                     ? product.product_type
                     : 'canvas'
                 }
+                configurerType={product.config?.configurerType ?? null}
                 currentConfig={product.config}
                 onSave={handleConfigSave}
               />

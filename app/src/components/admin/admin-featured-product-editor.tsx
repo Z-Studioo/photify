@@ -199,25 +199,25 @@ export function AdminFeaturedProductEditor({
     const positions = {
       1: {
         name: 'Large Left',
-        ratio: '14:9 (Landscape)',
+        ratio: '3:2 (Landscape)',
         description: 'Main hero position - largest display area',
         size: 'Full height, left half',
       },
       2: {
         name: 'Top Right Small',
-        ratio: '1:1 (Square)',
-        description: 'Top right quadrant - compact square',
-        size: 'Quarter height, half width',
+        ratio: '3:2 (Landscape)',
+        description: 'Top right quadrant - small landscape',
+        size: 'Half height, quarter width',
       },
       3: {
         name: 'Top Right Small',
-        ratio: '1:1 (Square)',
-        description: 'Top right quadrant - compact square',
-        size: 'Quarter height, half width',
+        ratio: '3:2 (Landscape)',
+        description: 'Top right quadrant - small landscape',
+        size: 'Half height, quarter width',
       },
       4: {
         name: 'Bottom Right Wide',
-        ratio: '21:9 (Ultra-wide)',
+        ratio: '3:1 (Ultra-wide)',
         description: 'Bottom banner - wide landscape',
         size: 'Half height, full width',
       },
@@ -304,7 +304,7 @@ export function AdminFeaturedProductEditor({
                       Large Left
                     </div>
                     <div className='text-[9px] text-gray-500 text-center'>
-                      14:9
+                      3:2
                     </div>
                   </div>
                 </button>
@@ -324,7 +324,7 @@ export function AdminFeaturedProductEditor({
                       <div className='text-[8px] text-gray-600 text-center'>
                         Top Right
                       </div>
-                      <div className='text-[7px] text-gray-500'>1:1</div>
+                      <div className='text-[7px] text-gray-500'>3:2</div>
                     </div>
                   </button>
 
@@ -341,7 +341,7 @@ export function AdminFeaturedProductEditor({
                       <div className='text-[8px] text-gray-600 text-center'>
                         Top Right
                       </div>
-                      <div className='text-[7px] text-gray-500'>1:1</div>
+                      <div className='text-[7px] text-gray-500'>3:2</div>
                     </div>
                   </button>
                 </div>
@@ -360,7 +360,7 @@ export function AdminFeaturedProductEditor({
                     <div className='text-[9px] text-gray-600 text-center'>
                       Bottom Wide
                     </div>
-                    <div className='text-[8px] text-gray-500'>21:9</div>
+                    <div className='text-[8px] text-gray-500'>3:1</div>
                   </div>
                 </button>
               </div>
@@ -440,10 +440,10 @@ export function AdminFeaturedProductEditor({
                     {getPositionInfo(featuredIndex).ratio}
                     <div className='text-xs mt-1'>
                       Recommended minimum size:
-                      {featuredIndex === 1 && ' 1400×900px'}
-                      {featuredIndex === 2 && ' 800×800px'}
-                      {featuredIndex === 3 && ' 800×800px'}
-                      {featuredIndex === 4 && ' 1400×600px'}
+                      {featuredIndex === 1 && ' 1500×1000px'}
+                      {featuredIndex === 2 && ' 900×600px'}
+                      {featuredIndex === 3 && ' 900×600px'}
+                      {featuredIndex === 4 && ' 1500×500px'}
                     </div>
                   </div>
                 </div>

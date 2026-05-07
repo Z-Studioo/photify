@@ -20,6 +20,9 @@ import { Canvas3DImageEditor } from '../single-canvas/canvas-3d-image-editor';
 import Canvas3DPreview from '../single-canvas/canvas-3d-preview.client';
 import { Room3DPreview } from './3d/room-3d-preview';
 import { SingleCanvasMesh } from '../single-canvas/single-canvas-mesh';
+import { resolveCanvasSizePrice } from '@/lib/canvas-size-price';
+import type { InchData } from '@/utils/ratio-sizes';
+import type { Product as LibProduct } from '@/lib/data/types';
 
 export interface Product3DViewProps {
   imageUrl: string;
@@ -77,7 +80,25 @@ interface Product {
   config: {
     allowedRatios: string[];
     allowedSizes: string[];
+    /**
+     * Admin-configured GBP price per size, keyed by size id. When present it
+     * overrides the `area_in2 * products.price` fallback.
+     */
+    sizePrices?: Record<string, number | string>;
   };
+}
+
+/**
+ * Admin-configured `config.sizePrices` takes precedence; falls back to the
+ * shared `resolveCanvasSizePrice` logic (per-size fixed_price, then area × base).
+ * Returns a `.toFixed(2)` string for rendering; `'0.00'` when unresolvable.
+ */
+function formatSizePrice(size: Size, product: Product | null | undefined): string {
+  const resolved = resolveCanvasSizePrice(
+    size as unknown as InchData,
+    product as unknown as LibProduct
+  );
+  return resolved != null ? resolved.toFixed(2) : '0.00';
 }
 
 export function Product3DView({
@@ -312,12 +333,13 @@ export function Product3DView({
     fetchData();
   }, [productId, canvasWidth, canvasHeight]);
 
-  // Calculate price
+  // Calculate price — prefers admin-configured per-size prices from
+  // `products.config.sizePrices`; otherwise falls back to area × base price.
   const calculatePrice = (): string => {
-    if (!selectedSizeId || !product?.price) return '0.00';
+    if (!selectedSizeId) return '0.00';
     const selectedSize = sizes.find(s => s.id === selectedSizeId);
     if (!selectedSize) return '0.00';
-    return (selectedSize.area_in2 * product.price).toFixed(2);
+    return formatSizePrice(selectedSize, product);
   };
 
   // Get available sizes for selected ratio
@@ -776,9 +798,7 @@ export function Product3DView({
                     </Label>
                     <div className='grid grid-cols-1 gap-2 max-h-64 overflow-y-auto'>
                       {getAvailableSizes().map(size => {
-                        const price = (
-                          size.area_in2 * (product?.price || 0)
-                        ).toFixed(2);
+                        const price = formatSizePrice(size, product);
                         const isSelected = selectedSizeId === size.id;
                         return (
                           <button

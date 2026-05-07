@@ -61,7 +61,7 @@ const PRODUCT_TYPE_OPTIONS = [
     bg: 'from-pink-50 to-white',
   },
   {
-    configurerType: 'poster-collage',
+    configurerType: 'event-canvas',
     label: 'Poster / Event Stand',
     description: 'Print as a large poster displayed on a premium canvas stand.',
     icon: Frame,
@@ -196,14 +196,14 @@ export function ArtDetailPage({ artProduct }: ArtDetailPageProps) {
       navigate(
         `/customize/multi-canvas-wall?artImageUrl=${encodedArt}${product ? `&productId=${product.id}` : ''}`
       );
-    } else if (configurerType === 'poster-collage') {
+    } else if (configurerType === 'event-canvas') {
       const rawPrice = String(artProduct.price || '0').replace(/[^0-9.]/g, '');
       const fixedPrice = parseFloat(rawPrice) || 0;
       const artNameStr = String(artProduct.name || '').trim();
       const priceParam = fixedPrice > 0 ? `&artFixedPrice=${fixedPrice}` : '';
       const nameParam = artNameStr ? `&artName=${encodeURIComponent(artNameStr)}` : '';
       navigate(
-        `/customize/poster-collage?artImageUrl=${encodedArt}${product ? `&productId=${product.id}` : ''}${priceParam}${nameParam}`
+        `/customize/event-canvas?artImageUrl=${encodedArt}${product ? `&productId=${product.id}` : ''}${priceParam}${nameParam}`
       );
     }
   };

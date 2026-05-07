@@ -77,6 +77,43 @@ export function CollageEditor({
     return `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
   };
 
+  // Export canvas to a PNG data URL, hiding empty-slot guides (the dashed
+  // boxes with the pink "+" icons) so the exported image used for the 3D
+  // preview only contains actual placed photos. Returns null if the canvas
+  // is not ready or there are no real photos to export.
+  const exportCanvasForPreview = (canvas: fabric.Canvas): string | null => {
+    const objects = canvas.getObjects();
+    const photoObjects = objects.filter((obj: any) => obj.data?.id);
+
+    if (photoObjects.length === 0) {
+      return null;
+    }
+
+    const guideObjects = objects.filter((obj: any) => obj.data?.isGuide);
+    const previousVisibility = guideObjects.map(g => g.visible !== false);
+
+    guideObjects.forEach(g => {
+      g.visible = false;
+    });
+    canvas.renderAll();
+
+    let dataURL: string | null = null;
+    try {
+      dataURL = canvas.toDataURL({
+        format: 'png',
+        quality: 1.0,
+        multiplier: 1,
+      });
+    } finally {
+      guideObjects.forEach((g, i) => {
+        g.visible = previousVisibility[i];
+      });
+      canvas.renderAll();
+    }
+
+    return dataURL;
+  };
+
   // Calculate viewport scale to fit canvas
   useEffect(() => {
     const calculateScale = () => {
@@ -451,15 +488,15 @@ export function CollageEditor({
         canvas.requestRenderAll(); // Force re-render
         setLoadingImages(false);
 
-        // Export canvas as data URL for 3D preview
+        // Export canvas as data URL for 3D preview (without empty-slot
+        // guide overlays, so the printed image is blank where no photo
+        // has been uploaded instead of showing the pink + icons).
         if (onCanvasUpdate && validImages.length > 0) {
           try {
-            const dataURL = canvas.toDataURL({
-              format: 'png',
-              quality: 1.0,
-              multiplier: 1,
-            });
-            onCanvasUpdate(dataURL);
+            const dataURL = exportCanvasForPreview(canvas);
+            if (dataURL) {
+              onCanvasUpdate(dataURL);
+            }
           } catch (error) {
             console.error('✗ Failed to export canvas:', error);
             toast.error('Failed to generate preview');
@@ -670,14 +707,13 @@ export function CollageEditor({
 
     onPhotosChange(updatedPhotos);
 
-    // Export canvas for 3D preview
-    if (onCanvasUpdate && objects.length > 0) {
-      const dataURL = canvas.toDataURL({
-        format: 'png',
-        quality: 1.0,
-        multiplier: 1,
-      });
-      onCanvasUpdate(dataURL);
+    // Export canvas for 3D preview, excluding empty-slot guide overlays
+    // so the printed image stays blank where no photo has been uploaded.
+    if (onCanvasUpdate) {
+      const dataURL = exportCanvasForPreview(canvas);
+      if (dataURL) {
+        onCanvasUpdate(dataURL);
+      }
     }
   }, [photos, onPhotosChange, onCanvasUpdate]);
 

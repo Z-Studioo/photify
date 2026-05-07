@@ -1,4 +1,4 @@
-import { useRef, useMemo, useState, useEffect } from 'react';
+import { useRef, useMemo, useState, useEffect, Suspense } from 'react';
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
 import { OrbitControls, Text } from '@react-three/drei';
 import * as THREE from 'three';
@@ -214,21 +214,130 @@ function EaselStand({ posterHeight, ledgeHeightAdjustment }: { posterHeight: num
   );
 }
 
-// Room Environment with floor
+// ── Floral pedestal: tall white plinth with a clustered floral arrangement
+// on top. Used to flank the easel and immediately signal "event venue" —
+// this shape is universal across weddings, birthdays, anniversaries, etc.
+function FloralPedestal({
+  position,
+}: {
+  position: [number, number, number];
+}) {
+  return (
+    <group position={position}>
+      {/* Square base / plinth */}
+      <mesh position={[0, 0.12, 0]} castShadow receiveShadow>
+        <boxGeometry args={[0.6, 0.24, 0.6]} />
+        <meshStandardMaterial color='#efe7d4' roughness={0.55} />
+      </mesh>
+      {/* Column shaft */}
+      <mesh position={[0, 1.35, 0]} castShadow>
+        <cylinderGeometry args={[0.18, 0.2, 2.2, 24]} />
+        <meshStandardMaterial color='#f5efe0' roughness={0.5} />
+      </mesh>
+      {/* Top capital */}
+      <mesh position={[0, 2.55, 0]} castShadow receiveShadow>
+        <boxGeometry args={[0.55, 0.22, 0.55]} />
+        <meshStandardMaterial color='#efe7d4' roughness={0.55} />
+      </mesh>
+
+      {/* Greenery base of arrangement */}
+      <mesh position={[0, 2.85, 0]} castShadow>
+        <sphereGeometry args={[0.5, 16, 16]} />
+        <meshStandardMaterial color='#4a6b3f' roughness={0.95} />
+      </mesh>
+      {/* White roses scattered through the cluster */}
+      {[
+        [0.22, 3.05, 0.12],
+        [-0.22, 2.95, 0.18],
+        [0.12, 3.18, -0.18],
+        [-0.12, 3.1, -0.12],
+        [0.32, 2.85, -0.05],
+        [0, 3.22, 0.0],
+        [-0.32, 2.9, 0.05],
+        [0.05, 2.85, 0.32],
+      ].map((p, i) => (
+        <mesh key={`w-${i}`} position={p as [number, number, number]} castShadow>
+          <sphereGeometry args={[0.13, 12, 12]} />
+          <meshStandardMaterial color='#fbf2e8' roughness={0.9} />
+        </mesh>
+      ))}
+      {/* Soft pink accent blooms */}
+      {[
+        [0.18, 2.95, 0.25],
+        [-0.28, 3.12, 0.0],
+        [0.05, 3.05, -0.3],
+      ].map((p, i) => (
+        <mesh key={`p-${i}`} position={p as [number, number, number]} castShadow>
+          <sphereGeometry args={[0.1, 12, 12]} />
+          <meshStandardMaterial color='#f2c4cf' roughness={0.9} />
+        </mesh>
+      ))}
+      {/* Trailing eucalyptus / cascading greenery */}
+      {[
+        [0.42, 2.6, 0.0],
+        [-0.42, 2.55, 0.05],
+        [0.32, 2.5, 0.22],
+        [-0.3, 2.55, -0.18],
+      ].map((p, i) => (
+        <mesh key={`g-${i}`} position={p as [number, number, number]} castShadow>
+          <sphereGeometry args={[0.16, 10, 10]} />
+          <meshStandardMaterial color='#7a9b6e' roughness={0.95} />
+        </mesh>
+      ))}
+    </group>
+  );
+}
+
+// Room Environment — designed as an event entry area: red carpet runner
+// leading to the easel, draped fabric backdrop, floral pedestals flanking
+// the banner, fairy lights, and warm uplighting on the back wall.
 function StudioRoomEnvironment({ wallColor }: { wallColor: string }) {
-  // Floor
+  // Room dimensions in scene units (1 unit ≈ 25 cm). Sized generously so
+  // even the orbit camera at maximum distance for large posters stays
+  // inside the room.
+  const ROOM_WIDTH = 22; // x extent (≈ 5.5 m)
+  const ROOM_DEPTH = 16; // z extent (≈ 4 m)
+  const ROOM_HEIGHT = 12; // y extent (≈ 3 m ceiling)
+  const ROOM_Z_CENTER = 3; // shift the room toward the camera so the easel
+  // sits comfortably between the back wall and the camera path
+  const BACK_Z = ROOM_Z_CENTER - ROOM_DEPTH / 2; // back wall z
+  const FRONT_Z = ROOM_Z_CENTER + ROOM_DEPTH / 2; // front wall z (behind camera)
+  const HALF_W = ROOM_WIDTH / 2;
+
+  // Materials
+  // Polished dark wood — feels like a venue / event hall floor and makes the
+  // red carpet pop on top of it.
   const floorMaterial = useMemo(
     () => (
       <meshStandardMaterial
-        color='#e8d5b7' // Light wood floor
-        roughness={0.9}
-        metalness={0.0}
+        color='#3b2a1d'
+        roughness={0.45}
+        metalness={0.1}
       />
     ),
     []
   );
 
-  // Wall material
+  // Pre-compute fairy light bulb positions once so they don't jitter on each
+  // render. Slight vertical variance gives them an organic "draped" feel.
+  const fairyLights = useMemo(() => {
+    const N = 16;
+    const arr: { pos: [number, number, number]; size: number }[] = [];
+    for (let i = 0; i < N; i++) {
+      const t = i / (N - 1);
+      const x = -6 + t * 12;
+      // Catenary-ish droop in two strands so it reads as fairy lights, not a
+      // straight LED bar.
+      const droop = Math.sin(t * Math.PI) * 0.35;
+      const y = ROOM_HEIGHT - 2.2 - droop;
+      arr.push({
+        pos: [x, y, BACK_Z + 0.6],
+        size: 0.06 + ((i * 37) % 100) / 1000, // tiny size variance
+      });
+    }
+    return arr;
+  }, [ROOM_HEIGHT, BACK_Z]);
+
   const wallMaterial = useMemo(
     () => (
       <meshStandardMaterial
@@ -240,47 +349,291 @@ function StudioRoomEnvironment({ wallColor }: { wallColor: string }) {
     [wallColor]
   );
 
+  const ceilingMaterial = useMemo(
+    () => (
+      <meshStandardMaterial
+        color='#fbf6ee' // Slightly warmer than walls — feels lit
+        roughness={1.0}
+        metalness={0.0}
+      />
+    ),
+    []
+  );
+
+  const trimColor = '#fdfaf3'; // Warm white skirting / cornice
+
+  // Skirting (baseboard) helper
+  const Skirting = ({
+    position,
+    rotation,
+    length,
+  }: {
+    position: [number, number, number];
+    rotation?: [number, number, number];
+    length: number;
+  }) => (
+    <mesh position={position} rotation={rotation} castShadow receiveShadow>
+      <boxGeometry args={[length, 0.18, 0.04]} />
+      <meshStandardMaterial color={trimColor} roughness={0.75} />
+    </mesh>
+  );
+
   return (
     <group>
       {/* Floor */}
-      <mesh position={[0, 0, 0]} rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
-        <planeGeometry args={[20, 20]} />
+      <mesh
+        position={[0, 0, ROOM_Z_CENTER]}
+        rotation={[-Math.PI / 2, 0, 0]}
+        receiveShadow
+      >
+        <planeGeometry args={[ROOM_WIDTH, ROOM_DEPTH]} />
         {floorMaterial}
       </mesh>
 
+      {/* ── Red carpet runner — runs from underneath the easel forward
+              through the entire camera path. Universal "event entry" cue. */}
+      <mesh
+        position={[0, 0.01, 4]}
+        rotation={[-Math.PI / 2, 0, 0]}
+        receiveShadow
+      >
+        <planeGeometry args={[3, 13]} />
+        <meshStandardMaterial color='#7a1f24' roughness={1.0} />
+      </mesh>
+      {/* Gold trim along the carpet edges */}
+      <mesh
+        position={[-1.5, 0.012, 4]}
+        rotation={[-Math.PI / 2, 0, 0]}
+        receiveShadow
+      >
+        <planeGeometry args={[0.08, 13]} />
+        <meshStandardMaterial
+          color='#caa66b'
+          roughness={0.4}
+          metalness={0.3}
+        />
+      </mesh>
+      <mesh
+        position={[1.5, 0.012, 4]}
+        rotation={[-Math.PI / 2, 0, 0]}
+        receiveShadow
+      >
+        <planeGeometry args={[0.08, 13]} />
+        <meshStandardMaterial
+          color='#caa66b'
+          roughness={0.4}
+          metalness={0.3}
+        />
+      </mesh>
+
+      {/* Ceiling */}
+      <mesh
+        position={[0, ROOM_HEIGHT, ROOM_Z_CENTER]}
+        rotation={[Math.PI / 2, 0, 0]}
+        receiveShadow
+      >
+        <planeGeometry args={[ROOM_WIDTH, ROOM_DEPTH]} />
+        {ceilingMaterial}
+      </mesh>
+
       {/* Back wall */}
-      <mesh position={[0, 2.5, -3]} receiveShadow>
-        <planeGeometry args={[20, 10]} />
+      <mesh
+        position={[0, ROOM_HEIGHT / 2, BACK_Z]}
+        receiveShadow
+      >
+        <planeGeometry args={[ROOM_WIDTH, ROOM_HEIGHT]} />
         {wallMaterial}
       </mesh>
 
       {/* Left wall */}
       <mesh
-        position={[-6, 2.5, 5]}
+        position={[-HALF_W, ROOM_HEIGHT / 2, ROOM_Z_CENTER]}
         rotation={[0, Math.PI / 2, 0]}
         receiveShadow
       >
-        <planeGeometry args={[20, 10]} />
+        <planeGeometry args={[ROOM_DEPTH, ROOM_HEIGHT]} />
         {wallMaterial}
       </mesh>
 
-      {/* Optional: Decorative plant */}
-      <group position={[-2.2, 0, 0.8]}>
-        {/* Pot */}
-        <mesh position={[0, 0.2, 0]} castShadow>
-          <cylinderGeometry args={[0.18, 0.2, 0.4, 16]} />
-          <meshStandardMaterial color='#d4c5b0' roughness={0.7} />
+      {/* Right wall */}
+      <mesh
+        position={[HALF_W, ROOM_HEIGHT / 2, ROOM_Z_CENTER]}
+        rotation={[0, -Math.PI / 2, 0]}
+        receiveShadow
+      >
+        <planeGeometry args={[ROOM_DEPTH, ROOM_HEIGHT]} />
+        {wallMaterial}
+      </mesh>
+
+      {/* Front wall — only ever visible if a peripheral camera angle catches
+          it. BackSide so the camera can sit just outside without the wall
+          intersecting the view. */}
+      <mesh position={[0, ROOM_HEIGHT / 2, FRONT_Z]}>
+        <planeGeometry args={[ROOM_WIDTH, ROOM_HEIGHT]} />
+        <meshStandardMaterial
+          color={wallColor}
+          roughness={0.95}
+          metalness={0.0}
+          side={THREE.BackSide}
+        />
+      </mesh>
+
+      {/* ── Skirting / baseboards (warm white trim) ───────────────────── */}
+      <Skirting position={[0, 0.09, BACK_Z + 0.02]} length={ROOM_WIDTH} />
+      <Skirting
+        position={[-HALF_W + 0.02, 0.09, ROOM_Z_CENTER]}
+        rotation={[0, Math.PI / 2, 0]}
+        length={ROOM_DEPTH}
+      />
+      <Skirting
+        position={[HALF_W - 0.02, 0.09, ROOM_Z_CENTER]}
+        rotation={[0, -Math.PI / 2, 0]}
+        length={ROOM_DEPTH}
+      />
+
+      {/* ── Ceiling cornice (subtle trim where wall meets ceiling) ────── */}
+      <mesh position={[0, ROOM_HEIGHT - 0.08, BACK_Z + 0.02]}>
+        <boxGeometry args={[ROOM_WIDTH, 0.16, 0.05]} />
+        <meshStandardMaterial color={trimColor} roughness={0.85} />
+      </mesh>
+      <mesh
+        position={[-HALF_W + 0.02, ROOM_HEIGHT - 0.08, ROOM_Z_CENTER]}
+        rotation={[0, Math.PI / 2, 0]}
+      >
+        <boxGeometry args={[ROOM_DEPTH, 0.16, 0.05]} />
+        <meshStandardMaterial color={trimColor} roughness={0.85} />
+      </mesh>
+      <mesh
+        position={[HALF_W - 0.02, ROOM_HEIGHT - 0.08, ROOM_Z_CENTER]}
+        rotation={[0, -Math.PI / 2, 0]}
+      >
+        <boxGeometry args={[ROOM_DEPTH, 0.16, 0.05]} />
+        <meshStandardMaterial color={trimColor} roughness={0.85} />
+      </mesh>
+
+      {/* ── Draped fabric backdrop on back wall — vertical half-cylinders
+              read as soft drape folds without needing a real cloth sim. ── */}
+      <group position={[0, 0, BACK_Z + 0.05]}>
+        {Array.from({ length: 12 }, (_, i) => {
+          const totalSpan = ROOM_WIDTH * 0.95;
+          const step = totalSpan / 11;
+          const x = -totalSpan / 2 + i * step;
+          // Small alternating depth offset so folds don't read as a flat row
+          const zJitter = (i % 2 === 0 ? 0 : 0.05);
+          // Slight radius variance for a more organic look
+          const radius = 0.32 + (i % 3) * 0.04;
+          return (
+            <mesh
+              key={`drape-${i}`}
+              position={[x, ROOM_HEIGHT * 0.48, radius + zJitter]}
+              receiveShadow
+            >
+              {/* Open vertical half-cylinder facing the room */}
+              <cylinderGeometry
+                args={[
+                  radius,
+                  radius,
+                  ROOM_HEIGHT * 0.92,
+                  10,
+                  1,
+                  true,
+                  0,
+                  Math.PI,
+                ]}
+              />
+              <meshStandardMaterial
+                color='#efe2c4'
+                roughness={0.95}
+                side={THREE.DoubleSide}
+              />
+            </mesh>
+          );
+        })}
+        {/* Decorative curtain rod above the drape */}
+        <mesh position={[0, ROOM_HEIGHT - 0.6, 0.4]} castShadow>
+          <cylinderGeometry
+            args={[0.08, 0.08, ROOM_WIDTH * 0.95, 16]}
+          />
+          <meshStandardMaterial
+            color='#caa66b'
+            roughness={0.35}
+            metalness={0.45}
+          />
         </mesh>
-        {/* Plant leaves */}
-        <mesh position={[0, 0.6, 0]} castShadow>
-          <sphereGeometry args={[0.3, 10, 10]} />
-          <meshStandardMaterial color='#5a8f6a' roughness={0.85} />
+        {/* Curtain rod end caps */}
+        <mesh
+          position={[-(ROOM_WIDTH * 0.95) / 2, ROOM_HEIGHT - 0.6, 0.4]}
+          castShadow
+        >
+          <sphereGeometry args={[0.13, 16, 16]} />
+          <meshStandardMaterial
+            color='#caa66b'
+            roughness={0.35}
+            metalness={0.45}
+          />
         </mesh>
-        <mesh position={[0.1, 0.75, -0.1]} castShadow>
-          <sphereGeometry args={[0.2, 8, 8]} />
-          <meshStandardMaterial color='#6ba87d' roughness={0.85} />
+        <mesh
+          position={[(ROOM_WIDTH * 0.95) / 2, ROOM_HEIGHT - 0.6, 0.4]}
+          castShadow
+        >
+          <sphereGeometry args={[0.13, 16, 16]} />
+          <meshStandardMaterial
+            color='#caa66b'
+            roughness={0.35}
+            metalness={0.45}
+          />
         </mesh>
       </group>
+
+      {/* ── Fairy lights strung in front of the drape ───────────────── */}
+      {fairyLights.map((b, i) => (
+        <mesh key={`fl-${i}`} position={b.pos}>
+          <sphereGeometry args={[b.size, 10, 10]} />
+          <meshStandardMaterial
+            color='#fff5d4'
+            emissive='#ffd28a'
+            emissiveIntensity={3.0}
+            toneMapped={false}
+          />
+        </mesh>
+      ))}
+
+      {/* ── Floral pedestals flanking the easel ──────────────────────── */}
+      <FloralPedestal position={[-2.6, 0, -0.4]} />
+      <FloralPedestal position={[2.6, 0, -0.4]} />
+
+      {/* ── Warm uplights at the base of the back wall (event uplighting
+              that classic venues use to wash the wall in colour) ──── */}
+      <pointLight
+        position={[-4.5, 0.6, BACK_Z + 1.2]}
+        intensity={1.4}
+        distance={5}
+        color='#ffb070'
+        decay={2}
+      />
+      <pointLight
+        position={[0, 0.6, BACK_Z + 1.2]}
+        intensity={1.2}
+        distance={4.5}
+        color='#ffc78a'
+        decay={2}
+      />
+      <pointLight
+        position={[4.5, 0.6, BACK_Z + 1.2]}
+        intensity={1.4}
+        distance={5}
+        color='#ffb070'
+        decay={2}
+      />
+
+      {/* ── Subtle scatter of fairy-light glow at the room level ───── */}
+      <pointLight
+        position={[0, ROOM_HEIGHT - 2.5, BACK_Z + 1]}
+        intensity={0.5}
+        distance={6}
+        color='#ffd9a0'
+        decay={2}
+      />
     </group>
   );
 }
@@ -516,46 +869,53 @@ export default function PosterEaselPreview({
         gl={{
           antialias: true,
           toneMapping: THREE.ACESFilmicToneMapping,
-          toneMappingExposure: 1.2,
+          toneMappingExposure: 1.05,
         }}
       >
-        {/* Ambient light - soft overall illumination */}
-        <ambientLight intensity={1.8} color='#fff8f0' />
+        {/* Ambient light — gentle, slightly warm event-hall glow */}
+        <ambientLight intensity={0.5} color='#fff1de' />
 
-        {/* Main directional light (window light from left) */}
+        {/* Hemisphere light — soft sky/ground bounce so underside of the
+            easel and floor near the carpet aren't pitch black */}
+        <hemisphereLight color='#fff2dc' groundColor='#3a2418' intensity={0.4} />
+
+        {/* Key light — overhead venue lighting, slightly warm and angled to
+            cast the easel's shadow forward onto the carpet */}
         <directionalLight
-          position={[-4, 4, 2]}
-          intensity={1.2}
-          color='#fff5e6'
+          position={[-3, 8, 5]}
+          intensity={1.1}
+          color='#ffe9c8'
           castShadow
           shadow-mapSize-width={2048}
           shadow-mapSize-height={2048}
-          shadow-camera-left={-5}
-          shadow-camera-right={5}
-          shadow-camera-top={5}
-          shadow-camera-bottom={-5}
+          shadow-camera-left={-8}
+          shadow-camera-right={8}
+          shadow-camera-top={8}
+          shadow-camera-bottom={-2}
+          shadow-bias={-0.0005}
         />
 
-        {/* Fill light from right (softer) */}
-        <pointLight
-          position={[3, 2.5, 1]}
-          intensity={0.6}
-          distance={8}
-          color='#ffffff'
-          decay={2}
+        {/* Fill light from the opposite side — cooler and dimmer to keep the
+            scene from going entirely orange */}
+        <directionalLight
+          position={[5, 4, 4]}
+          intensity={0.35}
+          color='#e6efff'
         />
 
-        {/* Spotlight on poster */}
+        {/* Spotlight aimed at the poster — main focal pop, like a venue
+            spotlight on the welcome banner */}
         <spotLight
-          position={[0, 3.5, 2]}
-          intensity={0.8}
-          angle={Math.PI / 5}
-          penumbra={0.5}
-          distance={10}
+          position={[0, 5.5, 3.5]}
+          intensity={0.9}
+          angle={Math.PI / 5.5}
+          penumbra={0.6}
+          distance={14}
           target-position={[0, posterCenterY, -0.13]}
           castShadow
           shadow-mapSize-width={1024}
           shadow-mapSize-height={1024}
+          shadow-bias={-0.0005}
         />
 
         {/* Studio Room Environment */}
@@ -567,13 +927,17 @@ export default function PosterEaselPreview({
         {/* Poster on Canvas */}
         <PosterCanvasMesh imageUrl={imageUrl} width={width} height={height} />
 
-        {/* Ruler Overlay */}
-        <RulerOverlay
-          posterWidth={width}
-          posterHeight={height}
-          posterCenterY={posterCenterY}
-          showRuler={showRuler}
-        />
+        {/* Ruler Overlay — wrapped in a local Suspense so the font loading
+            of <Text /> doesn't bubble up to the outer Suspense and replace
+            the entire Canvas with the loading spinner. */}
+        <Suspense fallback={null}>
+          <RulerOverlay
+            posterWidth={width}
+            posterHeight={height}
+            posterCenterY={posterCenterY}
+            showRuler={showRuler}
+          />
+        </Suspense>
 
         {/* Camera Animation */}
         {!animationComplete && (
@@ -585,16 +949,17 @@ export default function PosterEaselPreview({
           />
         )}
 
-        {/* Orbit Controls */}
+        {/* Orbit Controls — tightened so the camera always stays inside the
+            room and looks at the easel from a comfortable angle */}
         <OrbitControls
           enabled={animationComplete}
           target={[0, orbitTargetY, -0.13]}
           minDistance={dynamicMinDistance}
           maxDistance={dynamicMaxDistance}
-          minPolarAngle={Math.PI / 3.5} // Prevent going too low (floor view)
-          maxPolarAngle={Math.PI / 2.05} // Prevent going behind (back of stand)
-          minAzimuthAngle={-Math.PI / 2.5} // Limit left rotation
-          maxAzimuthAngle={Math.PI / 2.5} // Limit right rotation
+          minPolarAngle={Math.PI / 3.2} // not too high (avoid ceiling clip)
+          maxPolarAngle={Math.PI / 2.1} // not too low (stay above floor)
+          minAzimuthAngle={-Math.PI / 3} // ~60° left
+          maxAzimuthAngle={Math.PI / 3} // ~60° right
           enablePan={false}
           enableDamping={true}
           dampingFactor={0.05}
