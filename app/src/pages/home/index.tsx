@@ -1,4 +1,3 @@
-'use client';
 import { useState, useEffect } from 'react';
 import { HomePage } from '@/components/pages/home';
 import { createClient } from '@/lib/supabase/client';

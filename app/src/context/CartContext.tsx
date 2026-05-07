@@ -1,5 +1,3 @@
-'use client';
-
 import { createContext, useContext, useEffect, useState, type ReactNode } from 'react';
 import { uploadDataURLToStorage } from '@/lib/supabase/storage';
 
