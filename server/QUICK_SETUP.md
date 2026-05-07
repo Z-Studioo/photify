@@ -31,12 +31,6 @@ STRIPE_SECRET_KEY=sk_test_xxxxx
 STRIPE_WEBHOOK_SECRET=whsec_xxxxx  # After creating webhook
 ```
 
-**OpenAI** (from OpenAI Dashboard):
-
-```env
-OPENAI_API_KEY=sk-xxxxx
-```
-
 **Basic Config:**
 
 ```env
@@ -67,9 +61,6 @@ curl http://localhost:5000/health
 
 # API info
 curl http://localhost:5000/api
-
-# Test search (requires Supabase & OpenAI setup)
-curl "http://localhost:5000/api/search/semantic?q=art&limit=5"
 ```
 
 ---
@@ -91,14 +82,6 @@ curl http://localhost:5000/api
 ```
 
 Expected: List of endpoints
-
-### 3. Semantic Search (Needs Supabase + OpenAI)
-
-```bash
-curl "http://localhost:5000/api/search/semantic?q=canvas&limit=3"
-```
-
-Expected: JSON with products array
 
 ---
 
@@ -133,7 +116,6 @@ Before running, make sure you have:
 - [ ] Supabase project URL
 - [ ] Supabase service role key (NOT anon key)
 - [ ] Stripe secret key (test or live)
-- [ ] OpenAI API key with credits
 
 ---
 

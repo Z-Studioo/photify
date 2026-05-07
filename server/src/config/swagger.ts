@@ -7,7 +7,7 @@ const options: swaggerJsdoc.Options = {
     info: {
       title: 'Photify API',
       version: '1.0.0',
-      description: 'Professional Express API for Photify - E-commerce platform with AI-powered features',
+      description: 'Professional Express API for Photify - E-commerce platform',
       contact: {
         name: 'Photify Support',
         email: 'support@photify.com',
@@ -161,158 +161,6 @@ const options: swaggerJsdoc.Options = {
             },
           },
         },
-        SearchResult: {
-          type: 'object',
-          properties: {
-            id: {
-              type: 'string',
-              format: 'uuid',
-            },
-            name: {
-              type: 'string',
-              example: 'Abstract Canvas Print',
-            },
-            slug: {
-              type: 'string',
-              example: 'abstract-canvas-print',
-            },
-            description: {
-              type: 'string',
-              nullable: true,
-              example: 'Modern abstract artwork',
-            },
-            images: {
-              type: 'array',
-              items: {
-                type: 'string',
-              },
-            },
-            price: {
-              type: 'number',
-              example: 79.99,
-            },
-            is_featured: {
-              type: 'boolean',
-              example: true,
-            },
-            category_name: {
-              type: 'string',
-              nullable: true,
-              example: 'Abstract Art',
-            },
-            similarity: {
-              type: 'number',
-              example: 0.8543,
-            },
-          },
-        },
-        SearchResponse: {
-          type: 'object',
-          properties: {
-            success: {
-              type: 'boolean',
-              example: true,
-            },
-            query: {
-              type: 'string',
-              example: 'modern abstract art',
-            },
-            results: {
-              type: 'array',
-              items: {
-                $ref: '#/components/schemas/SearchResult',
-              },
-            },
-            count: {
-              type: 'integer',
-              example: 10,
-            },
-            threshold: {
-              type: 'number',
-              example: 0.7,
-            },
-            filters: {
-              type: 'object',
-              properties: {
-                category: {
-                  type: 'string',
-                },
-                minPrice: {
-                  type: 'number',
-                },
-                maxPrice: {
-                  type: 'number',
-                },
-                featured: {
-                  type: 'boolean',
-                },
-              },
-            },
-          },
-        },
-        EmbeddingRequest: {
-          type: 'object',
-          properties: {
-            productId: {
-              type: 'string',
-              format: 'uuid',
-              description: 'Single product ID to generate embedding for',
-            },
-            productIds: {
-              type: 'array',
-              items: {
-                type: 'string',
-                format: 'uuid',
-              },
-              description: 'Array of product IDs for bulk update',
-            },
-            bulkUpdate: {
-              type: 'boolean',
-              description: 'Generate embeddings for all active products',
-            },
-          },
-        },
-        EmbeddingResponse: {
-          type: 'object',
-          properties: {
-            success: {
-              type: 'boolean',
-              example: true,
-            },
-            productId: {
-              type: 'string',
-              format: 'uuid',
-            },
-            searchText: {
-              type: 'string',
-              example: 'Canvas Print Abstract Art',
-            },
-            embeddingDimensions: {
-              type: 'integer',
-              example: 1536,
-            },
-            processed: {
-              type: 'integer',
-              description: 'Number of products processed (bulk operations)',
-            },
-            errorCount: {
-              type: 'integer',
-              description: 'Number of errors (bulk operations)',
-            },
-            results: {
-              type: 'array',
-              items: {
-                type: 'object',
-              },
-            },
-            errors: {
-              type: 'array',
-              items: {
-                type: 'object',
-              },
-            },
-          },
-        },
       },
     },
     tags: [
@@ -327,14 +175,6 @@ const options: swaggerJsdoc.Options = {
       {
         name: 'Webhook',
         description: 'Stripe webhook endpoints',
-      },
-      {
-        name: 'Search',
-        description: 'AI-powered semantic search endpoints',
-      },
-      {
-        name: 'Embeddings',
-        description: 'Product embeddings management endpoints',
       },
     ],
   },
