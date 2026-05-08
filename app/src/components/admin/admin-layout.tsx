@@ -45,7 +45,8 @@ export function AdminLayout({ children }: AdminLayoutProps) {
     { icon: Package, label: 'Products', path: '/admin/products' },
     { icon: Palette, label: 'Art Collection', path: '/admin/art-collection' },
     { icon: Grid3x3, label: 'Categories', path: '/admin/categories' },
-    { icon: Home, label: 'Rooms', path: '/admin/rooms' },
+    // Rooms management is temporarily hidden (kept for future re-enable).
+    // { icon: Home, label: 'Rooms', path: '/admin/rooms' },
     { icon: Tag, label: 'Promotions', path: '/admin/promotions' },
     { icon: BarChart3, label: 'Analytics', path: '/admin/analytics' },
     { icon: Settings, label: 'Settings', path: '/admin/settings' },

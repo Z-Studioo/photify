@@ -2,11 +2,12 @@ import { Header } from '@/components/layout/header';
 import { FeaturedCollections } from '@/components/shared/featured-collections';
 import { ProductCard, type ProductCardProps } from '@/components/shared/product-card';
 import { RoomInspiration } from '@/components/shared/room-inspiration';
-import { ArtProductCard } from '@/components/shared/art-product-card';
+import { ArtPhotoTile } from '@/components/shared/art-photo-tile';
 // import { AIToolsSection } from '@/components/ai-tools/ai-tools-section';
 import { Footer } from '@/components/layout/footer';
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
+import { ArrowRight } from 'lucide-react';
 
 interface HomePageProps {
   initialFeaturedProducts: any[];
@@ -326,8 +327,8 @@ export function HomePage({
         </div>
       </section>
 
-      {/* Room Inspiration */}
-      <section className='py-16'>
+      {/* Room Inspiration — temporarily disabled (kept for future re-enable) */}
+      {/* <section className='py-16'>
         <div className='max-w-[1400px] mx-auto px-4'>
           <div className='text-left mb-12'>
             <h2
@@ -346,125 +347,127 @@ export function HomePage({
             ))}
           </div>
         </div>
-      </section>
+      </section> */}
 
-      {/* Art Collections Section */}
-      <section className='py-8'>
+      {/* Art Collections Section — Pixabay-style photo gallery */}
+      <section className='py-10 sm:py-14'>
         <div className='max-w-[1400px] mx-auto px-4'>
-          <motion.h2
-            initial={{ opacity: 0, x: -20 }}
-            whileInView={{ opacity: 1, x: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.5 }}
-            className="font-['Bricolage_Grotesque',_sans-serif] text-left"
-            style={{ fontSize: '24px', lineHeight: '1.2', fontWeight: '600' }}
-          >
-            Art Collections
-          </motion.h2>
-          <p className='text-gray-600 text-lg mt-3 mb-6'>
-            From abstract to traditional, find the perfect piece to complete
-            your space
-          </p>
-
-          {/* Categories */}
-          <div className='flex flex-wrap gap-3 mb-8'>
-            <button
-              disabled
-              className='px-8 py-3 rounded-full bg-pink-100 text-[#f63a9e] opacity-60 cursor-not-allowed'
-            >
-              All
-            </button>
-            {(initialArtTags.length > 0
-              ? initialArtTags
-              : ['Best Seller', 'New', 'Popular', 'Limited Edition', 'Eco-Friendly']
-            ).map(tag => (
-              <button
-                key={tag}
-                disabled
-                className='px-8 py-3 rounded-full bg-gray-100 text-gray-500 opacity-60 cursor-not-allowed'
+          <div className='flex items-end justify-between gap-4 mb-6 sm:mb-8'>
+            <div>
+              <motion.h2
+                initial={{ opacity: 0, x: -20 }}
+                whileInView={{ opacity: 1, x: 0 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.5 }}
+                className="font-['Bricolage_Grotesque',_sans-serif] text-left"
+                style={{
+                  fontSize: '24px',
+                  lineHeight: '1.2',
+                  fontWeight: '600',
+                }}
               >
-                {tag}
-              </button>
-            ))}
+                Art Collections
+              </motion.h2>
+              <p className='text-gray-600 text-base sm:text-lg mt-2 sm:mt-3 max-w-2xl'>
+                A curated gallery of prints — from abstract to traditional.
+                Tap any photo to make it yours.
+              </p>
+            </div>
+            <button
+              onClick={() => navigate('/art-collections')}
+              className='hidden sm:inline-flex items-center gap-1.5 text-[#f63a9e] hover:text-[#e02a8e] font-semibold text-sm transition-colors'
+            >
+              View all
+              <ArrowRight className='w-4 h-4' />
+            </button>
           </div>
 
-          <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4'>
-            {artProducts.length > 0 ? (
-              <>
-                {artProducts.slice(0, 7).map((product, index) => (
-                  <ArtProductCard
-                    key={product.productId}
-                    id={product.productId}
-                    slug={product.productId}
-                    name={product.name}
-                    images={product.images}
-                    price={product.price}
-                    index={index}
-                  />
-                ))}
-              </>
-            ) : (
-              <>
-                {featuredProducts.slice(0, 7).map((product, index) => (
-                  <ProductCard
-                    key={product.id}
-                    id={product.id}
-                    name={product.name}
-                    slug={product.slug}
-                    images={product.images}
-                    price={product.price}
-                    config={(product as ProductCardProps).config}
-                    fixed_price={(product as ProductCardProps).fixed_price}
-                    isFeatured={false}
-                    index={index}
-                  />
-                ))}
-              </>
-            )}
-
-            {/* Navigational Card */}
-            <div
-              onClick={() => navigate('/art-collections')}
-              className='cursor-pointer group'
-            >
-              <div className='relative aspect-square mb-3 rounded-lg bg-[#f63a9e] hover:bg-[#e02a8e] transition-colors flex flex-col items-center justify-center p-8 text-center'>
-                <p
-                  className='text-white mb-4'
-                  style={{
-                    fontSize: '18px',
-                    lineHeight: '1.4',
-                    fontWeight: '500',
-                  }}
+          {/* Category chips */}
+          {initialArtTags.length > 0 && (
+            <div className='flex flex-nowrap sm:flex-wrap gap-2 mb-6 sm:mb-8 overflow-x-auto pb-2 -mx-4 px-4 sm:mx-0 sm:px-0 sm:overflow-visible'>
+              <span className='flex-shrink-0 px-4 py-1.5 rounded-full bg-[#f63a9e] text-white text-xs sm:text-sm font-semibold'>
+                All
+              </span>
+              {initialArtTags.slice(0, 8).map(tag => (
+                <button
+                  key={tag}
+                  onClick={() =>
+                    navigate(`/art-collections?category=${encodeURIComponent(tag)}`)
+                  }
+                  className='flex-shrink-0 px-4 py-1.5 rounded-full bg-gray-100 text-gray-700 hover:bg-gray-200 hover:text-gray-900 text-xs sm:text-sm font-medium transition-colors'
                 >
-                  Can&apos;t find what you looking for?
-                </p>
-                <p
-                  className='text-white mb-6'
-                  style={{
-                    fontSize: '32px',
-                    lineHeight: '1.2',
-                    fontWeight: '700',
-                  }}
-                >
-                  Browse All
-                </p>
-                <div className='w-12 h-12 rounded-full border-2 border-white flex items-center justify-center group-hover:scale-110 transition-transform'>
-                  <svg
-                    className='w-6 h-6 text-white'
-                    fill='none'
-                    stroke='currentColor'
-                    viewBox='0 0 24 24'
-                  >
-                    <path
-                      strokeLinecap='round'
-                      strokeLinejoin='round'
-                      strokeWidth={2}
-                      d='M9 5l7 7-7 7'
-                    />
-                  </svg>
-                </div>
-              </div>
+                  {tag}
+                </button>
+              ))}
             </div>
+          )}
+
+          {/* Masonry photo grid */}
+          {artProducts.length > 0 ? (
+            <div className='columns-2 md:columns-3 lg:columns-4 gap-3 sm:gap-4'>
+              {artProducts.slice(0, 9).map((product, index) => (
+                <ArtPhotoTile
+                  key={product.productId}
+                  id={product.productId}
+                  slug={product.productId}
+                  name={product.name}
+                  images={product.images}
+                  category={product.category}
+                  index={index}
+                />
+              ))}
+
+              {/* Browse-all promo tile, sized to blend with masonry */}
+              <button
+                onClick={() => navigate('/art-collections')}
+                className='group relative block w-full overflow-hidden mb-3 sm:mb-4 break-inside-avoid aspect-[3/4] bg-gradient-to-br from-[#f63a9e] via-[#ff5fb1] to-[#7c2bd1] text-left border-0 p-0 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#f63a9e] focus-visible:ring-offset-2'
+              >
+                <span
+                  aria-hidden='true'
+                  className='pointer-events-none absolute -top-10 -right-10 w-40 h-40 rounded-full bg-white/20 blur-2xl transition-transform duration-500 group-hover:scale-110'
+                />
+                <div className='relative h-full w-full flex flex-col justify-end p-4 sm:p-5 text-white'>
+                  <p className='text-xs uppercase tracking-wider text-white/80 mb-1'>
+                    Explore
+                  </p>
+                  <p className="font-['Bricolage_Grotesque',_sans-serif] text-xl sm:text-2xl font-bold leading-tight mb-2">
+                    The full gallery awaits
+                  </p>
+                  <span className='inline-flex items-center gap-1.5 text-sm font-semibold transition-transform duration-300 group-hover:translate-x-1'>
+                    Browse all
+                    <ArrowRight className='w-4 h-4' />
+                  </span>
+                </div>
+              </button>
+            </div>
+          ) : (
+            // Fallback: when no art products yet, show featured products in same masonry feel
+            <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4'>
+              {featuredProducts.slice(0, 7).map((product, index) => (
+                <ProductCard
+                  key={product.id}
+                  id={product.id}
+                  name={product.name}
+                  slug={product.slug}
+                  images={product.images}
+                  price={product.price}
+                  config={(product as ProductCardProps).config}
+                  fixed_price={(product as ProductCardProps).fixed_price}
+                  isFeatured={false}
+                  index={index}
+                />
+              ))}
+            </div>
+          )}
+
+          <div className='mt-6 sm:hidden text-center'>
+            <button
+              onClick={() => navigate('/art-collections')}
+              className='inline-flex items-center gap-1.5 text-[#f63a9e] font-semibold text-sm'
+            >
+              View all
+              <ArrowRight className='w-4 h-4' />
+            </button>
           </div>
         </div>
       </section>

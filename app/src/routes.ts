@@ -24,7 +24,8 @@ export default [
   route('refund-return-policy', 'pages/refund-return-policy/index.tsx'),
   route('track-order', 'pages/track-order/index.tsx'),
 
-  route('room/:id', 'pages/room/[id]/index.tsx'),
+  // Room Inspiration feature is temporarily disabled (kept for future re-enable).
+  // route('room/:id', 'pages/room/[id]/index.tsx'),
   route('products', 'pages/products/index.tsx'),
   route('product/:id', 'pages/product/[id]/index.tsx'),
   route('art/:id', 'pages/art/[id]/index.tsx'),
@@ -79,9 +80,10 @@ export default [
       'pages/admin/promotions/edit/[promotionId]/index.tsx'
     ),
 
-    route('admin/rooms', 'pages/admin/rooms/index.tsx'),
-    route('admin/rooms/new', 'pages/admin/rooms/new/index.tsx'),
-    route('admin/rooms/:roomId', 'pages/admin/rooms/[roomId]/index.tsx'),
+    // Admin Rooms management is temporarily disabled (kept for future re-enable).
+    // route('admin/rooms', 'pages/admin/rooms/index.tsx'),
+    // route('admin/rooms/new', 'pages/admin/rooms/new/index.tsx'),
+    // route('admin/rooms/:roomId', 'pages/admin/rooms/[roomId]/index.tsx'),
 
     route('admin/products', 'pages/admin/products/index.tsx'),
     route('admin/products/new', 'pages/admin/products/new/index.tsx'),
