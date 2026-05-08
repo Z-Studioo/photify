@@ -167,7 +167,7 @@ export async function createCheckoutSession(
 
       return {
         price_data: {
-          currency: 'usd',
+          currency: 'gbp',
           product_data: productData,
           unit_amount: Math.max(1, Math.round(discountedPrice * 100)),
         },
@@ -178,12 +178,12 @@ export async function createCheckoutSession(
     // Add delivery fee as a line item
     lineItems.push({
       price_data: {
-        currency: 'usd',
+        currency: 'gbp',
         product_data: {
           name: 'Delivery Fee',
           description: 'Standard shipping',
         },
-        unit_amount: Math.round(deliveryFee * 100), // Convert to cents
+        unit_amount: Math.round(deliveryFee * 100), // Convert to pence
       },
       quantity: 1,
     });

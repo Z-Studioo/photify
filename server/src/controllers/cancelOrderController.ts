@@ -55,7 +55,7 @@ export async function cancelOrder(
     }
 
     let refundAmount = parseFloat(order.total);
-    let refundCurrency = 'gbd'; // Default
+    let refundCurrency = 'GBP'; // Default
 
     try {
       // First, get the payment intent to check its current status and amount
