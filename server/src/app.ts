@@ -20,9 +20,15 @@ const app = express();
 app.use(helmet());
 
 // CORS configuration
-// Supports a comma-separated list in CLIENT_URL so we can allow apex + www
-// (e.g. "https://photify.co,https://www.photify.co") as well as preview URLs.
-const allowedOrigins = (config.CLIENT_URL || 'http://localhost:5173')
+// `CORS_ALLOWED_ORIGINS` is a comma-separated list (e.g.
+// "https://photify.co,https://www.photify.co"). Falls back to `CLIENT_URL`
+// (the canonical site URL used for emails / Stripe redirects) so existing
+// single-origin deployments keep working.
+const allowedOrigins = (
+  process.env.CORS_ALLOWED_ORIGINS ||
+  config.CLIENT_URL ||
+  'http://localhost:5173'
+)
   .split(',')
   .map(o => o.trim())
   .filter(Boolean);
