@@ -25,6 +25,51 @@ const STATIC_CUSTOMER_ROUTES: StaticEntry[] = [
   { path: '/refund-return-policy', changefreq: 'yearly', priority: 0.2 },
 ];
 
+/**
+ * Internal / non-SEO static routes. They still need to be prerendered so
+ * that direct hits and reloads on the deployed static host serve a real
+ * `<path>/index.html` instead of 404'ing — but they should NOT appear in
+ * the sitemap (most are noindex anyway).
+ *
+ * Keep this list in sync with `app/src/routes.ts` whenever a new top-level
+ * page is added that has no route params.
+ */
+const STATIC_INTERNAL_ROUTES: string[] = [
+  // Tool / configurator flows
+  '/canvas-configurer',
+  '/upload',
+  '/crop',
+  '/customize/multi-canvas-wall',
+  '/customize/event-canvas',
+  '/customize/single-canvas',
+  '/customize/photo-collage-creator',
+  '/customize/product-3d-view',
+
+  // Customer order flow
+  '/cart',
+  '/checkout',
+  '/confirmation',
+  '/track-order',
+
+  // Admin (all noindex via meta)
+  '/admin/login',
+  '/admin/dashboard',
+  '/admin/analytics',
+  '/admin/categories',
+  '/admin/orders',
+  '/admin/promotions',
+  '/admin/promotions/new',
+  '/admin/rooms',
+  '/admin/rooms/new',
+  '/admin/products',
+  '/admin/products/new',
+  '/admin/art-collection',
+  '/admin/art-collection/new',
+  '/admin/settings',
+  '/admin/settings/size-pricing',
+  '/admin/customers',
+];
+
 interface DynamicPaths {
   productPaths: string[];
   artPaths: string[];
@@ -198,15 +243,17 @@ export default {
   async prerender() {
     const { productPaths, artPaths, categoryPaths } = await fetchDynamicPaths();
 
+    // Every static path that should produce its own <path>/index.html on
+    // disk so the static host can serve direct hits / reloads natively.
     const staticPaths = [
       ...STATIC_CUSTOMER_ROUTES.map(r => r.path),
-      '/track-order',
+      ...STATIC_INTERNAL_ROUTES,
     ];
 
     const all = [...staticPaths, ...productPaths, ...artPaths, ...categoryPaths];
 
     console.log(
-      `[prerender] ${all.length} routes (${productPaths.length} products, ${artPaths.length} arts, ${categoryPaths.length} categories)`
+      `[prerender] ${all.length} routes (${staticPaths.length} static, ${productPaths.length} products, ${artPaths.length} arts, ${categoryPaths.length} categories)`
     );
     return all;
   },
@@ -248,7 +295,7 @@ export default {
     try {
       const staticPaths = [
         ...STATIC_CUSTOMER_ROUTES.map(r => r.path),
-        '/track-order',
+        ...STATIC_INTERNAL_ROUTES,
       ];
       const redirects = buildRedirects({ staticPaths, dynamic });
       const target = resolvePath(clientDir, '_redirects');
