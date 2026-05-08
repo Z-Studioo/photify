@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { ImageWithFallback } from '@/components/figma/image-with-fallback';
-import { ArrowRight, Loader2 } from 'lucide-react';
+import { ArrowRight, Loader2, Sparkles, Upload } from 'lucide-react';
+import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { createClient } from '@/lib/supabase/client';
 import {
@@ -17,9 +18,14 @@ interface FeaturedCollection {
   productId: string;
 }
 
+// Sparse slot array: index 0 = featured_index 1 (large left),
+// 1 = featured_index 2 (top-right left), 2 = featured_index 3 (top-right right),
+// 3 = featured_index 4 (bottom-right wide). `null` means render promo placeholder.
+type FeaturedSlots = (FeaturedCollection | null)[];
+
 export function FeaturedCollections() {
   const navigate = useNavigate();
-  const [collections, setCollections] = useState<FeaturedCollection[]>([]);
+  const [collections, setCollections] = useState<FeaturedSlots>([]);
   const [loading, setLoading] = useState(true);
 
   // Fallback collections if database query fails
@@ -80,8 +86,13 @@ export function FeaturedCollections() {
       if (error) throw error;
 
       if (data && data.length > 0) {
-        // Transform database products to FeaturedCollection format
-        const transformedCollections = data.map(product => {
+        // Position each product by its admin-assigned featured_index (1-4).
+        // Slots that have no product remain null so a promo card renders there
+        // instead of shifting other products out of position.
+        const positionedSlots: FeaturedSlots = [null, null, null, null];
+        data.forEach(product => {
+          const slotIndex = (product.featured_index ?? 0) - 1;
+          if (slotIndex < 0 || slotIndex > 3) return;
           const amount = getListingDisplayAmount({
             config: product.config,
             fixed_price: product.fixed_price,
@@ -89,7 +100,7 @@ export function FeaturedCollections() {
           });
           const priceLabel =
             amount != null ? `£${formatGbpAmount(amount)}` : '—';
-          return {
+          positionedSlots[slotIndex] = {
             image: product.featured_image || '',
             badge: 'Featured',
             badgeColor: 'bg-[#f63a9e]',
@@ -99,16 +110,17 @@ export function FeaturedCollections() {
           };
         });
 
-        const repeatedCollections: FeaturedCollection[] = [];
-        while (repeatedCollections.length < 4) {
-          repeatedCollections.push(
-            transformedCollections[
-              repeatedCollections.length % transformedCollections.length
-            ]
-          );
+        // The large left tile must always have content; if its slot is empty,
+        // promote the first available product into it so the layout never breaks.
+        if (!positionedSlots[0]) {
+          const firstAvailableIdx = positionedSlots.findIndex(s => s !== null);
+          if (firstAvailableIdx > 0) {
+            positionedSlots[0] = positionedSlots[firstAvailableIdx];
+            positionedSlots[firstAvailableIdx] = null;
+          }
         }
 
-        setCollections(repeatedCollections);
+        setCollections(positionedSlots);
       } else {
         // No featured products in database, use fallback
         setCollections(fallbackCollections);
@@ -181,95 +193,247 @@ export function FeaturedCollections() {
 
         {/* Grid of 3 items - right */}
         <div className='grid grid-rows-2 gap-2 xs:gap-2.5 sm:gap-3 h-auto lg:h-full'>
-          {/* Top row - 2 items */}
+          {/* Top row - 2 items (slots for featured_index 2 and 3) */}
           <div className='grid grid-cols-2 gap-2 xs:gap-2.5 sm:gap-3'>
-            {displayCollections.slice(1, 3).map((collection, index) => (
-              <button
-                key={index}
-                onClick={() => navigate(`/product/${collection.productId}`)}
-                className='relative overflow-hidden rounded-sm group h-[135px] xs:h-[155px] sm:h-[185px] md:h-[205px] lg:h-full cursor-pointer border-0 p-0'
-              >
-                <ImageWithFallback
-                  src={collection.image}
-                  alt={collection.title}
-                  className='absolute inset-0 w-full h-full object-cover transition-transform duration-300 group-hover:scale-105'
-                />
-                <div className='absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent' />
-                <div className='absolute bottom-0 left-0 p-2 xs:p-2.5 sm:p-3 md:p-4 text-white text-left'>
-                  {collection.badge && collection.badge !== 'Featured' && (
-                    <span
-                      className={`inline-block ${collection.badgeColor} text-white text-[8px] xs:text-[9px] sm:text-[10px] md:text-xs px-1.5 xs:px-2 py-0.5 xs:py-0.5 sm:py-1 rounded-sm mb-1 xs:mb-1.5 sm:mb-2`}
+            {[1, 2].map(slotIdx => {
+              const collection = displayCollections[slotIdx];
+              if (!collection) {
+                return (
+                  <FeaturedPromoTile
+                    key={`promo-${slotIdx}`}
+                    onNavigate={() => navigate('/products')}
+                    variant='compact'
+                  />
+                );
+              }
+              return (
+                <button
+                  key={slotIdx}
+                  onClick={() => navigate(`/product/${collection.productId}`)}
+                  className='relative overflow-hidden rounded-sm group h-[135px] xs:h-[155px] sm:h-[185px] md:h-[205px] lg:h-full cursor-pointer border-0 p-0'
+                >
+                  <ImageWithFallback
+                    src={collection.image}
+                    alt={collection.title}
+                    className='absolute inset-0 w-full h-full object-cover transition-transform duration-300 group-hover:scale-105'
+                  />
+                  <div className='absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent' />
+                  <div className='absolute bottom-0 left-0 p-2 xs:p-2.5 sm:p-3 md:p-4 text-white text-left'>
+                    {collection.badge && collection.badge !== 'Featured' && (
+                      <span
+                        className={`inline-block ${collection.badgeColor} text-white text-[8px] xs:text-[9px] sm:text-[10px] md:text-xs px-1.5 xs:px-2 py-0.5 xs:py-0.5 sm:py-1 rounded-sm mb-1 xs:mb-1.5 sm:mb-2`}
+                      >
+                        {collection.badge}
+                      </span>
+                    )}
+                    <h3
+                      className="font-['Bricolage_Grotesque',_sans-serif] mb-1 xs:mb-1.5 sm:mb-2 line-clamp-2 text-left text-xs xs:text-sm sm:text-[15px] md:text-[16px]"
+                      style={{
+                        lineHeight: '1.3',
+                        fontWeight: '600',
+                      }}
                     >
-                      {collection.badge}
-                    </span>
-                  )}
-                  <h3
-                    className="font-['Bricolage_Grotesque',_sans-serif] mb-1 xs:mb-1.5 sm:mb-2 line-clamp-2 text-left text-xs xs:text-sm sm:text-[15px] md:text-[16px]"
-                    style={{
-                      lineHeight: '1.3',
-                      fontWeight: '600',
-                    }}
-                  >
-                    {collection.title}
-                  </h3>
-                  <div className='flex items-baseline gap-1 xs:gap-1.5 sm:gap-2 mb-1 xs:mb-1.5 sm:mb-2'>
-                    <p
-                      className='text-left text-[11px] xs:text-xs sm:text-[13px] md:text-[14px]'
-                      style={{ fontWeight: '700' }}
-                    >
-                      From {collection.price}
-                    </p>
+                      {collection.title}
+                    </h3>
+                    <div className='flex items-baseline gap-1 xs:gap-1.5 sm:gap-2 mb-1 xs:mb-1.5 sm:mb-2'>
+                      <p
+                        className='text-left text-[11px] xs:text-xs sm:text-[13px] md:text-[14px]'
+                        style={{ fontWeight: '700' }}
+                      >
+                        From {collection.price}
+                      </p>
+                    </div>
+                    <ArrowRight className='w-3 h-3 xs:w-3.5 xs:h-3.5 sm:w-4 sm:h-4 md:w-5 md:h-5' />
                   </div>
-                  <ArrowRight className='w-3 h-3 xs:w-3.5 xs:h-3.5 sm:w-4 sm:h-4 md:w-5 md:h-5' />
-                </div>
-              </button>
-            ))}
+                </button>
+              );
+            })}
           </div>
 
-          {/* Bottom row - 1 item spanning full width */}
-          <button
-            onClick={() =>
-              navigate(`/product/${displayCollections[3].productId}`)
-            }
-            className='relative overflow-hidden rounded-sm group h-[135px] xs:h-[155px] sm:h-[185px] md:h-[205px] lg:h-full cursor-pointer border-0 p-0'
-          >
-            <ImageWithFallback
-              src={displayCollections[3].image}
-              alt={displayCollections[3].title}
-              className='absolute inset-0 w-full h-full object-cover transition-transform duration-300 group-hover:scale-105'
-            />
-            <div className='absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent' />
-            <div className='absolute bottom-0 left-0 p-2.5 xs:p-3 sm:p-3.5 md:p-4 text-white text-left'>
-              {displayCollections[3].badge &&
-                displayCollections[3].badge !== 'Featured' && (
-                  <span
-                    className={`inline-block ${displayCollections[3].badgeColor} text-white text-[9px] xs:text-[10px] sm:text-xs px-1.5 xs:px-2 py-0.5 xs:py-0.5 sm:py-1 rounded-sm mb-1 xs:mb-1.5 sm:mb-2`}
-                  >
-                    {displayCollections[3].badge}
-                  </span>
-                )}
-              <h3
-                className="font-['Bricolage_Grotesque',_sans-serif] mb-1 xs:mb-1.5 sm:mb-2 text-left text-sm xs:text-base sm:text-[17px] md:text-[18px]"
-                style={{
-                  lineHeight: '1.3',
-                  fontWeight: '600',
-                }}
-              >
-                {displayCollections[3].title}
-              </h3>
-              <div className='flex items-baseline gap-1 xs:gap-1.5 sm:gap-2 mb-1 xs:mb-1.5 sm:mb-2'>
-                <p
-                  className='text-left text-xs xs:text-sm sm:text-[15px] md:text-[16px]'
-                  style={{ fontWeight: '700' }}
+          {/* Bottom row - 1 item spanning full width (slot for featured_index 4) */}
+          {displayCollections[3] ? (
+            <button
+              onClick={() =>
+                navigate(`/product/${displayCollections[3].productId}`)
+              }
+              className='relative overflow-hidden rounded-sm group h-[135px] xs:h-[155px] sm:h-[185px] md:h-[205px] lg:h-full cursor-pointer border-0 p-0'
+            >
+              <ImageWithFallback
+                src={displayCollections[3].image}
+                alt={displayCollections[3].title}
+                className='absolute inset-0 w-full h-full object-cover transition-transform duration-300 group-hover:scale-105'
+              />
+              <div className='absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent' />
+              <div className='absolute bottom-0 left-0 p-2.5 xs:p-3 sm:p-3.5 md:p-4 text-white text-left'>
+                {displayCollections[3].badge &&
+                  displayCollections[3].badge !== 'Featured' && (
+                    <span
+                      className={`inline-block ${displayCollections[3].badgeColor} text-white text-[9px] xs:text-[10px] sm:text-xs px-1.5 xs:px-2 py-0.5 xs:py-0.5 sm:py-1 rounded-sm mb-1 xs:mb-1.5 sm:mb-2`}
+                    >
+                      {displayCollections[3].badge}
+                    </span>
+                  )}
+                <h3
+                  className="font-['Bricolage_Grotesque',_sans-serif] mb-1 xs:mb-1.5 sm:mb-2 text-left text-sm xs:text-base sm:text-[17px] md:text-[18px]"
+                  style={{
+                    lineHeight: '1.3',
+                    fontWeight: '600',
+                  }}
                 >
-                  From {displayCollections[3].price}
-                </p>
+                  {displayCollections[3].title}
+                </h3>
+                <div className='flex items-baseline gap-1 xs:gap-1.5 sm:gap-2 mb-1 xs:mb-1.5 sm:mb-2'>
+                  <p
+                    className='text-left text-xs xs:text-sm sm:text-[15px] md:text-[16px]'
+                    style={{ fontWeight: '700' }}
+                  >
+                    From {displayCollections[3].price}
+                  </p>
+                </div>
+                <ArrowRight className='w-3.5 h-3.5 xs:w-4 xs:h-4 sm:w-4.5 sm:h-4.5 md:w-5 md:h-5' />
               </div>
-              <ArrowRight className='w-3.5 h-3.5 xs:w-4 xs:h-4 sm:w-4.5 sm:h-4.5 md:w-5 md:h-5' />
-            </div>
-          </button>
+            </button>
+          ) : (
+            <FeaturedPromoTile onNavigate={() => navigate('/products')} />
+          )}
         </div>
       </div>
     </section>
+  );
+}
+
+interface FeaturedPromoTileProps {
+  onNavigate: () => void;
+  variant?: 'wide' | 'compact';
+}
+
+function FeaturedPromoTile({
+  onNavigate,
+  variant = 'wide',
+}: FeaturedPromoTileProps) {
+  const isCompact = variant === 'compact';
+
+  return (
+    <button
+      onClick={onNavigate}
+      aria-label='Upload your photo and design a custom print'
+      className='relative overflow-hidden rounded-sm group h-[135px] xs:h-[155px] sm:h-[185px] md:h-[205px] lg:h-full cursor-pointer border-0 p-0 text-left bg-gradient-to-br from-[#f63a9e] via-[#ff5fb1] to-[#7c2bd1]'
+    >
+      {/* Decorative blurred orbs */}
+      <span
+        aria-hidden='true'
+        className='pointer-events-none absolute -top-10 -right-10 w-40 h-40 rounded-full bg-white/20 blur-2xl transition-transform duration-500 group-hover:scale-110'
+      />
+      <span
+        aria-hidden='true'
+        className='pointer-events-none absolute -bottom-12 -left-8 w-44 h-44 rounded-full bg-[#ffd1ec]/30 blur-3xl'
+      />
+
+      {/* Subtle grid pattern */}
+      <span
+        aria-hidden='true'
+        className='pointer-events-none absolute inset-0 opacity-[0.12] mix-blend-overlay'
+        style={{
+          backgroundImage:
+            'linear-gradient(to right, rgba(255,255,255,0.6) 1px, transparent 1px), linear-gradient(to bottom, rgba(255,255,255,0.6) 1px, transparent 1px)',
+          backgroundSize: isCompact ? '16px 16px' : '22px 22px',
+        }}
+      />
+
+      {/* Floating sparkle */}
+      <motion.span
+        aria-hidden='true'
+        initial={{ opacity: 0.7, y: 0 }}
+        animate={{ opacity: [0.7, 1, 0.7], y: [0, -4, 0] }}
+        transition={{ duration: 3, repeat: Infinity, ease: 'easeInOut' }}
+        className={
+          isCompact
+            ? 'absolute top-2 right-2 xs:top-2.5 xs:right-2.5 sm:top-3 sm:right-3 text-white/90'
+            : 'absolute top-3 right-3 xs:top-4 xs:right-4 sm:top-5 sm:right-5 text-white/90'
+        }
+      >
+        <Sparkles
+          className={
+            isCompact
+              ? 'w-3 h-3 xs:w-3.5 xs:h-3.5 sm:w-4 sm:h-4'
+              : 'w-4 h-4 xs:w-5 xs:h-5 sm:w-6 sm:h-6'
+          }
+        />
+      </motion.span>
+
+      <div
+        className={
+          isCompact
+            ? 'relative h-full w-full flex flex-col justify-between p-2 xs:p-2.5 sm:p-3 md:p-4 text-white'
+            : 'relative h-full w-full flex flex-col justify-between p-3 xs:p-4 sm:p-5 md:p-6 text-white'
+        }
+      >
+        <div className='flex items-center gap-1.5 xs:gap-2'>
+          <span
+            className={
+              isCompact
+                ? 'inline-flex items-center gap-1 bg-white/20 backdrop-blur-sm text-white text-[8px] xs:text-[9px] sm:text-[10px] font-semibold uppercase tracking-wider px-1.5 xs:px-2 py-0.5 rounded-full'
+                : 'inline-flex items-center gap-1 bg-white/20 backdrop-blur-sm text-white text-[9px] xs:text-[10px] sm:text-xs font-semibold uppercase tracking-wider px-2 xs:px-2.5 py-0.5 xs:py-1 rounded-full'
+            }
+          >
+            <Sparkles className='w-2.5 h-2.5 xs:w-3 xs:h-3' />
+            Make It Yours
+          </span>
+        </div>
+
+        <div className='mt-auto'>
+          <h3
+            className={
+              isCompact
+                ? "font-['Bricolage_Grotesque',_sans-serif] mb-1 xs:mb-1.5 sm:mb-2 text-left text-xs xs:text-sm sm:text-[15px] md:text-[16px] leading-tight"
+                : "font-['Bricolage_Grotesque',_sans-serif] mb-1 xs:mb-1.5 sm:mb-2 text-left text-base xs:text-lg sm:text-xl md:text-[22px] leading-tight"
+            }
+            style={{ fontWeight: '700' }}
+          >
+            {isCompact ? 'Design Your Print' : 'Turn Your Photos Into Wall Art'}
+          </h3>
+          {!isCompact && (
+            <>
+              <p className='hidden sm:block text-white/85 text-[12px] sm:text-[13px] md:text-sm mb-2 sm:mb-3 max-w-md'>
+                Upload a memory and we&apos;ll handcraft it into a
+                museum-quality print, delivered to your door.
+              </p>
+              <p className='block sm:hidden text-white/85 text-[11px] xs:text-xs mb-1.5'>
+                Upload &amp; design in minutes.
+              </p>
+            </>
+          )}
+          {isCompact && (
+            <p className='hidden md:block text-white/85 text-[11px] md:text-[12px] mb-1.5 md:mb-2 line-clamp-2'>
+              Upload your photo &amp; we&apos;ll do the rest.
+            </p>
+          )}
+
+          <div
+            className={
+              isCompact
+                ? 'inline-flex items-center gap-1 xs:gap-1.5 bg-white text-[#f63a9e] px-2 xs:px-2.5 py-0.5 xs:py-1 rounded-full text-[10px] xs:text-[11px] sm:text-xs font-semibold shadow-sm transition-transform duration-200 group-hover:translate-x-1'
+                : 'inline-flex items-center gap-1.5 xs:gap-2 bg-white text-[#f63a9e] px-2.5 xs:px-3 sm:px-4 py-1 xs:py-1.5 sm:py-2 rounded-full text-[11px] xs:text-xs sm:text-sm font-semibold shadow-sm transition-transform duration-200 group-hover:translate-x-1'
+            }
+          >
+            <Upload
+              className={
+                isCompact
+                  ? 'w-2.5 h-2.5 xs:w-3 xs:h-3'
+                  : 'w-3 h-3 xs:w-3.5 xs:h-3.5 sm:w-4 sm:h-4'
+              }
+            />
+            <span>{isCompact ? 'Start' : 'Start Designing'}</span>
+            <ArrowRight
+              className={
+                isCompact
+                  ? 'w-2.5 h-2.5 xs:w-3 xs:h-3'
+                  : 'w-3 h-3 xs:w-3.5 xs:h-3.5 sm:w-4 sm:h-4'
+              }
+            />
+          </div>
+        </div>
+      </div>
+    </button>
   );
 }
