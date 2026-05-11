@@ -4,6 +4,7 @@ import checkoutRoutes from './checkout';
 import contactRoutes from './contact';
 import ordersRoutes from './orders';
 import addressRoutes from './address';
+import shippingRoutes from './shipping';
 
 const router = Router();
 
@@ -77,15 +78,25 @@ router.get('/', (_req: Request, res: Response) => {
       webhook: 'POST /api/webhook',
       contact: 'POST /api/contact',
       orderNotification: 'POST /api/orders/:orderNumber/status-notification',
+      shippingQuotes: 'POST /api/shipping/orders/:orderNumber/quotes',
+      shippingBook: 'POST /api/shipping/orders/:orderNumber/book',
+      shippingLabel: 'GET /api/shipping/orders/:orderNumber/label',
+      shippingTracking: 'GET /api/shipping/orders/:orderNumber/tracking',
+      shippingSyncTracking:
+        'POST /api/shipping/orders/:orderNumber/sync-tracking',
+      parcel2goWebhook: 'POST /api/shipping/webhook',
     },
   });
 });
 
 // Mount route modules
-// Note: Webhook route is mounted directly in app.ts before JSON body parser
+// Note: Stripe webhook is mounted directly in app.ts before JSON body parser.
+// The Parcel2Go webhook lives under /api/shipping/webhook (no admin auth —
+// signature-verified). Admin-only shipping routes live alongside it.
 router.use('/checkout', checkoutRoutes);
 router.use('/contact', contactRoutes);
 router.use('/orders', ordersRoutes);
 router.use('/address', addressRoutes);
+router.use('/shipping', shippingRoutes);
 
 export default router;

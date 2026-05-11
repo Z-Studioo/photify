@@ -1069,26 +1069,21 @@ export function CheckoutPage() {
                       animate={{ opacity: 1, y: 0 }}
                       transition={{ delay: index * 0.05 }}
                     >
-                      <div className='relative flex-shrink-0'>
-                        <img
-                          src={item.image}
-                          alt={item.name}
-                          className='w-16 h-16 rounded-lg object-cover'
-                        />
-                        <div
-                          className='absolute -top-1 -right-1 w-5 h-5 rounded-full bg-[#f63a9e] text-white flex items-center justify-center text-xs'
-                          style={{ fontWeight: '700' }}
-                        >
-                          {item.quantity}
-                        </div>
-                      </div>
                       <div className='flex-1 min-w-0'>
-                        <h4
-                          className='text-gray-900 mb-1 truncate text-sm'
-                          style={{ fontWeight: '600' }}
-                        >
-                          {item.name}
-                        </h4>
+                        <div className='flex items-start justify-between gap-2 mb-1'>
+                          <h4
+                            className='text-gray-900 truncate text-sm'
+                            style={{ fontWeight: '600' }}
+                          >
+                            {item.name}
+                          </h4>
+                          <span
+                            className='flex-shrink-0 px-2 py-0.5 rounded-full bg-[#f63a9e] text-white text-[11px] leading-none'
+                            style={{ fontWeight: '700' }}
+                          >
+                            ×{item.quantity}
+                          </span>
+                        </div>
                         <p className='text-gray-500 text-xs mb-1'>
                           {item.size}
                         </p>

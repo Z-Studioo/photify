@@ -106,6 +106,8 @@ export async function createCheckoutSession(
         items: cartItems,
         subtotal,
         shipping_cost: deliveryFee,
+        discount: discount || 0,
+        promo_code: promoCode ? promoCode.toUpperCase() : null,
         total,
         video_permission: videoPermission || false,
         estimated_delivery: estimatedDelivery.toISOString().split('T')[0],

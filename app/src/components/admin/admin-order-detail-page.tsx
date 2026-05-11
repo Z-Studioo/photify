@@ -1,4 +1,4 @@
-import { useState, useEffect, type JSX } from 'react';
+import { useState, useEffect, useMemo, type JSX } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { AdminLayout } from './admin-layout';
 import { Button } from '@/components/ui/button';
@@ -22,6 +22,7 @@ import {
   Download,
   ExternalLink,
   FileText,
+  AlertTriangle,
 } from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
 import { toast } from 'sonner';
@@ -37,24 +38,31 @@ import {
   AlertDialogTitle,
 } from '../ui/alert-dialog';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-// import { Badge } from '../ui/badge';
+import { AdminOrderShipping } from './admin-order-shipping';
+import {
+  nextStatus as computeNextStatus,
+  previousStatus as computePreviousStatus,
+  nextActionLabel,
+  statusLabel,
+  statusBadgeClass,
+  normaliseStatus,
+  type OrderStatus,
+} from '@/lib/orders/status';
+import {
+  openInvoiceForPrint,
+  downloadInvoiceHtml,
+  type InvoiceItem,
+} from '@/lib/orders/invoice';
 
-const STATUS_FLOW = ['pending', 'processing', 'shipped', 'delivered'] as const;
-type OrderStatus = (typeof STATUS_FLOW)[number] | 'cancelled';
+type UpdatingAction = null | 'next' | 'revert' | 'cancel';
 
-const getNextStatus = (current: OrderStatus): OrderStatus => {
-  const index = STATUS_FLOW.indexOf(current as any);
-  return STATUS_FLOW[index + 1] ?? current;
-};
-
-const getPreviousStatus = (current: OrderStatus): OrderStatus => {
-  const index = STATUS_FLOW.indexOf(current as any);
-  return STATUS_FLOW[index - 1] ?? current;
-};
+const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:5000';
 
 const generateTimeline = (data: any) => {
   const createdAt = new Date(data.created_at);
   const paidAt = data.paid_at ? new Date(data.paid_at) : null;
+  const shippedAt = data.shipped_at ? new Date(data.shipped_at) : null;
+  const deliveredAt = data.delivered_at ? new Date(data.delivered_at) : null;
   const cancelledAt = data.cancelled_at ? new Date(data.cancelled_at) : null;
 
   const formatDate = (date: Date) =>
@@ -66,8 +74,47 @@ const generateTimeline = (data: any) => {
   const formatTime = (date: Date) =>
     date.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
 
-  const status = data.status;
-  const isCancelled = status === 'cancelled';
+  const status = normaliseStatus(data.status);
+  const paymentConfirmed = data.payment_status === 'paid';
+
+  // For cancelled orders we collapse the timeline to the steps that
+  // genuinely happened: Order Placed → (optional) Payment Confirmed →
+  // (optional) Dispatched → Cancelled. We never imply Delivered if it
+  // wasn't reached.
+  if (status === 'cancelled') {
+    const steps: any[] = [
+      {
+        label: 'Order Placed',
+        date: formatDate(createdAt),
+        time: formatTime(createdAt),
+        completed: true,
+      },
+    ];
+    if (paymentConfirmed || paidAt) {
+      steps.push({
+        label: 'Payment Confirmed',
+        date: paidAt ? formatDate(paidAt) : '',
+        time: paidAt ? formatTime(paidAt) : '',
+        completed: true,
+      });
+    }
+    if (shippedAt) {
+      steps.push({
+        label: 'Dispatched',
+        date: formatDate(shippedAt),
+        time: formatTime(shippedAt),
+        completed: true,
+      });
+    }
+    steps.push({
+      label: 'Cancelled',
+      date: cancelledAt ? formatDate(cancelledAt) : '',
+      time: cancelledAt ? formatTime(cancelledAt) : '',
+      completed: true,
+      cancelled: true,
+    });
+    return steps;
+  }
 
   return [
     {
@@ -80,35 +127,23 @@ const generateTimeline = (data: any) => {
       label: 'Payment Confirmed',
       date: paidAt ? formatDate(paidAt) : '',
       time: paidAt ? formatTime(paidAt) : '',
-      completed:
-        !isCancelled && status !== 'pending' && data.payment_status === 'paid',
+      completed: status !== 'pending' && paymentConfirmed,
+      active: status === 'pending' && paymentConfirmed,
     },
     {
       label: 'Dispatched',
-      date: '',
-      time: '',
-      completed: !isCancelled && status === 'delivered',
-      active: !isCancelled && status === 'shipped',
-      statusText:
-        !isCancelled && status === 'shipped' ? 'In Progress' : undefined,
+      date: shippedAt ? formatDate(shippedAt) : '',
+      time: shippedAt ? formatTime(shippedAt) : '',
+      completed: status === 'delivered',
+      active: status === 'shipped',
+      statusText: status === 'shipped' ? 'In Progress' : undefined,
     },
     {
       label: 'Delivered',
-      date: '',
-      time: '',
+      date: deliveredAt ? formatDate(deliveredAt) : '',
+      time: deliveredAt ? formatTime(deliveredAt) : '',
       completed: status === 'delivered',
     },
-    ...(isCancelled
-      ? [
-          {
-            label: 'Cancelled',
-            date: cancelledAt ? formatDate(cancelledAt) : '',
-            time: cancelledAt ? formatTime(cancelledAt) : '',
-            completed: true,
-            cancelled: true,
-          },
-        ]
-      : []),
   ];
 };
 
@@ -127,10 +162,26 @@ export function AdminOrderDetailPage() {
   const [savingNote, setSavingNote] = useState(false);
   const [order, setOrder] = useState<any>(null);
   const [loading, setLoading] = useState(true);
-  const supabase = createClient();
+  // Memoised so we don't recreate the client (and re-trigger fetchOrder) on
+  // every render.
+  const supabase = useMemo(() => createClient(), []);
   const [showCancelDialog, setShowCancelDialog] = useState(false);
   const [cancelReason, setCancelReason] = useState('');
-  const [updating, setUpdating] = useState(false);
+  const [updating, setUpdating] = useState<UpdatingAction>(null);
+
+  // Derived flags used in several places below — keeps render logic readable.
+  const status: OrderStatus = order ? normaliseStatus(order.status) : 'pending';
+  const isTerminal = status === 'delivered' || status === 'cancelled';
+  const hasParcel2GoShipment = Boolean(order?.parcel2go_order_id);
+  const paymentConfirmed = order?.payment_status === 'paid';
+  // Once a Parcel2Go shipment is booked, ship/deliver transitions are owned
+  // by Parcel2Go automation (webhook + cron) — admins should refresh the
+  // Shipping panel instead of pressing manual status buttons.
+  const manualAdvanceLocked =
+    hasParcel2GoShipment &&
+    (status === 'processing' || status === 'shipped');
+  // pending → processing is only meaningful once Stripe has confirmed payment.
+  const canConfirmPayment = status !== 'pending' || paymentConfirmed;
 
   useEffect(() => {
     const fetchOrder = async () => {
@@ -180,12 +231,13 @@ export function AdminOrderDetailPage() {
                     ? 'Payment Failed'
                     : 'Pending',
             deliveryMethod:
-              Math.abs(parseFloat(data.shipping_cost || 0) - 6.99) < 0.01
-                ? 'Express'
-                : 'Standard',
+              data.service_name ||
+              (parseFloat(data.shipping_cost || 0) >= 6 ? 'Express' : 'Standard'),
             deliveryPrice: `£${parseFloat(data.shipping_cost || 0).toFixed(2)}`,
             subtotal: `£${parseFloat(data.subtotal).toFixed(2)}`,
             deliveryCharge: `£${parseFloat(data.shipping_cost || 0).toFixed(2)}`,
+            discount: parseFloat(data.discount || 0),
+            promoCode: data.promo_code || null,
             total: `£${parseFloat(data.total).toFixed(2)}`,
             timeline: generateTimeline({ ...data, status: dbStatus }),
             payment_status: data.payment_status,
@@ -200,13 +252,25 @@ export function AdminOrderDetailPage() {
               category: 'Product',
               image: item.image || '#',
               images: Array.isArray(item.images) ? item.images : [],
-              invoice: `#INV-${Math.random().toString(36).substr(2, 9).toUpperCase()}`,
               unitPrice: `£${parseFloat(item.price).toFixed(2)}`,
               quantity: item.quantity || 1,
               customization: item.customization || null,
             })),
             hosted_invoice_url: data.hosted_invoice_url || '#',
             remarks: data.remarks || '',
+            // Parcel2Go shipment fields (used by AdminOrderShipping)
+            parcel2go_order_id: data.parcel2go_order_id || null,
+            parcel2go_orderline_id: data.parcel2go_orderline_id || null,
+            tracking_number: data.tracking_number || null,
+            tracking_url: data.tracking_url || null,
+            tracking_stage: data.tracking_stage || null,
+            carrier_name: data.carrier_name || null,
+            service_name: data.service_name || null,
+            service_id: data.service_id || null,
+            label_url: data.label_url || null,
+            shipped_at: data.shipped_at || null,
+            shipment_cost: data.shipment_cost || null,
+            parcel_dimensions: data.parcel_dimensions || null,
           };
 
           setOrder(transformedOrder);
@@ -222,156 +286,136 @@ export function AdminOrderDetailPage() {
     fetchOrder();
   }, [orderId, supabase]);
 
-  // Helper function to send status change notification email
-  const sendStatusNotificationEmail = async (
-    orderNumber: string,
-    status: string
-  ) => {
-    try {
-      const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000';
-
-      // Get the current Supabase session token
-      const {
-        data: { session },
-      } = await supabase.auth.getSession();
-
-      if (!session?.access_token) {
-        console.error('No active session token found');
-        toast.error('Failed to send notification email: Not authenticated');
-        return;
-      }
-
-      const response = await fetch(
-        `${apiUrl}/api/orders/${orderNumber}/status-notification`,
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${session.access_token}`,
-          },
-          body: JSON.stringify({ status }),
-        }
-      );
-
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.message || 'Failed to send notification');
-      }
-
-      toast.success('Customer notification email sent');
-    } catch (error) {
-      console.error('Failed to send status notification email:', error);
-      toast.error('Status updated but email notification failed');
+  /**
+   * Calls the centralised `PATCH /api/orders/:orderNumber/status` endpoint.
+   * The backend handles state-machine validation, optimistic locking,
+   * audit logging, and idempotent customer email — so the frontend just
+   * has to react to the result.
+   */
+  const callStatusEndpoint = async (
+    next: OrderStatus,
+    opts: { allowRevert?: boolean; reason?: string } = {}
+  ): Promise<{
+    ok: boolean;
+    emailSent?: boolean;
+    error?: string;
+    reasonCode?: string;
+  }> => {
+    const {
+      data: { session },
+    } = await supabase.auth.getSession();
+    if (!session?.access_token) {
+      return { ok: false, error: 'Not authenticated' };
     }
+    const response = await fetch(
+      `${API_BASE}/api/orders/${encodeURIComponent(order.id)}/status`,
+      {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${session.access_token}`,
+        },
+        body: JSON.stringify({
+          status: next,
+          allowRevert: Boolean(opts.allowRevert),
+          reason: opts.reason ?? null,
+        }),
+      }
+    );
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok) {
+      return {
+        ok: false,
+        error: data.error || 'Failed to update status',
+        reasonCode: data.reasonCode,
+      };
+    }
+    return { ok: true, emailSent: Boolean(data.data?.emailSent) };
+  };
+
+  const applyLocalStatus = (
+    next: OrderStatus,
+    extras: Record<string, any> = {}
+  ) => {
+    setOrder((prev: any) => {
+      if (!prev) return prev;
+      const merged = { ...prev, status: next, ...extras };
+      return {
+        ...merged,
+        timeline: generateTimeline(merged),
+      };
+    });
   };
 
   const handleNextStatus = async () => {
-    if (
-      !order ||
-      order.status === 'delivered' ||
-      order.status === 'cancelled' ||
-      updating
-    )
+    if (!order || isTerminal || updating) return;
+    if (manualAdvanceLocked) {
+      toast.info(
+        'Use the Shipping panel — dispatch/delivery is driven by Parcel2Go tracking.'
+      );
       return;
-
-    const nextStatus = getNextStatus(order.status);
-    if (nextStatus === order.status) return;
-
-    try {
-      setUpdating(true);
-      const payload: any = { status: nextStatus };
-
-      if (nextStatus === 'shipped')
-        payload.shipped_at = new Date().toISOString();
-      if (nextStatus === 'delivered')
-        payload.delivered_at = new Date().toISOString();
-
-      const { error } = await supabase
-        .from('orders')
-        .update(payload)
-        .eq('order_number', order.id)
-        .select();
-
-      if (error) throw error;
-
-      // Update local state
-      setOrder((prev: any) => ({
-        ...prev,
-        status: nextStatus,
-        ...payload,
-        timeline: generateTimeline({ ...prev, ...payload, status: nextStatus }),
-      }));
-
-      toast.success(`Order moved to ${nextStatus}`);
-
-      // Send email notification to customer (await to prevent race conditions)
-      await sendStatusNotificationEmail(order.id, nextStatus);
-    } catch (err) {
-      console.error('Error updating order:', err);
-      toast.error('Failed to update order status');
-    } finally {
-      setUpdating(false);
     }
+    if (status === 'pending' && !paymentConfirmed) {
+      toast.error(
+        'Cannot mark payment as confirmed — Stripe has not reported a successful charge yet.'
+      );
+      return;
+    }
+
+    const next = computeNextStatus(status);
+    if (next === status) return;
+
+    setUpdating('next');
+    const result = await callStatusEndpoint(next);
+    setUpdating(null);
+
+    if (!result.ok) {
+      toast.error(result.error || 'Failed to update order status');
+      return;
+    }
+
+    const extras: Record<string, any> = {};
+    if (next === 'shipped') extras.shipped_at = new Date().toISOString();
+    if (next === 'delivered') extras.delivered_at = new Date().toISOString();
+    applyLocalStatus(next, extras);
+
+    toast.success(`Order moved to ${statusLabel(next)}`, {
+      description: result.emailSent
+        ? 'Customer notification email sent.'
+        : 'No email sent (already notified for this status).',
+    });
   };
 
   const handleBackStatus = async () => {
-    if (
-      !order ||
-      order.status === 'pending' ||
-      order.status === 'cancelled' ||
-      updating
-    )
+    if (!order || status === 'pending' || status === 'cancelled' || updating)
       return;
+    const previous = computePreviousStatus(status);
+    if (previous === status) return;
 
-    const previousStatus = getPreviousStatus(order.status);
-    if (previousStatus === order.status) return;
+    setUpdating('revert');
+    const result = await callStatusEndpoint(previous, { allowRevert: true });
+    setUpdating(null);
 
-    try {
-      setUpdating(true);
-      const payload: any = { status: previousStatus };
-
-      if (order.status === 'shipped') payload.shipped_at = null;
-      if (order.status === 'delivered') payload.delivered_at = null;
-
-      const { error } = await supabase
-        .from('orders')
-        .update(payload)
-        .eq('order_number', order.id)
-        .select();
-
-      if (error) throw error;
-
-      // Update local state
-      setOrder((prev: any) => ({
-        ...prev,
-        status: previousStatus,
-        ...payload,
-        timeline: generateTimeline({
-          ...prev,
-          ...payload,
-          status: previousStatus,
-        }),
-      }));
-
-      toast.success(`Order reverted to ${previousStatus}`);
-    } catch (err) {
-      console.error('Error updating order:', err);
-      toast.error('Failed to update order status');
-    } finally {
-      setUpdating(false);
+    if (!result.ok) {
+      toast.error(result.error || 'Failed to revert order status');
+      return;
     }
+
+    const extras: Record<string, any> = {};
+    if (status === 'shipped') extras.shipped_at = null;
+    if (status === 'delivered') extras.delivered_at = null;
+    applyLocalStatus(previous, extras);
+
+    toast.success(`Order reverted to ${statusLabel(previous)}`, {
+      description: 'No email sent for reverts.',
+    });
   };
 
   const handleCancelOrder = async () => {
     if (updating) return;
 
+    setUpdating('cancel');
     try {
-      setUpdating(true);
-
-      // Call the backend API to cancel order and process refund
-      const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000';
-
-      // Get the current Supabase session token for admin authentication
       const {
         data: { session },
       } = await supabase.auth.getSession();
@@ -383,7 +427,7 @@ export function AdminOrderDetailPage() {
       }
 
       const response = await fetch(
-        `${apiUrl}/api/orders/${order.id}/cancel`,
+        `${API_BASE}/api/orders/${encodeURIComponent(order.id)}/cancel`,
         {
           method: 'POST',
           headers: {
@@ -395,100 +439,68 @@ export function AdminOrderDetailPage() {
       );
 
       if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.error || error.message || 'Failed to cancel order');
+        const errorBody = await response.json().catch(() => ({}));
+        throw new Error(
+          errorBody.error || errorBody.message || 'Failed to cancel order'
+        );
       }
 
       const result = await response.json();
 
-      // Update local state
       const payload = {
-        status: 'cancelled',
-        remarks: cancelReason,
+        status: 'cancelled' as const,
+        remarks: cancelReason || order.remarks,
         cancelled_at: new Date().toISOString(),
         payment_status: 'refunded',
       };
-
-      setOrder((prev: any) => ({
-        ...prev,
-        ...payload,
-        timeline: generateTimeline({
-          ...prev,
-          ...payload,
-        }),
-      }));
+      applyLocalStatus('cancelled', payload);
 
       toast.success(
-        `Order cancelled and refund of ${result.data.refund_amount} processed successfully`
+        `Order cancelled. £${Number(result.data?.refund_amount || 0).toFixed(2)} refund initiated.`,
+        {
+          description: result.data?.parcel2go_warning
+            ? `Parcel2Go: ${result.data.parcel2go_warning}`
+            : result.data?.parcel2go_cancelled
+              ? 'Parcel2Go shipment voided.'
+              : 'Refund will appear on the original payment method in 3–5 business days.',
+        }
       );
       setShowCancelDialog(false);
-
-      console.log('Refund details:', result.data);
     } catch (err) {
       console.error('Error cancelling order:', err);
-      const errorMessage = err instanceof Error ? err.message : 'Failed to cancel order';
+      const errorMessage =
+        err instanceof Error ? err.message : 'Failed to cancel order';
       toast.error(errorMessage);
     } finally {
-      setUpdating(false);
+      setUpdating(null);
     }
   };
 
+  const buildInvoiceData = () => ({
+    orderNumber: `#${order.id}`,
+    customer: order.customer,
+    email: order.email,
+    phone: order.phone,
+    date: order.date,
+    shippingMethod: order.deliveryMethod,
+    items: (order.items as any[]).map<InvoiceItem>(item => ({
+      product: item.product,
+      size: item.size,
+      unitPrice: item.unitPrice,
+      quantity: item.quantity ?? 1,
+    })),
+    subtotal: order.subtotal,
+    deliveryCharge: order.deliveryCharge,
+    discount: order.discount,
+    promoCode: order.promoCode,
+    total: order.total,
+  });
+
   const handlePrintInvoice = () => {
     if (!order) return;
-
-    const invoiceHtml = `
-    <html>
-      <head>
-        <title>Invoice #${order.id}</title>
-        <style>
-          body { font-family: Arial, sans-serif; padding: 20px; }
-          h1 { color: #f63a9e; }
-          table { width: 100%; border-collapse: collapse; margin-top: 20px; }
-          th, td { border: 1px solid #ccc; padding: 8px; text-align: left; }
-        </style>
-      </head>
-      <body>
-        <h1>Invoice #${order.id}</h1>
-        <p><strong>Customer:</strong> ${order.customer}</p>
-        <p><strong>Email:</strong> ${order.email}</p>
-        <p><strong>Phone:</strong> ${order.phone}</p>
-        <table>
-          <thead>
-            <tr>
-              <th>Product</th>
-              <th>Size</th>
-              <th>Unit Price</th>
-              <th>Quantity</th>
-            </tr>
-          </thead>
-          <tbody>
-            ${order.items
-              .map(
-                (item: any) =>
-                  `<tr>
-                    <td>${item.product}</td>
-                    <td>${item.size}</td>
-                    <td>${item.unitPrice}</td>
-                    <td>1</td>
-                  </tr>`
-              )
-              .join('')}
-          </tbody>
-        </table>
-        <h3>Total: ${order.total}</h3>
-      </body>
-    </html>
-  `;
-
-    const printWindow = window.open('', '_blank');
-    if (printWindow) {
-      printWindow.document.write(invoiceHtml);
-      printWindow.document.close();
-      printWindow.focus();
-      printWindow.print();
-    }
-
-    toast.success('Invoice opened in print window');
+    const ok = openInvoiceForPrint(buildInvoiceData());
+    if (ok) toast.success('Invoice opened in print window');
+    else toast.error('Could not open print window — check your popup blocker.');
   };
 
   const handleDownloadImage = async (url: string, filename: string) => {
@@ -512,16 +524,7 @@ export function AdminOrderDetailPage() {
 
   const handleDownloadInvoice = () => {
     if (!order) return;
-    const invoiceHtml = `<html><head><title>Invoice #${order.id}</title><style>body{font-family:Arial,sans-serif;padding:20px}h1{color:#f63a9e}table{width:100%;border-collapse:collapse;margin-top:20px}th,td{border:1px solid #ccc;padding:8px;text-align:left}</style></head><body><h1>Invoice #${order.id}</h1><p><strong>Customer:</strong> ${order.customer}</p><p><strong>Email:</strong> ${order.email}</p><p><strong>Phone:</strong> ${order.phone}</p><table><thead><tr><th>Product</th><th>Size</th><th>Unit Price</th><th>Qty</th></tr></thead><tbody>${order.items.map((item: any) => `<tr><td>${item.product}</td><td>${item.size}</td><td>${item.unitPrice}</td><td>${item.quantity ?? 1}</td></tr>`).join('')}</tbody></table><h3>Total: ${order.total}</h3></body></html>`;
-    const blob = new Blob([invoiceHtml], { type: 'text/html' });
-    const blobUrl = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = blobUrl;
-    a.download = `invoice-${order.id}.html`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(blobUrl);
+    downloadInvoiceHtml(buildInvoiceData());
     toast.success('Invoice downloaded');
   };
 
@@ -613,32 +616,9 @@ export function AdminOrderDetailPage() {
                       Current Status:
                     </span>
                     <span
-                      className={`px-4 py-1.5 rounded-full text-sm font-semibold ${
-                        order.status === 'pending'
-                          ? 'bg-yellow-100 text-yellow-800'
-                          : order.status === 'processing'
-                            ? 'bg-blue-100 text-blue-800'
-                            : order.status === 'shipped'
-                              ? 'bg-purple-100 text-purple-800'
-                              : order.status === 'delivered'
-                                ? 'bg-green-100 text-green-800'
-                                : order.status === 'cancelled'
-                                  ? 'bg-red-100 text-red-800'
-                                  : 'bg-gray-100 text-gray-700'
-                      }`}
+                      className={`px-4 py-1.5 rounded-full text-sm font-semibold ${statusBadgeClass(status)}`}
                     >
-                      {order.status === 'pending'
-                        ? 'Pending'
-                        : order.status === 'processing'
-                          ? 'Payment Confirmed'
-                          : order.status === 'shipped'
-                            ? 'Dispatched'
-                            : order.status === 'delivered'
-                              ? 'Delivered'
-                              : order.status === 'cancelled'
-                                ? 'Cancelled'
-                                : order.status.charAt(0).toUpperCase() +
-                                  order.status.slice(1)}
+                      {statusLabel(status)}
                     </span>
                   </div>
                 </div>
@@ -682,12 +662,14 @@ export function AdminOrderDetailPage() {
                     </svg>
                     Order Status Timeline
                   </h3>
-                  <span className='text-xs text-gray-500'>
-                    Est. Delivery:{' '}
-                    <span className='text-[#f63a9e] font-medium'>
-                      {order.timeline[0]?.date || 'Oct 24th - Oct 28th'}
+                  {order.timeline[0]?.date && (
+                    <span className='text-xs text-gray-500'>
+                      Placed:{' '}
+                      <span className='text-[#f63a9e] font-medium'>
+                        {order.timeline[0].date}
+                      </span>
                     </span>
-                  </span>
+                  )}
                 </div>
                 {/* Timeline Progress */}
                 <div className='relative'>
@@ -785,15 +767,11 @@ export function AdminOrderDetailPage() {
                     <Button
                       size='lg'
                       variant='destructive'
-                      disabled={
-                        updating ||
-                        order.status === 'delivered' ||
-                        order.status === 'cancelled'
-                      }
+                      disabled={updating !== null || isTerminal}
                       onClick={() => setShowCancelDialog(true)}
                       className='flex-shrink-0'
                     >
-                      {updating ? (
+                      {updating === 'cancel' ? (
                         <Loader2 className='mr-2 animate-spin' />
                       ) : (
                         <X className='mr-2' />
@@ -808,14 +786,14 @@ export function AdminOrderDetailPage() {
                         size='lg'
                         variant='outline'
                         disabled={
-                          updating ||
-                          order.status === 'pending' ||
-                          order.status === 'cancelled'
+                          updating !== null ||
+                          status === 'pending' ||
+                          status === 'cancelled'
                         }
                         onClick={handleBackStatus}
                         className='min-w-[140px]'
                       >
-                        {updating ? (
+                        {updating === 'revert' ? (
                           <>
                             <Loader2 className='mr-2 h-4 w-4 animate-spin' />
                             Reverting...
@@ -832,14 +810,15 @@ export function AdminOrderDetailPage() {
                       <Button
                         size='lg'
                         disabled={
-                          updating ||
-                          order.status === 'delivered' ||
-                          order.status === 'cancelled'
+                          updating !== null ||
+                          isTerminal ||
+                          manualAdvanceLocked ||
+                          !canConfirmPayment
                         }
                         onClick={handleNextStatus}
                         className='min-w-[180px] bg-[#f63a9e] hover:bg-[#e02d8d]'
                       >
-                        {updating ? (
+                        {updating === 'next' ? (
                           <>
                             <Loader2 className='mr-2 h-4 w-4 animate-spin' />
                             Updating...
@@ -847,13 +826,7 @@ export function AdminOrderDetailPage() {
                         ) : (
                           <>
                             <span className='font-semibold'>
-                              {order.status === 'pending'
-                                ? 'Confirm Payment'
-                                : order.status === 'processing'
-                                  ? 'Mark as Dispatched'
-                                  : order.status === 'shipped'
-                                    ? 'Mark as Delivered'
-                                    : 'Next Status'}
+                              {nextActionLabel(status)}
                             </span>
                             <MoveRight className='ml-2' />
                           </>
@@ -863,58 +836,82 @@ export function AdminOrderDetailPage() {
                   </div>
 
                   {/* Helper Text */}
-                  {!updating &&
-                    order.status !== 'delivered' &&
-                    order.status !== 'cancelled' && (
-                      <div className='mt-4 flex items-start gap-2 text-xs text-gray-600 bg-blue-50 border border-blue-200 rounded p-3'>
-                        <svg
-                          className='w-4 h-4 text-blue-600 mt-0.5 flex-shrink-0'
-                          fill='none'
-                          viewBox='0 0 24 24'
-                          stroke='currentColor'
-                        >
-                          <path
-                            strokeLinecap='round'
-                            strokeLinejoin='round'
-                            strokeWidth={2}
-                            d='M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z'
-                          />
-                        </svg>
-                        <p>
-                          {order.status === 'pending' ? (
-                            <span>
-                              <strong>Next action:</strong> Order will be marked
-                              as{' '}
-                              <strong className='text-blue-700'>
-                                Payment Confirmed
-                              </strong>
-                              . Customer notification already sent during
-                              checkout.
-                            </span>
-                          ) : order.status === 'processing' ? (
-                            <span>
-                              <strong>Next action:</strong> Order will be marked
-                              as{' '}
-                              <strong className='text-purple-700'>
-                                Dispatched
-                              </strong>{' '}
-                              and customer will receive a dispatch notification
-                              email.
-                            </span>
-                          ) : order.status === 'shipped' ? (
-                            <span>
-                              <strong>Next action:</strong> Order will be marked
-                              as{' '}
-                              <strong className='text-green-700'>
-                                Delivered
-                              </strong>{' '}
-                              and customer will receive a delivery confirmation
-                              email.
-                            </span>
-                          ) : null}
-                        </p>
-                      </div>
-                    )}
+                  {!updating && !isTerminal && (
+                    <>
+                      {manualAdvanceLocked ? (
+                        <div className='mt-4 flex items-start gap-2 text-xs text-amber-800 bg-amber-50 border border-amber-200 rounded p-3'>
+                          <AlertTriangle className='w-4 h-4 text-amber-600 mt-0.5 flex-shrink-0' />
+                          <p>
+                            <strong>Status owned by Parcel2Go.</strong> A
+                            shipment is booked — the order will move to{' '}
+                            <strong>Dispatched</strong> when Parcel2Go reports
+                            drop-off and to <strong>Delivered</strong> when
+                            confirmed. Use the Shipping panel to refresh
+                            tracking instead of advancing manually.
+                          </p>
+                        </div>
+                      ) : status === 'pending' && !paymentConfirmed ? (
+                        <div className='mt-4 flex items-start gap-2 text-xs text-amber-800 bg-amber-50 border border-amber-200 rounded p-3'>
+                          <AlertTriangle className='w-4 h-4 text-amber-600 mt-0.5 flex-shrink-0' />
+                          <p>
+                            Waiting for Stripe payment confirmation. This
+                            order will auto-advance to{' '}
+                            <strong>Payment Confirmed</strong> as soon as
+                            Stripe reports a successful charge.
+                          </p>
+                        </div>
+                      ) : (
+                        <div className='mt-4 flex items-start gap-2 text-xs text-gray-600 bg-blue-50 border border-blue-200 rounded p-3'>
+                          <svg
+                            className='w-4 h-4 text-blue-600 mt-0.5 flex-shrink-0'
+                            fill='none'
+                            viewBox='0 0 24 24'
+                            stroke='currentColor'
+                          >
+                            <path
+                              strokeLinecap='round'
+                              strokeLinejoin='round'
+                              strokeWidth={2}
+                              d='M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z'
+                            />
+                          </svg>
+                          <p>
+                            {status === 'pending' ? (
+                              <span>
+                                <strong>Next action:</strong> Order will be
+                                marked as{' '}
+                                <strong className='text-blue-700'>
+                                  Payment Confirmed
+                                </strong>
+                                . Customer notification already sent during
+                                checkout.
+                              </span>
+                            ) : status === 'processing' ? (
+                              <span>
+                                <strong>Next action:</strong> Order will be
+                                marked as{' '}
+                                <strong className='text-purple-700'>
+                                  Dispatched
+                                </strong>{' '}
+                                and customer will receive a dispatch
+                                notification email.
+                              </span>
+                            ) : status === 'shipped' ? (
+                              <span>
+                                <strong>Next action:</strong> Order will be
+                                marked as{' '}
+                                <strong className='text-green-700'>
+                                  Delivered
+                                </strong>{' '}
+                                and customer will receive a delivery
+                                confirmation email.
+                              </span>
+                            ) : null}
+                          </p>
+                        </div>
+                      )}
+                    </>
+                  )}
                 </div>
 
                 {order.remarks && order.remarks.length && (
@@ -1253,7 +1250,7 @@ export function AdminOrderDetailPage() {
 
               {/* Totals */}
               <div className='flex justify-end'>
-                <div className='w-64 space-y-2'>
+                <div className='w-72 space-y-2'>
                   <div className='flex justify-between text-sm'>
                     <span className='text-gray-600'>Subtotal:</span>
                     <span>{order.subtotal}</span>
@@ -1262,6 +1259,16 @@ export function AdminOrderDetailPage() {
                     <span className='text-gray-600'>Delivery:</span>
                     <span>{order.deliveryCharge}</span>
                   </div>
+                  {order.discount > 0 && (
+                    <div className='flex justify-between text-sm rounded-md bg-green-50 border border-green-200 px-2 py-1'>
+                      <span className='text-green-700 font-medium'>
+                        Discount{order.promoCode ? ` (${order.promoCode})` : ''}:
+                      </span>
+                      <span className='text-green-700 font-semibold'>
+                        -£{order.discount.toFixed(2)}
+                      </span>
+                    </div>
+                  )}
                   <Separator />
                   <div className='flex justify-between font-semibold'>
                     <span>Total:</span>
@@ -1274,6 +1281,39 @@ export function AdminOrderDetailPage() {
 
           {/* Right Sidebar */}
           <div className='space-y-6 sticky top-6 self-start'>
+            {/* Shipping (Parcel2Go) */}
+            <AdminOrderShipping
+              order={{
+                order_number: order.id,
+                parcel2go_order_id: order.parcel2go_order_id,
+                parcel2go_orderline_id: order.parcel2go_orderline_id,
+                tracking_number: order.tracking_number,
+                tracking_url: order.tracking_url,
+                tracking_stage: order.tracking_stage,
+                carrier_name: order.carrier_name,
+                service_name: order.service_name,
+                service_id: order.service_id,
+                label_url: order.label_url,
+                shipped_at: order.shipped_at,
+                shipment_cost: order.shipment_cost,
+                parcel_dimensions: order.parcel_dimensions,
+                status: order.status,
+              }}
+              onShipmentBooked={updates => {
+                setOrder((prev: any) => {
+                  if (!prev) return prev;
+                  const merged = { ...prev, ...updates };
+                  return {
+                    ...merged,
+                    timeline: generateTimeline({
+                      ...merged,
+                      status: updates.status || merged.status,
+                    }),
+                  };
+                });
+              }}
+            />
+
             {/* Actions */}
             <div className='bg-white rounded-lg border border-gray-200 p-6'>
               <h3 className='font-semibold mb-4'>Actions</h3>
@@ -1360,15 +1400,15 @@ export function AdminOrderDetailPage() {
           />
 
           <AlertDialogFooter>
-            <AlertDialogCancel disabled={updating}>
+            <AlertDialogCancel disabled={updating === 'cancel'}>
               Keep Order
             </AlertDialogCancel>
             <AlertDialogAction
               className='bg-red-600 hover:bg-red-700'
               onClick={handleCancelOrder}
-              disabled={updating}
+              disabled={updating === 'cancel'}
             >
-              {updating ? (
+              {updating === 'cancel' ? (
                 <>
                   <Loader2 className='mr-2 h-4 w-4 animate-spin' />
                   Cancelling...

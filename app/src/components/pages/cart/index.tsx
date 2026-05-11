@@ -2,7 +2,6 @@ import { useCart } from '@/context/CartContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { RadioGroup } from '@/components/ui/radio-group';
-import { ImageWithFallback } from '@/components/figma/image-with-fallback';
 import {
   X,
   Plus,
@@ -27,6 +26,17 @@ import { Footer } from '@/components/layout/footer';
 import { useSiteSetting } from '@/lib/supabase/hooks';
 import { createClient } from '@/lib/supabase/client';
 import { toast } from 'sonner';
+
+/**
+ * Strip a trailing size suffix from product names like:
+ *   `Collage on Single Canvas - 20" × 20"` → `Collage on Single Canvas`
+ *   `Multi-Canvas Wall — 16" × 32"`        → `Multi-Canvas Wall`
+ * Matches a separator (-, –, —, ·) followed by content beginning with a digit
+ * (i.e. dimensions). The dedicated size badge below the name shows the size.
+ */
+function stripSizeSuffix(name: string): string {
+  return name.replace(/\s+[-–—·]\s+\d.*$/u, '').trim();
+}
 
 export function CartPage() {
   const { cartItems, updateQuantity, removeFromCart, deliveryMethod, setDeliveryMethod, setShippingCost, discount, setDiscount, appliedPromoCode, setAppliedPromoCode, promoApplied, setPromoApplied } = useCart();
@@ -239,19 +249,10 @@ export function CartPage() {
                   {cartItems.map(item => (
                     <div
                       key={item.id}
-                      className='flex flex-col sm:flex-row gap-3 sm:gap-4 bg-gray-50 rounded-xl p-3 sm:p-4 border-2 border-gray-200 hover:border-[#f63a9e]/40 hover:shadow-lg transition-all duration-300 group relative overflow-hidden'
+                      className='flex gap-3 sm:gap-4 bg-gray-50 rounded-xl p-3 sm:p-4 border-2 border-gray-200 hover:border-[#f63a9e]/40 hover:shadow-lg transition-all duration-300 group relative overflow-hidden'
                     >
                       {/* Decorative accent */}
                       <div className='absolute top-0 left-0 w-1 h-full bg-[#f63a9e] opacity-0 group-hover:opacity-100 transition-opacity' />
-
-                      {/* Product Image */}
-                      <div className='w-full sm:w-20 h-48 sm:h-20 rounded-xl overflow-hidden flex-shrink-0 bg-white shadow-md ring-2 ring-gray-100 group-hover:ring-[#f63a9e]/20 transition-all'>
-                        <ImageWithFallback
-                          src={item.image}
-                          alt={item.name}
-                          className='w-full h-full object-cover group-hover:scale-110 transition-transform duration-500'
-                        />
-                      </div>
 
                       {/* Product Details */}
                       <div className='flex-1 min-w-0 flex flex-col'>
@@ -261,7 +262,7 @@ export function CartPage() {
                               className='text-gray-900 mb-1.5 group-hover:text-[#f63a9e] transition-colors text-sm sm:text-base'
                               style={{ fontWeight: '600' }}
                             >
-                              {item.name}
+                              {stripSizeSuffix(item.name)}
                             </h4>
                             {item.size && (
                               <div className='inline-flex items-center gap-1.5 px-2.5 py-1.5 bg-white rounded-lg border-2 border-gray-200 shadow-sm'>

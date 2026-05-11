@@ -6,10 +6,99 @@ import {
   sendOrderCancelledEmail,
   getDeliveryInfo,
 } from '@/lib/sendgrid';
+import {
+  applyStatusChange,
+  type OrderStatus,
+} from '@/services/orderStatus';
+
+const ALLOWED_NEXT: ReadonlySet<OrderStatus> = new Set([
+  'pending',
+  'processing',
+  'shipped',
+  'delivered',
+  'cancelled',
+]);
+
+/**
+ * PATCH /api/orders/:orderNumber/status
+ *
+ * Single source of truth for admin-driven status mutations. Centralises
+ * state-machine validation, optimistic locking, audit logging, and
+ * customer email side-effects (the email send is idempotent across all
+ * mutation sources via `order_status_history`).
+ *
+ * Body:
+ *   { status: OrderStatus, reason?: string, allowRevert?: boolean }
+ */
+export async function updateOrderStatus(
+  req: Request,
+  res: Response
+): Promise<void> {
+  const { orderNumber } = req.params;
+  const { status, reason, allowRevert } = (req.body || {}) as {
+    status?: string;
+    reason?: string;
+    allowRevert?: boolean;
+  };
+
+  if (!orderNumber) {
+    res.status(400).json({ error: 'Order number is required' });
+    return;
+  }
+  if (!status || !ALLOWED_NEXT.has(status as OrderStatus)) {
+    res.status(400).json({
+      error: 'Invalid status',
+      message:
+        'status must be one of: pending, processing, shipped, delivered, cancelled',
+    });
+    return;
+  }
+
+  const actor =
+    (req as any).user?.email ||
+    (req as any).user?.id ||
+    null;
+
+  const result = await applyStatusChange(orderNumber, status as OrderStatus, {
+    source: 'admin',
+    actor,
+    reason: reason || null,
+    allowRevert: Boolean(allowRevert),
+  });
+
+  if (!result.ok) {
+    const httpStatus =
+      result.reasonCode === 'order_not_found'
+        ? 404
+        : result.reasonCode === 'concurrent_update'
+          ? 409
+          : 400;
+    res.status(httpStatus).json({
+      error: result.error || 'Status change rejected',
+      reasonCode: result.reasonCode,
+      previous_status: result.previous_status,
+    });
+    return;
+  }
+
+  res.status(200).json({
+    success: true,
+    data: {
+      order_number: orderNumber,
+      previous_status: result.previous_status,
+      new_status: result.new_status,
+      emailSent: result.emailSent,
+    },
+  });
+}
 
 /**
  * POST /api/orders/:orderNumber/status-notification
- * Send order status change notification email to customer
+ *
+ * Legacy endpoint kept for compatibility — manually re-sends a customer
+ * notification email without changing the order status. Useful if the
+ * original send failed in SendGrid. The state mutation has already been
+ * audited; this just re-fires the email.
  */
 export async function sendOrderStatusNotification(
   req: Request,
@@ -29,7 +118,6 @@ export async function sendOrderStatusNotification(
       return;
     }
 
-    // Fetch order details from database
     const { data: order, error } = await supabase
       .from('orders')
       .select('*')
@@ -41,12 +129,11 @@ export async function sendOrderStatusNotification(
       return;
     }
 
-    // Format shipping address
-    const shippingAddress = typeof order.shipping_address === 'string'
-      ? order.shipping_address
-      : order.shipping_address?.address || 'N/A';
+    const shippingAddress =
+      typeof order.shipping_address === 'string'
+        ? order.shipping_address
+        : order.shipping_address?.address || 'N/A';
 
-    // Format dates
     const formatDate = (date: string | Date) =>
       new Date(date).toLocaleDateString('en-US', {
         day: 'numeric',
@@ -54,20 +141,17 @@ export async function sendOrderStatusNotification(
         year: 'numeric',
       });
 
-    // Send appropriate email based on status
     switch (status.toLowerCase()) {
       case 'shipped':
       case 'processing': {
-        // Get delivery info based on shipping cost
         const shippingCost = parseFloat(order.shipping_cost || 0);
         const deliveryInfo = getDeliveryInfo(shippingCost);
-        
-        // Calculate estimated delivery based on delivery type
         const estimatedDelivery = new Date();
-        const daysToAdd = deliveryInfo.delivery_type === 'Express Shipping' ? 3 : 7;
+        const daysToAdd =
+          deliveryInfo.delivery_type === 'Express Shipping' ? 3 : 7;
         estimatedDelivery.setDate(estimatedDelivery.getDate() + daysToAdd);
 
-        const dispatchData = {
+        await sendOrderDispatchedEmail({
           customer_name: order.customer_name,
           customer_email: order.customer_email,
           order_number: order.order_number,
@@ -94,22 +178,19 @@ export async function sendOrderStatusNotification(
             postal_code: '',
             country: 'United Kingdom',
           },
-        };
-
-        await sendOrderDispatchedEmail(dispatchData);
+        });
         res.status(200).json({
           success: true,
-          message: 'Order dispatched notification sent',
+          message: 'Order dispatched notification re-sent',
         });
         break;
       }
 
       case 'delivered': {
-        // Get delivery info based on shipping cost
         const shippingCost = parseFloat(order.shipping_cost || 0);
         const deliveryInfo = getDeliveryInfo(shippingCost);
-        
-        const deliveredData = {
+
+        await sendOrderDeliveredEmail({
           customer_name: order.customer_name,
           customer_email: order.customer_email,
           order_number: order.order_number,
@@ -126,12 +207,10 @@ export async function sendOrderStatusNotification(
             quantity: item.quantity || 1,
             price: `£${parseFloat(item.price).toFixed(2)}`,
           })),
-        };
-
-        await sendOrderDeliveredEmail(deliveredData);
+        });
         res.status(200).json({
           success: true,
-          message: 'Order delivered notification sent',
+          message: 'Order delivered notification re-sent',
         });
         break;
       }
@@ -161,7 +240,7 @@ export async function sendOrderStatusNotification(
         await sendOrderCancelledEmail(cancelledData);
         res.status(200).json({
           success: true,
-          message: 'Order cancellation notification sent',
+          message: 'Order cancellation notification re-sent',
         });
         break;
       }

@@ -182,8 +182,36 @@ export async function handleStripeWebhook(
         } else if (order) {
           console.log('Payment successful for session:', session.id);
 
+          // Audit row so the admin UI can show "Stripe confirmed payment"
+          // without conflating it with the (no-op) admin button.
+          await supabase.from('order_status_history').insert({
+            order_number: order.order_number,
+            previous_status: 'pending',
+            new_status: 'processing',
+            source: 'stripe',
+            email_sent: true, // Order confirmation email is sent below.
+            metadata: {
+              stripe_session_id: session.id,
+              stripe_payment_intent_id: session.payment_intent,
+            },
+          });
+
           // Upsert customer record
           await upsertCustomer(order);
+
+          // Increment promotion usage count if a promo code was applied
+          if (order.promo_code) {
+            const { error: promoError } = await supabase.rpc(
+              'apply_promotion_to_order',
+              {
+                promotion_code: order.promo_code,
+                order_uuid: order.id,
+              }
+            );
+            if (promoError) {
+              console.error('Failed to increment promotion usage:', promoError);
+            }
+          }
 
           // Send order confirmation email
           await sendConfirmationEmailForOrder(order);

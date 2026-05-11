@@ -18,6 +18,10 @@ interface Config {
   SENDGRID_FROM_EMAIL: string | undefined;
   SUPPORT_EMAIL: string | undefined;
   ADMIN_EMAIL: string | undefined;
+  PARCEL2GO_CLIENT_ID: string | undefined;
+  PARCEL2GO_CLIENT_SECRET: string | undefined;
+  PARCEL2GO_ENV: 'sandbox' | 'live';
+  PARCEL2GO_WEBHOOK_SECRET: string | undefined;
 }
 
 export const config: Config = {
@@ -35,6 +39,10 @@ export const config: Config = {
   SENDGRID_FROM_EMAIL: process.env.SENDGRID_FROM_EMAIL || 'noreply@photify.co',
   SUPPORT_EMAIL: process.env.SUPPORT_EMAIL,
   ADMIN_EMAIL: process.env.ADMIN_EMAIL,
+  PARCEL2GO_CLIENT_ID: process.env.PARCEL2GO_CLIENT_ID,
+  PARCEL2GO_CLIENT_SECRET: process.env.PARCEL2GO_CLIENT_SECRET,
+  PARCEL2GO_ENV: process.env.PARCEL2GO_ENV === 'live' ? 'live' : 'sandbox',
+  PARCEL2GO_WEBHOOK_SECRET: process.env.PARCEL2GO_WEBHOOK_SECRET,
 };
 
 // Validate required environment variables in production

@@ -573,7 +573,7 @@ export function MultiCanvasWallCustomizer() {
       price: parseFloat(totalPrice),
       image: state.canvases[0].imageUrl || '/placeholder.jpg',
       images: state.canvases.map(c => c.imageUrl || '/placeholder.jpg'),
-      size: `3 × ${cartSize.width_in}" × ${cartSize.height_in}" canvases with ${state.customSpacing}" spacing`,
+      size: `3 × ${cartSize.width_in}" × ${cartSize.height_in}" canvases`,
       quantity: 1,
     };
 

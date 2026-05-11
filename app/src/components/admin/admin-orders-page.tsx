@@ -33,25 +33,16 @@ import {
 } from '@/components/ui/alert-dialog';
 import { createClient } from '@/lib/supabase/client';
 import { toast } from 'sonner';
+import {
+  normaliseStatus,
+  statusLabel,
+  statusBadgeClass,
+  type OrderStatus,
+} from '@/lib/orders/status';
+import { openInvoiceForPrint } from '@/lib/orders/invoice';
 
 // ── Constants ──────────────────────────────────────────────────────────────
 const PAGE_SIZE = 10;
-
-const STATUS_DB_MAP: Record<string, string> = {
-  pending: 'pending',
-  processing: 'processing',
-  shipped: 'shipped',
-  delivered: 'delivered',
-  cancelled: 'cancelled',
-};
-
-const STATUS_DISPLAY_MAP: Record<string, string> = {
-  pending: 'Pending',
-  processing: 'Processing',
-  shipped: 'Dispatched',
-  delivered: 'Delivered',
-  cancelled: 'Cancelled',
-};
 
 // ── Types ──────────────────────────────────────────────────────────────────
 interface RawItem {
@@ -68,7 +59,7 @@ interface Order {
   product: string;
   quantity: number;
   amount: string;
-  status: string;
+  status: OrderStatus;
   date: string;
   shipping: string;
   rawItems: RawItem[];
@@ -129,7 +120,7 @@ export function AdminOrdersPage() {
       }
 
       if (statusFilter !== 'all') {
-        query = query.eq('status', STATUS_DB_MAP[statusFilter] ?? statusFilter);
+        query = query.eq('status', statusFilter);
       }
 
       const { data, error, count } = await query;
@@ -139,12 +130,11 @@ export function AdminOrdersPage() {
         id: row.order_number as string,
         customer: row.customer_name as string,
         email: row.customer_email as string,
-        product: ((row.items as RawItem[])?.[0]?.name) || 'Multiple Items',
+        product: (row.items as RawItem[])?.[0]?.name || 'Multiple Items',
         quantity:
           (row.items as RawItem[])?.reduce((s, i) => s + i.quantity, 0) ?? 0,
         amount: `£${parseFloat(row.total as string).toFixed(2)}`,
-        status:
-          STATUS_DISPLAY_MAP[(row.status as string)?.toLowerCase()] ?? 'Pending',
+        status: normaliseStatus(row.status as string),
         date: new Date(row.created_at as string).toLocaleDateString('en-GB'),
         shipping: 'Standard Delivery',
         rawItems: (row.items as RawItem[]) ?? [],
@@ -182,56 +172,17 @@ export function AdminOrdersPage() {
             },
           ];
 
-    const rows = items
-      .map(
-        item =>
-          `<tr>
-            <td>${item.product}</td>
-            <td>${item.size}</td>
-            <td>${item.unitPrice}</td>
-            <td>${item.quantity}</td>
-          </tr>`
-      )
-      .join('');
-
-    const invoiceHtml = `
-      <html>
-        <head>
-          <title>Invoice #${order.id}</title>
-          <style>
-            body { font-family: Arial, sans-serif; padding: 20px; }
-            h1 { color: #f63a9e; }
-            table { width: 100%; border-collapse: collapse; margin-top: 20px; }
-            th, td { border: 1px solid #ccc; padding: 8px; text-align: left; }
-          </style>
-        </head>
-        <body>
-          <h1>Invoice #${order.id}</h1>
-          <p><strong>Customer:</strong> ${order.customer}</p>
-          <p><strong>Email:</strong> ${order.email}</p>
-          <p><strong>Date:</strong> ${order.date}</p>
-          <p><strong>Shipping:</strong> ${order.shipping}</p>
-          <table>
-            <thead>
-              <tr>
-                <th>Product</th><th>Size</th><th>Unit Price</th><th>Quantity</th>
-              </tr>
-            </thead>
-            <tbody>${rows}</tbody>
-          </table>
-          <h3>Total: ${order.amount}</h3>
-        </body>
-      </html>
-    `;
-
-    const printWindow = window.open('', '_blank');
-    if (printWindow) {
-      printWindow.document.write(invoiceHtml);
-      printWindow.document.close();
-      printWindow.focus();
-      printWindow.print();
-    }
-    toast.success('Invoice opened in print window');
+    const ok = openInvoiceForPrint({
+      orderNumber: `#${order.id}`,
+      customer: order.customer,
+      email: order.email,
+      date: order.date,
+      shippingMethod: order.shipping,
+      items,
+      total: order.amount,
+    });
+    if (ok) toast.success('Invoice opened in print window');
+    else toast.error('Could not open print window — check your popup blocker.');
   }, []);
 
   // ── Delete ─────────────────────────────────────────────────────────────
@@ -320,7 +271,7 @@ export function AdminOrdersPage() {
               <SelectContent>
                 <SelectItem value='all'>All Status</SelectItem>
                 <SelectItem value='pending'>Pending</SelectItem>
-                <SelectItem value='processing'>Processing</SelectItem>
+                <SelectItem value='processing'>Payment Confirmed</SelectItem>
                 <SelectItem value='shipped'>Dispatched</SelectItem>
                 <SelectItem value='delivered'>Delivered</SelectItem>
                 <SelectItem value='cancelled'>Cancelled</SelectItem>
@@ -392,19 +343,9 @@ export function AdminOrdersPage() {
                       </td>
                       <td className='px-6 py-4'>
                         <span
-                          className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium ${
-                            order.status === 'Delivered'
-                              ? 'bg-green-100 text-green-700'
-                              : order.status === 'Dispatched'
-                                ? 'bg-blue-100 text-blue-700'
-                                : order.status === 'Processing'
-                                  ? 'bg-yellow-100 text-yellow-700'
-                                  : order.status === 'Cancelled'
-                                    ? 'bg-red-100 text-red-700'
-                                    : 'bg-gray-100 text-gray-700'
-                          }`}
+                          className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium ${statusBadgeClass(order.status)}`}
                         >
-                          {order.status}
+                          {statusLabel(order.status)}
                         </span>
                       </td>
                       <td className='px-6 py-4 text-sm text-gray-600'>

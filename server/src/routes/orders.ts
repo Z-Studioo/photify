@@ -1,10 +1,50 @@
 import { Router } from 'express';
-import { sendOrderStatusNotification } from '@/controllers/orderStatusController';
+import {
+  sendOrderStatusNotification,
+  updateOrderStatus,
+} from '@/controllers/orderStatusController';
 import { cancelOrder } from '@/controllers/cancelOrderController';
 import { updateVideoPermission } from '@/controllers/videoPermissionController';
 import { adminAuth } from '@/middleware/adminAuth';
 
 const router = Router();
+
+/**
+ * @swagger
+ * /api/orders/{orderNumber}/status:
+ *   patch:
+ *     summary: Update an order status (admin)
+ *     description: |
+ *       Centralised status mutation. Validates the requested transition,
+ *       writes an `order_status_history` audit row, and idempotently fires
+ *       the customer notification email. Supports `allowRevert=true` to
+ *       step backward in the linear flow without re-sending emails.
+ *     tags: [Orders]
+ *     parameters:
+ *       - in: path
+ *         name: orderNumber
+ *         required: true
+ *         schema: { type: string }
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [status]
+ *             properties:
+ *               status:
+ *                 type: string
+ *                 enum: [pending, processing, shipped, delivered, cancelled]
+ *               reason: { type: string }
+ *               allowRevert: { type: boolean }
+ *     responses:
+ *       200: { description: Status updated }
+ *       400: { description: Invalid transition }
+ *       404: { description: Order not found }
+ *       409: { description: Concurrent update — refresh and retry }
+ */
+router.patch('/:orderNumber/status', adminAuth, updateOrderStatus);
 
 /**
  * @swagger
