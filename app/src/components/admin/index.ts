@@ -1,10 +1,8 @@
 // Admin Components - Export all admin-related components
 export { AdminAnalyticsPage } from './admin-analytics-page';
 export { AdminArtCollectionPage } from './admin-art-collection-page';
-export { AdminArtEditPage } from './admin-art-edit-page';
+export { AdminArtPhotoEditModal } from './admin-art-photo-edit-modal';
 export { AdminArtProductTagsEditor } from './admin-art-product-tags-editor';
-export { AdminArtSizeManager } from './admin-art-size-manager';
-export { AdminArtContentEditor } from './admin-art-content-editor';
 export { AdminCategoriesPage } from './admin-categories-page';
 export { AdminCategoryDetailPage } from './admin-category-detail-page';
 export { AdminCustomersPage } from './admin-customers-page';

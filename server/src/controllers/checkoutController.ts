@@ -146,8 +146,14 @@ export async function createCheckoutSession(
 
     // Create line items for Stripe
     const lineItems = cartItems.map(item => {
+      // Show only the base product name on Stripe (strip trailing
+      // ratio/size segments separated by " — " / " - " / " – ").
+      // Keeps in-word hyphens like "Multi-Canvas" intact.
+      const displayName =
+        item.name?.trim().split(/\s+[—–-]\s+/)[0]?.trim() || item.name;
+
       const productData: any = {
-        name: item.name,
+        name: displayName,
       };
 
       // Build description: include size and promo info
@@ -156,11 +162,8 @@ export async function createCheckoutSession(
       if (promoCode && discountRatio > 0) descParts.push(`Promo: ${promoCode}`);
       if (descParts.length > 0) productData.description = descParts.join(' · ');
 
-      // Only add images if they are publicly accessible https:// URLs
-      // (blob: and data: URLs are not valid for Stripe)
-      if (item.image && item.image.startsWith('https://')) {
-        productData.images = [item.image];
-      }
+      // Intentionally do NOT pass any images to Stripe so the hosted
+      // checkout matches the image-free cart/checkout summary.
 
       // Discount applied proportionally; ensure minimum 1 cent per item
       const discountedPrice = item.price * (1 - discountRatio);

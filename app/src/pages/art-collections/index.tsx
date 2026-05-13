@@ -1,11 +1,6 @@
 import { ArtCollectionPage } from '@/components/pages/art-collection';
 import { createServerClient } from '@/lib/supabase/server';
-import {
-  breadcrumbJsonLd,
-  buildMeta,
-  itemListJsonLd,
-  type ItemListEntry,
-} from '@/lib/seo';
+import { breadcrumbJsonLd, buildMeta } from '@/lib/seo';
 import type { Route } from './+types/index';
 
 interface ArtTag {
@@ -40,26 +35,17 @@ const DESCRIPTION =
 export const meta: Route.MetaFunction = ({ data }) => {
   const art = (data?.artProducts ?? []) as Array<{
     name?: string;
-    slug?: string | null;
     image?: string | null;
   }>;
 
-  const items: ItemListEntry[] = art
-    .filter(a => a.slug && a.name)
-    .slice(0, 24)
-    .map(a => ({
-      name: a.name!,
-      path: `/art/${a.slug}`,
-      image: a.image ?? null,
-    }));
-
+  // Note: individual art photos no longer have dedicated detail pages, so we
+  // no longer emit `ItemList` JSON-LD with per-item URLs.
   const jsonLd: Record<string, unknown>[] = [
     breadcrumbJsonLd([
       { name: 'Home', path: '/' },
       { name: 'Art Collections', path: '/art-collections' },
     ]),
   ];
-  if (items.length) jsonLd.push(itemListJsonLd(items, 'Art collections'));
 
   return buildMeta({
     title: TITLE,
@@ -101,7 +87,7 @@ export async function loader() {
 
   return {
     artProducts: (productsData as unknown as RawArtProduct[]) ?? [],
-    categories: ['All', ...tagNames],
+    categories: tagNames,
   };
 }
 

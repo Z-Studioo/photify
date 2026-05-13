@@ -1,7 +1,3 @@
-import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
-import { collection, addDoc } from 'firebase/firestore';
-import { storage, db } from '@/firebase/index';
-
 interface ImageData {
   base64Data: string;
   fileType: string;
@@ -108,119 +104,6 @@ export async function createFinalUploadData(): Promise<JsonExportData | null> {
   }
 }
 
-export async function createFinalUploadDataWithImage(): Promise<FinalUploadData | null> {
-  try {
-    const imageData = await getImageDataFromIndexedDB();
-
-    if (!imageData || !imageData.base64Data) {
-      throw new Error(
-        'No image found in IndexedDB. Please upload an image first.'
-      );
-    }
-    const blob = base64ToBlob(imageData.base64Data, imageData.fileType);
-    const fileName = imageData.fileName || `uploaded_image_${Date.now()}.png`;
-
-    const imageRef = ref(storage, `photify_uploads/${fileName}`);
-
-    await uploadBytes(imageRef, blob);
-    const downloadURL = await getDownloadURL(imageRef);
-
-    const baseData = await createBaseDataForFirebase();
-
-    if (!baseData) {
-      throw new Error('Could not create base data structure');
-    }
-    const finalDataWithImage: FinalUploadData = {
-      ...baseData,
-      image: downloadURL,
-
-      metadata: {
-        ...baseData.metadata,
-        fileName: imageData.fileName,
-        fileSize: imageData.fileSize,
-        fileType: imageData.fileType,
-      },
-    };
-    return finalDataWithImage;
-  } catch (err) {
-    console.error('Error creating final data with image:', err);
-    throw err;
-  }
-}
-
-async function createBaseDataForFirebase(): Promise<FinalUploadData | null> {
-  try {
-    const metadataStr = localStorage.getItem('photify_metadata');
-    const originalMetadata: Metadata = metadataStr
-      ? JSON.parse(metadataStr)
-      : {};
-
-    if (!originalMetadata) {
-      console.warn('No metadata found in localStorage');
-      return null;
-    }
-    const selectedRatio = originalMetadata.selectedRatio;
-    const selectedSize = originalMetadata.selectedSize;
-    const edgeType = originalMetadata.edgeType;
-    const quantity = originalMetadata.quantity;
-    const slug = selectedSize?.Slug;
-    const newMetadata: Metadata = {
-      ...originalMetadata,
-    };
-    delete newMetadata.selectedSize;
-    delete newMetadata.quantity;
-    delete newMetadata.selectedRatio;
-    delete newMetadata.shape;
-    delete newMetadata.edgeType;
-
-    const { totalPrice, totalPriceAfterDiscount } = calculatePrices(
-      selectedSize,
-      getSafeValue(quantity, 1)
-    );
-
-    const finalData: FinalUploadData = {
-      image: '',
-      ratio: getSafeValue(selectedRatio, '1:1'),
-      orderedAt: new Date(),
-      inches: getSafeValue(slug, ''),
-      edgeType: getSafeValue(edgeType, ''),
-      quantity: getSafeValue(quantity, 1),
-      totalPrice,
-      totalPriceAfterDiscount,
-
-      metadata: newMetadata,
-    };
-    Object.keys(finalData).forEach(key => {
-      if (finalData[key as keyof FinalUploadData] === undefined) {
-        delete finalData[key as keyof FinalUploadData];
-      }
-    });
-
-    return finalData;
-  } catch (error) {
-    console.error('Error creating base data for Firebase:', error);
-    return null;
-  }
-}
-export let finalUploadData: FinalUploadData | null = null;
-
-function base64ToBlob(base64Data: string, contentType: string): Blob {
-  const base64WithoutPrefix = base64Data.split(',')[1];
-  if (!base64WithoutPrefix) {
-    throw new Error('Invalid base64 data');
-  }
-
-  const byteCharacters = atob(base64WithoutPrefix);
-  const byteNumbers = new Array(byteCharacters.length);
-
-  for (let i = 0; i < byteCharacters.length; i++) {
-    byteNumbers[i] = byteCharacters.charCodeAt(i);
-  }
-
-  const byteArray = new Uint8Array(byteNumbers);
-  return new Blob([byteArray], { type: contentType });
-}
-
 function getImageDataFromIndexedDB(): Promise<ImageData | null> {
   return new Promise((resolve, reject) => {
     const dbRequest = indexedDB.open('keyval-store');
@@ -278,41 +161,6 @@ function calculatePrices(
 
 function getSafeValue(value: any, fallback: any = null) {
   return value !== undefined && value !== null ? value : fallback;
-}
-
-export async function prepareFinalData(): Promise<FinalUploadData> {
-  const data = await createFinalUploadDataWithImage();
-  if (!data) {
-    throw new Error('Failed to prepare final data');
-  }
-  finalUploadData = data;
-  return data;
-}
-
-export async function uploadToFirestore(data?: FinalUploadData): Promise<void> {
-  try {
-    const uploadData = data || finalUploadData;
-
-    if (!uploadData) {
-      throw new Error(
-        'No data to upload. Please prepare data first or provide data parameter.'
-      );
-    }
-
-    await addDoc(collection(db, 'photify_uploads'), uploadData);
-  } catch (err) {
-    throw err;
-  }
-}
-
-export async function handleConfirmChanges(): Promise<void> {
-  try {
-    await prepareFinalData();
-
-    await uploadToFirestore();
-  } catch (err) {
-    throw err;
-  }
 }
 
 export function isValidPhotifyExport(data: any): data is JsonExportData {
@@ -380,7 +228,7 @@ export function validatePhotifyFile(fileContent: string): {
       data: parsedData as JsonExportData,
       summary,
     };
-  } catch (error) {
+  } catch {
     return {
       isValid: false,
       error: 'Invalid JSON file format',

@@ -3,7 +3,7 @@ import { Header } from '@/components/layout/header';
 import { Footer } from '@/components/layout/footer';
 import { ArtPhotoTile } from '@/components/shared/art-photo-tile';
 import { useSearchParams, useNavigate } from 'react-router';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { Search, Sparkles, X } from 'lucide-react';
 
 interface ArtProduct {
@@ -11,6 +11,7 @@ interface ArtProduct {
   slug?: string;
   name: string;
   image: string;
+  images?: string[];
   size: string;
   sizeCount?: number;
   price: string;
@@ -195,13 +196,16 @@ export function ArtCollectionPage({
 }: ArtCollectionPageProps) {
   const [searchParams, setSearchParams] = useSearchParams();
   const navigate = useNavigate();
-  const [selectedCategory, setSelectedCategory] = useState<string>('All');
+  const [selectedCategory, setSelectedCategory] = useState<string>('');
   const [searchQuery, setSearchQuery] = useState<string>('');
 
-  const categories =
-    initialCategories.length > 1
-      ? initialCategories
-      : ['All', 'Abstract', 'Religion', 'Animals', 'Nepal', 'Nature', 'Modern'];
+  const categories = useMemo(
+    () => initialCategories.filter(c => c.toLowerCase() !== 'all'),
+    [initialCategories]
+  );
+
+  const isMinimized =
+    searchQuery.trim().length > 0 || selectedCategory.length > 0;
 
   const artProducts: ArtProduct[] = useMemo(
     () =>
@@ -216,6 +220,7 @@ export function ArtCollectionPage({
                 : null) ||
               art.image ||
               '',
+            images: Array.isArray(art.images) ? art.images : undefined,
             size: art.size || '',
             sizeCount: Array.isArray(art.available_sizes)
               ? art.available_sizes.length
@@ -240,30 +245,38 @@ export function ArtCollectionPage({
     if (categoryParam && categories.includes(categoryParam)) {
       setSelectedCategory(categoryParam);
     } else if (!categoryParam) {
-      setSelectedCategory('All');
+      setSelectedCategory('');
     }
   }, [searchParams, categories]);
 
   const handleSelectCategory = (category: string) => {
-    setSelectedCategory(category);
     const next = new URLSearchParams(searchParams);
-    if (category === 'All') {
+    const newCategory = selectedCategory === category ? '' : category;
+    setSelectedCategory(newCategory);
+    if (!newCategory) {
       next.delete('category');
     } else {
-      next.set('category', category);
+      next.set('category', newCategory);
     }
     setSearchParams(next, { replace: true });
   };
 
+  const clearFilters = () => {
+    setSearchQuery('');
+    setSelectedCategory('');
+    const next = new URLSearchParams(searchParams);
+    next.delete('category');
+    setSearchParams(next, { replace: true });
+  };
+
   const filteredProducts = useMemo(() => {
-    const byCategory =
-      selectedCategory === 'All'
-        ? artProducts
-        : artProducts.filter(p =>
-            p.tags && p.tags.length > 0
-              ? p.tags.includes(selectedCategory)
-              : p.category === selectedCategory
-          );
+    const byCategory = !selectedCategory
+      ? artProducts
+      : artProducts.filter(p =>
+          p.tags && p.tags.length > 0
+            ? p.tags.includes(selectedCategory)
+            : p.category === selectedCategory
+        );
 
     const q = searchQuery.trim().toLowerCase();
     if (!q) return byCategory;
@@ -288,118 +301,156 @@ export function ArtCollectionPage({
     <div className="min-h-screen font-['Mona_Sans',_sans-serif] bg-white">
       <Header />
 
-      {/* HERO — Pixabay-style search prompt over a soft photo collage backdrop */}
-      <section className='relative overflow-hidden bg-gradient-to-br from-[#fff5fb] via-white to-[#f3e9ff] border-b border-gray-100'>
-        {/* Decorative photo strip backdrop */}
-        <div className='pointer-events-none absolute inset-0 opacity-[0.18] flex'>
-          {heroBackdrops.map((src, i) => (
-            <div
-              key={`${src}-${i}`}
-              className='flex-1 h-full bg-cover bg-center hidden md:block'
-              style={{ backgroundImage: `url(${src})` }}
-            />
-          ))}
-        </div>
-        <div className='absolute inset-0 bg-gradient-to-b from-white/30 via-white/70 to-white' />
+      {/* HERO — Pixabay-style search prompt that collapses once a query/filter is active */}
+      <motion.section
+        layout
+        transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
+        className='relative overflow-hidden bg-gradient-to-br from-[#fff5fb] via-white to-[#f3e9ff] border-b border-gray-100'
+      >
+        {/* Decorative photo strip backdrop — only shown in expanded state */}
+        <AnimatePresence initial={false}>
+          {!isMinimized && heroBackdrops.length > 0 && (
+            <motion.div
+              key='hero-backdrop'
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 0.18 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.3 }}
+              className='pointer-events-none absolute inset-0 flex'
+            >
+              {heroBackdrops.map((src, i) => (
+                <div
+                  key={`${src}-${i}`}
+                  className='flex-1 h-full bg-cover bg-center hidden md:block'
+                  style={{ backgroundImage: `url(${src})` }}
+                />
+              ))}
+            </motion.div>
+          )}
+        </AnimatePresence>
+        <div className='absolute inset-0 bg-gradient-to-b from-white/30 via-white/70 to-white pointer-events-none' />
 
-        <div className='relative max-w-[1200px] mx-auto px-4 pt-12 sm:pt-16 md:pt-20 pb-10 sm:pb-12 md:pb-14 text-center'>
-          <motion.div
-            initial={{ opacity: 0, y: 12 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5 }}
-            className='inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-pink-100 text-[#f63a9e] text-xs sm:text-sm font-semibold mb-4'
-          >
-            <Sparkles className='w-3.5 h-3.5' />
-            Curated wall art gallery
-          </motion.div>
+        <motion.div
+          layout
+          transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
+          className={`relative max-w-[1200px] mx-auto px-4 text-center ${
+            isMinimized
+              ? 'pt-4 sm:pt-5 pb-3 sm:pb-4'
+              : 'pt-12 sm:pt-16 md:pt-20 pb-10 sm:pb-12 md:pb-14'
+          }`}
+        >
+          <AnimatePresence initial={false}>
+            {!isMinimized && (
+              <motion.div
+                key='hero-headline'
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: 'auto' }}
+                exit={{ opacity: 0, height: 0 }}
+                transition={{ duration: 0.3 }}
+                className='overflow-hidden'
+              >
+                <div className='inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-pink-100 text-[#f63a9e] text-xs sm:text-sm font-semibold mb-4'>
+                  <Sparkles className='w-3.5 h-3.5' />
+                  Curated wall art gallery
+                </div>
 
-          <motion.h1
-            initial={{ opacity: 0, y: 16 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.05 }}
-            className="font-['Bricolage_Grotesque',_sans-serif] text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold text-gray-900 max-w-3xl mx-auto leading-[1.05]"
-          >
-            Stunning art prints,{' '}
-            <span className='text-[#f63a9e]'>ready for your wall</span>
-          </motion.h1>
-          <motion.p
-            initial={{ opacity: 0, y: 16 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.1 }}
-            className='mt-4 sm:mt-5 text-gray-600 text-sm sm:text-base md:text-lg max-w-2xl mx-auto'
-          >
-            Browse {artProducts.length}+ original artworks. Search by mood,
-            subject or style — printed on museum-grade paper or canvas.
-          </motion.p>
+                <h1 className="font-['Bricolage_Grotesque',_sans-serif] text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold text-gray-900 max-w-3xl mx-auto leading-[1.05]">
+                  Stunning art prints,{' '}
+                  <span className='text-[#f63a9e]'>ready for your wall</span>
+                </h1>
+                <p className='mt-4 sm:mt-5 text-gray-600 text-sm sm:text-base md:text-lg max-w-2xl mx-auto'>
+                  Browse {artProducts.length}+ original artworks. Search by
+                  mood, subject or style — printed on museum-grade paper or
+                  canvas.
+                </p>
+              </motion.div>
+            )}
+          </AnimatePresence>
 
           {/* Search bar */}
           <motion.div
-            initial={{ opacity: 0, y: 16 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.15 }}
-            className='mt-7 sm:mt-9 max-w-2xl mx-auto'
+            layout
+            transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
+            className={`max-w-2xl mx-auto ${isMinimized ? 'mt-0' : 'mt-7 sm:mt-9'}`}
           >
             <div className='relative'>
-              <Search className='absolute left-4 sm:left-5 top-1/2 -translate-y-1/2 w-5 h-5 sm:w-6 sm:h-6 text-gray-400' />
-              <input
+              <Search
+                className={`absolute left-4 sm:left-5 top-1/2 -translate-y-1/2 text-gray-400 ${
+                  isMinimized
+                    ? 'w-4 h-4 sm:w-5 sm:h-5'
+                    : 'w-5 h-5 sm:w-6 sm:h-6'
+                }`}
+              />
+              <motion.input
+                layout
+                transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
                 type='search'
                 value={searchQuery}
                 onChange={e => setSearchQuery(e.target.value)}
                 placeholder='Search "lions", "abstract", "Himalayas"...'
-                className='w-full h-14 sm:h-16 pl-12 sm:pl-14 pr-12 sm:pr-14 rounded-full bg-white border border-gray-200 shadow-[0_8px_30px_rgb(0,0,0,0.06)] text-sm sm:text-base placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#f63a9e]/40 focus:border-[#f63a9e] transition-all'
+                className={`w-full pl-12 sm:pl-14 pr-12 sm:pr-14 rounded-full bg-white border border-gray-200 shadow-[0_8px_30px_rgb(0,0,0,0.06)] text-sm sm:text-base placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#f63a9e]/40 focus:border-[#f63a9e] transition-colors ${
+                  isMinimized ? 'h-11 sm:h-12' : 'h-14 sm:h-16'
+                }`}
                 aria-label='Search art collection'
               />
-              {searchQuery && (
+              {(searchQuery || selectedCategory) && (
                 <button
-                  onClick={() => setSearchQuery('')}
-                  aria-label='Clear search'
-                  className='absolute right-3 sm:right-4 top-1/2 -translate-y-1/2 w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-gray-100 hover:bg-gray-200 flex items-center justify-center transition-colors'
+                  onClick={clearFilters}
+                  aria-label='Clear search and filters'
+                  className={`absolute right-3 sm:right-4 top-1/2 -translate-y-1/2 rounded-full bg-gray-100 hover:bg-gray-200 flex items-center justify-center transition-colors ${
+                    isMinimized
+                      ? 'w-7 h-7 sm:w-8 sm:h-8'
+                      : 'w-9 h-9 sm:w-10 sm:h-10'
+                  }`}
                 >
                   <X className='w-4 h-4 text-gray-600' />
                 </button>
               )}
             </div>
 
-            {/* Suggested searches */}
-            <div className='mt-4 flex flex-wrap items-center justify-center gap-2 text-xs sm:text-sm'>
-              <span className='text-gray-500'>Try:</span>
-              {SUGGESTED_TAGS.map(tag => (
-                <button
-                  key={tag}
-                  onClick={() => setSearchQuery(tag.toLowerCase())}
-                  className='px-3 py-1 rounded-full bg-white border border-gray-200 hover:border-[#f63a9e] hover:text-[#f63a9e] text-gray-700 transition-colors'
+            {/* Suggested / category chips */}
+            <AnimatePresence initial={false}>
+              {!isMinimized && (
+                <motion.div
+                  key='hero-chips'
+                  initial={{ opacity: 0, height: 0 }}
+                  animate={{ opacity: 1, height: 'auto' }}
+                  exit={{ opacity: 0, height: 0 }}
+                  transition={{ duration: 0.25 }}
+                  className='overflow-hidden'
                 >
-                  {tag}
-                </button>
-              ))}
-            </div>
+                  <div className='mt-4 flex flex-wrap items-center justify-center gap-2 text-xs sm:text-sm'>
+                    <span className='text-gray-500'>Try:</span>
+                    {(categories.length > 0 ? categories : SUGGESTED_TAGS).map(
+                      tag => {
+                        const isActiveCat =
+                          categories.length > 0 && selectedCategory === tag;
+                        return (
+                          <button
+                            key={tag}
+                            onClick={() =>
+                              categories.length > 0
+                                ? handleSelectCategory(tag)
+                                : setSearchQuery(tag.toLowerCase())
+                            }
+                            className={`px-3 py-1 rounded-full border transition-colors ${
+                              isActiveCat
+                                ? 'bg-gray-900 text-white border-gray-900'
+                                : 'bg-white border-gray-200 hover:border-[#f63a9e] hover:text-[#f63a9e] text-gray-700'
+                            }`}
+                          >
+                            {tag}
+                          </button>
+                        );
+                      }
+                    )}
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
           </motion.div>
-        </div>
-      </section>
-
-      {/* CATEGORY CHIPS */}
-      <section className='sticky top-0 z-30 bg-white/90 backdrop-blur-md border-b border-gray-100'>
-        <div className='max-w-[1400px] mx-auto px-4 py-3 sm:py-4'>
-          <div className='flex items-center gap-2 overflow-x-auto pb-1 scrollbar-thin'>
-            {categories.map(category => {
-              const isActive = selectedCategory === category;
-              return (
-                <button
-                  key={category}
-                  onClick={() => handleSelectCategory(category)}
-                  className={`flex-shrink-0 px-4 sm:px-5 py-2 rounded-full text-xs sm:text-sm font-semibold transition-all ${
-                    isActive
-                      ? 'bg-gray-900 text-white shadow-sm'
-                      : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                  }`}
-                >
-                  {category}
-                </button>
-              );
-            })}
-          </div>
-        </div>
-      </section>
+        </motion.div>
+      </motion.section>
 
       {/* RESULTS HEADER */}
       <div className='max-w-[1400px] mx-auto px-4 pt-6 sm:pt-8 pb-3 flex items-end justify-between gap-3'>
@@ -407,7 +458,7 @@ export function ArtCollectionPage({
           <h2
             className="font-['Bricolage_Grotesque',_sans-serif] text-xl sm:text-2xl font-semibold text-gray-900"
           >
-            {selectedCategory === 'All' ? 'All artworks' : selectedCategory}
+            {selectedCategory || 'All artworks'}
             {searchQuery && (
               <span className='text-gray-500 font-normal'>
                 {' '}
@@ -433,7 +484,9 @@ export function ArtCollectionPage({
                 slug={product.slug}
                 name={product.name}
                 image={product.image}
+                images={product.images}
                 category={product.category}
+                price={product.price}
                 isBestSeller={product.isBestSeller}
                 index={index}
               />
@@ -452,10 +505,7 @@ export function ArtCollectionPage({
               gallery.
             </p>
             <button
-              onClick={() => {
-                setSearchQuery('');
-                handleSelectCategory('All');
-              }}
+              onClick={clearFilters}
               className='inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-[#f63a9e] hover:bg-[#e02a8e] text-white text-sm font-semibold transition-colors'
             >
               Reset filters

@@ -2,7 +2,6 @@ import { useCart } from '@/context/CartContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { RadioGroup } from '@/components/ui/radio-group';
-import { ImageWithFallback } from '@/components/figma/image-with-fallback';
 import {
   X,
   Plus,
@@ -27,6 +26,19 @@ import { Footer } from '@/components/layout/footer';
 import { useSiteSetting } from '@/lib/supabase/hooks';
 import { createClient } from '@/lib/supabase/client';
 import { toast } from 'sonner';
+
+// Returns just the base product name for a cart line item by stripping
+// any trailing ratio/size segments. Item names are built like
+// "Product — Ratio — 12\" × 12\"" or "Product - 12\" × 12\"", so we
+// split on the first space-separated em-dash / en-dash / hyphen and keep
+// the first part. Hyphens without surrounding spaces (e.g. "Multi-Canvas
+// Wall") are intentionally preserved.
+function getDisplayName(name: string): string {
+  if (!name) return name;
+  const trimmedName = name.trim();
+  const cleaned = trimmedName.split(/\s+[—–-]\s+/)[0]?.trim();
+  return cleaned || trimmedName;
+}
 
 export function CartPage() {
   const { cartItems, updateQuantity, removeFromCart, deliveryMethod, setDeliveryMethod, setShippingCost, discount, setDiscount, appliedPromoCode, setAppliedPromoCode, promoApplied, setPromoApplied } = useCart();
@@ -235,104 +247,82 @@ export function CartPage() {
                     Items
                   </span>
                 </div>
-                <div className='space-y-3'>
-                  {cartItems.map(item => (
-                    <div
-                      key={item.id}
-                      className='flex flex-col sm:flex-row gap-3 sm:gap-4 bg-gray-50 rounded-xl p-3 sm:p-4 border-2 border-gray-200 hover:border-[#f63a9e]/40 hover:shadow-lg transition-all duration-300 group relative overflow-hidden'
-                    >
-                      {/* Decorative accent */}
-                      <div className='absolute top-0 left-0 w-1 h-full bg-[#f63a9e] opacity-0 group-hover:opacity-100 transition-opacity' />
-
-                      {/* Product Image */}
-                      <div className='w-full sm:w-20 h-48 sm:h-20 rounded-xl overflow-hidden flex-shrink-0 bg-white shadow-md ring-2 ring-gray-100 group-hover:ring-[#f63a9e]/20 transition-all'>
-                        <ImageWithFallback
-                          src={item.image}
-                          alt={item.name}
-                          className='w-full h-full object-cover group-hover:scale-110 transition-transform duration-500'
-                        />
-                      </div>
-
-                      {/* Product Details */}
-                      <div className='flex-1 min-w-0 flex flex-col'>
-                        <div className='flex items-start justify-between mb-2 gap-2'>
+                <ul className='divide-y divide-gray-100'>
+                  {cartItems.map(item => {
+                    const displayName = getDisplayName(item.name);
+                    return (
+                      <li
+                        key={item.id}
+                        className='py-4 first:pt-0 last:pb-0'
+                      >
+                        <div className='flex items-start gap-3'>
                           <div className='flex-1 min-w-0'>
                             <h4
-                              className='text-gray-900 mb-1.5 group-hover:text-[#f63a9e] transition-colors text-sm sm:text-base'
+                              className='text-gray-900 text-sm sm:text-base leading-snug'
                               style={{ fontWeight: '600' }}
                             >
-                              {item.name}
+                              {displayName}
                             </h4>
                             {item.size && (
-                              <div className='inline-flex items-center gap-1.5 px-2.5 py-1.5 bg-white rounded-lg border-2 border-gray-200 shadow-sm'>
-                                <Package className='w-3.5 h-3.5 text-[#f63a9e]' />
-                                <span
-                                  className='text-xs text-gray-700'
-                                  style={{ fontWeight: '600' }}
-                                >
-                                  {item.size}
-                                </span>
-                              </div>
+                              <p className='mt-1 text-xs sm:text-sm text-gray-500'>
+                                {item.size}
+                              </p>
                             )}
                           </div>
                           <button
                             onClick={() => removeFromCart(item.id)}
-                            className='ml-3 w-9 h-9 rounded-lg border-2 border-gray-200 hover:border-red-500 hover:bg-red-50 flex items-center justify-center transition-all group/del shadow-sm'
+                            aria-label='Remove item'
+                            className='shrink-0 w-8 h-8 rounded-md text-gray-400 hover:text-red-500 hover:bg-red-50 flex items-center justify-center transition-colors'
                           >
-                            <X className='w-4 h-4 text-gray-400 group-hover/del:text-red-500 transition-colors' />
+                            <X className='w-4 h-4' />
                           </button>
                         </div>
 
-                        {/* Quantity and Price */}
-                        <div className='flex flex-col sm:flex-row items-start sm:items-end justify-between mt-auto gap-2 sm:gap-0'>
-                          <div className='flex items-center gap-2'>
+                        <div className='mt-3 flex items-center justify-between gap-3'>
+                          <div className='inline-flex items-center rounded-lg border border-gray-200'>
+                            <button
+                              onClick={() =>
+                                updateQuantity(item.id, item.quantity - 1)
+                              }
+                              aria-label='Decrease quantity'
+                              className='w-8 h-8 flex items-center justify-center text-gray-500 hover:text-[#f63a9e] transition-colors'
+                            >
+                              <Minus className='w-3.5 h-3.5' />
+                            </button>
                             <span
-                              className='text-xs text-gray-600'
+                              className='w-8 text-center text-sm text-gray-900'
                               style={{ fontWeight: '600' }}
                             >
-                              Qty:
+                              {item.quantity}
                             </span>
-                            <div className='flex items-center gap-1 sm:gap-1.5 bg-white rounded-lg border-2 border-gray-200 p-1 shadow-sm'>
-                              <button
-                                onClick={() =>
-                                  updateQuantity(item.id, item.quantity - 1)
-                                }
-                                className='w-7 h-7 rounded-md hover:bg-[#f63a9e]/10 hover:text-[#f63a9e] flex items-center justify-center transition-all'
-                              >
-                                <Minus className='w-4 h-4' />
-                              </button>
-                              <span
-                                className='w-10 text-center text-gray-900'
-                                style={{ fontWeight: '700', fontSize: '15px' }}
-                              >
-                                {item.quantity}
-                              </span>
-                              <button
-                                onClick={() =>
-                                  updateQuantity(item.id, item.quantity + 1)
-                                }
-                                className='w-7 h-7 rounded-md hover:bg-[#f63a9e]/10 hover:text-[#f63a9e] flex items-center justify-center transition-all'
-                              >
-                                <Plus className='w-4 h-4' />
-                              </button>
-                            </div>
+                            <button
+                              onClick={() =>
+                                updateQuantity(item.id, item.quantity + 1)
+                              }
+                              aria-label='Increase quantity'
+                              className='w-8 h-8 flex items-center justify-center text-gray-500 hover:text-[#f63a9e] transition-colors'
+                            >
+                              <Plus className='w-3.5 h-3.5' />
+                            </button>
                           </div>
                           <div className='text-right'>
-                            <p className='text-xs text-gray-500 mb-1'>
-                              £{item.price.toFixed(2)} each
-                            </p>
+                            {item.quantity > 1 && (
+                              <p className='text-xs text-gray-400'>
+                                £{item.price.toFixed(2)} each
+                              </p>
+                            )}
                             <p
-                              className='text-[#f63a9e]'
-                              style={{ fontWeight: '700', fontSize: '20px' }}
+                              className='text-gray-900 text-base sm:text-lg leading-tight'
+                              style={{ fontWeight: '700' }}
                             >
                               £{(item.price * item.quantity).toFixed(2)}
                             </p>
                           </div>
                         </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
+                      </li>
+                    );
+                  })}
+                </ul>
               </div>
 
               {/* Order Summary */}

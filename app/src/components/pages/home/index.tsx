@@ -413,6 +413,7 @@ export function HomePage({
                   name={product.name}
                   images={product.images}
                   category={product.category}
+                  price={product.price}
                   index={index}
                 />
               ))}

@@ -32,6 +32,19 @@ function cn(...inputs: any[]) {
   return inputs.filter(Boolean).join(' ');
 }
 
+// Returns just the base product name by stripping any trailing
+// ratio/size segments. Item names are built like
+// "Product — Ratio — 12\" × 12\"" or "Product - 12\" × 12\"", so we
+// split on the first space-separated em-dash / en-dash / hyphen and keep
+// the first part. Hyphens without surrounding spaces (e.g. "Multi-Canvas
+// Wall") are intentionally preserved.
+function getDisplayName(name: string): string {
+  if (!name) return name;
+  const trimmedName = name.trim();
+  const cleaned = trimmedName.split(/\s+[—–-]\s+/)[0]?.trim();
+  return cleaned || trimmedName;
+}
+
 interface PostcoderAddress {
   addressline1: string;
   addressline2?: string;
@@ -1059,49 +1072,39 @@ export function CheckoutPage() {
                   </div>
                 </div>
 
-                {/* Cart Items - Compact */}
-                <div className='space-y-2 sm:space-y-3 mb-4 sm:mb-6 max-h-48 sm:max-h-64 overflow-y-auto pr-1 sm:pr-2'>
-                  {cartItems.map((item, index) => (
-                    <motion.div
-                      key={item.id}
-                      className='flex gap-2 sm:gap-3 p-2 sm:p-3 bg-gray-50 rounded-lg sm:rounded-xl border border-gray-100'
-                      initial={{ opacity: 0, y: 10 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ delay: index * 0.05 }}
-                    >
-                      <div className='relative flex-shrink-0'>
-                        <img
-                          src={item.image}
-                          alt={item.name}
-                          className='w-16 h-16 rounded-lg object-cover'
-                        />
-                        <div
-                          className='absolute -top-1 -right-1 w-5 h-5 rounded-full bg-[#f63a9e] text-white flex items-center justify-center text-xs'
-                          style={{ fontWeight: '700' }}
-                        >
-                          {item.quantity}
+                {/* Cart Items - Compact, image-free */}
+                <ul className='mb-4 sm:mb-6 max-h-48 sm:max-h-64 overflow-y-auto pr-1 sm:pr-2 divide-y divide-gray-100'>
+                  {cartItems.map((item, index) => {
+                    const displayName = getDisplayName(item.name);
+                    return (
+                      <motion.li
+                        key={item.id}
+                        className='py-3 first:pt-0 last:pb-0 flex items-start gap-3'
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: index * 0.05 }}
+                      >
+                        <div className='flex-1 min-w-0'>
+                          <h4
+                            className='text-gray-900 truncate text-sm leading-snug'
+                            style={{ fontWeight: '600' }}
+                          >
+                            {displayName}
+                          </h4>
+                          <p className='text-gray-500 text-xs mt-0.5'>
+                            {item.size ? `${item.size} · ` : ''}Qty {item.quantity}
+                          </p>
                         </div>
-                      </div>
-                      <div className='flex-1 min-w-0'>
-                        <h4
-                          className='text-gray-900 mb-1 truncate text-sm'
-                          style={{ fontWeight: '600' }}
-                        >
-                          {item.name}
-                        </h4>
-                        <p className='text-gray-500 text-xs mb-1'>
-                          {item.size}
-                        </p>
                         <span
-                          className='text-[#f63a9e] text-sm'
+                          className='text-gray-900 text-sm whitespace-nowrap'
                           style={{ fontWeight: '700' }}
                         >
-                          £{item.price.toFixed(2)}
+                          £{(item.price * item.quantity).toFixed(2)}
                         </span>
-                      </div>
-                    </motion.div>
-                  ))}
-                </div>
+                      </motion.li>
+                    );
+                  })}
+                </ul>
 
                 {/* Price Breakdown - Compact */}
                 <div className='space-y-3 pt-4 border-t border-gray-200 mb-4'>
