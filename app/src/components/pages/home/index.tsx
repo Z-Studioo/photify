@@ -349,7 +349,7 @@ export function HomePage({
         </div>
       </section> */}
 
-      {/* Art Collections Section — Pixabay-style photo gallery */}
+      {/* Stock Images Section — Pixabay-style photo gallery */}
       <section className='py-10 sm:py-14'>
         <div className='max-w-[1400px] mx-auto px-4'>
           <div className='flex items-end justify-between gap-4 mb-6 sm:mb-8'>
@@ -366,7 +366,7 @@ export function HomePage({
                   fontWeight: '600',
                 }}
               >
-                Art Collections
+                Stock Images
               </motion.h2>
               <p className='text-gray-600 text-base sm:text-lg mt-2 sm:mt-3 max-w-2xl'>
                 A curated gallery of prints — from abstract to traditional.
@@ -374,7 +374,7 @@ export function HomePage({
               </p>
             </div>
             <button
-              onClick={() => navigate('/art-collections')}
+              onClick={() => navigate('/stock-images')}
               className='hidden sm:inline-flex items-center gap-1.5 text-[#f63a9e] hover:text-[#e02a8e] font-semibold text-sm transition-colors'
             >
               View all
@@ -392,7 +392,7 @@ export function HomePage({
                 <button
                   key={tag}
                   onClick={() =>
-                    navigate(`/art-collections?category=${encodeURIComponent(tag)}`)
+                    navigate(`/stock-images?category=${encodeURIComponent(tag)}`)
                   }
                   className='flex-shrink-0 px-4 py-1.5 rounded-full bg-gray-100 text-gray-700 hover:bg-gray-200 hover:text-gray-900 text-xs sm:text-sm font-medium transition-colors'
                 >
@@ -420,7 +420,7 @@ export function HomePage({
 
               {/* Browse-all promo tile, sized to blend with masonry */}
               <button
-                onClick={() => navigate('/art-collections')}
+                onClick={() => navigate('/stock-images')}
                 className='group relative block w-full overflow-hidden mb-3 sm:mb-4 break-inside-avoid aspect-[3/4] bg-gradient-to-br from-[#f63a9e] via-[#ff5fb1] to-[#7c2bd1] text-left border-0 p-0 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#f63a9e] focus-visible:ring-offset-2'
               >
                 <span
@@ -463,7 +463,7 @@ export function HomePage({
 
           <div className='mt-6 sm:hidden text-center'>
             <button
-              onClick={() => navigate('/art-collections')}
+              onClick={() => navigate('/stock-images')}
               className='inline-flex items-center gap-1.5 text-[#f63a9e] font-semibold text-sm'
             >
               View all

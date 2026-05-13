@@ -28,7 +28,7 @@ export default [
   // route('room/:id', 'pages/room/[id]/index.tsx'),
   route('products', 'pages/products/index.tsx'),
   route('product/:id', 'pages/product/[id]/index.tsx'),
-  route('art-collections', 'pages/art-collections/index.tsx'),
+  route('stock-images', 'pages/stock-images/index.tsx'),
 
   route(
     'customize/multi-canvas-wall',
@@ -91,7 +91,7 @@ export default [
       'pages/admin/products/edit/[productId]/index.tsx'
     ),
 
-    route('admin/art-collection', 'pages/admin/art-collection/index.tsx'),
+    route('admin/stock-images', 'pages/admin/stock-images/index.tsx'),
 
     route('admin/settings', 'pages/admin/settings/index.tsx'),
     route(

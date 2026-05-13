@@ -633,7 +633,7 @@ export function ProductDetailPage({
                         </Button>
                         <button
                           type='button'
-                          onClick={() => navigate('/art-collections')}
+                          onClick={() => navigate('/stock-images')}
                           className='text-xs sm:text-sm text-gray-500 hover:text-gray-700 transition-colors text-center sm:text-left sm:whitespace-nowrap'
                         >
                           or choose art from our collection

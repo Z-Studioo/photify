@@ -20,7 +20,7 @@ interface ArtProduct {
   tags?: string[];
 }
 
-interface ArtCollectionPageProps {
+interface StockImagesPageProps {
   initialArtProducts: any[];
   initialCategories: string[];
 }
@@ -190,10 +190,10 @@ const mockArtProducts: ArtProduct[] = [
 
 const SUGGESTED_TAGS = ['Abstract', 'Animals', 'Nature', 'Religion', 'Modern'];
 
-export function ArtCollectionPage({
+export function StockImagesPage({
   initialArtProducts,
   initialCategories,
-}: ArtCollectionPageProps) {
+}: StockImagesPageProps) {
   const [searchParams, setSearchParams] = useSearchParams();
   const navigate = useNavigate();
   const [selectedCategory, setSelectedCategory] = useState<string>('');
@@ -391,7 +391,7 @@ export function ArtCollectionPage({
                 className={`w-full pl-12 sm:pl-14 pr-12 sm:pr-14 rounded-full bg-white border border-gray-200 shadow-[0_8px_30px_rgb(0,0,0,0.06)] text-sm sm:text-base placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#f63a9e]/40 focus:border-[#f63a9e] transition-colors ${
                   isMinimized ? 'h-11 sm:h-12' : 'h-14 sm:h-16'
                 }`}
-                aria-label='Search art collection'
+                aria-label='Search stock images'
               />
               {(searchQuery || selectedCategory) && (
                 <button
@@ -458,7 +458,7 @@ export function ArtCollectionPage({
           <h2
             className="font-['Bricolage_Grotesque',_sans-serif] text-xl sm:text-2xl font-semibold text-gray-900"
           >
-            {selectedCategory || 'All artworks'}
+            {selectedCategory || 'All stock images'}
             {searchQuery && (
               <span className='text-gray-500 font-normal'>
                 {' '}

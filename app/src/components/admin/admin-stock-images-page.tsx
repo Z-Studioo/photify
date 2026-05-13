@@ -100,7 +100,7 @@ function storageKeyFromUrl(url: string | null | undefined): string | null {
 // Component
 // ----------------------------------------------------------------------------
 
-export function AdminArtCollectionPage() {
+export function AdminStockImagesPage() {
   const supabase = createClient();
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
@@ -495,7 +495,7 @@ export function AdminArtCollectionPage() {
               className="font-['Bricolage_Grotesque',_sans-serif] mb-2"
               style={{ fontSize: '32px', fontWeight: '600' }}
             >
-              Art Collection
+              Stock Images
             </h1>
             <p className='text-gray-600'>
               Bulk-upload photos and add tags so customers can find them.

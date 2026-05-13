@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import { Request, Response } from 'express';
 import checkoutRoutes from './checkout';
+import paymentIntentRoutes from './payment-intent';
 import contactRoutes from './contact';
 import ordersRoutes from './orders';
 import addressRoutes from './address';
@@ -74,6 +75,7 @@ router.get('/', (_req: Request, res: Response) => {
     health: '/api/health',
     endpoints: {
       checkout: 'POST /api/checkout',
+      paymentIntent: 'POST /api/payment-intent',
       webhook: 'POST /api/webhook',
       contact: 'POST /api/contact',
       orderNotification: 'POST /api/orders/:orderNumber/status-notification',
@@ -84,6 +86,7 @@ router.get('/', (_req: Request, res: Response) => {
 // Mount route modules
 // Note: Webhook route is mounted directly in app.ts before JSON body parser
 router.use('/checkout', checkoutRoutes);
+router.use('/payment-intent', paymentIntentRoutes);
 router.use('/contact', contactRoutes);
 router.use('/orders', ordersRoutes);
 router.use('/address', addressRoutes);

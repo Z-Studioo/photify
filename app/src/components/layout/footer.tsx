@@ -46,10 +46,10 @@ export function Footer() {
               </li>
               <li>
                 <Link
-                  to='/art-collections'
+                  to='/stock-images'
                   className='text-gray-400 hover:text-[#f63a9e] transition-colors'
                 >
-                  Art Collections
+                  Stock Images
                 </Link>
               </li>
             </ul>

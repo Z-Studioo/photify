@@ -195,6 +195,65 @@ export async function handleStripeWebhook(
       case 'payment_intent.succeeded': {
         const paymentIntent = event.data.object as Stripe.PaymentIntent;
         console.log('PaymentIntent succeeded:', paymentIntent.id);
+
+        // Inline / Express Checkout flow: the PaymentIntent is created
+        // directly (no Checkout Session), so the session.completed handler
+        // never fires. Do the full post-payment work here.
+        //
+        // We make this idempotent so it's safe even when Stripe also fires
+        // checkout.session.completed for the same PI (it does for Checkout
+        // Session-created PIs): we only proceed when the order is still
+        // marked as pending.
+        const orderId = paymentIntent.metadata?.order_id;
+
+        // Prefer lookup by stripe_payment_intent_id (set when the intent is
+        // created in /api/payment-intent), fall back to metadata.order_id.
+        const { data: pendingOrder, error: lookupError } = await supabase
+          .from('orders')
+          .select('*')
+          .or(
+            `stripe_payment_intent_id.eq.${paymentIntent.id}${orderId ? `,id.eq.${orderId}` : ''}`
+          )
+          .maybeSingle();
+
+        if (lookupError) {
+          console.error('Error looking up order for PaymentIntent:', lookupError);
+          break;
+        }
+
+        if (!pendingOrder) {
+          console.log(
+            'No matching order for PaymentIntent (may be a Checkout Session flow):',
+            paymentIntent.id
+          );
+          break;
+        }
+
+        if (pendingOrder.payment_status === 'paid') {
+          console.log('Order already marked paid, skipping:', pendingOrder.id);
+          break;
+        }
+
+        const { data: updatedOrder, error: updateError } = await supabase
+          .from('orders')
+          .update({
+            payment_status: 'paid',
+            status: 'processing',
+            stripe_payment_intent_id: paymentIntent.id,
+            paid_at: new Date().toISOString(),
+          })
+          .eq('id', pendingOrder.id)
+          .eq('payment_status', 'pending') // idempotency guard
+          .select()
+          .single();
+
+        if (updateError) {
+          console.error('Error updating order on PI success:', updateError);
+        } else if (updatedOrder) {
+          await upsertCustomer(updatedOrder);
+          await sendConfirmationEmailForOrder(updatedOrder);
+        }
+
         break;
       }
 

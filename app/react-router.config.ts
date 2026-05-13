@@ -18,7 +18,7 @@ interface StaticEntry {
 const STATIC_CUSTOMER_ROUTES: StaticEntry[] = [
   { path: '/', changefreq: 'daily', priority: 1.0 },
   { path: '/products', changefreq: 'daily', priority: 0.9 },
-  { path: '/art-collections', changefreq: 'daily', priority: 0.9 },
+  { path: '/stock-images', changefreq: 'daily', priority: 0.9 },
   { path: '/contact', changefreq: 'yearly', priority: 0.4 },
   { path: '/privacy-policy', changefreq: 'yearly', priority: 0.2 },
   { path: '/terms-of-use', changefreq: 'yearly', priority: 0.2 },
@@ -63,7 +63,7 @@ const STATIC_INTERNAL_ROUTES: string[] = [
   '/admin/rooms/new',
   '/admin/products',
   '/admin/products/new',
-  '/admin/art-collection',
+  '/admin/stock-images',
   '/admin/settings',
   '/admin/settings/size-pricing',
   '/admin/customers',
