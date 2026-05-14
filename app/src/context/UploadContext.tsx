@@ -93,7 +93,7 @@ interface UploadContextType {
   hasUserOverriddenRatio: boolean;
   setHasUserOverriddenRatio: (v: boolean) => void;
   reset: () => Promise<void>;
-  // Art collection fixed price (set when navigating from art detail page)
+  // Stock image fixed price (set when navigating from a stock image detail page)
   artFixedPrice: number;
   setArtFixedPrice: (price: number) => void;
   artName: string;

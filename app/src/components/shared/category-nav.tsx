@@ -68,7 +68,7 @@ export function CategoryNav({ disabled = false }: CategoryNavProps) {
         <div className="grid grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-4">
           {categories.map((category) => {
             const IconComponent = (Icons as any)[category.icon] || Icons.Frame;
-            const href = category.slug === 'art-collection' ? '/art-collections' : `/category/${category.slug}`;
+            const href = category.slug === 'art-collection' ? '/stock-images' : `/category/${category.slug}`;
             return (
               <Link
                 key={category.id}

@@ -74,7 +74,7 @@ export function Header() {
     { href: '/', label: 'Home', icon: Home },
     { href: '/products', label: 'All Products', icon: Package },
     // { href: '/category/gallery-walls', label: 'Browse Collection', icon: Grid },
-    { href: '/art-collections', label: 'Art Collections', icon: Palette },
+    { href: '/stock-images', label: 'Stock Images', icon: Palette },
     // { href: '/ai-tools', label: 'AI Tools', icon: Wand2 },
     { href: '/track-order', label: 'Track Order', icon: MapPin },
     { href: '/contact', label: 'Contact Us', icon: Mail },

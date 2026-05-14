@@ -1,0 +1,134 @@
+# Render Blueprint — Photify
+#
+# Apply with: Dashboard -> Blueprints -> "New Blueprint Instance" or "Sync".
+# After first apply, fill in the secrets marked `sync: false` once via the
+# Render Dashboard. They persist across deploys.
+#
+# Public values are committed here so they remain in version control.
+# Anything sensitive (API keys, tokens, service-role keys) uses `sync: false`,
+# which means Render keeps the value already set in the Dashboard and never
+# reads it from this file.
+
+services:
+  # ---------------------------------------------------------------------------
+  # Frontend — React Router v7 SPA (prerender + ssr:false), served as a
+  # static site.
+  #
+  # The wildcard rewrite is the permanent fix for unknown / mistyped URLs
+  # (e.g. /foobar) showing Render's default "Not Found" page instead of our
+  # styled 404. Render evaluates this rule ONLY when no real file exists on
+  # disk, so prerendered routes (/cart, /checkout, every /admin/* index,
+  # every /customize/* tool, /product/:slug, /category/:slug) are still
+  # served natively as <path>/index.html with no rewrite involved.
+  #
+  # For any path with no prerendered file, Render rewrites (status 200) to
+  # /__spa-fallback.html — which React Router generates automatically
+  # because ssr:false + "/" is in the prerender list. The SPA shell then
+  # hydrates against window.location, and the `route('*', 'pages/not-found.tsx')`
+  # wildcard renders the styled 404 page client-side.
+  #
+  # Note: this also restores the original deep-link / reload behaviour for
+  # dynamic admin routes that intentionally are NOT prerendered (e.g.
+  # /admin/orders/:orderId, /admin/products/edit/:productId). Hitting them
+  # directly now loads the SPA shell instead of 404'ing.
+  # ---------------------------------------------------------------------------
+  - type: web
+    runtime: static
+    name: photify-frontend
+    buildCommand: cd app && npm install && npm run build
+    staticPublishPath: ./app/build/client
+    pullRequestPreviewsEnabled: true
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /__spa-fallback.html
+    headers:
+      - path: /assets/*
+        name: Cache-Control
+        value: public, max-age=31536000, immutable
+      - path: /*
+        name: X-Frame-Options
+        value: SAMEORIGIN
+      - path: /*
+        name: X-Content-Type-Options
+        value: nosniff
+      - path: /*
+        name: Referrer-Policy
+        value: strict-origin-when-cross-origin
+    envVars:
+      - key: VITE_API_URL
+        value: https://photify-backend.onrender.com
+      - key: VITE_APP_URL
+        value: https://www.photify.co
+      - key: VITE_PUBLIC_SITE_URL
+        value: https://photify.co
+      # Public Supabase + Stripe + Firebase keys are inlined into the JS
+      # bundle at build time, so Vite needs them as build-time env vars.
+      # Marked `sync: false` so the actual values live in the Dashboard.
+      - key: VITE_SUPABASE_URL
+        sync: false
+      - key: VITE_SUPABASE_ANON_KEY
+        sync: false
+      - key: VITE_STRIPE_PUBLISHABLE_KEY
+        sync: false
+      - key: VITE_FIREBASE_API_KEY
+        sync: false
+      - key: VITE_FIREBASE_AUTH_DOMAIN
+        sync: false
+      - key: VITE_FIREBASE_PROJECT_ID
+        sync: false
+      - key: VITE_FIREBASE_STORAGE_BUCKET
+        sync: false
+      - key: VITE_FIREBASE_MESSAGING_SENDER_ID
+        sync: false
+      - key: VITE_FIREBASE_APP_ID
+        sync: false
+
+  # ---------------------------------------------------------------------------
+  # Backend — Node/Express API. Runs the compiled output from `tsc`.
+  # CORS_ALLOWED_ORIGINS is comma-separated so apex + www both work; the
+  # singular CLIENT_URL stays canonical and is used for Stripe redirect
+  # URLs and email links.
+  # ---------------------------------------------------------------------------
+  - type: web
+    runtime: node
+    name: photify-backend
+    buildCommand: cd server && npm install && npm run build
+    startCommand: cd server && npm start
+    healthCheckPath: /health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: CLIENT_URL
+        value: https://www.photify.co
+      - key: CORS_ALLOWED_ORIGINS
+        value: https://www.photify.co,https://photify.co
+      - key: PUBLIC_APP_URL
+        value: https://www.photify.co
+      - key: SENDGRID_FROM_EMAIL
+        value: noreply@photify.co
+      - key: RATE_LIMIT_MAX_REQUESTS
+        value: "100"
+      # Secrets — keep values in the Render Dashboard, never in the repo.
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_ANON_KEY
+        sync: false
+      - key: SUPABASE_SERVICE_KEY
+        sync: false
+      - key: SUPABASE_SERVICE_ROLE_KEY
+        sync: false
+      - key: STRIPE_SECRET_KEY
+        sync: false
+      - key: STRIPE_WEBHOOK_SECRET
+        sync: false
+      - key: SENDGRID_API_KEY
+        sync: false
+      - key: SUPPORT_EMAIL
+        sync: false
+      - key: ADMIN_EMAIL
+        sync: false
+      - key: POSTCODER_API_KEY
+        sync: false
+      - key: OPENAI_API_KEY
+        sync: false

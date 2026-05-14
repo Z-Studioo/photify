@@ -515,7 +515,7 @@ export function AdminSettingsPage() {
                           Product Tags
                         </h2>
                         <p className='text-sm text-gray-600'>
-                          Manage tags for products and art collections
+                          Manage tags for products and stock images
                         </p>
                       </div>
                       <Button

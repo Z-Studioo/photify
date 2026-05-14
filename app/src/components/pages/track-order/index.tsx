@@ -18,21 +18,12 @@ import {
   Home,
   AlertCircle,
   ArrowRight,
-  Clock,
-  CheckCheck,
-  PackageCheck,
-  Frame,
-  Image as ImageIcon,
-  Square,
-  Layers,
-  Camera,
-  PictureInPicture,
+  ArrowUpRight,
   Loader2,
   Mail,
   Phone,
 } from 'lucide-react';
 
-// Database Order Type
 interface DatabaseOrder {
   id: string;
   order_number: string;
@@ -55,8 +46,8 @@ interface DatabaseOrder {
   subtotal: number;
   shipping_cost: number;
   total: number;
-  status: string; // 'pending' | 'processing' | 'shipped' | 'delivered' | 'cancelled'
-  payment_status: string; // 'pending' | 'paid' | 'failed' | 'refunded'
+  status: string;
+  payment_status: string;
   video_permission: boolean;
   estimated_delivery: string;
   stripe_session_id?: string;
@@ -68,7 +59,6 @@ interface DatabaseOrder {
   delivered_at?: string;
 }
 
-// UI Order Status Type
 interface OrderStatus {
   orderNumber: string;
   status: 'processing' | 'shipped' | 'delivered' | 'pending';
@@ -85,9 +75,7 @@ interface OrderStatus {
   }[];
 }
 
-// Helper function to transform database order to UI format
 const transformOrderToUI = (dbOrder: DatabaseOrder): OrderStatus => {
-  // Map database status to UI status
   let uiStatus: OrderStatus['status'] = 'pending';
   if (dbOrder.status === 'delivered') {
     uiStatus = 'delivered';
@@ -100,22 +88,20 @@ const transformOrderToUI = (dbOrder: DatabaseOrder): OrderStatus => {
     uiStatus = 'processing';
   }
 
-  // Format dates
-  const orderDate = new Date(dbOrder.created_at).toLocaleDateString('en-US', {
+  const orderDate = new Date(dbOrder.created_at).toLocaleDateString('en-GB', {
     year: 'numeric',
     month: 'long',
     day: 'numeric',
   });
 
   const estimatedDelivery = dbOrder.estimated_delivery
-    ? new Date(dbOrder.estimated_delivery).toLocaleDateString('en-US', {
+    ? new Date(dbOrder.estimated_delivery).toLocaleDateString('en-GB', {
         year: 'numeric',
         month: 'long',
         day: 'numeric',
       })
     : 'TBD';
 
-  // Extract city from address
   const shippingAddress =
     typeof dbOrder.shipping_address === 'string'
       ? dbOrder.shipping_address
@@ -147,27 +133,71 @@ const transformOrderToUI = (dbOrder: DatabaseOrder): OrderStatus => {
 const statusSteps = [
   {
     key: 'processing',
-    label: 'Order Confirmed',
+    label: 'Order confirmed',
     icon: Box,
-    description: 'Your order is being prepared',
-    image:
-      'https://images.unsplash.com/photo-1608497454474-29b2a8e9fa91?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHx3YXJlaG91c2UlMjBzaGlwcGluZ3xlbnwxfHx8fDE3NjA4NjkzNDd8MA&ixlib=rb-4.1.0&q=80&w=1080',
+    description: 'We have your order and are preparing it for production.',
   },
   {
     key: 'shipped',
-    label: 'On the Way',
+    label: 'On the way',
     icon: Truck,
-    description: 'Package is on the way to you',
-    image:
-      'https://images.unsplash.com/photo-1759671934974-a4928e049dec?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxzaGlwcGluZyUyMHRydWNrJTIwZGVsaXZlcnl8ZW58MXx8fHwxNzYwOTYxNzM3fDA&ixlib=rb-4.1.0&q=80&w=1080',
+    description: 'Your package has left our facility and is heading to you.',
   },
   {
     key: 'delivered',
     label: 'Delivered',
     icon: CheckCircle2,
-    description: 'Successfully delivered',
-    image:
-      'https://images.unsplash.com/photo-1731251447169-1be7bfdc9d0f?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxmcmFtZWQlMjBwaG90byUyMHdhbGwlMjBhcnR8ZW58MXx8fHwxNzYwNTMxMjY2fDA&ixlib=rb-4.1.0&q=80&w=1080',
+    description: 'Successfully delivered. Enjoy your prints.',
+  },
+];
+
+const journeyStages = [
+  {
+    label: 'Order confirmed',
+    description:
+      'As soon as your payment goes through we pick up your order and start the print queue.',
+    duration: 'Within minutes',
+  },
+  {
+    label: 'In production',
+    description:
+      'Your photos are printed, framed (where applicable) and quality-checked by hand.',
+    duration: '1–3 working days',
+  },
+  {
+    label: 'Shipped',
+    description:
+      "Your package is dispatched with our courier. You'll get a tracking reference by email.",
+    duration: 'Same / next day',
+  },
+  {
+    label: 'Delivered',
+    description:
+      'Your prints arrive at the address you provided at checkout. Time to hang them up.',
+    duration: 'Standard 6 days · Express 3',
+  },
+];
+
+const trackingFaqs = [
+  {
+    q: 'Where do I find my order number?',
+    a: "Your order number was emailed to you right after checkout — it starts with 'PH-' followed by 6 digits. Check your inbox (and spam folder) for an email from support@photify.co.",
+  },
+  {
+    q: "Why doesn't my order number work?",
+    a: "Make sure you're using the same email address you placed the order with. Both fields are required and case-insensitive. If it still doesn't work, get in touch and we'll look it up for you.",
+  },
+  {
+    q: 'How long does delivery take?',
+    a: 'Standard delivery takes 6 working days from order. Express delivery (selectable at checkout) takes 3 working days. You can see your estimated date once your order is confirmed.',
+  },
+  {
+    q: 'My order is late — what should I do?',
+    a: "Couriers occasionally run a day or two behind. If your order is more than 2 working days past the estimated date, email support@photify.co with your order number and we'll chase it for you.",
+  },
+  {
+    q: 'Can I change my delivery address after ordering?',
+    a: "If your order hasn't shipped yet we can usually update the address — message us as soon as possible. Once it's with the courier, we can't reroute it.",
   },
 ];
 
@@ -175,19 +205,17 @@ export function OrderTrackPage() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const [orderNumber, setOrderNumber] = useState(
-    searchParams.get('order_id') || searchParams.get('order') || ''
+    searchParams.get('order_id') || searchParams.get('order') || '',
   );
-  const [email, setEmail] = useState(
-    searchParams.get('email') || ''
-  );
+  const [email, setEmail] = useState(searchParams.get('email') || '');
   const [searchedOrder, setSearchedOrder] = useState<OrderStatus | null>(null);
   const [notFound, setNotFound] = useState(false);
   const [isSearching, setIsSearching] = useState(false);
   const orderDetailsRef = useRef<HTMLDivElement>(null);
 
-  // Auto-search when both order_id and email are present as query params (email link)
   useEffect(() => {
-    const paramOrderId = searchParams.get('order_id') || searchParams.get('order');
+    const paramOrderId =
+      searchParams.get('order_id') || searchParams.get('order');
     const paramEmail = searchParams.get('email');
     if (paramOrderId && paramEmail) {
       handleSearch();
@@ -212,7 +240,6 @@ export function OrderTrackPage() {
     try {
       const supabase = createClient();
 
-      // Query order with order number and email verification
       const { data, error } = await supabase
         .from('orders')
         .select('*')
@@ -222,11 +249,10 @@ export function OrderTrackPage() {
 
       if (error) {
         if (error.code === 'PGRST116') {
-          // No rows returned
           setSearchedOrder(null);
           setNotFound(true);
           toast.error(
-            'Order not found. Please check your order number and email.'
+            'Order not found. Please check your order number and email.',
           );
         } else {
           console.error('Error fetching order:', error);
@@ -239,15 +265,18 @@ export function OrderTrackPage() {
         const transformedOrder = transformOrderToUI(data as DatabaseOrder);
         setSearchedOrder(transformedOrder);
         setNotFound(false);
-        toast.success('Order found!');
+        toast.success('Order found');
         setTimeout(() => {
-          orderDetailsRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+          orderDetailsRef.current?.scrollIntoView({
+            behavior: 'smooth',
+            block: 'start',
+          });
         }, 100);
       } else {
         setSearchedOrder(null);
         setNotFound(true);
         toast.error(
-          'Order not found. Please check your order number and email.'
+          'Order not found. Please check your order number and email.',
         );
       }
     } catch (err) {
@@ -259,596 +288,365 @@ export function OrderTrackPage() {
     }
   };
 
-  const getStatusIndex = (status: string) => {
-    return statusSteps.findIndex(step => step.key === status);
-  };
-
-  const currentStatusStep = searchedOrder
-    ? statusSteps[getStatusIndex(searchedOrder.status)]
-    : null;
+  const getStatusIndex = (status: string) =>
+    statusSteps.findIndex(step => step.key === status);
 
   return (
     <div className="min-h-screen flex flex-col bg-white font-['Mona_Sans',_sans-serif]">
       <Header />
 
       <main className='flex-1'>
+        {/* Hero + Search */}
         {!searchedOrder && (
-          <div className='relative overflow-hidden bg-[#FFF5FB]'>
-            {/* Animated Decorative Elements */}
-            <div className='absolute inset-0 overflow-hidden pointer-events-none'>
-              {/* Floating Circles */}
+          <div className='border-b border-gray-200'>
+            <div className='max-w-[1200px] mx-auto px-6 md:px-12 pt-20 pb-16'>
               <motion.div
-                className='absolute top-20 right-[10%] w-32 h-32 border-4 border-[#f63a9e]/20 rounded-full'
-                animate={{
-                  y: [0, -30, 0],
-                  rotate: [0, 180, 360],
-                }}
-                transition={{ duration: 20, repeat: Infinity, ease: 'linear' }}
-              />
-              <motion.div
-                className='absolute bottom-32 left-[8%] w-24 h-24 border-4 border-[#f63a9e]/10 rounded-full'
-                animate={{
-                  y: [0, 40, 0],
-                  rotate: [360, 180, 0],
-                }}
-                transition={{ duration: 25, repeat: Infinity, ease: 'linear' }}
-              />
-
-              {/* Floating Business Icons */}
-              {[...Array(12)].map((_, i) => (
-                <motion.div
-                  key={i}
-                  className='absolute'
-                  style={{
-                    left: `${10 + i * 8}%`,
-                    top: `${15 + (i % 3) * 25}%`,
-                  }}
-                  animate={{
-                    y: [0, -40, 0],
-                    opacity: [0.2, 0.5, 0.2],
-                    rotate: [0, 15, -15, 0],
-                  }}
-                  transition={{
-                    duration: 4 + (i % 4),
-                    delay: i * 0.4,
-                    repeat: Infinity,
-                    ease: 'easeInOut',
-                  }}
-                >
-                  {i % 6 === 0 && <Frame className='w-7 h-7 text-[#f63a9e]/30' />}
-                  {i % 6 === 1 && (
-                    <ImageIcon className='w-6 h-6 text-[#f63a9e]/30' />
-                  )}
-                  {i % 6 === 2 && (
-                    <Square className='w-6 h-6 text-[#f63a9e]/30' />
-                  )}
-                  {i % 6 === 3 && (
-                    <Layers className='w-6 h-6 text-[#f63a9e]/30' />
-                  )}
-                  {i % 6 === 4 && (
-                    <Camera className='w-7 h-7 text-[#f63a9e]/30' />
-                  )}
-                  {i % 6 === 5 && (
-                    <PictureInPicture className='w-6 h-6 text-[#f63a9e]/30' />
-                  )}
-                </motion.div>
-              ))}
-            </div>
-
-            <div className='relative z-10 max-w-[1400px] mx-auto px-8 py-24'>
-              <motion.div
-                initial={{ opacity: 0, y: 30 }}
+                initial={{ opacity: 0, y: 12 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.6 }}
-                className='text-center max-w-3xl mx-auto'
+                transition={{ duration: 0.5, ease: 'easeOut' }}
+                className='max-w-2xl'
               >
-                {/* Animated Icon */}
-                <motion.div
-                  initial={{ scale: 0, rotate: -180 }}
-                  animate={{ scale: 1, rotate: 0 }}
-                  transition={{
-                    type: 'spring',
-                    duration: 0.8,
-                    bounce: 0.5,
-                  }}
-                  className='inline-flex items-center justify-center relative mb-8'
-                >
-                  <motion.div
-                    className='w-32 h-32 rounded-full bg-[#f63a9e] flex items-center justify-center shadow-2xl'
-                    animate={{
-                      boxShadow: [
-                        '0 20px 60px rgba(246, 58, 158, 0.3)',
-                        '0 20px 80px rgba(246, 58, 158, 0.5)',
-                        '0 20px 60px rgba(246, 58, 158, 0.3)',
-                      ],
-                    }}
-                    transition={{ duration: 2, repeat: Infinity }}
+                <div className='flex items-center gap-2 mb-6'>
+                  <Package className='w-4 h-4 text-[#f63a9e]' />
+                  <p
+                    className='text-[11px] uppercase tracking-[0.18em] text-gray-500'
+                    style={{ fontWeight: 600 }}
                   >
-                    <Package className='w-16 h-16 text-white' />
-                  </motion.div>
-
-                  {/* Orbiting Business Icons */}
-                  {[Frame, ImageIcon, Square].map((Icon, i) => (
-                    <motion.div
-                      key={i}
-                      className='absolute'
-                      style={{
-                        left: '50%',
-                        top: '50%',
-                      }}
-                      animate={{
-                        rotate: [0 + i * 120, 360 + i * 120],
-                      }}
-                      transition={{
-                        duration: 8,
-                        repeat: Infinity,
-                        ease: 'linear',
-                      }}
-                    >
-                      <div
-                        style={{
-                          transform: 'translate(-50%, -50%) translateY(-80px)',
-                        }}
-                      >
-                        <Icon className='w-7 h-7 text-[#f63a9e]' />
-                      </div>
-                    </motion.div>
-                  ))}
-                </motion.div>
-
+                    Order tracking
+                  </p>
+                </div>
                 <h1
-                  className="font-['Bricolage_Grotesque',_sans-serif] text-gray-900 mb-4"
+                  className="font-['Bricolage_Grotesque',_sans-serif] text-gray-900 mb-5"
                   style={{
-                    fontSize: '40px',
-                    fontWeight: '700',
-                    lineHeight: '1.2',
+                    fontSize: 'clamp(36px, 5vw, 52px)',
+                    fontWeight: 700,
+                    letterSpacing: '-0.025em',
+                    lineHeight: 1.05,
                   }}
                 >
-                  Track Your Order
+                  Where&apos;s my order?
                 </h1>
-
-                <p className='text-gray-600 mb-10 text-lg'>
-                  Enter your order number and email to see real-time updates on
-                  your delivery
+                <p className='text-gray-600 text-[17px] leading-relaxed mb-8'>
+                  Enter your order number and the email you used at checkout
+                  to see real-time progress on your prints.
                 </p>
 
-                {/* Search Box */}
-                <motion.div
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.3 }}
-                  className='relative max-w-2xl mx-auto'
-                >
-                  <div className='bg-white rounded-2xl p-6 shadow-2xl border-2 border-gray-100 space-y-4'>
-                  {/* Order Number Input */}
-                  <div>
-                    <Label
-                      htmlFor='orderNumber'
-                      className='text-gray-700 mb-2 block'
-                      style={{ fontWeight: '600' }}
-                    >
-                      Order Number
-                    </Label>
-                    <div className='relative'>
-                      <Search className='absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400' />
-                      <Input
-                        id='orderNumber'
-                        type='text'
-                        placeholder='e.g., PH-123456'
-                        value={orderNumber}
-                        onChange={e => setOrderNumber(e.target.value)}
-                        onKeyPress={e => e.key === 'Enter' && handleSearch()}
-                        className='h-[56px] pl-12 pr-4 border-2 border-gray-200 focus-visible:ring-2 focus-visible:ring-[#f63a9e] focus-visible:border-[#f63a9e] text-lg'
-                      />
+                {/* Search card */}
+                <div className='border border-gray-200 rounded-xl p-5 bg-white space-y-4'>
+                  <div className='grid sm:grid-cols-2 gap-4'>
+                    <div>
+                      <Label
+                        htmlFor='orderNumber'
+                        className='text-[13px] text-gray-700 mb-1.5 block'
+                        style={{ fontWeight: 500 }}
+                      >
+                        Order number
+                      </Label>
+                      <div className='relative'>
+                        <Search className='absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400' />
+                        <Input
+                          id='orderNumber'
+                          type='text'
+                          placeholder='e.g. PH-123456'
+                          value={orderNumber}
+                          onChange={e => setOrderNumber(e.target.value)}
+                          onKeyDown={e =>
+                            e.key === 'Enter' && handleSearch()
+                          }
+                          className='h-11 pl-9 pr-3 border-gray-300 focus:border-gray-900 focus-visible:ring-0'
+                        />
+                      </div>
+                    </div>
+
+                    <div>
+                      <Label
+                        htmlFor='email'
+                        className='text-[13px] text-gray-700 mb-1.5 block'
+                        style={{ fontWeight: 500 }}
+                      >
+                        Email address
+                      </Label>
+                      <div className='relative'>
+                        <Mail className='absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400' />
+                        <Input
+                          id='email'
+                          type='email'
+                          placeholder='you@example.com'
+                          value={email}
+                          onChange={e => setEmail(e.target.value)}
+                          onKeyDown={e =>
+                            e.key === 'Enter' && handleSearch()
+                          }
+                          className='h-11 pl-9 pr-3 border-gray-300 focus:border-gray-900 focus-visible:ring-0'
+                        />
+                      </div>
                     </div>
                   </div>
 
-                  {/* Email Input */}
-                  <div>
-                    <Label
-                      htmlFor='email'
-                      className='text-gray-700 mb-2 block'
-                      style={{ fontWeight: '600' }}
+                  <div className='flex items-center justify-between gap-4 pt-1'>
+                    <p className='text-xs text-gray-400'>
+                      Your order number was emailed to you after purchase.
+                    </p>
+                    <Button
+                      onClick={handleSearch}
+                      disabled={isSearching}
+                      className='inline-flex items-center gap-2 bg-[#f63a9e] hover:bg-[#e02d8d] disabled:bg-[#f63a9e]/50 text-white px-5 h-11 rounded-lg text-sm shadow-none'
+                      style={{ fontWeight: 500 }}
                     >
-                      Email Address
-                    </Label>
-                    <div className='relative'>
-                      <Mail className='absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400' />
-                      <Input
-                        id='email'
-                        type='email'
-                        placeholder='your@email.com'
-                        value={email}
-                        onChange={e => setEmail(e.target.value)}
-                        onKeyPress={e => e.key === 'Enter' && handleSearch()}
-                        className='h-[56px] pl-12 pr-4 border-2 border-gray-200 focus-visible:ring-2 focus-visible:ring-[#f63a9e] focus-visible:border-[#f63a9e] text-lg'
-                      />
-                    </div>
+                      {isSearching ? (
+                        <>
+                          <Loader2 className='w-4 h-4 animate-spin' />
+                          Searching…
+                        </>
+                      ) : (
+                        <>
+                          Track order
+                          <ArrowRight className='w-4 h-4' />
+                        </>
+                      )}
+                    </Button>
                   </div>
-
-                  {/* Search Button */}
-                  <Button
-                    onClick={handleSearch}
-                    disabled={isSearching}
-                    className='w-full bg-[#f63a9e] hover:bg-[#e02d8d] text-white rounded-xl h-[56px] shadow-lg'
-                    style={{ fontWeight: '700' }}
-                  >
-                    {isSearching ? (
-                      <>
-                        <Loader2 className='w-6 h-6 mr-2 animate-spin' />
-                        Searching...
-                      </>
-                    ) : (
-                      <>
-                        Track Order
-                        <ArrowRight className='w-5 h-5 ml-2' />
-                      </>
-                    )}
-                  </Button>
-                  </div>
-
-                  {/* Help Text */}
-                  <motion.p
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    transition={{ delay: 0.5 }}
-                    className='text-center text-gray-500 text-sm mt-4'
-                  >
-                    Your order number was sent to your email after purchase
-                  </motion.p>
-                </motion.div>
+                </div>
               </motion.div>
             </div>
           </div>
         )}
 
-        {/* Results Section */}
-        <div className='max-w-[1400px] mx-auto px-8 py-16'>
-          {searchedOrder && currentStatusStep && (
-            <motion.div
-              initial={{ opacity: 0, y: -12 }}
-              animate={{ opacity: 1, y: 0 }}
-              className='mb-8'
-            >
-              <div className='bg-[#f63a9e] text-white rounded-2xl px-6 py-4 shadow-xl'>
-                <div className='flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3'>
-                  <div className='flex items-center gap-3'>
-                    <div className='w-11 h-11 rounded-xl bg-white/20 backdrop-blur-sm flex items-center justify-center'>
-                      {React.createElement(currentStatusStep.icon, {
-                        className: 'w-6 h-6',
-                      })}
-                    </div>
-                    <div>
-                      <p className='text-white/80 text-xs' style={{ fontWeight: '600' }}>
-                        Order Status
-                      </p>
-                      <h2
-                        className="font-['Bricolage_Grotesque',_sans-serif]"
-                        style={{ fontSize: '22px', fontWeight: '700', lineHeight: '1.2' }}
-                      >
-                        {currentStatusStep.label}
-                      </h2>
-                    </div>
-                  </div>
-                  <div className='text-left sm:text-right'>
-                    <p className='text-white/80 text-xs' style={{ fontWeight: '600' }}>
-                      Order Number
-                    </p>
-                    <p style={{ fontWeight: '700' }}>{searchedOrder.orderNumber}</p>
-                  </div>
-                </div>
-              </div>
-            </motion.div>
-          )}
-
+        {/* Results */}
+        <div className='max-w-[1200px] mx-auto px-6 md:px-12 py-16'>
           <AnimatePresence mode='wait'>
-            {/* Not Found Message */}
-            {notFound && (
+            {/* Not found */}
+            {notFound && !searchedOrder && (
               <motion.div
-                initial={{ opacity: 0, scale: 0.9 }}
-                animate={{ opacity: 1, scale: 1 }}
-                exit={{ opacity: 0, scale: 0.9 }}
-                className='max-w-lg mx-auto text-center'
+                initial={{ opacity: 0, y: 12 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -12 }}
+                className='max-w-xl mx-auto text-center border border-gray-200 rounded-xl p-10'
               >
-                <div className='relative bg-white rounded-3xl p-12 shadow-2xl border-2 border-gray-100'>
-                  <motion.div
-                    animate={{
-                      rotate: [0, -10, 10, -10, 0],
-                    }}
-                    transition={{ duration: 0.5 }}
-                    className='w-24 h-24 rounded-full bg-gray-100 flex items-center justify-center mx-auto mb-6'
-                  >
-                    <AlertCircle className='w-12 h-12 text-gray-400' />
-                  </motion.div>
-                  <h3
-                    className='text-gray-900 mb-3'
-                    style={{ fontSize: '24px', fontWeight: '700' }}
-                  >
-                    Order Not Found
-                  </h3>
-                  <p className='text-gray-600 mb-8'>
-                    We couldn&apos;t find an order with number{' '}
-                    <span className='font-bold text-[#f63a9e]'>
-                      &quot;{orderNumber}&quot;
-                    </span>
-                    .
-                    <br />
-                    Please check your order number and try again.
-                  </p>
-                  <Button
-                    onClick={() => {
-                      setOrderNumber('');
-                      setEmail('');
-                      setNotFound(false);
-                      window.scrollTo({ top: 0, behavior: 'smooth' });
-                    }}
-                    className='bg-[#f63a9e] hover:bg-[#e02d8d] text-white rounded-xl h-[50px] px-8'
-                    style={{ fontWeight: '700' }}
-                  >
-                    Try Again
-                  </Button>
+                <div className='w-12 h-12 rounded-full border border-gray-200 flex items-center justify-center mx-auto mb-5'>
+                  <AlertCircle className='w-5 h-5 text-gray-400' />
                 </div>
+                <h3
+                  className="font-['Bricolage_Grotesque',_sans-serif] text-gray-900 mb-2"
+                  style={{ fontSize: '22px', fontWeight: 700, letterSpacing: '-0.015em' }}
+                >
+                  Order not found
+                </h3>
+                <p className='text-gray-500 text-[14.5px] leading-relaxed mb-7'>
+                  We couldn&apos;t find an order matching{' '}
+                  <span
+                    className='text-gray-900'
+                    style={{ fontWeight: 500 }}
+                  >
+                    &ldquo;{orderNumber}&rdquo;
+                  </span>{' '}
+                  and that email. Please check both and try again.
+                </p>
+                <Button
+                  onClick={() => {
+                    setOrderNumber('');
+                    setEmail('');
+                    setNotFound(false);
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                  }}
+                  className='bg-gray-900 hover:bg-black text-white rounded-lg h-10 px-5 text-sm shadow-none'
+                  style={{ fontWeight: 500 }}
+                >
+                  Try again
+                </Button>
               </motion.div>
             )}
 
-            {/* Order Details */}
+            {/* Order details */}
             {searchedOrder && (
               <motion.div
                 ref={orderDetailsRef}
-                initial={{ opacity: 0, y: 30 }}
+                initial={{ opacity: 0, y: 24 }}
                 animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -30 }}
-                transition={{ duration: 0.5 }}
+                exit={{ opacity: 0, y: -16 }}
+                transition={{ duration: 0.4 }}
               >
-                {/* Main Content Grid */}
-                <div className='grid lg:grid-cols-3 gap-8'>
-                  {/* Left: Order Timeline & Items */}
-                  <div className='lg:col-span-2 space-y-8'>
-                    {/* Order Header */}
-                    <motion.div
-                      initial={{ opacity: 0, x: -20 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      transition={{ delay: 0.2 }}
-                      className='bg-white rounded-3xl p-8 shadow-xl border-2 border-gray-100'
+                {/* Top bar */}
+                <div className='flex flex-col sm:flex-row sm:items-end sm:justify-between gap-6 mb-12 pb-8 border-b border-gray-200'>
+                  <div>
+                    <p
+                      className='text-[11px] uppercase tracking-[0.18em] text-[#f63a9e] mb-2'
+                      style={{ fontWeight: 600 }}
                     >
-                      <div className='flex items-center justify-between mb-8 pb-6 border-b-2 border-gray-100'>
+                      Order {searchedOrder.orderNumber}
+                    </p>
+                    <h2
+                      className="font-['Bricolage_Grotesque',_sans-serif] text-gray-900 mb-2"
+                      style={{
+                        fontSize: 'clamp(28px, 4vw, 40px)',
+                        fontWeight: 700,
+                        letterSpacing: '-0.022em',
+                        lineHeight: 1.1,
+                      }}
+                    >
+                      {(() => {
+                        const i = getStatusIndex(searchedOrder.status);
+                        return statusSteps[i]?.label ?? 'In progress';
+                      })()}
+                    </h2>
+                    <p className='text-gray-500 text-[15px]'>
+                      Placed on {searchedOrder.orderDate} · Estimated delivery{' '}
+                      {searchedOrder.estimatedDelivery}
+                    </p>
+                  </div>
+                  <div className='flex flex-wrap gap-3'>
+                    <Button
+                      onClick={() => {
+                        setSearchedOrder(null);
+                        setOrderNumber('');
+                        setEmail('');
+                        setNotFound(false);
+                        window.scrollTo({ top: 0, behavior: 'smooth' });
+                      }}
+                      variant='outline'
+                      className='inline-flex items-center gap-2 border border-gray-300 hover:border-gray-900 text-gray-900 bg-white hover:bg-white h-10 px-4 rounded-lg text-sm shadow-none'
+                      style={{ fontWeight: 500 }}
+                    >
+                      <Search className='w-4 h-4' />
+                      Track another
+                    </Button>
+                    <Button
+                      onClick={() => navigate('/')}
+                      className='inline-flex items-center gap-2 bg-gray-900 hover:bg-black text-white h-10 px-4 rounded-lg text-sm shadow-none'
+                      style={{ fontWeight: 500 }}
+                    >
+                      <Home className='w-4 h-4' />
+                      Home
+                    </Button>
+                  </div>
+                </div>
+
+                <div className='grid lg:grid-cols-[1.4fr_1fr] gap-12 lg:gap-16'>
+                  {/* Timeline + tracking */}
+                  <div>
+                    <p
+                      className='text-[11px] uppercase tracking-[0.18em] text-gray-400 mb-5'
+                      style={{ fontWeight: 600 }}
+                    >
+                      Progress
+                    </p>
+                    <ol className='relative border-l border-gray-200 pl-7 space-y-8'>
+                      {statusSteps.map((step, index) => {
+                        const StepIcon = step.icon;
+                        const currentIndex = getStatusIndex(
+                          searchedOrder.status,
+                        );
+                        const isCompleted = index <= currentIndex;
+                        const isCurrent = index === currentIndex;
+
+                        return (
+                          <li key={step.key} className='relative'>
+                            <span
+                              className={`absolute -left-[37px] top-0 flex items-center justify-center w-7 h-7 rounded-full border-2 ${
+                                isCurrent
+                                  ? 'bg-[#f63a9e] border-[#f63a9e] text-white'
+                                  : isCompleted
+                                    ? 'bg-white border-[#f63a9e] text-[#f63a9e]'
+                                    : 'bg-white border-gray-200 text-gray-300'
+                              }`}
+                            >
+                              <StepIcon className='w-3.5 h-3.5' />
+                            </span>
+                            <div className='flex items-start justify-between gap-4'>
+                              <div>
+                                <p
+                                  className={`text-[15.5px] mb-1 ${
+                                    isCompleted
+                                      ? 'text-gray-900'
+                                      : 'text-gray-400'
+                                  }`}
+                                  style={{
+                                    fontWeight: 600,
+                                    letterSpacing: '-0.01em',
+                                  }}
+                                >
+                                  {step.label}
+                                </p>
+                                <p
+                                  className={`text-[14px] leading-relaxed ${
+                                    isCompleted
+                                      ? 'text-gray-500'
+                                      : 'text-gray-400'
+                                  }`}
+                                >
+                                  {step.description}
+                                </p>
+                              </div>
+                              {isCurrent && (
+                                <span
+                                  className='inline-flex items-center px-2 py-0.5 rounded-full bg-[#f63a9e]/10 text-[#f63a9e] text-[11px] uppercase tracking-[0.12em] flex-shrink-0'
+                                  style={{ fontWeight: 600 }}
+                                >
+                                  Now
+                                </span>
+                              )}
+                            </div>
+                          </li>
+                        );
+                      })}
+                    </ol>
+
+                    {searchedOrder.trackingNumber && (
+                      <div className='mt-10 border border-gray-200 rounded-xl p-5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3'>
                         <div>
-                          <h3
-                            className="font-['Bricolage_Grotesque',_sans-serif] text-gray-900 mb-2"
-                            style={{ fontSize: '24px', fontWeight: '700' }}
+                          <p className='text-[11px] uppercase tracking-[0.14em] text-gray-500 mb-1'>
+                            Tracking number
+                          </p>
+                          <p
+                            className='text-gray-900 tabular-nums'
+                            style={{
+                              fontWeight: 600,
+                              fontSize: '15.5px',
+                              letterSpacing: '0.02em',
+                            }}
                           >
-                            Order {searchedOrder.orderNumber}
-                          </h3>
-                          <p className='text-gray-500'>
-                            Placed on {searchedOrder.orderDate}
+                            {searchedOrder.trackingNumber}
                           </p>
                         </div>
-
-                        <motion.div
-                          animate={{ rotate: [0, 10, -10, 0] }}
-                          transition={{
-                            duration: 2,
-                            repeat: Infinity,
-                            repeatDelay: 3,
-                          }}
-                        >
-                          <PackageCheck className='w-12 h-12 text-[#f63a9e]' />
-                        </motion.div>
+                        <p className='text-xs text-gray-400'>
+                          Reference for our shipping partner
+                        </p>
                       </div>
+                    )}
 
-                      {/* Visual Progress Timeline */}
-                      <div className='space-y-6'>
-                        {statusSteps.map((step, index) => {
-                          const StepIcon = step.icon;
-                          const currentIndex = getStatusIndex(
-                            searchedOrder.status
-                          );
-                          const isCompleted = index <= currentIndex;
-                          const isCurrent = index === currentIndex;
-
-                          return (
-                            <motion.div
-                              key={step.key}
-                              initial={{ opacity: 0, x: -20 }}
-                              animate={{ opacity: 1, x: 0 }}
-                              transition={{ delay: 0.3 + index * 0.1 }}
-                              className='relative'
-                            >
-                              <div
-                                className={`flex items-center gap-6 p-6 rounded-2xl transition-all ${
-                                  isCurrent
-                                    ? 'bg-[#FFF5FB] border-2 border-[#f63a9e] shadow-lg'
-                                    : isCompleted
-                                      ? 'bg-gray-50 border-2 border-gray-200'
-                                      : 'bg-white border-2 border-gray-100'
-                                }`}
-                              >
-                                {/* Step Number/Icon */}
-                                <motion.div
-                                  className={`relative w-20 h-20 rounded-2xl flex items-center justify-center flex-shrink-0 transition-all shadow-lg ${
-                                    isCompleted ? 'bg-[#f63a9e]' : 'bg-gray-200'
-                                  }`}
-                                  animate={
-                                    isCurrent
-                                      ? {
-                                          scale: [1, 1.1, 1],
-                                        }
-                                      : {}
-                                  }
-                                  transition={{ duration: 2, repeat: Infinity }}
-                                >
-                                  <StepIcon
-                                    className={`w-10 h-10 ${isCompleted ? 'text-white' : 'text-gray-400'}`}
-                                  />
-
-                                  {isCurrent && (
-                                    <motion.div
-                                      className='absolute inset-0 rounded-2xl border-4 border-[#f63a9e]'
-                                      animate={{
-                                        scale: [1, 1.2, 1],
-                                        opacity: [1, 0, 1],
-                                      }}
-                                      transition={{
-                                        duration: 2,
-                                        repeat: Infinity,
-                                      }}
-                                    />
-                                  )}
-                                </motion.div>
-
-                                {/* Content */}
-                                <div className='flex-1'>
-                                  <h4
-                                    className={`mb-2 ${isCompleted ? 'text-gray-900' : 'text-gray-500'}`}
-                                    style={{
-                                      fontWeight: '700',
-                                      fontSize: '18px',
-                                    }}
-                                  >
-                                    {step.label}
-                                  </h4>
-                                  <p
-                                    className={`${isCompleted ? 'text-gray-600' : 'text-gray-400'}`}
-                                  >
-                                    {step.description}
-                                  </p>
-                                </div>
-
-                                {/* Status Check */}
-                                {isCompleted && (
-                                  <motion.div
-                                    initial={{ scale: 0, rotate: -180 }}
-                                    animate={{ scale: 1, rotate: 0 }}
-                                    className='w-10 h-10 rounded-full bg-green-500 flex items-center justify-center shadow-lg'
-                                  >
-                                    <CheckCheck className='w-6 h-6 text-white' />
-                                  </motion.div>
-                                )}
-                              </div>
-
-                              {/* Connector */}
-                              {index < statusSteps.length - 1 && (
-                                <div className='flex justify-start pl-10 py-2'>
-                                  <div
-                                    className={`w-1 h-8 rounded-full ${
-                                      index < currentIndex
-                                        ? 'bg-[#f63a9e]'
-                                        : 'bg-gray-200'
-                                    }`}
-                                  />
-                                </div>
-                              )}
-                            </motion.div>
-                          );
-                        })}
-                      </div>
-
-                      {/* Tracking Number */}
-                      {searchedOrder.trackingNumber && (
-                        <motion.div
-                          initial={{ opacity: 0, y: 10 }}
-                          animate={{ opacity: 1, y: 0 }}
-                          transition={{ delay: 0.8 }}
-                          className='mt-8 p-6 bg-[#FFF5FB] rounded-2xl border-2 border-[#f63a9e]/30'
-                        >
-                          <div className='flex items-center justify-between'>
-                            <div>
-                              <p
-                                className='text-[#f63a9e] text-xs mb-2'
-                                style={{ fontWeight: '700' }}
-                              >
-                                TRACKING NUMBER
-                              </p>
-                              <p
-                                className='text-gray-900'
-                                style={{
-                                  fontWeight: '800',
-                                  fontSize: '20px',
-                                  letterSpacing: '0.05em',
-                                }}
-                              >
-                                {searchedOrder.trackingNumber}
-                              </p>
-                            </div>
-                            <Clock className='w-10 h-10 text-[#f63a9e]' />
-                          </div>
-                        </motion.div>
-                      )}
-                    </motion.div>
-
+                    {/* Shipping summary */}
+                    <div className='mt-10'>
+                      <p
+                        className='text-[11px] uppercase tracking-[0.18em] text-gray-400 mb-3'
+                        style={{ fontWeight: 600 }}
+                      >
+                        Shipping to
+                      </p>
+                      <p className='text-gray-900 text-[15px]'>
+                        {searchedOrder.shippingAddress}
+                      </p>
+                      <p className='text-gray-500 text-[14px]'>
+                        {searchedOrder.shippingCity}
+                      </p>
+                    </div>
                   </div>
 
-                  {/* Right: Quick Actions */}
-                  <div className='space-y-6'>
-                    {/* Action Buttons */}
-                    <motion.div
-                      initial={{ opacity: 0, y: 20 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ delay: 0.3 }}
-                      className='space-y-3'
-                    >
-                      <motion.div
-                        whileHover={{ scale: 1.02, y: -2 }}
-                        whileTap={{ scale: 0.98 }}
+                  {/* Right rail: items + support */}
+                  <aside className='space-y-12'>
+                    <div>
+                      <p
+                        className='text-[11px] uppercase tracking-[0.18em] text-gray-400 mb-5'
+                        style={{ fontWeight: 600 }}
                       >
-                        <Button
-                          onClick={() => navigate('/')}
-                          className='w-full bg-[#f63a9e] hover:bg-[#e02d8d] text-white rounded-xl h-[50px] shadow-lg'
-                          style={{ fontWeight: '700' }}
-                        >
-                          <Home className='w-5 h-5 mr-2' />
-                          Back to Home
-                        </Button>
-                      </motion.div>
-
-                      <motion.div
-                        whileHover={{ scale: 1.02, y: -2 }}
-                        whileTap={{ scale: 0.98 }}
-                      >
-                        <Button
-                          onClick={() => {
-                            setSearchedOrder(null);
-                            setOrderNumber('');
-                            setEmail('');
-                            setNotFound(false);
-                            window.scrollTo({ top: 0, behavior: 'smooth' });
-                          }}
-                          variant='outline'
-                          className='w-full border-2 border-[#f63a9e] text-[#f63a9e] hover:bg-[#FFF5FB] rounded-xl h-[50px]'
-                          style={{ fontWeight: '700' }}
-                        >
-                          <Search className='w-5 h-5 mr-2' />
-                          Track Another Order
-                        </Button>
-                      </motion.div>
-                    </motion.div>
-
-                    {/* Items in This Order (Compact) */}
-                    <motion.div
-                      initial={{ opacity: 0, x: 20 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      transition={{ delay: 0.45 }}
-                      className='bg-white rounded-3xl p-6 border-2 border-gray-100 shadow-xl'
-                    >
-                      <div className='flex items-center gap-3 mb-5'>
-                        <div className='w-11 h-11 rounded-xl bg-[#FFF5FB] flex items-center justify-center'>
-                          <Box className='w-5 h-5 text-[#f63a9e]' />
-                        </div>
-                        <h3
-                          className="font-['Bricolage_Grotesque',_sans-serif] text-gray-900"
-                          style={{ fontSize: '22px', fontWeight: '700' }}
-                        >
-                          Items in This Order
-                        </h3>
-                      </div>
-
-                      <div className='space-y-3'>
+                        Items in this order
+                      </p>
+                      <ul className='border border-gray-200 rounded-xl divide-y divide-gray-100'>
                         {searchedOrder.items.map((item, index) => (
-                          <div
+                          <li
                             key={`${item.name}-${index}`}
-                            className='flex items-start gap-3 p-3 rounded-xl bg-gray-50 border border-gray-100'
+                            className='flex items-start gap-4 p-4'
                           >
-                            <div className='w-14 h-14 rounded-lg overflow-hidden flex-shrink-0 bg-white border border-gray-200'>
+                            <div className='w-14 h-14 rounded-md overflow-hidden flex-shrink-0 bg-gray-50 border border-gray-200'>
                               <ImageWithFallback
                                 src={item.image}
                                 alt={item.name}
@@ -857,144 +655,276 @@ export function OrderTrackPage() {
                             </div>
                             <div className='min-w-0 flex-1'>
                               <p
-                                className='text-gray-900 truncate'
-                                style={{ fontWeight: '700' }}
+                                className='text-gray-900 truncate text-[14.5px]'
+                                style={{ fontWeight: 500 }}
                               >
                                 {item.name}
                               </p>
-                              <p className='text-xs text-gray-600 mt-1'>
-                                {item.size} • Qty: {item.quantity}
+                              <p className='text-xs text-gray-500 mt-0.5'>
+                                {item.size} · Qty {item.quantity}
                               </p>
                             </div>
-                          </div>
+                          </li>
                         ))}
-                      </div>
-                    </motion.div>
+                      </ul>
+                    </div>
 
-                    {/* Support Card */}
-                    <motion.div
-                      initial={{ opacity: 0, x: 20 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      transition={{ delay: 0.6 }}
-                      className='bg-[#FFF5FB] rounded-3xl p-6 border-2 border-[#f63a9e]/25 shadow-xl'
-                    >
-                      <h3
-                        className="font-['Bricolage_Grotesque',_sans-serif] text-gray-900 mb-4"
-                        style={{ fontSize: '22px', fontWeight: '700' }}
+                    <div>
+                      <p
+                        className='text-[11px] uppercase tracking-[0.18em] text-gray-400 mb-3'
+                        style={{ fontWeight: 600 }}
                       >
-                        Need help with this order?
-                      </h3>
-                      <div className='space-y-3'>
+                        Need help?
+                      </p>
+                      <p className='text-gray-500 text-[14px] leading-relaxed mb-4'>
+                        Something not right with this order? Get in touch and
+                        we&apos;ll be back to you within one working day.
+                      </p>
+                      <div className='space-y-2.5'>
                         <a
-                          href='tel:+447700900123'
-                          className='flex items-center gap-3 p-3 rounded-xl bg-white border border-gray-200 hover:border-[#f63a9e]/40 transition-colors'
+                          href='mailto:support@photify.co'
+                          className='flex items-center justify-between gap-3 border border-gray-200 hover:border-gray-900 transition-colors rounded-lg px-4 py-3'
                         >
-                          <Phone className='w-5 h-5 text-[#f63a9e]' />
-                          <div>
-                            <p className='text-xs text-gray-500'>Phone / WhatsApp</p>
-                            <p className='text-gray-900' style={{ fontWeight: '700' }}>
-                              +44 7700 900123
-                            </p>
-                          </div>
+                          <span className='flex items-center gap-3'>
+                            <Mail className='w-4 h-4 text-[#f63a9e]' />
+                            <span>
+                              <span className='block text-xs text-gray-500'>
+                                Email
+                              </span>
+                              <span
+                                className='block text-gray-900 text-[14px]'
+                                style={{ fontWeight: 500 }}
+                              >
+                                support@photify.co
+                              </span>
+                            </span>
+                          </span>
+                          <ArrowUpRight className='w-4 h-4 text-gray-400' />
                         </a>
                         <a
-                          href='mailto:support@photify.co.uk'
-                          className='flex items-center gap-3 p-3 rounded-xl bg-white border border-gray-200 hover:border-[#f63a9e]/40 transition-colors'
+                          href='https://wa.me/447438940960'
+                          target='_blank'
+                          rel='noopener noreferrer'
+                          className='flex items-center justify-between gap-3 border border-gray-200 hover:border-gray-900 transition-colors rounded-lg px-4 py-3'
                         >
-                          <Mail className='w-5 h-5 text-[#f63a9e]' />
-                          <div>
-                            <p className='text-xs text-gray-500'>Email</p>
-                            <p className='text-gray-900 break-all' style={{ fontWeight: '700' }}>
-                              support@photify.co.uk
-                            </p>
-                          </div>
+                          <span className='flex items-center gap-3'>
+                            <Phone className='w-4 h-4 text-[#f63a9e]' />
+                            <span>
+                              <span className='block text-xs text-gray-500'>
+                                Phone &amp; WhatsApp
+                              </span>
+                              <span
+                                className='block text-gray-900 text-[14px]'
+                                style={{ fontWeight: 500 }}
+                              >
+                                07438 940960
+                              </span>
+                            </span>
+                          </span>
+                          <ArrowUpRight className='w-4 h-4 text-gray-400' />
                         </a>
                       </div>
-                    </motion.div>
-                  </div>
+                    </div>
+                  </aside>
                 </div>
               </motion.div>
             )}
 
-            {/* Initial State - Empty State */}
+            {/* Empty / initial state — full editorial content */}
             {!searchedOrder && !notFound && !isSearching && (
               <motion.div
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
-                className='text-center py-20'
+                transition={{ duration: 0.4 }}
               >
-                <motion.div
-                  animate={{
-                    y: [0, -15, 0],
-                  }}
-                  transition={{
-                    duration: 4,
-                    repeat: Infinity,
-                    ease: 'easeInOut',
-                  }}
-                  className='relative inline-block mb-8'
-                >
-                  <div className='w-56 h-56 rounded-full bg-[#FFF5FB] border-4 border-[#f63a9e]/20 flex items-center justify-center mx-auto'>
-                    <Package className='w-32 h-32 text-[#f63a9e]/40' />
-                  </div>
-
-                  {/* Floating Business Icons Around */}
-                  {[
-                    { Icon: Frame, angle: 0 },
-                    { Icon: ImageIcon, angle: 90 },
-                    { Icon: Square, angle: 180 },
-                    { Icon: Camera, angle: 270 },
-                  ].map(({ Icon, angle }, i) => (
-                    <motion.div
-                      key={i}
-                      className='absolute'
+                {/* How tracking works */}
+                <section className='grid lg:grid-cols-[280px_1fr] gap-10 lg:gap-16 mb-20'>
+                  <div>
+                    <p
+                      className='text-[11px] uppercase tracking-[0.18em] text-[#f63a9e] mb-3'
+                      style={{ fontWeight: 600 }}
+                    >
+                      How tracking works
+                    </p>
+                    <h2
+                      className="font-['Bricolage_Grotesque',_sans-serif] text-gray-900 mb-3"
                       style={{
-                        left: '50%',
-                        top: '50%',
-                      }}
-                      animate={{
-                        rotate: [angle, angle + 360],
-                      }}
-                      transition={{
-                        duration: 20,
-                        repeat: Infinity,
-                        ease: 'linear',
+                        fontSize: '26px',
+                        fontWeight: 700,
+                        letterSpacing: '-0.02em',
+                        lineHeight: 1.15,
                       }}
                     >
+                      From confirmation to your front door.
+                    </h2>
+                    <p className='text-gray-500 text-[14.5px] leading-relaxed'>
+                      Every order moves through these four stages. We&apos;ll
+                      update your tracker as soon as each one starts.
+                    </p>
+                  </div>
+                  <ol className='border-t border-gray-200'>
+                    {journeyStages.map((stage, i) => (
+                      <li
+                        key={i}
+                        className='grid grid-cols-[40px_1fr_auto] gap-6 items-start py-5 border-b border-gray-200'
+                      >
+                        <span
+                          className='text-gray-300 tabular-nums text-[15px] pt-0.5'
+                          style={{ fontWeight: 500 }}
+                        >
+                          {String(i + 1).padStart(2, '0')}
+                        </span>
+                        <div className='min-w-0'>
+                          <p
+                            className='text-gray-900 mb-1 text-[15.5px]'
+                            style={{ fontWeight: 600, letterSpacing: '-0.01em' }}
+                          >
+                            {stage.label}
+                          </p>
+                          <p className='text-gray-500 text-[14px] leading-relaxed'>
+                            {stage.description}
+                          </p>
+                        </div>
+                        <span className='text-gray-500 text-[13px] whitespace-nowrap pt-0.5'>
+                          {stage.duration}
+                        </span>
+                      </li>
+                    ))}
+                  </ol>
+                </section>
+
+                {/* Delivery & dispatch facts */}
+                <section className='border-t border-b border-gray-200 bg-gray-50/60 -mx-6 md:-mx-12 px-6 md:px-12 py-10 mb-20'>
+                  <div className='max-w-[1200px] mx-auto grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-x-10 gap-y-6'>
+                    {[
+                      {
+                        title: 'Standard delivery',
+                        desc: '6 working days from order, free over £40.',
+                      },
+                      {
+                        title: 'Express delivery',
+                        desc: '3 working days, selectable at checkout.',
+                      },
+                      {
+                        title: 'Dispatch updates',
+                        desc: 'Emailed the moment your order leaves us.',
+                      },
+                      {
+                        title: 'UK only',
+                        desc: 'We currently ship within the United Kingdom.',
+                      },
+                    ].map((item, i) => (
                       <div
+                        key={i}
+                        className='border-l-2 border-[#f63a9e]/60 pl-4'
+                      >
+                        <p
+                          className='text-gray-900 mb-1 text-[14.5px]'
+                          style={{ fontWeight: 600 }}
+                        >
+                          {item.title}
+                        </p>
+                        <p className='text-gray-500 text-[13.5px] leading-relaxed'>
+                          {item.desc}
+                        </p>
+                      </div>
+                    ))}
+                  </div>
+                </section>
+
+                {/* FAQ */}
+                <section className='grid lg:grid-cols-[280px_1fr] gap-10 lg:gap-16 mb-20'>
+                  <div>
+                    <p
+                      className='text-[11px] uppercase tracking-[0.18em] text-[#f63a9e] mb-3'
+                      style={{ fontWeight: 600 }}
+                    >
+                      Tracking FAQ
+                    </p>
+                    <h2
+                      className="font-['Bricolage_Grotesque',_sans-serif] text-gray-900 mb-3"
+                      style={{
+                        fontSize: '26px',
+                        fontWeight: 700,
+                        letterSpacing: '-0.02em',
+                        lineHeight: 1.15,
+                      }}
+                    >
+                      Questions about your order?
+                    </h2>
+                    <p className='text-gray-500 text-[14.5px] leading-relaxed'>
+                      Quick answers to the things we get asked most often
+                      about delivery and tracking.
+                    </p>
+                  </div>
+                  <div className='border-t border-gray-200'>
+                    {trackingFaqs.map((faq, i) => (
+                      <details
+                        key={i}
+                        className='group border-b border-gray-200 py-4'
+                      >
+                        <summary className='flex items-start justify-between gap-4 cursor-pointer list-none'>
+                          <span
+                            className='text-gray-900 text-[15px] leading-snug'
+                            style={{ fontWeight: 500 }}
+                          >
+                            {faq.q}
+                          </span>
+                          <span className='text-gray-400 text-xl leading-none transition-transform group-open:rotate-45 flex-shrink-0'>
+                            +
+                          </span>
+                        </summary>
+                        <p className='text-gray-600 text-[14px] mt-3 leading-relaxed'>
+                          {faq.a}
+                        </p>
+                      </details>
+                    ))}
+                  </div>
+                </section>
+
+                {/* Need help footer */}
+                <section className='border-t border-gray-200 pt-12'>
+                  <div className='flex flex-col sm:flex-row sm:items-end sm:justify-between gap-6'>
+                    <div className='max-w-md'>
+                      <h3
+                        className="font-['Bricolage_Grotesque',_sans-serif] text-gray-900 mb-2"
                         style={{
-                          transform: `translate(-50%, -50%) translateY(-140px)`,
+                          fontSize: '22px',
+                          fontWeight: 700,
+                          letterSpacing: '-0.015em',
                         }}
                       >
-                        <motion.div
-                          animate={{
-                            y: [0, -10, 0],
-                            rotate: [0, 15, -15, 0],
-                          }}
-                          transition={{
-                            duration: 3,
-                            delay: i * 0.5,
-                            repeat: Infinity,
-                            ease: 'easeInOut',
-                          }}
-                        >
-                          <Icon className='w-10 h-10 text-[#f63a9e]' />
-                        </motion.div>
-                      </div>
-                    </motion.div>
-                  ))}
-                </motion.div>
-
-                <h3
-                  className='text-gray-900 mb-4'
-                  style={{ fontSize: '24px', fontWeight: '700' }}
-                >
-                  Enter Your Order Number
-                </h3>
-                <p className='text-gray-500 max-w-md mx-auto text-lg'>
-                  Track your beautiful prints and see exactly where they are on
-                  their journey to you
-                </p>
+                        Can&apos;t find your order?
+                      </h3>
+                      <p className='text-gray-500 text-[15px] leading-relaxed'>
+                        Send us your name and the email you ordered with —
+                        we&apos;ll look it up and get back to you within one
+                        working day.
+                      </p>
+                    </div>
+                    <div className='flex flex-wrap gap-3'>
+                      <a
+                        href='mailto:support@photify.co'
+                        className='inline-flex items-center gap-2 bg-[#f63a9e] hover:bg-[#e02d8d] text-white px-5 h-11 rounded-lg text-sm transition-colors'
+                        style={{ fontWeight: 500 }}
+                      >
+                        <Mail className='w-4 h-4' />
+                        Email support
+                      </a>
+                      <a
+                        href='https://wa.me/447438940960'
+                        target='_blank'
+                        rel='noopener noreferrer'
+                        className='inline-flex items-center gap-2 border border-gray-300 hover:border-gray-900 text-gray-900 px-5 h-11 rounded-lg text-sm transition-colors'
+                        style={{ fontWeight: 500 }}
+                      >
+                        <Phone className='w-4 h-4' />
+                        WhatsApp us
+                        <ArrowUpRight className='w-3.5 h-3.5 text-gray-400' />
+                      </a>
+                    </div>
+                  </div>
+                </section>
               </motion.div>
             )}
           </AnimatePresence>

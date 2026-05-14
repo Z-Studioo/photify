@@ -633,7 +633,7 @@ export function ProductDetailPage({
                         </Button>
                         <button
                           type='button'
-                          onClick={() => navigate('/art-collections')}
+                          onClick={() => navigate('/stock-images')}
                           className='text-xs sm:text-sm text-gray-500 hover:text-gray-700 transition-colors text-center sm:text-left sm:whitespace-nowrap'
                         >
                           or choose art from our collection
@@ -1026,14 +1026,6 @@ export function ProductDetailPage({
                     className='group cursor-pointer'
                   >
                     <div className='relative bg-white rounded-lg xs:rounded-xl sm:rounded-2xl overflow-hidden shadow-sm hover:shadow-xl transition-all border border-gray-100'>
-                      {relProduct.is_featured && (
-                        <div className='absolute top-1.5 left-1.5 xs:top-2 xs:left-2 sm:top-3 sm:left-3 z-10'>
-                          <div className='px-1.5 py-0.5 xs:px-2 xs:py-1 bg-gradient-to-r from-[#f63a9e] to-[#e02d8d] text-white rounded-full text-[8px] xs:text-[9px] sm:text-xs font-bold'>
-                            ⭐ BESTSELLER
-                          </div>
-                        </div>
-                      )}
-
                       <div className='aspect-square overflow-hidden'>
                         <ImageWithFallback
                           src={

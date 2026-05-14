@@ -18,7 +18,8 @@ interface StaticEntry {
 const STATIC_CUSTOMER_ROUTES: StaticEntry[] = [
   { path: '/', changefreq: 'daily', priority: 1.0 },
   { path: '/products', changefreq: 'daily', priority: 0.9 },
-  { path: '/art-collections', changefreq: 'daily', priority: 0.9 },
+  { path: '/category', changefreq: 'weekly', priority: 0.8 },
+  { path: '/stock-images', changefreq: 'daily', priority: 0.9 },
   { path: '/contact', changefreq: 'yearly', priority: 0.4 },
   { path: '/privacy-policy', changefreq: 'yearly', priority: 0.2 },
   { path: '/terms-of-use', changefreq: 'yearly', priority: 0.2 },
@@ -63,8 +64,7 @@ const STATIC_INTERNAL_ROUTES: string[] = [
   '/admin/rooms/new',
   '/admin/products',
   '/admin/products/new',
-  '/admin/art-collection',
-  '/admin/art-collection/new',
+  '/admin/stock-images',
   '/admin/settings',
   '/admin/settings/size-pricing',
   '/admin/customers',
@@ -72,7 +72,6 @@ const STATIC_INTERNAL_ROUTES: string[] = [
 
 interface DynamicPaths {
   productPaths: string[];
-  artPaths: string[];
   categoryPaths: string[];
 }
 
@@ -85,7 +84,7 @@ async function fetchDynamicPaths(): Promise<DynamicPaths> {
     console.warn(
       '[prerender] VITE_SUPABASE_URL / VITE_SUPABASE_ANON_KEY missing; using static routes only.'
     );
-    return { productPaths: [], artPaths: [], categoryPaths: [] };
+    return { productPaths: [], categoryPaths: [] };
   }
 
   try {
@@ -94,15 +93,11 @@ async function fetchDynamicPaths(): Promise<DynamicPaths> {
       auth: { persistSession: false, autoRefreshToken: false },
     });
 
-    const [products, arts, categories] = await Promise.all([
+    const [products, categories] = await Promise.all([
       supabase
         .from('products')
         .select('slug, updated_at')
         .eq('active', true),
-      supabase
-        .from('art_products')
-        .select('slug, updated_at')
-        .eq('status', 'active'),
       supabase
         .from('categories')
         .select('slug, updated_at')
@@ -113,14 +108,13 @@ async function fetchDynamicPaths(): Promise<DynamicPaths> {
       productPaths: (products.data || [])
         .filter(p => p.slug)
         .map(p => `/product/${p.slug}`),
-      artPaths: (arts.data || []).filter(a => a.slug).map(a => `/art/${a.slug}`),
       categoryPaths: (categories.data || [])
         .filter(c => c.slug)
         .map(c => `/category/${c.slug}`),
     };
   } catch (err) {
     console.warn('[prerender] Supabase fetch failed:', err);
-    return { productPaths: [], artPaths: [], categoryPaths: [] };
+    return { productPaths: [], categoryPaths: [] };
   }
 }
 
@@ -158,7 +152,6 @@ function buildRedirects(paths: {
   const allPrerenderedPaths = new Set<string>([
     ...paths.staticPaths,
     ...paths.dynamic.productPaths,
-    ...paths.dynamic.artPaths,
     ...paths.dynamic.categoryPaths,
   ]);
 
@@ -197,9 +190,6 @@ function buildSitemapXml(paths: {
       p => ({ path: p, changefreq: 'weekly', priority: 0.7 }) as StaticEntry
     ),
     ...paths.dynamic.productPaths.map(
-      p => ({ path: p, changefreq: 'weekly', priority: 0.8 }) as StaticEntry
-    ),
-    ...paths.dynamic.artPaths.map(
       p => ({ path: p, changefreq: 'weekly', priority: 0.8 }) as StaticEntry
     ),
   ];
@@ -241,7 +231,7 @@ export default {
   appDirectory: 'src',
   ssr: false,
   async prerender() {
-    const { productPaths, artPaths, categoryPaths } = await fetchDynamicPaths();
+    const { productPaths, categoryPaths } = await fetchDynamicPaths();
 
     // Every static path that should produce its own <path>/index.html on
     // disk so the static host can serve direct hits / reloads natively.
@@ -250,10 +240,10 @@ export default {
       ...STATIC_INTERNAL_ROUTES,
     ];
 
-    const all = [...staticPaths, ...productPaths, ...artPaths, ...categoryPaths];
+    const all = [...staticPaths, ...productPaths, ...categoryPaths];
 
     console.log(
-      `[prerender] ${all.length} routes (${staticPaths.length} static, ${productPaths.length} products, ${artPaths.length} arts, ${categoryPaths.length} categories)`
+      `[prerender] ${all.length} routes (${staticPaths.length} static, ${productPaths.length} products, ${categoryPaths.length} categories)`
     );
     return all;
   },
@@ -264,7 +254,6 @@ export default {
 
     let dynamic: DynamicPaths = {
       productPaths: [],
-      artPaths: [],
       categoryPaths: [],
     };
     try {
@@ -284,7 +273,6 @@ export default {
         `[buildEnd] wrote sitemap with ${
           STATIC_CUSTOMER_ROUTES.length +
           dynamic.productPaths.length +
-          dynamic.artPaths.length +
           dynamic.categoryPaths.length
         } URLs → ${target}`
       );
@@ -303,7 +291,6 @@ export default {
       const ruleCount =
         staticPaths.filter(p => p !== '/').length +
         dynamic.productPaths.length +
-        dynamic.artPaths.length +
         dynamic.categoryPaths.length;
       console.log(
         `[buildEnd] wrote _redirects with ${ruleCount} prerender rules + SPA fallback → ${target}`

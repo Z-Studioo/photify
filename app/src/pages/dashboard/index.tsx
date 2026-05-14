@@ -26,7 +26,6 @@ import ViewControls from '@/components/shared/dashboard/ViewControls';
 import QuantityControl from '@/components/shared/dashboard/QuantityControl';
 import ApplyChangesControl from '@/components/shared/dashboard/ApplyChangesControl';
 import { Room3DView } from '@/components/shared/dashboard/Room3DView';
-import { handleConfirmChanges } from '@/utils/uploadHandler';
 import { resolveCanvasSizePrice } from '@/lib/canvas-size-price';
 import { useProductCanvasPricingProduct } from '@/hooks/use-product-canvas-pricing';
 import { cn } from '@/lib/utils';
@@ -79,7 +78,6 @@ const Dashboard: React.FC = () => {
   const handleConfirmAndApply = async () => {
     setIsConfirming(true);
     try {
-      await handleConfirmChanges();
       applyPendingChanges();
       applyPendingEdgeType();
 

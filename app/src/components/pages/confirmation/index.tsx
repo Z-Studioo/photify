@@ -17,12 +17,24 @@ import {
   Home,
   ShoppingBag,
   Video,
-  Sparkles,
   Heart,
   Star,
   Clock,
   Loader2,
 } from 'lucide-react';
+
+// Returns just the base product name for an order line item by stripping
+// any trailing ratio/size segments. Item names are built like
+// "Product — Ratio — 12\" × 12\"" or "Product - 12\" × 12\"", so we
+// split on the first space-separated em-dash / en-dash / hyphen and keep
+// the first part. Hyphens without surrounding spaces (e.g. "Multi-Canvas
+// Wall") are intentionally preserved.
+function getDisplayName(name: string): string {
+  if (!name) return name;
+  const trimmedName = name.trim();
+  const cleaned = trimmedName.split(/\s+[—–-]\s+/)[0]?.trim();
+  return cleaned || trimmedName;
+}
 import { Button } from '@/components/ui/button';
 
 interface OrderItem {
@@ -689,74 +701,6 @@ export function ConfirmationPage() {
                 </div>
               </motion.div>
 
-              {/* Video Permission */}
-              {orderData.videoPermission && (
-                <motion.div
-                  initial={{ opacity: 0, y: 30 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 1.3 }}
-                >
-                  <div className='bg-gradient-to-br from-[#f63a9e]/5 to-gray-50 rounded-3xl p-8 border border-[#f63a9e]/20 shadow-lg'>
-                    <div className='flex items-start gap-5'>
-                      <motion.div
-                        className='w-16 h-16 rounded-2xl bg-[#f63a9e] flex items-center justify-center flex-shrink-0 shadow-xl'
-                        animate={{
-                          y: [0, -5, 0],
-                        }}
-                        transition={{ duration: 3, repeat: Infinity }}
-                      >
-                        <Video className='w-8 h-8 text-white' />
-                      </motion.div>
-
-                      <div className='flex-1'>
-                        <div className='flex items-center gap-2 mb-3'>
-                          <h3
-                            className='text-gray-900'
-                            style={{ fontWeight: '700' }}
-                          >
-                            Your Behind-the-Scenes Video is Coming!
-                          </h3>
-                          <Sparkles className='w-5 h-5 text-[#f63a9e]' />
-                        </div>
-
-                        <p className='text-gray-600 mb-4'>
-                          We&apos;re creating a special video of your prints being crafted — perfect for sharing on social media! 📱✨
-                          We&apos;ll send it to <strong>{orderData.email}</strong> once ready.
-                        </p>
-
-                        <div className='flex flex-wrap gap-3'>
-                          {[
-                            { icon: '📸', label: 'Social Ready' },
-                            { icon: '🎨', label: 'Crafting Process' },
-                            { icon: '✨', label: 'Shareable Content' },
-                          ].map((feature, i) => (
-                            <motion.div
-                              key={feature.label}
-                              className='flex items-center gap-2 px-4 py-2 bg-white rounded-full shadow-sm border border-gray-100'
-                              initial={{ opacity: 0, scale: 0.8 }}
-                              animate={{ opacity: 1, scale: 1 }}
-                              transition={{ delay: 1.4 + i * 0.1 }}
-                            >
-                                <span className='text-sm'>{feature.icon}</span>
-                                <span
-                                  className='text-sm text-gray-700'
-                                  style={{ fontWeight: '600' }}
-                                >
-                                  {feature.label}
-                                </span>
-                              </motion.div>
-                          ))}
-                        </div>
-
-                        <p className='text-xs text-gray-500 mt-3'>
-                          💡 Get ready to share your print journey with the world! 🌍
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                </motion.div>
-              )}
-
               {/* Order Items */}
               <motion.div
                 initial={{ opacity: 0, y: 30 }}
@@ -785,61 +729,50 @@ export function ConfirmationPage() {
                     </div>
                   </div>
 
-                  <div className='grid gap-4 mb-6'>
-                    {orderData.items.map((item, index) => (
-                      <motion.div
-                        key={item.id}
-                        className='group flex gap-5 p-5 bg-gray-50 rounded-2xl border border-gray-100 hover:border-[#f63a9e]/30 hover:shadow-md transition-all'
-                        initial={{ opacity: 0, x: -30 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        transition={{ delay: 1.6 + index * 0.1 }}
-                        whileHover={{ scale: 1.01 }}
-                      >
-                        {/* Image */}
-                        <div className='relative flex-shrink-0'>
-                          <motion.img
-                            src={item.image}
-                            alt={item.name}
-                            className='w-28 h-28 rounded-xl object-cover shadow-md'
-                            whileHover={{ scale: 1.05 }}
-                          />
-                          <div
-                            className='absolute -top-2 -right-2 w-8 h-8 rounded-full bg-[#f63a9e] flex items-center justify-center text-white text-xs shadow-lg'
-                            style={{ fontWeight: '700' }}
-                          >
-                            {item.quantity}
-                          </div>
-                        </div>
-
-                        {/* Details */}
-                        <div className='flex-1 flex flex-col justify-center'>
-                          <h3
-                            className='text-gray-900 mb-2'
-                            style={{ fontWeight: '700' }}
-                          >
-                            {item.name}
-                          </h3>
-                          <div className='flex items-center gap-4 text-sm text-gray-600 mb-3'>
-                            <span
-                              className='px-3 py-1 bg-white rounded-full shadow-sm border border-gray-100'
-                              style={{ fontWeight: '600' }}
+                  <ul className='divide-y divide-gray-100 mb-6'>
+                    {orderData.items.map((item, index) => {
+                      const displayName = getDisplayName(item.name);
+                      return (
+                        <motion.li
+                          key={item.id}
+                          className='py-4 first:pt-0 last:pb-0'
+                          initial={{ opacity: 0, x: -20 }}
+                          animate={{ opacity: 1, x: 0 }}
+                          transition={{ delay: 1.6 + index * 0.08 }}
+                        >
+                          <div className='flex items-start justify-between gap-4'>
+                            <div className='flex-1 min-w-0'>
+                              <h3
+                                className='text-gray-900 text-base leading-snug'
+                                style={{ fontWeight: '700' }}
+                              >
+                                {displayName}
+                              </h3>
+                              {item.size && (
+                                <p className='mt-1 text-sm text-gray-500'>
+                                  {item.size}
+                                </p>
+                              )}
+                              <p className='mt-1 text-xs text-gray-400'>
+                                Qty: {item.quantity}
+                                {item.quantity > 1 && (
+                                  <span className='ml-2'>
+                                    · £{item.price.toFixed(2)} each
+                                  </span>
+                                )}
+                              </p>
+                            </div>
+                            <p
+                              className='text-gray-900 text-lg leading-tight whitespace-nowrap'
+                              style={{ fontWeight: '700' }}
                             >
-                              {item.size}
-                            </span>
-                            <span style={{ fontWeight: '600' }}>
-                              Qty: {item.quantity}
-                            </span>
+                              £{(item.price * item.quantity).toFixed(2)}
+                            </p>
                           </div>
-                          <div
-                            className='text-[#f63a9e]'
-                            style={{ fontSize: '20px', fontWeight: '800' }}
-                          >
-                            £{(item.price * item.quantity).toFixed(2)}
-                          </div>
-                        </div>
-                      </motion.div>
-                    ))}
-                  </div>
+                        </motion.li>
+                      );
+                    })}
+                  </ul>
 
                   {/* Price Summary */}
                   <div className='bg-gray-50 rounded-2xl p-6 border border-gray-100'>

@@ -1,8 +1,6 @@
 import { useCart } from '@/context/CartContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { RadioGroup } from '@/components/ui/radio-group';
-import { ImageWithFallback } from '@/components/figma/image-with-fallback';
 import {
   X,
   Plus,
@@ -10,7 +8,6 @@ import {
   Tag,
   ShoppingCart as ShoppingCartIcon,
   Truck,
-  Package,
   ArrowRight,
   Sparkles,
   ArrowLeft,
@@ -19,6 +16,8 @@ import {
   Check,
   CreditCard,
   Loader2,
+  ChevronDown,
+  ChevronUp,
 } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
@@ -28,14 +27,40 @@ import { useSiteSetting } from '@/lib/supabase/hooks';
 import { createClient } from '@/lib/supabase/client';
 import { toast } from 'sonner';
 
+// Returns just the base product name for a cart line item by stripping
+// any trailing ratio/size segments. Item names are built like
+// "Product — Ratio — 12\" × 12\"" or "Product - 12\" × 12\"", so we
+// split on the first space-separated em-dash / en-dash / hyphen and keep
+// the first part. Hyphens without surrounding spaces (e.g. "Multi-Canvas
+// Wall") are intentionally preserved.
+function getDisplayName(name: string): string {
+  if (!name) return name;
+  const trimmedName = name.trim();
+  const cleaned = trimmedName.split(/\s+[—–-]\s+/)[0]?.trim();
+  return cleaned || trimmedName;
+}
+
 export function CartPage() {
-  const { cartItems, updateQuantity, removeFromCart, deliveryMethod, setDeliveryMethod, setShippingCost, discount, setDiscount, appliedPromoCode, setAppliedPromoCode, promoApplied, setPromoApplied } = useCart();
+  const {
+    cartItems,
+    updateQuantity,
+    removeFromCart,
+    deliveryMethod,
+    setDeliveryMethod,
+    setShippingCost,
+    discount,
+    setDiscount,
+    appliedPromoCode,
+    setAppliedPromoCode,
+    promoApplied,
+    setPromoApplied,
+  } = useCart();
   const navigate = useNavigate();
   const [promoCode, setPromoCode] = useState('');
   const [validatingPromo, setValidatingPromo] = useState(false);
   const [featuredPromotion, setFeaturedPromotion] = useState<any>(null);
+  const [promoOpen, setPromoOpen] = useState(false);
 
-  // Fetch featured promotion
   useEffect(() => {
     const fetchFeaturedPromotion = async () => {
       try {
@@ -62,18 +87,17 @@ export function CartPage() {
     fetchFeaturedPromotion();
   }, []);
 
-  // Fetch delivery prices from settings
   const { data: standardShipping } = useSiteSetting('shipping_flat_rate');
   const { data: expressShipping } = useSiteSetting('shipping_express_cost');
 
   const deliveryOptions = {
     standard: {
-      name: 'Standard Delivery',
+      name: 'Standard',
       price: standardShipping?.setting_value?.value || 4.99,
       duration: '7-10 business days',
     },
     express: {
-      name: 'Express Delivery',
+      name: 'Express',
       price: expressShipping?.setting_value?.value || 6.99,
       duration: '3-5 business days',
     },
@@ -85,8 +109,8 @@ export function CartPage() {
   );
   const deliveryPrice = deliveryOptions[deliveryMethod].price;
   const total = subtotal + deliveryPrice - discount;
+  const itemCount = cartItems.reduce((sum, item) => sum + item.quantity, 0);
 
-  // Update shipping cost in context when delivery method or prices change
   useEffect(() => {
     setShippingCost(deliveryPrice);
   }, [deliveryPrice, setShippingCost]);
@@ -138,591 +162,461 @@ export function CartPage() {
     }
   };
 
+  const handleRemovePromo = () => {
+    setPromoApplied(false);
+    setDiscount(0);
+    setAppliedPromoCode('');
+    setPromoCode('');
+  };
+
+  const isEmpty = cartItems.length === 0;
+
   return (
     <div className="min-h-screen bg-gray-50 font-['Mona_Sans',_sans-serif]">
       <Header />
 
-      {/* Main Content */}
-      <div className='max-w-[1400px] mx-auto px-4 sm:px-6 py-4 sm:py-8'>
-        {/* Breadcrumb / Back Button */}
-        <button
-          onClick={() => navigate("/")}
-          className='flex items-center gap-2 text-gray-600 hover:text-[#f63a9e] transition-colors mb-4 sm:mb-6 group'
-        >
-          <ArrowLeft className='w-4 h-4 group-hover:-translate-x-1 transition-transform' />
-          <span style={{ fontWeight: '500' }}>Continue Shopping</span>
-        </button>
-
-        {/* Page Header */}
-        <div className='mb-4 sm:mb-8 bg-white rounded-2xl p-4 sm:p-6 shadow-sm border-2 border-gray-200'>
-          <div className='flex items-center gap-3 sm:gap-4'>
-            <div className='w-12 h-12 sm:w-16 sm:h-16 rounded-2xl bg-[#f63a9e] flex items-center justify-center shadow-lg ring-4 ring-[#f63a9e]/10'>
-              <ShoppingCartIcon className='w-6 h-6 sm:w-8 sm:h-8 text-white' />
-            </div>
-            <div className='flex-1'>
-              <h1
-                className="font-['Bricolage_Grotesque',_sans-serif] text-gray-900 mb-1 text-xl sm:text-2xl md:text-3xl"
-                style={{ fontWeight: '700' }}
+      {/* Mobile sticky checkout bar */}
+      {!isEmpty && (
+        <div className='lg:hidden fixed bottom-0 left-0 right-0 z-40 bg-white border-t-2 border-gray-200 shadow-[0_-8px_24px_-12px_rgba(0,0,0,0.12)] px-4 py-3 pb-[max(env(safe-area-inset-bottom),0.75rem)]'>
+          <div className='flex items-center gap-3'>
+            <div className='flex-shrink-0'>
+              <p className='text-[11px] text-gray-500 leading-tight'>
+                Total · {itemCount} item{itemCount !== 1 ? 's' : ''}
+              </p>
+              <p
+                className="font-['Bricolage_Grotesque',_sans-serif] text-[#f63a9e] leading-tight"
+                style={{ fontWeight: '700', fontSize: '22px' }}
               >
-                Shopping Cart
-              </h1>
-              <p className='text-gray-600 flex items-center gap-2'>
-                <span
-                  className='inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#f63a9e]/10 text-[#f63a9e]'
-                  style={{ fontWeight: '600' }}
-                >
-                  <Package className='w-4 h-4' />
-                  {cartItems.length} {cartItems.length === 1 ? 'item' : 'items'}
-                </span>
-                <span className='text-gray-400'>•</span>
-                <span style={{ fontWeight: '600' }}>
-                  £
-                  {cartItems
-                    .reduce((sum, item) => sum + item.price * item.quantity, 0)
-                    .toFixed(2)}
-                </span>
+                £{total.toFixed(2)}
               </p>
             </div>
+            <Button
+              onClick={() => navigate('/checkout')}
+              className='flex-1 h-12 bg-[#f63a9e] hover:bg-[#e02d8d] text-white rounded-xl shadow-md transition-colors'
+              style={{ fontWeight: '700', fontSize: '15px' }}
+            >
+              Checkout
+              <ArrowRight className='w-4 h-4 ml-1.5' />
+            </Button>
           </div>
         </div>
+      )}
 
-        {cartItems.length === 0 ? (
-          <div className='flex flex-col items-center justify-center text-center py-12 sm:py-20 bg-white rounded-3xl shadow-sm px-4'>
-            <div className='w-24 h-24 sm:w-32 sm:h-32 rounded-3xl bg-[#FFF5FB] flex items-center justify-center mb-4 sm:mb-6 shadow-xl'>
-              <ShoppingCartIcon className='w-12 h-12 sm:w-16 sm:h-16 text-[#f63a9e]' />
+      <div className='max-w-[1400px] mx-auto px-4 sm:px-6 py-4 sm:py-8 pb-28 lg:pb-12'>
+        {/* Compact back + title row */}
+        <div className='flex items-center justify-between gap-3 mb-4 sm:mb-6'>
+          <button
+            onClick={() => navigate('/')}
+            className='inline-flex items-center gap-1.5 text-gray-600 hover:text-[#f63a9e] transition-colors group min-h-[40px]'
+          >
+            <ArrowLeft className='w-4 h-4 group-hover:-translate-x-1 transition-transform' />
+            <span className='text-sm' style={{ fontWeight: '600' }}>
+              Continue shopping
+            </span>
+          </button>
+          {!isEmpty && (
+            <span
+              className='inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-[#FFF5FB] text-[#f63a9e] text-xs'
+              style={{ fontWeight: '700' }}
+            >
+              <ShoppingCartIcon className='w-3.5 h-3.5' />
+              {itemCount} item{itemCount !== 1 ? 's' : ''}
+            </span>
+          )}
+        </div>
+
+        <h1
+          className="font-['Bricolage_Grotesque',_sans-serif] text-gray-900 mb-4 sm:mb-6 text-2xl sm:text-3xl lg:text-4xl"
+          style={{ fontWeight: '700', lineHeight: '1.1' }}
+        >
+          Your cart
+        </h1>
+
+        {isEmpty ? (
+          <div className='flex flex-col items-center justify-center text-center py-12 sm:py-20 bg-white rounded-2xl shadow-sm border-2 border-gray-200 px-4'>
+            <div className='w-20 h-20 sm:w-24 sm:h-24 rounded-2xl bg-[#FFF5FB] flex items-center justify-center mb-4 sm:mb-5'>
+              <ShoppingCartIcon className='w-10 h-10 sm:w-12 sm:h-12 text-[#f63a9e]' />
             </div>
             <h3
-              className="font-['Bricolage_Grotesque',_sans-serif] text-gray-900 mb-3 text-2xl sm:text-3xl"
+              className="font-['Bricolage_Grotesque',_sans-serif] text-gray-900 mb-2 text-xl sm:text-2xl"
               style={{ fontWeight: '700' }}
             >
               Your cart is empty
             </h3>
-            <p
-              className='text-gray-600 mb-6 sm:mb-8 max-w-md text-sm sm:text-base'
-            >
+            <p className='text-gray-600 mb-6 max-w-md text-sm sm:text-base'>
               Discover our collection of beautiful prints and bring art into
-              your home
+              your home.
             </p>
             <Button
               onClick={() => navigate('/')}
-              className='bg-[#f63a9e] hover:bg-[#e02d8d] text-white shadow-lg px-6 sm:px-8 h-12 sm:h-14 text-sm sm:text-base'
-              style={{ fontWeight: '600' }}
+              className='bg-[#f63a9e] hover:bg-[#e02d8d] text-white shadow-sm px-6 h-12'
+              style={{ fontWeight: '700' }}
             >
-              Start Shopping <ArrowRight className='ml-2 w-4 h-4 sm:w-5 sm:h-5' />
+              Start shopping
+              <ArrowRight className='ml-2 w-4 h-4' />
             </Button>
           </div>
         ) : (
-          <div className='grid grid-cols-1 lg:grid-cols-3 gap-4 lg:gap-6'>
-            {/* Left Column - Cart Items & Order Summary */}
-            <div className='lg:col-span-2 space-y-3 sm:space-y-4'>
-              {/* Cart Items */}
-              <div className='bg-white rounded-2xl shadow-sm p-4 sm:p-6 border-2 border-gray-200'>
-                <div className='flex items-center justify-between mb-5'>
-                  <h2
-                    className="font-['Bricolage_Grotesque',_sans-serif] text-gray-900 flex items-center gap-3"
-                    style={{ fontSize: '20px', fontWeight: '700' }}
-                  >
-                    <div className='w-9 h-9 rounded-lg bg-[#FFF5FB] flex items-center justify-center'>
-                      <ShoppingCartIcon className='w-4 h-4 text-[#f63a9e]' />
-                    </div>
-                    Your Items
-                  </h2>
-                  <span
-                    className='px-3 py-1.5 rounded-full bg-[#f63a9e] text-white text-xs'
-                    style={{ fontWeight: '700' }}
-                  >
-                    {cartItems.reduce((sum, item) => sum + item.quantity, 0)}{' '}
-                    Items
+          <div className='grid grid-cols-1 lg:grid-cols-5 gap-4 lg:gap-6'>
+            {/* Left: items + delivery + promo */}
+            <div className='lg:col-span-3 space-y-4'>
+              {/* Items */}
+              <section className='bg-white rounded-2xl shadow-sm border-2 border-gray-200 p-4 sm:p-5'>
+                <h2
+                  className="font-['Bricolage_Grotesque',_sans-serif] text-gray-900 mb-3 text-base sm:text-lg flex items-center gap-2"
+                  style={{ fontWeight: '700' }}
+                >
+                  Items
+                  <span className='text-xs text-gray-500' style={{ fontWeight: '500' }}>
+                    ({itemCount})
                   </span>
-                </div>
-                <div className='space-y-3'>
-                  {cartItems.map(item => (
-                    <div
-                      key={item.id}
-                      className='flex flex-col sm:flex-row gap-3 sm:gap-4 bg-gray-50 rounded-xl p-3 sm:p-4 border-2 border-gray-200 hover:border-[#f63a9e]/40 hover:shadow-lg transition-all duration-300 group relative overflow-hidden'
-                    >
-                      {/* Decorative accent */}
-                      <div className='absolute top-0 left-0 w-1 h-full bg-[#f63a9e] opacity-0 group-hover:opacity-100 transition-opacity' />
-
-                      {/* Product Image */}
-                      <div className='w-full sm:w-20 h-48 sm:h-20 rounded-xl overflow-hidden flex-shrink-0 bg-white shadow-md ring-2 ring-gray-100 group-hover:ring-[#f63a9e]/20 transition-all'>
-                        <ImageWithFallback
-                          src={item.image}
-                          alt={item.name}
-                          className='w-full h-full object-cover group-hover:scale-110 transition-transform duration-500'
-                        />
-                      </div>
-
-                      {/* Product Details */}
-                      <div className='flex-1 min-w-0 flex flex-col'>
-                        <div className='flex items-start justify-between mb-2 gap-2'>
+                </h2>
+                <ul className='divide-y divide-gray-100'>
+                  {cartItems.map(item => {
+                    const displayName = getDisplayName(item.name);
+                    return (
+                      <li key={item.id} className='py-3 first:pt-0 last:pb-0'>
+                        <div className='flex items-start gap-3'>
                           <div className='flex-1 min-w-0'>
                             <h4
-                              className='text-gray-900 mb-1.5 group-hover:text-[#f63a9e] transition-colors text-sm sm:text-base'
+                              className='text-gray-900 text-sm sm:text-base leading-snug'
                               style={{ fontWeight: '600' }}
                             >
-                              {item.name}
+                              {displayName}
                             </h4>
                             {item.size && (
-                              <div className='inline-flex items-center gap-1.5 px-2.5 py-1.5 bg-white rounded-lg border-2 border-gray-200 shadow-sm'>
-                                <Package className='w-3.5 h-3.5 text-[#f63a9e]' />
-                                <span
-                                  className='text-xs text-gray-700'
-                                  style={{ fontWeight: '600' }}
-                                >
-                                  {item.size}
-                                </span>
-                              </div>
+                              <p className='mt-0.5 text-xs sm:text-sm text-gray-500'>
+                                {item.size}
+                              </p>
                             )}
                           </div>
                           <button
                             onClick={() => removeFromCart(item.id)}
-                            className='ml-3 w-9 h-9 rounded-lg border-2 border-gray-200 hover:border-red-500 hover:bg-red-50 flex items-center justify-center transition-all group/del shadow-sm'
+                            aria-label='Remove item'
+                            className='shrink-0 w-8 h-8 rounded-md text-gray-400 hover:text-red-500 hover:bg-red-50 flex items-center justify-center transition-colors'
                           >
-                            <X className='w-4 h-4 text-gray-400 group-hover/del:text-red-500 transition-colors' />
+                            <X className='w-4 h-4' />
                           </button>
                         </div>
 
-                        {/* Quantity and Price */}
-                        <div className='flex flex-col sm:flex-row items-start sm:items-end justify-between mt-auto gap-2 sm:gap-0'>
-                          <div className='flex items-center gap-2'>
+                        <div className='mt-2.5 flex items-center justify-between gap-3'>
+                          <div className='inline-flex items-center rounded-lg border border-gray-200'>
+                            <button
+                              onClick={() =>
+                                updateQuantity(item.id, item.quantity - 1)
+                              }
+                              aria-label='Decrease quantity'
+                              className='w-9 h-9 sm:w-8 sm:h-8 flex items-center justify-center text-gray-500 hover:text-[#f63a9e] transition-colors'
+                            >
+                              <Minus className='w-3.5 h-3.5' />
+                            </button>
                             <span
-                              className='text-xs text-gray-600'
+                              className='w-8 text-center text-sm text-gray-900'
                               style={{ fontWeight: '600' }}
                             >
-                              Qty:
+                              {item.quantity}
                             </span>
-                            <div className='flex items-center gap-1 sm:gap-1.5 bg-white rounded-lg border-2 border-gray-200 p-1 shadow-sm'>
-                              <button
-                                onClick={() =>
-                                  updateQuantity(item.id, item.quantity - 1)
-                                }
-                                className='w-7 h-7 rounded-md hover:bg-[#f63a9e]/10 hover:text-[#f63a9e] flex items-center justify-center transition-all'
-                              >
-                                <Minus className='w-4 h-4' />
-                              </button>
-                              <span
-                                className='w-10 text-center text-gray-900'
-                                style={{ fontWeight: '700', fontSize: '15px' }}
-                              >
-                                {item.quantity}
-                              </span>
-                              <button
-                                onClick={() =>
-                                  updateQuantity(item.id, item.quantity + 1)
-                                }
-                                className='w-7 h-7 rounded-md hover:bg-[#f63a9e]/10 hover:text-[#f63a9e] flex items-center justify-center transition-all'
-                              >
-                                <Plus className='w-4 h-4' />
-                              </button>
-                            </div>
+                            <button
+                              onClick={() =>
+                                updateQuantity(item.id, item.quantity + 1)
+                              }
+                              aria-label='Increase quantity'
+                              className='w-9 h-9 sm:w-8 sm:h-8 flex items-center justify-center text-gray-500 hover:text-[#f63a9e] transition-colors'
+                            >
+                              <Plus className='w-3.5 h-3.5' />
+                            </button>
                           </div>
                           <div className='text-right'>
-                            <p className='text-xs text-gray-500 mb-1'>
-                              £{item.price.toFixed(2)} each
-                            </p>
+                            {item.quantity > 1 && (
+                              <p className='text-[11px] text-gray-400 leading-tight'>
+                                £{item.price.toFixed(2)} each
+                              </p>
+                            )}
                             <p
-                              className='text-[#f63a9e]'
-                              style={{ fontWeight: '700', fontSize: '20px' }}
+                              className='text-gray-900 text-base sm:text-lg leading-tight'
+                              style={{ fontWeight: '700' }}
                             >
                               £{(item.price * item.quantity).toFixed(2)}
                             </p>
                           </div>
                         </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
+                      </li>
+                    );
+                  })}
+                </ul>
+              </section>
 
-              {/* Order Summary */}
-              <div className='bg-white rounded-2xl p-4 sm:p-6 shadow-lg border-2 border-gray-200'>
-                <h3
-                  className="font-['Bricolage_Grotesque',_sans-serif] mb-5 flex items-center gap-3"
-                  style={{
-                    fontWeight: '700',
-                    fontSize: '20px',
-                    color: '#1f2937',
-                  }}
+              {/* Delivery */}
+              <section className='bg-white rounded-2xl shadow-sm border-2 border-gray-200 p-4 sm:p-5'>
+                <h2
+                  className="font-['Bricolage_Grotesque',_sans-serif] text-gray-900 mb-3 text-base sm:text-lg flex items-center gap-2"
+                  style={{ fontWeight: '700' }}
                 >
-                  <div className='w-10 h-10 rounded-xl bg-[#FFF5FB] flex items-center justify-center'>
-                    <svg
-                      className='w-5 h-5 text-[#f63a9e]'
-                      fill='none'
-                      viewBox='0 0 24 24'
-                      stroke='currentColor'
-                    >
-                      <path
-                        strokeLinecap='round'
-                        strokeLinejoin='round'
-                        strokeWidth={2}
-                        d='M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z'
-                      />
-                    </svg>
-                  </div>
-                  Order Summary
-                </h3>
+                  <Truck className='w-4 h-4 text-[#f63a9e]' />
+                  Delivery
+                </h2>
+                <div className='grid grid-cols-2 gap-2'>
+                  {(['standard', 'express'] as const).map(method => {
+                    const opt = deliveryOptions[method];
+                    const selected = deliveryMethod === method;
+                    return (
+                      <button
+                        key={method}
+                        onClick={() => setDeliveryMethod(method)}
+                        className={`relative text-left p-3 rounded-xl border-2 transition-colors ${
+                          selected
+                            ? 'border-[#f63a9e] bg-[#FFF5FB]'
+                            : 'border-gray-200 hover:border-[#f63a9e]/40 bg-white'
+                        }`}
+                      >
+                        <div className='flex items-center justify-between mb-0.5'>
+                          <span
+                            className='text-sm text-gray-900'
+                            style={{ fontWeight: '700' }}
+                          >
+                            {opt.name}
+                          </span>
+                          {selected && (
+                            <div className='w-4 h-4 rounded-full bg-[#f63a9e] flex items-center justify-center'>
+                              <Check
+                                className='w-2.5 h-2.5 text-white'
+                                strokeWidth={3}
+                              />
+                            </div>
+                          )}
+                        </div>
+                        <p className='text-xs text-gray-500 leading-tight'>
+                          {opt.duration}
+                        </p>
+                        <p
+                          className='text-sm text-[#f63a9e] mt-1.5'
+                          style={{ fontWeight: '700' }}
+                        >
+                          £{opt.price.toFixed(2)}
+                        </p>
+                        {method === 'express' && (
+                          <span className='absolute top-1.5 right-1.5 text-[9px] bg-[#f63a9e] text-white px-1.5 py-0.5 rounded-full tracking-wide'
+                            style={{ fontWeight: '700' }}>
+                            FAST
+                          </span>
+                        )}
+                      </button>
+                    );
+                  })}
+                </div>
+              </section>
 
-                <div className='space-y-3 mb-5'>
-                  <div className='flex items-center justify-between py-2 px-3 rounded-lg bg-gray-50'>
-                    <span className='text-gray-600'>Subtotal</span>
-                    <span
+              {/* Promo — collapsed by default */}
+              <section className='bg-white rounded-2xl shadow-sm border-2 border-gray-200 overflow-hidden'>
+                {promoApplied ? (
+                  <div className='p-4 flex items-center gap-3'>
+                    <div className='w-9 h-9 rounded-lg bg-green-500 flex items-center justify-center flex-shrink-0'>
+                      <Check className='w-5 h-5 text-white' strokeWidth={3} />
+                    </div>
+                    <div className='flex-1 min-w-0'>
+                      <p
+                        className='text-green-900 text-sm'
+                        style={{ fontWeight: '700' }}
+                      >
+                        {appliedPromoCode} applied
+                      </p>
+                      <p className='text-green-700 text-xs'>
+                        You saved £{discount.toFixed(2)}
+                      </p>
+                    </div>
+                    <button
+                      onClick={handleRemovePromo}
+                      className='text-xs text-gray-500 hover:text-red-500 underline underline-offset-2'
+                      style={{ fontWeight: '600' }}
+                    >
+                      Remove
+                    </button>
+                  </div>
+                ) : (
+                  <>
+                    <button
+                      onClick={() => setPromoOpen(v => !v)}
+                      className='w-full px-4 py-3 flex items-center justify-between text-left'
+                      aria-expanded={promoOpen}
+                    >
+                      <div className='flex items-center gap-2.5'>
+                        <div className='w-8 h-8 rounded-lg bg-[#FFF5FB] flex items-center justify-center'>
+                          <Tag className='w-4 h-4 text-[#f63a9e]' />
+                        </div>
+                        <div>
+                          <p
+                            className='text-gray-900 text-sm'
+                            style={{ fontWeight: '700' }}
+                          >
+                            Have a promo code?
+                          </p>
+                          {featuredPromotion && !promoOpen && (
+                            <p className='text-xs text-gray-500 leading-tight'>
+                              Try{' '}
+                              <span
+                                className='text-[#f63a9e]'
+                                style={{ fontWeight: '700' }}
+                              >
+                                {featuredPromotion.code}
+                              </span>
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                      {promoOpen ? (
+                        <ChevronUp className='w-4 h-4 text-gray-400' />
+                      ) : (
+                        <ChevronDown className='w-4 h-4 text-gray-400' />
+                      )}
+                    </button>
+                    {promoOpen && (
+                      <div className='px-4 pb-4 -mt-1'>
+                        <div className='flex gap-2'>
+                          <Input
+                            type='text'
+                            placeholder='Enter code'
+                            value={promoCode}
+                            onChange={e => setPromoCode(e.target.value)}
+                            onKeyDown={e => {
+                              if (e.key === 'Enter') {
+                                e.preventDefault();
+                                handleApplyPromo();
+                              }
+                            }}
+                            className='h-11 border-2 rounded-xl text-sm flex-1 uppercase'
+                            style={{ fontWeight: '500' }}
+                          />
+                          <Button
+                            onClick={handleApplyPromo}
+                            disabled={!promoCode.trim() || validatingPromo}
+                            className='h-11 px-4 bg-[#f63a9e] hover:bg-[#e02d8d] text-white rounded-xl border-0 disabled:opacity-50'
+                            style={{ fontWeight: '700' }}
+                          >
+                            {validatingPromo ? (
+                              <Loader2 className='w-4 h-4 animate-spin' />
+                            ) : (
+                              'Apply'
+                            )}
+                          </Button>
+                        </div>
+                        {featuredPromotion && (
+                          <button
+                            onClick={() => setPromoCode(featuredPromotion.code)}
+                            className='mt-2.5 flex items-center gap-2 text-left'
+                          >
+                            <Sparkles className='w-3.5 h-3.5 text-[#f63a9e]' />
+                            <span className='text-xs text-gray-600'>
+                              Try{' '}
+                              <span
+                                className='text-[#f63a9e]'
+                                style={{ fontWeight: '700' }}
+                              >
+                                {featuredPromotion.code}
+                              </span>
+                              {featuredPromotion.description ? (
+                                <> — {featuredPromotion.description}</>
+                              ) : null}
+                            </span>
+                          </button>
+                        )}
+                      </div>
+                    )}
+                  </>
+                )}
+              </section>
+            </div>
+
+            {/* Right: order summary (sticky on desktop) */}
+            <div className='lg:col-span-2'>
+              {/* lg:top-[88px] = sticky header height (h-[72px]) + 16px gap */}
+              <div className='lg:sticky lg:top-[88px] bg-white rounded-2xl shadow-sm border-2 border-gray-200 p-4 sm:p-5'>
+                <h2
+                  className="font-['Bricolage_Grotesque',_sans-serif] text-gray-900 mb-3 text-base sm:text-lg"
+                  style={{ fontWeight: '700' }}
+                >
+                  Order summary
+                </h2>
+
+                <dl className='space-y-2 text-sm'>
+                  <div className='flex items-center justify-between'>
+                    <dt className='text-gray-600'>Subtotal</dt>
+                    <dd
                       className='text-gray-900'
                       style={{ fontWeight: '600' }}
                     >
                       £{subtotal.toFixed(2)}
-                    </span>
+                    </dd>
                   </div>
-                  <div className='flex items-center justify-between py-2 px-3 rounded-lg bg-gray-50'>
-                    <span className='text-gray-600'>Delivery</span>
-                    <span
+                  <div className='flex items-center justify-between'>
+                    <dt className='text-gray-600 inline-flex items-center gap-1.5'>
+                      <Truck className='w-3.5 h-3.5' />
+                      Delivery
+                    </dt>
+                    <dd
                       className='text-gray-900'
                       style={{ fontWeight: '600' }}
                     >
                       £{deliveryPrice.toFixed(2)}
-                    </span>
+                    </dd>
                   </div>
                   {promoApplied && (
-                    <div className='space-y-2'>
-                      <div className='flex items-center justify-between py-2 px-3 rounded-lg bg-green-50 border border-green-200'>
-                        <span
-                          className='text-green-700 flex items-center gap-1.5'
-                          style={{ fontWeight: '600' }}
-                        >
-                          <Gift className='w-4 h-4' />
-                          Discount
-                        </span>
-                        <span
-                          className='text-green-600'
-                          style={{ fontWeight: '700' }}
-                        >
-                          -£{discount.toFixed(2)}
-                        </span>
-                      </div>
-                      <div className='flex items-center gap-2 px-3 py-2 bg-green-50/50 rounded-lg border border-green-100'>
-                        <Check className='w-3.5 h-3.5 text-green-600' />
-                        <span
-                          className='text-xs text-green-700'
-                          style={{ fontWeight: '600' }}
-                        >
-                          Promo applied:{' '}
-                          <span
-                            className='text-green-900'
-                            style={{ fontWeight: '700' }}
-                          >
-                            {appliedPromoCode}
-                          </span>
-                        </span>
-                      </div>
+                    <div className='flex items-center justify-between'>
+                      <dt className='text-green-700 inline-flex items-center gap-1.5'>
+                        <Gift className='w-3.5 h-3.5' />
+                        Discount
+                      </dt>
+                      <dd
+                        className='text-green-600'
+                        style={{ fontWeight: '700' }}
+                      >
+                        -£{discount.toFixed(2)}
+                      </dd>
                     </div>
                   )}
-                  <div className='pt-4 border-t-2 border-gray-200'>
-                    <div className='flex items-center justify-between mb-2 px-3 py-3 rounded-xl bg-[#FFF5FB]'>
-                      <span
-                        className="font-['Bricolage_Grotesque',_sans-serif] text-gray-900"
-                        style={{ fontSize: '18px', fontWeight: '700' }}
-                      >
-                        Total
-                      </span>
-                      <span
-                        className="font-['Bricolage_Grotesque',_sans-serif] text-[#f63a9e]"
-                        style={{ fontSize: '34px', fontWeight: '700' }}
-                      >
-                        £{total.toFixed(2)}
-                      </span>
-                    </div>
-                    <p className='text-xs text-gray-500 text-center mt-2'>
-                      Includes all taxes and fees
-                    </p>
-                  </div>
-                </div>
+                </dl>
 
-                <Button
-                  onClick={() => navigate('/checkout')}
-                  className='w-full bg-[#f63a9e] hover:bg-[#e02d8d] text-white shadow-lg hover:shadow-xl transition-all border-0 mb-4'
-                  style={{
-                    height: '54px',
-                    fontSize: '16px',
-                    fontWeight: '700',
-                  }}
-                >
-                  Proceed to Checkout
-                  <ArrowRight className='ml-2 w-5 h-5' />
-                </Button>
-
-                <div className='flex items-center justify-center gap-2 p-3 rounded-xl bg-gray-50 border border-gray-200'>
-                  <Shield className='w-4 h-4 text-gray-600' />
-                  <span
-                    className='text-gray-700 text-sm'
-                    style={{ fontWeight: '600' }}
-                  >
-                    Secure checkout with
-                  </span>
-                  <div className='flex items-center gap-1 px-2 py-1 bg-white rounded-md border border-gray-200 shadow-sm'>
-                    <CreditCard className='w-3.5 h-3.5 text-[#635bff]' />
+                <div className='mt-4 pt-4 border-t-2 border-gray-100'>
+                  <div className='flex items-center justify-between p-3 rounded-xl bg-[#FFF5FB]'>
                     <span
-                      className='text-[#635bff]'
-                      style={{ fontWeight: '700', fontSize: '13px' }}
+                      className="font-['Bricolage_Grotesque',_sans-serif] text-gray-900"
+                      style={{ fontWeight: '700', fontSize: '15px' }}
                     >
-                      Stripe
+                      Total
+                    </span>
+                    <span
+                      className="font-['Bricolage_Grotesque',_sans-serif] text-[#f63a9e] leading-none"
+                      style={{ fontWeight: '700', fontSize: '28px' }}
+                    >
+                      £{total.toFixed(2)}
                     </span>
                   </div>
+                  <p className='text-[11px] text-gray-500 text-center mt-2'>
+                    Includes all taxes and fees
+                  </p>
                 </div>
-              </div>
-            </div>
 
-            {/* Right Column - Delivery & Promo */}
-            <div className='space-y-3 sm:space-y-4'>
-              {/* Delivery Method */}
-              <div className='bg-white rounded-2xl border-2 border-gray-200 p-4 sm:p-5 shadow-sm hover:shadow-md transition-shadow'>
-                <h3
-                  className="font-['Bricolage_Grotesque',_sans-serif] text-gray-900 mb-4 flex items-center gap-2.5"
-                  style={{ fontWeight: '700', fontSize: '17px' }}
+                {/* Desktop CTA (mobile uses sticky bar) */}
+                <Button
+                  onClick={() => navigate('/checkout')}
+                  className='mt-4 hidden lg:flex w-full bg-[#f63a9e] hover:bg-[#e02d8d] text-white rounded-xl shadow-md transition-colors'
+                  style={{ height: '52px', fontSize: '15px', fontWeight: '700' }}
                 >
-                  <div className='w-9 h-9 rounded-xl bg-[#FFF5FB] flex items-center justify-center shadow-sm'>
-                    <Truck className='w-4.5 h-4.5 text-[#f63a9e]' />
-                  </div>
-                  Delivery Method
-                </h3>
-                <RadioGroup
-                  value={deliveryMethod}
-                  onValueChange={(value: 'standard' | 'express') =>
-                    setDeliveryMethod(value)
-                  }
-                >
-                  <div className='space-y-3'>
-                    <div
-                      onClick={() => setDeliveryMethod('standard')}
-                      className={`flex items-start gap-3 p-4 rounded-xl border-2 cursor-pointer transition-all ${
-                        deliveryMethod === 'standard'
-                          ? 'border-[#f63a9e] bg-[#FFF5FB]'
-                          : 'border-gray-200 hover:border-[#f63a9e]/40 bg-white'
-                      }`}
-                    >
-                      <div
-                        className={`mt-0.5 w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all ${
-                          deliveryMethod === 'standard'
-                            ? 'border-[#f63a9e] bg-[#f63a9e]'
-                            : 'border-gray-300 bg-white'
-                        }`}
-                      >
-                        {deliveryMethod === 'standard' && (
-                          <Check
-                            className='w-3.5 h-3.5 text-white'
-                            strokeWidth={3}
-                          />
-                        )}
-                      </div>
-                      <div className='flex-1'>
-                        <div className='flex items-center justify-between gap-3'>
-                          <span className='text-[15px] font-semibold text-gray-900 leading-5'>
-                            {deliveryOptions.standard.name}
-                          </span>
-                          <span className='text-[15px] font-semibold text-[#f63a9e] whitespace-nowrap'>
-                            £{deliveryOptions.standard.price.toFixed(2)}
-                          </span>
-                        </div>
-                        <p className='text-sm text-gray-500 mt-1'>
-                          {deliveryOptions.standard.duration}
-                        </p>
-                      </div>
-                    </div>
+                  Checkout
+                  <ArrowRight className='ml-2 w-4 h-4' />
+                </Button>
 
-                    <div
-                      onClick={() => setDeliveryMethod('express')}
-                      className={`flex items-start gap-3 p-4 rounded-xl border-2 cursor-pointer transition-all ${
-                        deliveryMethod === 'express'
-                          ? 'border-[#f63a9e] bg-[#FFF5FB]'
-                          : 'border-gray-200 hover:border-[#f63a9e]/40 bg-white'
-                      }`}
-                    >
-                      <div
-                        className={`mt-0.5 w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all ${
-                          deliveryMethod === 'express'
-                            ? 'border-[#f63a9e] bg-[#f63a9e]'
-                            : 'border-gray-300 bg-white'
-                        }`}
-                      >
-                        {deliveryMethod === 'express' && (
-                          <Check
-                            className='w-3.5 h-3.5 text-white'
-                            strokeWidth={3}
-                          />
-                        )}
-                      </div>
-                      <div className='flex-1'>
-                        <div className='flex items-center justify-between gap-3'>
-                          <div className='flex items-center gap-2'>
-                            <span className='text-[15px] font-semibold text-gray-900 leading-5'>
-                              {deliveryOptions.express.name}
-                            </span>
-                            <span className='text-[10px] bg-[#f63a9e] text-white px-2 py-0.5 rounded-full font-bold tracking-wide'>
-                              FAST
-                            </span>
-                          </div>
-                          <span className='text-[15px] font-semibold text-[#f63a9e] whitespace-nowrap'>
-                            £{deliveryOptions.express.price.toFixed(2)}
-                          </span>
-                        </div>
-                        <p className='text-sm text-gray-500 mt-1'>
-                          {deliveryOptions.express.duration}
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                </RadioGroup>
-              </div>
-
-              {/* Promo Code */}
-              <div className='bg-white rounded-2xl border-2 border-gray-200 p-4 sm:p-5 shadow-sm hover:shadow-md transition-shadow'>
-                <h3
-                  className="font-['Bricolage_Grotesque',_sans-serif] text-gray-900 mb-4 flex items-center gap-2.5"
-                  style={{ fontWeight: '700', fontSize: '17px' }}
-                >
-                  <div className='w-9 h-9 rounded-xl bg-[#FFF5FB] flex items-center justify-center shadow-sm'>
-                    <Tag className='w-4.5 h-4.5 text-[#f63a9e]' />
-                  </div>
-                  Promo Code
-                </h3>
-                <div className='space-y-3'>
-                  <div className='flex gap-2'>
-                    <div className='relative flex-1'>
-                      <Tag className='absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400' />
-                      <Input
-                        type='text'
-                        placeholder='Enter promo code'
-                        value={promoCode}
-                        onChange={e => setPromoCode(e.target.value)}
-                        disabled={promoApplied}
-                        className='pl-10 h-11 border-2 rounded-xl text-sm shadow-sm focus:ring-2 focus:ring-[#f63a9e]/20'
-                        style={{ fontWeight: '500' }}
-                      />
-                    </div>
-                    <Button
-                      onClick={handleApplyPromo}
-                      disabled={
-                        promoApplied || !promoCode.trim() || validatingPromo
-                      }
-                      className={`px-5 rounded-xl text-sm shadow-sm ${
-                        promoApplied
-                          ? 'bg-green-500 hover:bg-green-600 text-white border-0'
-                          : 'bg-[#f63a9e] hover:bg-[#e02d8d] text-white border-0'
-                      }`}
-                      style={{ height: '44px', fontWeight: '700' }}
-                    >
-                      {promoApplied ? (
-                        <>
-                          <svg
-                            className='w-4 h-4 mr-1.5'
-                            fill='none'
-                            viewBox='0 0 24 24'
-                            stroke='currentColor'
-                          >
-                            <path
-                              strokeLinecap='round'
-                              strokeLinejoin='round'
-                              strokeWidth={2.5}
-                              d='M5 13l4 4L19 7'
-                            />
-                          </svg>
-                          Applied
-                        </>
-                      ) : validatingPromo ? (
-                        <>
-                          <Loader2 className='w-4 h-4 animate-spin' />
-                        </>
-                      ) : (
-                        'Apply'
-                      )}
-                    </Button>
-                  </div>
-                  {promoApplied ? (
-                    <div className='p-4 bg-green-50 border-2 border-green-300 rounded-xl shadow-sm'>
-                      <div className='flex items-start gap-3'>
-                        <div className='w-8 h-8 rounded-lg bg-green-500 flex items-center justify-center flex-shrink-0 shadow-md'>
-                          <svg
-                            className='w-5 h-5 text-white'
-                            fill='none'
-                            viewBox='0 0 24 24'
-                            stroke='currentColor'
-                          >
-                            <path
-                              strokeLinecap='round'
-                              strokeLinejoin='round'
-                              strokeWidth={2.5}
-                              d='M5 13l4 4L19 7'
-                            />
-                          </svg>
-                        </div>
-                        <div>
-                          <p
-                            className='text-green-800'
-                            style={{ fontWeight: '700', fontSize: '14px' }}
-                          >
-                            Promo code applied!
-                          </p>
-                          <p
-                            className='text-green-600 text-xs mt-1'
-                            style={{ fontWeight: '600' }}
-                          >
-                            You saved £{discount.toFixed(2)} on this order
-                          </p>
-                        </div>
-                      </div>
-                    </div>
-                  ) : featuredPromotion ? (
-                    <div className='p-4 bg-[#FFF5FB] border-2 border-[#f63a9e]/30 rounded-xl shadow-sm'>
-                      <div className='flex items-start gap-3'>
-                        <div className='w-8 h-8 rounded-lg bg-[#f63a9e] flex items-center justify-center flex-shrink-0 shadow-md'>
-                          <Sparkles className='w-4 h-4 text-white' />
-                        </div>
-                        <div className='flex-1'>
-                          <p
-                            className='text-gray-800 text-sm'
-                            style={{ fontWeight: '600' }}
-                          >
-                            Try code:{' '}
-                            <button
-                              onClick={() => {
-                                setPromoCode(featuredPromotion.code);
-                              }}
-                              className='text-[#f63a9e] hover:text-[#e02d8d] transition-colors'
-                              style={{ fontWeight: '700' }}
-                            >
-                              {featuredPromotion.code}
-                            </button>
-                          </p>
-                          <p className='text-gray-600 text-xs mt-1'>
-                            {featuredPromotion.description || 
-                              `Get ${featuredPromotion.type === 'percentage' 
-                                ? `${featuredPromotion.value}% off` 
-                                : featuredPromotion.type === 'fixed_amount'
-                                ? `£${featuredPromotion.value} off`
-                                : 'free shipping on'} your order`}
-                          </p>
-                        </div>
-                      </div>
-                    </div>
-                  ) : (
-                    <div className='p-4 bg-gray-50 border-2 border-gray-200 rounded-xl shadow-sm'>
-                      <div className='flex items-start gap-3'>
-                        <div className='w-8 h-8 rounded-lg bg-gray-300 flex items-center justify-center flex-shrink-0'>
-                          <Tag className='w-4 h-4 text-gray-600' />
-                        </div>
-                        <div>
-                          <p
-                            className='text-gray-700 text-sm'
-                            style={{ fontWeight: '600' }}
-                          >
-                            Have a promo code?
-                          </p>
-                          <p className='text-gray-500 text-xs mt-1'>
-                            Enter your code above to apply discount
-                          </p>
-                        </div>
-                      </div>
-                    </div>
-                  )}
+                <div className='hidden lg:flex items-center justify-center gap-2 mt-3'>
+                  <Shield className='w-3.5 h-3.5 text-gray-500' />
+                  <span className='text-xs text-gray-600'>
+                    Secure checkout with
+                  </span>
+                  <span
+                    className='inline-flex items-center gap-1 px-1.5 py-0.5 bg-white rounded border border-gray-200 text-[#635bff]'
+                    style={{ fontWeight: '700', fontSize: '11px' }}
+                  >
+                    <CreditCard className='w-3 h-3' />
+                    Stripe
+                  </span>
                 </div>
               </div>
             </div>

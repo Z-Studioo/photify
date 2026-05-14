@@ -1,189 +1,370 @@
+import { useEffect, useState } from 'react';
 import { Header } from '@/components/layout/header';
 import { Footer } from '@/components/layout/footer';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Shield, ChevronRight } from 'lucide-react';
+import { Shield, Mail, ArrowUpRight } from 'lucide-react';
 
-const sections = [
-  { id: 'who-we-are', label: '1.1 Who we are' },
-  { id: 'data-collected', label: '1.2 Personal data we collect' },
-  { id: 'how-we-use', label: '1.3 How we use your data' },
-  { id: 'automated', label: '1.4 Automated decision-making' },
-  { id: 'sharing', label: '1.5 Who we share data with' },
-  { id: 'transfers', label: '1.6 International transfers' },
-  { id: 'retention', label: '1.7 Data retention periods' },
-  { id: 'rights', label: '1.8 Your rights' },
-  { id: 'security', label: '1.9 Security' },
-  { id: 'changes', label: '1.10 Changes to this Policy' },
-  { id: 'contact', label: '1.11 Contact' },
-  { id: 'accounts', label: '2. Customer Accounts' },
-  { id: 'cookies', label: '3. Note on Cookies' },
+type SectionItem = { id: string; label: string };
+type SectionGroup = { title: string; items: SectionItem[] };
+
+const sectionGroups: SectionGroup[] = [
+  {
+    title: 'Personal Data',
+    items: [
+      { id: 'who-we-are', label: 'Who we are' },
+      { id: 'data-collected', label: 'Data we collect' },
+      { id: 'how-we-use', label: 'How we use your data' },
+      { id: 'automated', label: 'Automated decisions' },
+      { id: 'sharing', label: 'Who we share with' },
+      { id: 'transfers', label: 'International transfers' },
+      { id: 'retention', label: 'Data retention' },
+      { id: 'rights', label: 'Your rights' },
+      { id: 'security', label: 'Security' },
+      { id: 'changes', label: 'Changes' },
+      { id: 'contact', label: 'Contact' },
+    ],
+  },
+  { title: 'Customer Accounts', items: [{ id: 'accounts', label: 'Overview' }] },
+  { title: 'Cookies', items: [{ id: 'cookies', label: 'A note on cookies' }] },
 ];
 
+const summary = [
+  { title: 'We never sell your data', desc: 'Not to advertisers, not to anyone.' },
+  { title: 'UK GDPR compliant', desc: 'Aligned with UK GDPR and the DPA 2018.' },
+  { title: 'Encrypted in transit', desc: 'TLS and tokenised payments via Stripe.' },
+  { title: 'You stay in control', desc: 'Access, edit or delete your data anytime.' },
+];
+
+const rights = [
+  { title: 'Access', desc: 'Request a copy of the data we hold about you.' },
+  { title: 'Rectification', desc: 'Correct inaccurate or incomplete data.' },
+  { title: 'Erasure', desc: 'Request deletion where legal grounds permit.' },
+  { title: 'Object & restrict', desc: 'Object to or restrict processing.' },
+  { title: 'Portability', desc: 'Receive your data in a machine-readable format.' },
+  { title: 'Complain', desc: "Lodge a complaint with the UK's ICO." },
+];
+
+function SubSection({
+  id,
+  number,
+  title,
+  description,
+  children,
+}: {
+  id: string;
+  number: string;
+  title: string;
+  description?: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <section id={id} className='scroll-mt-24'>
+      <div className='mb-5'>
+        <p className='text-xs text-gray-400 mb-1.5 tabular-nums'>{number}</p>
+        <h3
+          className="font-['Bricolage_Grotesque',_sans-serif] text-gray-900"
+          style={{ fontSize: '22px', fontWeight: 600, letterSpacing: '-0.01em' }}
+        >
+          {title}
+        </h3>
+        {description && (
+          <p className='text-gray-500 text-[15px] mt-2 leading-relaxed'>
+            {description}
+          </p>
+        )}
+      </div>
+      <div className='text-gray-700 leading-relaxed space-y-4 text-[15px]'>
+        {children}
+      </div>
+    </section>
+  );
+}
+
+function PartHeader({
+  part,
+  title,
+  description,
+}: {
+  part: string;
+  title: string;
+  description?: string;
+}) {
+  return (
+    <div className='border-t border-gray-200 pt-12 mb-12'>
+      <p
+        className='text-[11px] uppercase tracking-[0.18em] text-[#f63a9e] mb-3'
+        style={{ fontWeight: 600 }}
+      >
+        {part}
+      </p>
+      <h2
+        className="font-['Bricolage_Grotesque',_sans-serif] text-gray-900 mb-3"
+        style={{ fontSize: '32px', fontWeight: 700, letterSpacing: '-0.02em', lineHeight: 1.15 }}
+      >
+        {title}
+      </h2>
+      {description && (
+        <p className='text-gray-500 text-[16px] leading-relaxed max-w-2xl'>
+          {description}
+        </p>
+      )}
+    </div>
+  );
+}
+
 export function PrivacyPolicyPage() {
+  const allIds = sectionGroups.flatMap(g => g.items.map(i => i.id));
+  const [activeId, setActiveId] = useState<string>(allIds[0] ?? '');
+
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      entries => {
+        const visible = entries
+          .filter(e => e.isIntersecting)
+          .sort(
+            (a, b) =>
+              (a.target as HTMLElement).offsetTop -
+              (b.target as HTMLElement).offsetTop,
+          );
+        if (visible.length > 0) {
+          setActiveId(visible[0].target.id);
+        }
+      },
+      { rootMargin: '-96px 0px -70% 0px', threshold: [0, 1] },
+    );
+    allIds.forEach(id => {
+      const el = document.getElementById(id);
+      if (el) observer.observe(el);
+    });
+    return () => observer.disconnect();
+  }, [allIds]);
+
   return (
     <div className="min-h-screen flex flex-col bg-white font-['Mona_Sans',_sans-serif]">
       <Header />
 
       <main className='flex-1'>
         {/* Hero */}
-        <div className='bg-[#FFF5FB] border-b border-[#f63a9e]/20'>
-          <div className='max-w-[1400px] mx-auto px-6 md:px-12 py-16'>
+        <div className='border-b border-gray-200'>
+          <div className='max-w-[1200px] mx-auto px-6 md:px-12 pt-20 pb-16'>
             <motion.div
-              initial={{ opacity: 0, y: 20 }}
+              initial={{ opacity: 0, y: 12 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5 }}
-              className='flex flex-col items-center text-center'
+              transition={{ duration: 0.5, ease: 'easeOut' }}
+              className='max-w-2xl'
             >
-              <div className='w-20 h-20 rounded-2xl bg-[#f63a9e] flex items-center justify-center shadow-xl mb-6'>
-                <Shield className='w-10 h-10 text-white' />
+              <div className='flex items-center gap-2 mb-6'>
+                <Shield className='w-4 h-4 text-[#f63a9e]' />
+                <p
+                  className='text-[11px] uppercase tracking-[0.18em] text-gray-500'
+                  style={{ fontWeight: 600 }}
+                >
+                  Privacy Policy
+                </p>
               </div>
               <h1
-                className="font-['Bricolage_Grotesque',_sans-serif] text-gray-900 mb-4"
+                className="font-['Bricolage_Grotesque',_sans-serif] text-gray-900 mb-5"
                 style={{
-                  fontSize: '40px',
-                  fontWeight: '800',
-                  lineHeight: '1.2',
+                  fontSize: 'clamp(36px, 5vw, 52px)',
+                  fontWeight: 700,
+                  letterSpacing: '-0.025em',
+                  lineHeight: 1.05,
                 }}
               >
-                Privacy Policy
+                How we handle your data.
               </h1>
-              <p className='text-gray-500 max-w-2xl text-lg'>
-                At Photify.co, we value your privacy and are committed to
-                safeguarding your personal data. This Privacy Policy explains
-                how we process your personal information when you use our
-                services, contact us, or interact with us online or offline.
+              <p className='text-gray-600 text-[17px] leading-relaxed mb-6'>
+                At Photify, we treat your personal information with care and
+                only collect what we need to fulfil your order, run the site,
+                and stay compliant with UK law. This page explains exactly what
+                that means in practice.
               </p>
-              <p className='text-sm text-gray-400 mt-4'>
-                Last updated: February 2026
+              <p className='text-sm text-gray-400'>
+                Last updated 14 February 2026 ·{' '}
+                <a
+                  href='mailto:support@photify.co'
+                  className='text-gray-500 hover:text-[#f63a9e] underline-offset-4 hover:underline'
+                >
+                  support@photify.co
+                </a>
               </p>
             </motion.div>
           </div>
         </div>
 
+        {/* Summary strip */}
+        <div className='border-b border-gray-200 bg-gray-50/60'>
+          <div className='max-w-[1200px] mx-auto px-6 md:px-12 py-10'>
+            <div className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-x-10 gap-y-6'>
+              {summary.map((item, i) => (
+                <div key={i} className='border-l-2 border-[#f63a9e]/60 pl-4'>
+                  <p
+                    className='text-gray-900 mb-1 text-[15px]'
+                    style={{ fontWeight: 600 }}
+                  >
+                    {item.title}
+                  </p>
+                  <p className='text-gray-500 text-sm leading-relaxed'>
+                    {item.desc}
+                  </p>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+
         {/* Content */}
-        <div className='max-w-[1400px] mx-auto px-6 md:px-12 py-16'>
-          <div className='flex flex-col lg:flex-row gap-12'>
+        <div className='max-w-[1200px] mx-auto px-6 md:px-12 py-16'>
+          <div className='flex flex-col lg:flex-row gap-16'>
             {/* Sidebar TOC */}
-            <aside className='lg:w-72 flex-shrink-0'>
-              <div className='sticky top-8 bg-[#FFF5FB] border border-[#f63a9e]/20 rounded-2xl p-6'>
+            <aside className='lg:w-64 flex-shrink-0'>
+              <div className='sticky top-24'>
                 <p
-                  className="font-['Bricolage_Grotesque',_sans-serif] text-gray-900 mb-4"
-                  style={{ fontWeight: '700', fontSize: '16px' }}
+                  className='text-[11px] uppercase tracking-[0.18em] text-gray-400 mb-5'
+                  style={{ fontWeight: 600 }}
                 >
-                  Table of Contents
+                  On this page
                 </p>
-                <ul className='space-y-1'>
-                  {sections.map(s => (
-                    <li key={s.id}>
-                      <a
-                        href={`#${s.id}`}
-                        className='flex items-center gap-2 text-sm text-gray-600 hover:text-[#f63a9e] transition-colors py-1'
+                <nav className='space-y-7'>
+                  {sectionGroups.map((group, gi) => (
+                    <div key={gi}>
+                      <p
+                        className='text-[11px] uppercase tracking-[0.14em] text-gray-500 mb-3'
+                        style={{ fontWeight: 600 }}
                       >
-                        <ChevronRight className='w-3 h-3 flex-shrink-0 text-[#f63a9e]' />
-                        {s.label}
-                      </a>
-                    </li>
+                        {group.title}
+                      </p>
+                      <ul className='space-y-0.5 border-l border-gray-200'>
+                        {group.items.map(s => {
+                          const isActive = activeId === s.id;
+                          return (
+                            <li key={s.id}>
+                              <a
+                                href={`#${s.id}`}
+                                className={`block text-[13.5px] py-1.5 pl-4 -ml-px border-l transition-colors ${
+                                  isActive
+                                    ? 'text-[#f63a9e] border-[#f63a9e]'
+                                    : 'text-gray-500 hover:text-gray-900 border-transparent'
+                                }`}
+                              >
+                                {s.label}
+                              </a>
+                            </li>
+                          );
+                        })}
+                      </ul>
+                    </div>
                   ))}
-                </ul>
+                </nav>
               </div>
             </aside>
 
             {/* Main content */}
-            <div className='flex-1 max-w-3xl space-y-14 text-gray-700 leading-relaxed'>
-              {/* Section 1 */}
-              <section>
-                <h2
-                  id='section-1'
-                  className="font-['Bricolage_Grotesque',_sans-serif] text-gray-900 mb-6 pb-3 border-b-2 border-[#f63a9e]/30"
-                  style={{ fontSize: '26px', fontWeight: '700' }}
-                >
-                  1. Which Personal Data Do We Process?
-                </h2>
+            <article className='flex-1 max-w-2xl'>
+              {/* Part 1 */}
+              <PartHeader
+                part='Part 1'
+                title='Personal data'
+                description='What we collect, why we collect it, where it goes, and how long we keep it.'
+              />
 
-                <div id='who-we-are' className='scroll-mt-8 mb-10'>
-                  <h3
-                    className="font-['Bricolage_Grotesque',_sans-serif] text-gray-900 mb-3"
-                    style={{ fontSize: '20px', fontWeight: '700' }}
-                  >
-                    1.1 Who we are
-                  </h3>
-                  <p className='mb-4'>
-                    Photify Limited (&qout;Photify&qout;, &qout;we&qout;, &qout;our&qout;, &qout;us&qout;) is a company
-                    registered in England and Wales.
+              <div className='space-y-14'>
+                <SubSection id='who-we-are' number='1.1' title='Who we are'>
+                  <p>
+                    Photify Limited (&quot;Photify&quot;, &quot;we&quot;,
+                    &quot;our&quot;, &quot;us&quot;) is a company registered in
+                    England and Wales.
                   </p>
-                  <ul className='space-y-2 ml-4'>
-                    <li className='flex items-start gap-2'>
-                      <span className='w-1.5 h-1.5 rounded-full bg-[#f63a9e] mt-2 flex-shrink-0' />
-                      <span>
-                        <strong>Registered office:</strong> London, United
-                        Kingdom
-                      </span>
-                    </li>
-                    <li className='flex items-start gap-2'>
-                      <span className='w-1.5 h-1.5 rounded-full bg-[#f63a9e] mt-2 flex-shrink-0' />
-                      <span>
-                        <strong>Company number:</strong> 16119644
-                      </span>
-                    </li>
-                    <li className='flex items-start gap-2'>
-                      <span className='w-1.5 h-1.5 rounded-full bg-[#f63a9e] mt-2 flex-shrink-0' />
-                      <span>
-                        <strong>Website:</strong>{' '}
-                        <a
-                          href='https://www.photify.co'
-                          target='_blank'
-                          rel='noopener noreferrer'
-                          className='text-[#f63a9e] hover:underline'
-                        >
-                          https://www.photify.co
-                        </a>{' '}
-                        (the &quot;Site&quot;)
-                      </span>
-                    </li>
-                    <li className='flex items-start gap-2'>
-                      <span className='w-1.5 h-1.5 rounded-full bg-[#f63a9e] mt-2 flex-shrink-0' />
-                      <span>
-                        <strong>Contact email:</strong>{' '}
-                        <a
-                          href='mailto:support@photify.co'
-                          className='text-[#f63a9e] hover:underline'
-                        >
-                          support@photify.co
-                        </a>
-                      </span>
-                    </li>
-                  </ul>
-                  <p className='mt-4'>
+                  <dl className='grid grid-cols-1 sm:grid-cols-2 gap-y-3 gap-x-8 text-[14.5px] border border-gray-200 rounded-xl p-5 not-prose'>
+                    {[
+                      { k: 'Registered office', v: 'London, United Kingdom' },
+                      { k: 'Company number', v: '16119644' },
+                      {
+                        k: 'Website',
+                        v: 'photify.co',
+                        href: 'https://www.photify.co',
+                      },
+                      {
+                        k: 'Contact email',
+                        v: 'support@photify.co',
+                        href: 'mailto:support@photify.co',
+                      },
+                    ].map((row, i) => (
+                      <div key={i}>
+                        <dt className='text-gray-500 text-xs mb-0.5'>
+                          {row.k}
+                        </dt>
+                        <dd>
+                          {row.href ? (
+                            <a
+                              href={row.href}
+                              target={
+                                row.href.startsWith('http') ? '_blank' : undefined
+                              }
+                              rel={
+                                row.href.startsWith('http')
+                                  ? 'noopener noreferrer'
+                                  : undefined
+                              }
+                              className='text-gray-900 hover:text-[#f63a9e] underline-offset-4 hover:underline'
+                              style={{ fontWeight: 500 }}
+                            >
+                              {row.v}
+                            </a>
+                          ) : (
+                            <span
+                              className='text-gray-900'
+                              style={{ fontWeight: 500 }}
+                            >
+                              {row.v}
+                            </span>
+                          )}
+                        </dd>
+                      </div>
+                    ))}
+                  </dl>
+                  <p>
                     We sell custom photo prints to customers in the United
                     Kingdom only. We do not knowingly target or market to
                     children under 16, EU/EEA residents (outside the UK), or
                     California residents.
                   </p>
-                </div>
+                </SubSection>
 
-                <div id='data-collected' className='scroll-mt-8 mb-10'>
-                  <h3
-                    className="font-['Bricolage_Grotesque',_sans-serif] text-gray-900 mb-3"
-                    style={{ fontSize: '20px', fontWeight: '700' }}
-                  >
-                    1.2 Personal data we collect
-                  </h3>
-                  <div className='overflow-x-auto rounded-xl border border-gray-200 shadow-sm'>
-                    <table className='w-full text-sm'>
+                <SubSection
+                  id='data-collected'
+                  number='1.2'
+                  title='Personal data we collect'
+                  description='Each category below includes the purpose and lawful basis under UK GDPR Article 6.'
+                >
+                  <div className='overflow-x-auto border border-gray-200 rounded-xl'>
+                    <table className='w-full text-[13.5px]'>
                       <thead>
-                        <tr className='bg-[#f63a9e] text-white'>
-                          <th className='px-4 py-3 text-left font-semibold'>
+                        <tr className='border-b border-gray-200 bg-gray-50/70 text-gray-500'>
+                          <th
+                            className='px-4 py-3 text-left'
+                            style={{ fontWeight: 600 }}
+                          >
                             Category
                           </th>
-                          <th className='px-4 py-3 text-left font-semibold'>
+                          <th
+                            className='px-4 py-3 text-left'
+                            style={{ fontWeight: 600 }}
+                          >
                             Examples
                           </th>
-                          <th className='px-4 py-3 text-left font-semibold'>
+                          <th
+                            className='px-4 py-3 text-left'
+                            style={{ fontWeight: 600 }}
+                          >
                             Purpose
                           </th>
-                          <th className='px-4 py-3 text-left font-semibold'>
-                            Lawful basis (UK GDPR Art. 6)
+                          <th
+                            className='px-4 py-3 text-left'
+                            style={{ fontWeight: 600 }}
+                          >
+                            Lawful basis
                           </th>
                         </tr>
                       </thead>
@@ -191,11 +372,10 @@ export function PrivacyPolicyPage() {
                         {[
                           {
                             category: 'Identity & contact',
-                            examples:
-                              'Name, phone number, email, postal address',
+                            examples: 'Name, phone, email, postal address',
                             purpose:
                               'Create your order, deliver prints, communicate about your purchase',
-                            basis: 'Contract (perform our contract with you)',
+                            basis: 'Contract',
                           },
                           {
                             category: 'Photos & artwork',
@@ -207,15 +387,15 @@ export function PrivacyPolicyPage() {
                             category: 'Payment details',
                             examples: 'Card number (tokenised via Stripe)',
                             purpose: 'Process payment',
-                            basis: 'Contract; Legal obligation (prevent fraud)',
+                            basis: 'Contract & legal obligation',
                           },
                           {
                             category: 'Usage data',
                             examples:
-                              'IP address, browser type, pages viewed, events (via Google Analytics & Hotjar)',
+                              'IP, browser, pages viewed (GA & Hotjar)',
                             purpose:
                               'Improve the Site, detect issues, measure marketing',
-                            basis: 'Contract (perform our contract with you)',
+                            basis: 'Contract',
                           },
                           {
                             category: 'Marketing preferences',
@@ -227,24 +407,23 @@ export function PrivacyPolicyPage() {
                             category: 'Automated logs',
                             examples: 'Server logs, Stripe webhook logs',
                             purpose: 'Protect security, prevent fraud',
-                            basis:
-                              'Legitimate interests (security, fraud prevention)',
+                            basis: 'Legitimate interests',
                           },
                         ].map((row, i) => (
-                          <tr
-                            key={i}
-                            className={i % 2 === 0 ? 'bg-white' : 'bg-gray-50'}
-                          >
-                            <td className='px-4 py-3 font-medium text-gray-900'>
+                          <tr key={i}>
+                            <td
+                              className='px-4 py-3 text-gray-900 align-top'
+                              style={{ fontWeight: 500 }}
+                            >
                               {row.category}
                             </td>
-                            <td className='px-4 py-3 text-gray-600'>
+                            <td className='px-4 py-3 text-gray-600 align-top'>
                               {row.examples}
                             </td>
-                            <td className='px-4 py-3 text-gray-600'>
+                            <td className='px-4 py-3 text-gray-600 align-top'>
                               {row.purpose}
                             </td>
-                            <td className='px-4 py-3 text-gray-600'>
+                            <td className='px-4 py-3 text-gray-600 align-top'>
                               {row.basis}
                             </td>
                           </tr>
@@ -252,45 +431,41 @@ export function PrivacyPolicyPage() {
                       </tbody>
                     </table>
                   </div>
-                </div>
+                </SubSection>
 
-                <div id='how-we-use' className='scroll-mt-8 mb-10'>
-                  <h3
-                    className="font-['Bricolage_Grotesque',_sans-serif] text-gray-900 mb-3"
-                    style={{ fontSize: '20px', fontWeight: '700' }}
-                  >
-                    1.3 How we use your data
-                  </h3>
-                  <p className='mb-4'>
-                    We use your data primarily for order fulfilment, which
-                    involves receiving your images, printing them, packaging
-                    your order, and dispatching it to you. Additionally, we
-                    provide customer support by responding to your enquiries and
-                    handling service-related emails.
+                <SubSection
+                  id='how-we-use'
+                  number='1.3'
+                  title='How we use your data'
+                >
+                  <p>
+                    We use your data primarily for{' '}
+                    <span className='text-gray-900' style={{ fontWeight: 500 }}>
+                      order fulfilment
+                    </span>{' '}
+                    — receiving your images, printing them, packaging your
+                    order, and dispatching it to you. Customer support emails
+                    are handled under the same basis.
                   </p>
-                  <p className='mb-4'>
-                    To improve our services and understand how visitors use our
-                    Site, we analyse website traffic and user behaviour through
-                    tools like Google Analytics and Hotjar. When you give your
-                    consent, we also use your information to deliver marketing
-                    communications, including ads on Meta platforms and
-                    promotional emails.
+                  <p>
+                    To improve our services, we analyse website traffic and
+                    user behaviour through Google Analytics and Hotjar. When
+                    you give your consent, we may also use your information to
+                    deliver marketing communications, including ads on Meta
+                    platforms and promotional emails.
                   </p>
                   <p>
                     Finally, we employ automated monitoring of payment
                     transactions and website traffic patterns to enhance
-                    security and prevent fraud, helping to protect both our
-                    users and our business.
+                    security and prevent fraud.
                   </p>
-                </div>
+                </SubSection>
 
-                <div id='automated' className='scroll-mt-8 mb-10'>
-                  <h3
-                    className="font-['Bricolage_Grotesque',_sans-serif] text-gray-900 mb-3"
-                    style={{ fontSize: '20px', fontWeight: '700' }}
-                  >
-                    1.4 Automated decision-making
-                  </h3>
+                <SubSection
+                  id='automated'
+                  number='1.4'
+                  title='Automated decision-making'
+                >
                   <p>
                     We apply automated checks (via Stripe Radar and similar
                     fraud-detection triggers) to flag or block potentially
@@ -298,26 +473,34 @@ export function PrivacyPolicyPage() {
                     legal or similarly significant effects on individuals; a
                     human review is available on request.
                   </p>
-                </div>
+                </SubSection>
 
-                <div id='sharing' className='scroll-mt-8 mb-10'>
-                  <h3
-                    className="font-['Bricolage_Grotesque',_sans-serif] text-gray-900 mb-3"
-                    style={{ fontSize: '20px', fontWeight: '700' }}
-                  >
-                    1.5 Who we share data with
-                  </h3>
-                  <div className='overflow-x-auto rounded-xl border border-gray-200 shadow-sm mb-4'>
-                    <table className='w-full text-sm'>
+                <SubSection
+                  id='sharing'
+                  number='1.5'
+                  title='Who we share data with'
+                  description='We only share what is needed, with vetted providers, under formal safeguards.'
+                >
+                  <div className='overflow-x-auto border border-gray-200 rounded-xl'>
+                    <table className='w-full text-[13.5px]'>
                       <thead>
-                        <tr className='bg-[#f63a9e] text-white'>
-                          <th className='px-4 py-3 text-left font-semibold'>
+                        <tr className='border-b border-gray-200 bg-gray-50/70 text-gray-500'>
+                          <th
+                            className='px-4 py-3 text-left'
+                            style={{ fontWeight: 600 }}
+                          >
                             Recipient
                           </th>
-                          <th className='px-4 py-3 text-left font-semibold'>
+                          <th
+                            className='px-4 py-3 text-left'
+                            style={{ fontWeight: 600 }}
+                          >
                             Role
                           </th>
-                          <th className='px-4 py-3 text-left font-semibold'>
+                          <th
+                            className='px-4 py-3 text-left'
+                            style={{ fontWeight: 600 }}
+                          >
                             Safeguards
                           </th>
                         </tr>
@@ -330,7 +513,7 @@ export function PrivacyPolicyPage() {
                             safeguards: 'UK-hosted; PCI-DSS compliant',
                           },
                           {
-                            recipient: 'Google Analytics / Google LLC',
+                            recipient: 'Google Analytics',
                             role: 'Site analytics',
                             safeguards:
                               'IP anonymisation; EU–US Data Privacy Framework',
@@ -343,11 +526,10 @@ export function PrivacyPolicyPage() {
                           {
                             recipient: 'Hotjar Ltd.',
                             role: 'Session analytics & heat-maps',
-                            safeguards:
-                              'Malta/EEA; SCCs for any third-country processing',
+                            safeguards: 'Malta/EEA; SCCs where needed',
                           },
                           {
-                            recipient: 'Couriers (e.g., Royal Mail, DPD)',
+                            recipient: 'Couriers (Royal Mail, DPD)',
                             role: 'Deliver your prints',
                             safeguards: 'Address & contact info only',
                           },
@@ -357,17 +539,17 @@ export function PrivacyPolicyPage() {
                             safeguards: 'UK/EU servers where possible',
                           },
                         ].map((row, i) => (
-                          <tr
-                            key={i}
-                            className={i % 2 === 0 ? 'bg-white' : 'bg-gray-50'}
-                          >
-                            <td className='px-4 py-3 font-medium text-gray-900'>
+                          <tr key={i}>
+                            <td
+                              className='px-4 py-3 text-gray-900 align-top'
+                              style={{ fontWeight: 500 }}
+                            >
                               {row.recipient}
                             </td>
-                            <td className='px-4 py-3 text-gray-600'>
+                            <td className='px-4 py-3 text-gray-600 align-top'>
                               {row.role}
                             </td>
-                            <td className='px-4 py-3 text-gray-600'>
+                            <td className='px-4 py-3 text-gray-600 align-top'>
                               {row.safeguards}
                             </td>
                           </tr>
@@ -375,51 +557,54 @@ export function PrivacyPolicyPage() {
                       </tbody>
                     </table>
                   </div>
-                  <p className='font-semibold text-gray-900 bg-[#FFF5FB] border border-[#f63a9e]/30 rounded-xl px-4 py-3'>
+                  <p
+                    className='text-gray-900'
+                    style={{ fontWeight: 500 }}
+                  >
                     We never sell your personal data.
                   </p>
-                </div>
+                </SubSection>
 
-                <div id='transfers' className='scroll-mt-8 mb-10'>
-                  <h3
-                    className="font-['Bricolage_Grotesque',_sans-serif] text-gray-900 mb-3"
-                    style={{ fontSize: '20px', fontWeight: '700' }}
-                  >
-                    1.6 International transfers
-                  </h3>
-                  <p className='mb-3'>
+                <SubSection
+                  id='transfers'
+                  number='1.6'
+                  title='International transfers'
+                >
+                  <p>
                     Where providers transfer data outside the UK (e.g., to the
                     US), we rely on:
                   </p>
-                  <ul className='space-y-2 ml-4'>
-                    <li className='flex items-start gap-2'>
-                      <span className='w-1.5 h-1.5 rounded-full bg-[#f63a9e] mt-2 flex-shrink-0' />
+                  <ul className='space-y-2 list-disc pl-5 marker:text-gray-300'>
+                    <li>
                       An adequacy decision (UK Extension to the EU–US Data
                       Privacy Framework); or
                     </li>
-                    <li className='flex items-start gap-2'>
-                      <span className='w-1.5 h-1.5 rounded-full bg-[#f63a9e] mt-2 flex-shrink-0' />
-                      UK International Data Transfer Addendum to EU Standard
-                      Contractual Clauses.
+                    <li>
+                      The UK International Data Transfer Addendum to EU
+                      Standard Contractual Clauses.
                     </li>
                   </ul>
-                </div>
+                </SubSection>
 
-                <div id='retention' className='scroll-mt-8 mb-10'>
-                  <h3
-                    className="font-['Bricolage_Grotesque',_sans-serif] text-gray-900 mb-3"
-                    style={{ fontSize: '20px', fontWeight: '700' }}
-                  >
-                    1.7 Data retention periods
-                  </h3>
-                  <div className='overflow-x-auto rounded-xl border border-gray-200 shadow-sm'>
-                    <table className='w-full text-sm'>
+                <SubSection
+                  id='retention'
+                  number='1.7'
+                  title='Data retention periods'
+                >
+                  <div className='overflow-x-auto border border-gray-200 rounded-xl'>
+                    <table className='w-full text-[13.5px]'>
                       <thead>
-                        <tr className='bg-[#f63a9e] text-white'>
-                          <th className='px-4 py-3 text-left font-semibold'>
+                        <tr className='border-b border-gray-200 bg-gray-50/70 text-gray-500'>
+                          <th
+                            className='px-4 py-3 text-left'
+                            style={{ fontWeight: 600 }}
+                          >
                             Data type
                           </th>
-                          <th className='px-4 py-3 text-left font-semibold'>
+                          <th
+                            className='px-4 py-3 text-left'
+                            style={{ fontWeight: 600 }}
+                          >
                             Retention period
                           </th>
                         </tr>
@@ -431,9 +616,9 @@ export function PrivacyPolicyPage() {
                             period: '30 days (see Cookies Policy below)',
                           },
                           {
-                            type: 'Order information (including address, phone, email, payment tokens)',
+                            type: 'Order information',
                             period:
-                              '1 year from dispatch, then securely deleted/anonymised (required for tax & warranty queries)',
+                              '1 year from dispatch, then securely deleted / anonymised',
                           },
                           {
                             type: 'Photos you upload',
@@ -446,18 +631,17 @@ export function PrivacyPolicyPage() {
                           },
                           {
                             type: 'Analytics data (aggregated)',
-                            period:
-                              'Up to 26 months, per Google Analytics settings',
+                            period: 'Up to 26 months (per Google Analytics)',
                           },
                         ].map((row, i) => (
-                          <tr
-                            key={i}
-                            className={i % 2 === 0 ? 'bg-white' : 'bg-gray-50'}
-                          >
-                            <td className='px-4 py-3 font-medium text-gray-900'>
+                          <tr key={i}>
+                            <td
+                              className='px-4 py-3 text-gray-900 align-top'
+                              style={{ fontWeight: 500 }}
+                            >
                               {row.type}
                             </td>
-                            <td className='px-4 py-3 text-gray-600'>
+                            <td className='px-4 py-3 text-gray-600 align-top'>
                               {row.period}
                             </td>
                           </tr>
@@ -465,298 +649,303 @@ export function PrivacyPolicyPage() {
                       </tbody>
                     </table>
                   </div>
-                </div>
+                </SubSection>
 
-                <div id='rights' className='scroll-mt-8 mb-10'>
-                  <h3
-                    className="font-['Bricolage_Grotesque',_sans-serif] text-gray-900 mb-3"
-                    style={{ fontSize: '20px', fontWeight: '700' }}
-                  >
-                    1.8 Your rights (UK GDPR / Data Protection Act 2018)
-                  </h3>
-                  <p className='mb-4'>You can:</p>
-                  <ul className='space-y-3 ml-4'>
-                    {[
-                      'Request access to the personal data we hold about you.',
-                      'Ask us to correct inaccurate or incomplete data.',
-                      'Ask for deletion ("right to be forgotten") where legal grounds permit.',
-                      'Object to or restrict our processing in certain circumstances.',
-                      'Receive a copy of the data you provided to us in a structured, machine-readable format ("data portability").',
-                      "Lodge a complaint with the UK Information Commissioner's Office (ICO) if you believe we've mishandled your data.",
-                    ].map((right, i) => (
-                      <li key={i} className='flex items-start gap-2'>
-                        <span className='w-1.5 h-1.5 rounded-full bg-[#f63a9e] mt-2 flex-shrink-0' />
-                        {right}
-                      </li>
+                <SubSection
+                  id='rights'
+                  number='1.8'
+                  title='Your rights'
+                  description='Under UK GDPR and the Data Protection Act 2018.'
+                >
+                  <div className='grid sm:grid-cols-2 gap-x-8 gap-y-5 not-prose'>
+                    {rights.map((right, i) => (
+                      <div key={i}>
+                        <p
+                          className='text-gray-900 mb-1 text-[14.5px]'
+                          style={{ fontWeight: 600 }}
+                        >
+                          {right.title}
+                        </p>
+                        <p className='text-gray-500 text-[13.5px] leading-relaxed'>
+                          {right.desc}
+                        </p>
+                      </div>
                     ))}
-                  </ul>
-                  <p className='mt-4'>
+                  </div>
+                  <p className='text-[14.5px] text-gray-600'>
                     To exercise any of these rights, email{' '}
                     <a
                       href='mailto:support@photify.co'
-                      className='text-[#f63a9e] hover:underline'
+                      className='text-[#f63a9e] underline-offset-4 hover:underline'
                     >
                       support@photify.co
                     </a>
-                    .
+                    . We respond within 30 days.
                   </p>
-                </div>
+                </SubSection>
 
-                <div id='security' className='scroll-mt-8 mb-10'>
-                  <h3
-                    className="font-['Bricolage_Grotesque',_sans-serif] text-gray-900 mb-3"
-                    style={{ fontSize: '20px', fontWeight: '700' }}
-                  >
-                    1.9 Security
-                  </h3>
+                <SubSection id='security' number='1.9' title='Security'>
                   <p>
                     We use TLS encryption, tokenised payments (Stripe),
                     least-privilege access controls, periodic penetration
                     testing, and secure deletion routines to protect your
                     information.
                   </p>
-                </div>
+                </SubSection>
 
-                <div id='changes' className='scroll-mt-8 mb-10'>
-                  <h3
-                    className="font-['Bricolage_Grotesque',_sans-serif] text-gray-900 mb-3"
-                    style={{ fontSize: '20px', fontWeight: '700' }}
-                  >
-                    1.10 Changes to this Policy
-                  </h3>
+                <SubSection
+                  id='changes'
+                  number='1.10'
+                  title='Changes to this policy'
+                >
                   <p>
-                    We may update this notice from time to time. We&apos;ll post the
-                    revised version and, if changes are material, notify you via
-                    email or a prominent Site banner.
+                    We may update this notice from time to time. We&apos;ll
+                    post the revised version and, if changes are material,
+                    notify you by email or a prominent banner on the Site.
                   </p>
-                </div>
+                </SubSection>
 
-                <div id='contact' className='scroll-mt-8'>
-                  <h3
-                    className="font-['Bricolage_Grotesque',_sans-serif] text-gray-900 mb-3"
-                    style={{ fontSize: '20px', fontWeight: '700' }}
-                  >
-                    1.11 Contact
-                  </h3>
+                <SubSection id='contact' number='1.11' title='Contact'>
                   <p>
                     For privacy questions, email{' '}
                     <a
                       href='mailto:support@photify.co'
-                      className='text-[#f63a9e] hover:underline'
+                      className='text-[#f63a9e] underline-offset-4 hover:underline'
                     >
                       support@photify.co
                     </a>{' '}
                     or write to Photify Limited, London, United Kingdom.
                   </p>
-                </div>
-              </section>
-
-              {/* Section 2 */}
-              <section>
-                <h2
-                  id='accounts'
-                  className="font-['Bricolage_Grotesque',_sans-serif] text-gray-900 mb-6 pb-3 border-b-2 border-[#f63a9e]/30 scroll-mt-8"
-                  style={{ fontSize: '26px', fontWeight: '700' }}
-                >
-                  2. Customer Accounts
-                </h2>
-                <p className='mb-6'>
-                  Creating a customer account requires basic personal
-                  information like your name, address, email, and password. This
-                  data allows us to simplify order placements and manage your
-                  preferences. You can update or delete your account at any
-                  time, and your data will be removed unless required for legal
-                  or outstanding obligations.
-                </p>
-
-                <h3
-                  className="font-['Bricolage_Grotesque',_sans-serif] text-gray-900 mb-3"
-                  style={{ fontSize: '20px', fontWeight: '700' }}
-                >
-                  2.1 How Photify.co Uses Your Data
-                </h3>
-                <p className='mb-4'>
-                  We process your personal data in compliance with data
-                  protection laws, particularly the principles outlined in GDPR.
-                  Your data is used only for purposes communicated in our
-                  Privacy Policy or those explained at the time of collection.
-                  This includes order processing, personalization, service
-                  development, and ensuring security. We also use your data
-                  under strict European laws for product development, scientific
-                  research (AI, machine learning, and deep learning), and market
-                  analysis.
-                </p>
-                <p className='mb-4'>
-                  For order processing, we collect personal information such as
-                  your name, email address, and image files to fulfill your
-                  requests. This data is used to keep you updated on order
-                  status, provide relevant product information, and analyze
-                  trends. Image files are deleted after three months unless
-                  extended retention is necessary for customer support.
-                  Additionally, we use your data to optimize business
-                  operations, design tailored services, and deliver personalized
-                  advertising.
-                </p>
-                <p className='mb-4'>
-                  To enhance your shopping experience, we share data with select
-                  service providers under GDPR regulations. This enables
-                  efficient payment processing, shipping, and marketing
-                  insights. For instance, shipping providers like DHL, EVRI or
-                  UPS receive your address, while payment platforms like PayPal
-                  ensure smooth transactions. Data sharing is strictly limited
-                  to fulfilling your order or improving our services.
-                </p>
-                <p>
-                  We also use marketing tools such as Google Analytics, Adobe
-                  Media Optimizer, and retargeting technologies to understand
-                  customer preferences and optimize our website. Social media
-                  plugins are intentionally excluded to prevent automatic data
-                  transfers, protecting your privacy. While you can manually
-                  share pages on platforms like Facebook, no user profile data
-                  is directly transmitted.
-                </p>
-              </section>
-
-              {/* Section 3 */}
-              <section>
-                <h2
-                  id='cookies'
-                  className="font-['Bricolage_Grotesque',_sans-serif] text-gray-900 mb-6 pb-3 border-b-2 border-[#f63a9e]/30 scroll-mt-8"
-                  style={{ fontSize: '26px', fontWeight: '700' }}
-                >
-                  3. Note on Cookies
-                </h2>
-                <p className='mb-4'>
-                  We use cookies on our websites. Cookies are small text files
-                  that are stored on your device and can be read by us. There
-                  are two types of cookies:
-                </p>
-                <ul className='space-y-2 ml-4 mb-6'>
-                  <li className='flex items-start gap-2'>
-                    <span className='w-1.5 h-1.5 rounded-full bg-[#f63a9e] mt-2 flex-shrink-0' />
-                    <span>
-                      <strong>Session Cookies:</strong> These are deleted when
-                      you close your browser.
-                    </span>
-                  </li>
-                  <li className='flex items-start gap-2'>
-                    <span className='w-1.5 h-1.5 rounded-full bg-[#f63a9e] mt-2 flex-shrink-0' />
-                    <span>
-                      <strong>Permanent Cookies:</strong> These remain on your
-                      device beyond a single session.
-                    </span>
-                  </li>
-                </ul>
-
-                <h3
-                  className="font-['Bricolage_Grotesque',_sans-serif] text-gray-900 mb-3"
-                  style={{ fontSize: '20px', fontWeight: '700' }}
-                >
-                  What Are Cookies?
-                </h3>
-                <p className='mb-6'>
-                  Cookies and similar technologies are small text files or
-                  pieces of code that often contain a unique identification
-                  code. When you visit a website or use a mobile application,
-                  the site requests permission to save this file on your device,
-                  allowing it to access specific information. The data collected
-                  through cookies may include the time and date of your visit
-                  and how you use a particular website or mobile application.
-                </p>
-
-                <h3
-                  className="font-['Bricolage_Grotesque',_sans-serif] text-gray-900 mb-3"
-                  style={{ fontSize: '20px', fontWeight: '700' }}
-                >
-                  Why Do We Use Cookies?
-                </h3>
-                <p className='mb-3'>
-                  Cookies ensure that during your visit to our online shop:
-                </p>
-                <ul className='space-y-2 ml-4 mb-4'>
-                  {[
-                    'You remain logged in.',
-                    'Items remain in your shopping cart.',
-                    'You can shop safely, and the website functions smoothly.',
-                  ].map((item, i) => (
-                    <li key={i} className='flex items-start gap-2'>
-                      <span className='w-1.5 h-1.5 rounded-full bg-[#f63a9e] mt-2 flex-shrink-0' />
-                      {item}
-                    </li>
-                  ))}
-                </ul>
-                <p className='mb-6'>
-                  Additionally, cookies help us analyze website usage to improve
-                  our services. Based on your preferences, our cookies may also
-                  be used to display targeted advertisements that match your
-                  personal interests.
-                </p>
-
-                <h3
-                  className="font-['Bricolage_Grotesque',_sans-serif] text-gray-900 mb-4"
-                  style={{ fontSize: '20px', fontWeight: '700' }}
-                >
-                  What Types of Cookies Do We Use?
-                </h3>
-                <div className='space-y-4'>
-                  {[
-                    {
-                      title: '1. Unclassified Cookies',
-                      desc: 'These are cookies that are in the process of being categorized. They will eventually be classified under one of the following categories: Necessary, Performance, Functional, or Advertising.',
-                    },
-                    {
-                      title: '2. Necessary Cookies',
-                      desc: 'These are essential for the website to function properly. They enable actions such as storing items in your shopping cart, saving your cookie preferences, remembering your language settings, and checking if you are logged in.',
-                    },
-                    {
-                      title: '3. Performance Cookies',
-                      desc: 'These collect statistical data about how our website is used, which helps us optimize website performance.',
-                    },
-                    {
-                      title: '4. Functional Cookies',
-                      desc: 'These cookies provide enhanced functionality, such as live chat services, viewing online videos, social media sharing buttons, and logging in using social media accounts.',
-                    },
-                    {
-                      title: '5. Advertising / Tracking Cookies',
-                      desc: 'These cookies are set by external advertising partners and are used for profiling and tracking across websites. They help us show you relevant ads based on your user profile and preferences, and they track the effectiveness of our ad campaigns.',
-                    },
-                  ].map((cookie, i) => (
-                    <div
-                      key={i}
-                      className='bg-gray-50 rounded-xl p-5 border border-gray-200'
-                    >
-                      <h4
-                        className='text-gray-900 mb-2'
-                        style={{ fontWeight: '700' }}
-                      >
-                        {cookie.title}
-                      </h4>
-                      <p className='text-gray-600 text-sm'>{cookie.desc}</p>
-                    </div>
-                  ))}
-                </div>
-              </section>
-
-              {/* CTA */}
-              <div className='bg-[#FFF5FB] border-2 border-[#f63a9e]/30 rounded-2xl p-8 text-center'>
-                <h3
-                  className="font-['Bricolage_Grotesque',_sans-serif] text-gray-900 mb-3"
-                  style={{ fontSize: '22px', fontWeight: '700' }}
-                >
-                  Questions about your privacy?
-                </h3>
-                <p className='text-gray-600 mb-6'>
-                  We&apos;re here to help. Reach out to our team and we&apos;ll respond as
-                  quickly as possible.
-                </p>
-                <Link
-                  to='/contact'
-                  className='inline-flex items-center gap-2 bg-[#f63a9e] text-white px-8 py-3 rounded-xl hover:bg-[#e02d8d] transition-colors font-semibold'
-                >
-                  Contact Us
-                </Link>
+                </SubSection>
               </div>
-            </div>
+
+              {/* Part 2 */}
+              <div className='mt-20'>
+                <PartHeader
+                  part='Part 2'
+                  title='Customer accounts'
+                  description='Account data, how it&rsquo;s used, and how to remove it.'
+                />
+                <section id='accounts' className='scroll-mt-24 space-y-4 text-gray-700 leading-relaxed text-[15px]'>
+                  <p>
+                    Creating a customer account requires basic personal
+                    information like your name, address, email, and password.
+                    This data allows us to simplify order placements and manage
+                    your preferences.{' '}
+                    <span className='text-gray-900' style={{ fontWeight: 500 }}>
+                      You can update or delete your account at any time
+                    </span>
+                    , and your data will be removed unless required for legal
+                    or outstanding obligations.
+                  </p>
+                  <h3
+                    className="font-['Bricolage_Grotesque',_sans-serif] text-gray-900 pt-6"
+                    style={{ fontSize: '19px', fontWeight: 600, letterSpacing: '-0.01em' }}
+                  >
+                    2.1 How Photify uses your data
+                  </h3>
+                  <p>
+                    We process your personal data in compliance with data
+                    protection laws, particularly the principles outlined in
+                    GDPR. Your data is used only for purposes communicated in
+                    our Privacy Policy or those explained at the time of
+                    collection. This includes order processing, personalisation,
+                    service development, and ensuring security. We also use
+                    your data under strict European laws for product
+                    development, scientific research (AI, machine learning, and
+                    deep learning), and market analysis.
+                  </p>
+                  <p>
+                    For order processing, we collect personal information such
+                    as your name, email address, and image files to fulfil your
+                    requests. This data is used to keep you updated on order
+                    status, provide relevant product information, and analyse
+                    trends. Image files are deleted after three months unless
+                    extended retention is necessary for customer support.
+                    Additionally, we use your data to optimise business
+                    operations, design tailored services, and deliver
+                    personalised advertising.
+                  </p>
+                  <p>
+                    To enhance your shopping experience, we share data with
+                    select service providers under GDPR regulations. This
+                    enables efficient payment processing, shipping, and
+                    marketing insights. For instance, shipping providers like
+                    DHL, EVRI or UPS receive your address, while payment
+                    platforms like PayPal ensure smooth transactions. Data
+                    sharing is strictly limited to fulfilling your order or
+                    improving our services.
+                  </p>
+                  <p>
+                    We also use marketing tools such as Google Analytics, Adobe
+                    Media Optimizer, and retargeting technologies to understand
+                    customer preferences and optimise our website. Social media
+                    plugins are intentionally excluded to prevent automatic
+                    data transfers, protecting your privacy. While you can
+                    manually share pages on platforms like Facebook, no user
+                    profile data is directly transmitted.
+                  </p>
+                </section>
+              </div>
+
+              {/* Part 3 */}
+              <div className='mt-20'>
+                <PartHeader
+                  part='Part 3'
+                  title='A note on cookies'
+                  description='What they are, why we use them, and the types you may encounter on the Site.'
+                />
+                <section id='cookies' className='scroll-mt-24 space-y-6 text-gray-700 leading-relaxed text-[15px]'>
+                  <p>
+                    We use cookies on our websites. Cookies are small text
+                    files that are stored on your device and can be read by us.
+                    There are two types:
+                  </p>
+                  <div className='grid sm:grid-cols-2 gap-x-8 gap-y-4'>
+                    <div className='border-l-2 border-gray-200 pl-4'>
+                      <p
+                        className='text-gray-900 mb-1'
+                        style={{ fontWeight: 600 }}
+                      >
+                        Session cookies
+                      </p>
+                      <p className='text-gray-500 text-sm'>
+                        Deleted automatically when you close your browser.
+                      </p>
+                    </div>
+                    <div className='border-l-2 border-gray-200 pl-4'>
+                      <p
+                        className='text-gray-900 mb-1'
+                        style={{ fontWeight: 600 }}
+                      >
+                        Permanent cookies
+                      </p>
+                      <p className='text-gray-500 text-sm'>
+                        Remain on your device beyond a single session.
+                      </p>
+                    </div>
+                  </div>
+
+                  <h3
+                    className="font-['Bricolage_Grotesque',_sans-serif] text-gray-900 pt-4"
+                    style={{ fontSize: '19px', fontWeight: 600, letterSpacing: '-0.01em' }}
+                  >
+                    What are cookies?
+                  </h3>
+                  <p>
+                    Cookies and similar technologies are small text files or
+                    pieces of code that often contain a unique identification
+                    code. When you visit a website or use a mobile application,
+                    the site requests permission to save this file on your
+                    device, allowing it to access specific information. The
+                    data collected through cookies may include the time and
+                    date of your visit and how you use a particular website or
+                    mobile application.
+                  </p>
+
+                  <h3
+                    className="font-['Bricolage_Grotesque',_sans-serif] text-gray-900 pt-4"
+                    style={{ fontSize: '19px', fontWeight: 600, letterSpacing: '-0.01em' }}
+                  >
+                    Why do we use cookies?
+                  </h3>
+                  <p>Cookies ensure that during your visit to our online shop:</p>
+                  <ul className='space-y-1.5 list-disc pl-5 marker:text-gray-300'>
+                    <li>You remain logged in.</li>
+                    <li>Items remain in your shopping cart.</li>
+                    <li>You can shop safely and the site functions smoothly.</li>
+                  </ul>
+                  <p>
+                    Additionally, cookies help us analyse website usage to
+                    improve our services. Based on your preferences, our
+                    cookies may also be used to display targeted advertisements
+                    that match your personal interests.
+                  </p>
+
+                  <h3
+                    className="font-['Bricolage_Grotesque',_sans-serif] text-gray-900 pt-4"
+                    style={{ fontSize: '19px', fontWeight: 600, letterSpacing: '-0.01em' }}
+                  >
+                    Types of cookies we use
+                  </h3>
+                  <dl className='border border-gray-200 rounded-xl divide-y divide-gray-100'>
+                    {[
+                      {
+                        title: 'Unclassified',
+                        desc: 'Cookies in the process of being categorised. They will eventually be classified as Necessary, Performance, Functional, or Advertising.',
+                      },
+                      {
+                        title: 'Necessary',
+                        desc: 'Essential for the website to function — storing items in your cart, saving cookie preferences, remembering language settings, and checking if you are logged in.',
+                      },
+                      {
+                        title: 'Performance',
+                        desc: 'Collect statistical data about how our website is used, which helps us optimise website performance.',
+                      },
+                      {
+                        title: 'Functional',
+                        desc: 'Provide enhanced functionality such as live chat, online videos, social sharing, and social login.',
+                      },
+                      {
+                        title: 'Advertising / tracking',
+                        desc: 'Set by external advertising partners and used for profiling, tracking across websites, and measuring ad campaign effectiveness.',
+                      },
+                    ].map((c, i) => (
+                      <div
+                        key={i}
+                        className='grid grid-cols-[140px_1fr] gap-6 px-5 py-4'
+                      >
+                        <dt
+                          className='text-gray-900 text-[14px]'
+                          style={{ fontWeight: 600 }}
+                        >
+                          {c.title}
+                        </dt>
+                        <dd className='text-gray-600 text-[14px] leading-relaxed'>
+                          {c.desc}
+                        </dd>
+                      </div>
+                    ))}
+                  </dl>
+                </section>
+              </div>
+
+              {/* Footer CTA */}
+              <div className='mt-20 border-t border-gray-200 pt-12'>
+                <div className='flex flex-col sm:flex-row sm:items-end sm:justify-between gap-6'>
+                  <div className='max-w-md'>
+                    <h3
+                      className="font-['Bricolage_Grotesque',_sans-serif] text-gray-900 mb-2"
+                      style={{ fontSize: '22px', fontWeight: 700, letterSpacing: '-0.015em' }}
+                    >
+                      Questions about your privacy?
+                    </h3>
+                    <p className='text-gray-500 text-[15px] leading-relaxed'>
+                      Our team is happy to help. We usually reply within one
+                      working day.
+                    </p>
+                  </div>
+                  <div className='flex flex-wrap gap-3'>
+                    <a
+                      href='mailto:support@photify.co'
+                      className='inline-flex items-center gap-2 bg-gray-900 hover:bg-black text-white px-5 py-2.5 rounded-lg text-sm transition-colors'
+                      style={{ fontWeight: 500 }}
+                    >
+                      <Mail className='w-4 h-4' />
+                      Email us
+                    </a>
+                    <Link
+                      to='/contact'
+                      className='inline-flex items-center gap-2 border border-gray-300 hover:border-gray-900 text-gray-900 px-5 py-2.5 rounded-lg text-sm transition-colors'
+                      style={{ fontWeight: 500 }}
+                    >
+                      Contact form
+                      <ArrowUpRight className='w-4 h-4' />
+                    </Link>
+                  </div>
+                </div>
+              </div>
+            </article>
           </div>
         </div>
       </main>

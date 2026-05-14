@@ -1,11 +1,6 @@
-import { ArtCollectionPage } from '@/components/pages/art-collection';
+import { StockImagesPage } from '@/components/pages/stock-images';
 import { createServerClient } from '@/lib/supabase/server';
-import {
-  breadcrumbJsonLd,
-  buildMeta,
-  itemListJsonLd,
-  type ItemListEntry,
-} from '@/lib/seo';
+import { breadcrumbJsonLd, buildMeta } from '@/lib/seo';
 import type { Route } from './+types/index';
 
 interface ArtTag {
@@ -33,38 +28,29 @@ interface RawArtProduct {
   art_product_tags: { tags: ArtTag | ArtTag[] | null }[];
 }
 
-const TITLE = 'Art Collections — Premium Wall Art Prints | Photify';
+const TITLE = 'Stock Images — Premium Wall Art Prints | Photify';
 const DESCRIPTION =
-  'Discover curated art collections on Photify: abstract, religion, nature, and more. Gallery-grade prints with free UK shipping over £50.';
+  'Browse our stock images on Photify: abstract, religion, nature, and more. Gallery-grade prints with free UK shipping over £50.';
 
 export const meta: Route.MetaFunction = ({ data }) => {
   const art = (data?.artProducts ?? []) as Array<{
     name?: string;
-    slug?: string | null;
     image?: string | null;
   }>;
 
-  const items: ItemListEntry[] = art
-    .filter(a => a.slug && a.name)
-    .slice(0, 24)
-    .map(a => ({
-      name: a.name!,
-      path: `/art/${a.slug}`,
-      image: a.image ?? null,
-    }));
-
+  // Note: individual stock image photos no longer have dedicated detail pages,
+  // so we no longer emit `ItemList` JSON-LD with per-item URLs.
   const jsonLd: Record<string, unknown>[] = [
     breadcrumbJsonLd([
       { name: 'Home', path: '/' },
-      { name: 'Art Collections', path: '/art-collections' },
+      { name: 'Stock Images', path: '/stock-images' },
     ]),
   ];
-  if (items.length) jsonLd.push(itemListJsonLd(items, 'Art collections'));
 
   return buildMeta({
     title: TITLE,
     description: DESCRIPTION,
-    path: '/art-collections',
+    path: '/stock-images',
     image: art[0]?.image ?? null,
     jsonLd,
   });
@@ -101,13 +87,13 @@ export async function loader() {
 
   return {
     artProducts: (productsData as unknown as RawArtProduct[]) ?? [],
-    categories: ['All', ...tagNames],
+    categories: tagNames,
   };
 }
 
-export default function ArtCollections({ loaderData }: Route.ComponentProps) {
+export default function StockImages({ loaderData }: Route.ComponentProps) {
   return (
-    <ArtCollectionPage
+    <StockImagesPage
       initialArtProducts={loaderData.artProducts}
       initialCategories={loaderData.categories}
     />
