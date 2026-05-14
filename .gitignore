@@ -107,3 +107,7 @@ pnpm-lock.yaml
 
 
 .claude
+
+# Supabase CLI local state
+server/supabase/.branches/
+server/supabase/.temp/
