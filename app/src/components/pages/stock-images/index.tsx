@@ -25,169 +25,6 @@ interface StockImagesPageProps {
   initialCategories: string[];
 }
 
-const mockArtProducts: ArtProduct[] = [
-  {
-    id: 'art1',
-    name: 'Ocean Dreams',
-    image:
-      'https://images.unsplash.com/photo-1744096641619-646e1f6fbcd5?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxhYnN0cmFjdCUyMGFydCUyMHByaW50fGVufDF8fHx8MTc2MDYyODI1M3ww&ixlib=rb-4.1.0&q=80&w=1080',
-    size: '50cm x 70cm',
-    price: '£68.00',
-    isBestSeller: true,
-    category: 'Abstract',
-  },
-  {
-    id: 'art2',
-    name: 'Sunset Waves',
-    image:
-      'https://images.unsplash.com/photo-1744096641619-646e1f6fbcd5?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxhYnN0cmFjdCUyMGFydCUyMHByaW50fGVufDF8fHx8MTc2MDYyODI1M3ww&ixlib=rb-4.1.0&q=80&w=1080',
-    size: '60cm x 80cm',
-    price: '£82.00',
-    isBestSeller: false,
-    category: 'Abstract',
-  },
-  {
-    id: 'art3',
-    name: 'Color Burst',
-    image:
-      'https://images.unsplash.com/photo-1678117699040-b89738399ca7?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxtb2Rlcm4lMjB3YWxsJTIwYXJ0fGVufDF8fHx8MTc2MDcwNDYyOHww&ixlib=rb-4.1.0&q=80&w=1080',
-    size: '40cm x 60cm',
-    price: '£56.00',
-    isBestSeller: true,
-    category: 'Abstract',
-  },
-  {
-    id: 'art4',
-    name: 'Fluid Motion',
-    image:
-      'https://images.unsplash.com/photo-1744096641619-646e1f6fbcd5?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxhYnN0cmFjdCUyMGFydCUyMHByaW50fGVufDF8fHx8MTc2MDYyODI1M3ww&ixlib=rb-4.1.0&q=80&w=1080',
-    size: '70cm x 100cm',
-    price: '£125.00',
-    isBestSeller: false,
-    category: 'Abstract',
-  },
-  {
-    id: 'art5',
-    name: 'Divine Light',
-    image:
-      'https://images.unsplash.com/photo-1584727638096-042c45049ebe?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxyZWxpZ2lvdXMlMjBhcnQlMjBwYWludGluZ3xlbnwxfHx8fDE3NjA3MDU3MzR8MA&ixlib=rb-4.1.0&q=80&w=1080',
-    size: '50cm x 70cm',
-    price: '£88.00',
-    isBestSeller: true,
-    category: 'Religion',
-  },
-  {
-    id: 'art6',
-    name: 'Sacred Symbols',
-    image:
-      'https://images.unsplash.com/photo-1584727638096-042c45049ebe?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxyZWxpZ2lvdXMlMjBhcnQlMjBwYWludGluZ3xlbnwxfHx8fDE3NjA3MDU3MzR8MA&ixlib=rb-4.1.0&q=80&w=1080',
-    size: '40cm x 60cm',
-    price: '£72.00',
-    isBestSeller: false,
-    category: 'Religion',
-  },
-  {
-    id: 'art7',
-    name: 'Spiritual Journey',
-    image:
-      'https://images.unsplash.com/photo-1584727638096-042c45049ebe?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxyZWxpZ2lvdXMlMjBhcnQlMjBwYWludGluZ3xlbnwxfHx8fDE3NjA3MDU3MzR8MA&ixlib=rb-4.1.0&q=80&w=1080',
-    size: '60cm x 90cm',
-    price: '£115.00',
-    isBestSeller: true,
-    category: 'Religion',
-  },
-  {
-    id: 'art8',
-    name: 'Temple Art',
-    image:
-      'https://images.unsplash.com/photo-1584727638096-042c45049ebe?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxyZWxpZ2lvdXMlMjBhcnQlMjBwYWludGluZ3xlbnwxfHx8fDE3NjA3MDU3MzR8MA&ixlib=rb-4.1.0&q=80&w=1080',
-    size: '30cm x 40cm',
-    price: '£58.00',
-    isBestSeller: false,
-    category: 'Religion',
-  },
-  {
-    id: 'art9',
-    name: 'Wild Lion',
-    image:
-      'https://images.unsplash.com/photo-1683027062130-e70ca0fbc20f?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxhbmltYWwlMjB3aWxkbGlmZSUyMGFydHxlbnwxfHx8fDE3NjA3MDU3Mzd8MA&ixlib=rb-4.1.0&q=80&w=1080',
-    size: '60cm x 80cm',
-    price: '£92.00',
-    isBestSeller: true,
-    category: 'Animals',
-  },
-  {
-    id: 'art10',
-    name: 'Elephant Majesty',
-    image:
-      'https://images.unsplash.com/photo-1683027062130-e70ca0fbc20f?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxhbmltYWwlMjB3aWxkbGlmZSUyMGFydHxlbnwxfHx8fDE3NjA3MDU3Mzd8MA&ixlib=rb-4.1.0&q=80&w=1080',
-    size: '50cm x 70cm',
-    price: '£78.00',
-    isBestSeller: false,
-    category: 'Animals',
-  },
-  {
-    id: 'art11',
-    name: 'Bird Paradise',
-    image:
-      'https://images.unsplash.com/photo-1683027062130-e70ca0fbc20f?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxhbmltYWwlMjB3aWxkbGlmZSUyMGFydHxlbnwxfHx8fDE3NjA3MDU3Mzd8MA&ixlib=rb-4.1.0&q=80&w=1080',
-    size: '40cm x 60cm',
-    price: '£65.00',
-    isBestSeller: true,
-    category: 'Animals',
-  },
-  {
-    id: 'art12',
-    name: 'Wolf Spirit',
-    image:
-      'https://images.unsplash.com/photo-1683027062130-e70ca0fbc20f?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxhbmltYWwlMjB3aWxkbGlmZSUyMGFydHxlbnwxfHx8fDE3NjA3MDU3Mzd8MA&ixlib=rb-4.1.0&q=80&w=1080',
-    size: '70cm x 100cm',
-    price: '£135.00',
-    isBestSeller: false,
-    category: 'Animals',
-  },
-  {
-    id: 'art13',
-    name: 'Himalayan Peaks',
-    image:
-      'https://images.unsplash.com/photo-1718106230088-ef0606677859?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxuZXBhbCUyMGxhbmRzY2FwZSUyMGFydHxlbnwxfHx8fDE3NjA3MDU3NDF8MA&ixlib=rb-4.1.0&q=80&w=1080',
-    size: '60cm x 90cm',
-    price: '£105.00',
-    isBestSeller: true,
-    category: 'Nepal',
-  },
-  {
-    id: 'art14',
-    name: 'Kathmandu Valley',
-    image:
-      'https://images.unsplash.com/photo-1718106230088-ef0606677859?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxuZXBhbCUyMGxhbmRzY2FwZSUyMGFydHxlbnwxfHx8fDE3NjA3MDU3NDF8MA&ixlib=rb-4.1.0&q=80&w=1080',
-    size: '50cm x 70cm',
-    price: '£88.00',
-    isBestSeller: false,
-    category: 'Nepal',
-  },
-  {
-    id: 'art15',
-    name: 'Prayer Flags',
-    image:
-      'https://images.unsplash.com/photo-1718106230088-ef0606677859?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxuZXBhbCUyMGxhbmRzY2FwZSUyMGFydHxlbnwxfHx8fDE3NjA3MDU3NDF8MA&ixlib=rb-4.1.0&q=80&w=1080',
-    size: '40cm x 60cm',
-    price: '£72.00',
-    isBestSeller: true,
-    category: 'Nepal',
-  },
-  {
-    id: 'art16',
-    name: 'Mountain Village',
-    image:
-      'https://images.unsplash.com/photo-1718106230088-ef0606677859?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxuZXBhbCUyMGxhbmRzY2FwZSUyMGFydHxlbnwxfHx8fDE3NjA3MDU3NDF8MA&ixlib=rb-4.1.0&q=80&w=1080',
-    size: '70cm x 100cm',
-    price: '£145.00',
-    isBestSeller: false,
-    category: 'Nepal',
-  },
-];
-
 const SUGGESTED_TAGS = ['Abstract', 'Animals', 'Nature', 'Religion', 'Modern'];
 
 export function StockImagesPage({
@@ -209,35 +46,37 @@ export function StockImagesPage({
 
   const artProducts: ArtProduct[] = useMemo(
     () =>
-      initialArtProducts.length > 0
-        ? initialArtProducts.map((art: any) => ({
-            id: art.id,
-            slug: art.slug,
-            name: art.name,
-            image:
-              (Array.isArray(art.images) && art.images.length > 0
-                ? art.images[0]
-                : null) ||
-              art.image ||
-              '',
-            images: Array.isArray(art.images) ? art.images : undefined,
-            size: art.size || '',
-            sizeCount: Array.isArray(art.available_sizes)
-              ? art.available_sizes.length
-              : 0,
-            price: art.price || '',
-            isBestSeller: art.is_bestseller || false,
-            category: art.category || '',
-            tags: (art.art_product_tags || [])
-              .map((apt: any) => {
-                const t = Array.isArray(apt.tags) ? apt.tags[0] : apt.tags;
-                return t?.name ?? null;
-              })
-              .filter(Boolean),
-          }))
-        : mockArtProducts,
+      initialArtProducts.map((art: any) => ({
+        id: art.id,
+        slug: art.slug,
+        name: art.name,
+        image:
+          (Array.isArray(art.images) && art.images.length > 0
+            ? art.images[0]
+            : null) ||
+          art.image ||
+          '',
+        images: Array.isArray(art.images) ? art.images : undefined,
+        size: art.size || '',
+        sizeCount: Array.isArray(art.available_sizes)
+          ? art.available_sizes.length
+          : 0,
+        price: art.price || '',
+        isBestSeller: art.is_bestseller || false,
+        category: art.category || '',
+        tags: (art.art_product_tags || [])
+          .map((apt: any) => {
+            const t = Array.isArray(apt.tags) ? apt.tags[0] : apt.tags;
+            return t?.name ?? null;
+          })
+          .filter(Boolean),
+      })),
     [initialArtProducts]
   );
+
+  const galleryIsEmpty = artProducts.length === 0;
+  const hasActiveFilters =
+    searchQuery.trim().length > 0 || selectedCategory.length > 0;
 
   // Sync category state with URL ?category=
   useEffect(() => {
@@ -359,9 +198,9 @@ export function StockImagesPage({
                   <span className='text-[#f63a9e]'>ready for your wall</span>
                 </h1>
                 <p className='mt-4 sm:mt-5 text-gray-600 text-sm sm:text-base md:text-lg max-w-2xl mx-auto'>
-                  Browse {artProducts.length}+ original artworks. Search by
-                  mood, subject or style — printed on museum-grade paper or
-                  canvas.
+                  {galleryIsEmpty
+                    ? 'New artworks are landing soon. Search by mood, subject or style — printed on museum-grade paper or canvas.'
+                    : `Browse ${artProducts.length}+ original artworks. Search by mood, subject or style — printed on museum-grade paper or canvas.`}
                 </p>
               </motion.div>
             )}
@@ -492,6 +331,25 @@ export function StockImagesPage({
               />
             ))}
           </div>
+        ) : galleryIsEmpty ? (
+          <div className='text-center py-20 sm:py-24'>
+            <div className='inline-flex items-center justify-center w-16 h-16 rounded-full bg-gray-100 mb-4'>
+              <Sparkles className='w-7 h-7 text-gray-400' />
+            </div>
+            <h3 className="font-['Bricolage_Grotesque',_sans-serif] text-xl font-semibold text-gray-900 mb-2">
+              The gallery is being curated
+            </h3>
+            <p className='text-gray-500 max-w-md mx-auto mb-6'>
+              We&apos;re adding fresh artworks to the collection. In the
+              meantime, you can design a custom canvas from your own photo.
+            </p>
+            <button
+              onClick={() => navigate('/products')}
+              className='inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-[#f63a9e] hover:bg-[#e02a8e] text-white text-sm font-semibold transition-colors'
+            >
+              Explore custom prints
+            </button>
+          </div>
         ) : (
           <div className='text-center py-20 sm:py-24'>
             <div className='inline-flex items-center justify-center w-16 h-16 rounded-full bg-gray-100 mb-4'>
@@ -504,12 +362,14 @@ export function StockImagesPage({
               Try a different keyword or clear your filters to browse the full
               gallery.
             </p>
-            <button
-              onClick={clearFilters}
-              className='inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-[#f63a9e] hover:bg-[#e02a8e] text-white text-sm font-semibold transition-colors'
-            >
-              Reset filters
-            </button>
+            {hasActiveFilters && (
+              <button
+                onClick={clearFilters}
+                className='inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-[#f63a9e] hover:bg-[#e02a8e] text-white text-sm font-semibold transition-colors'
+              >
+                Reset filters
+              </button>
+            )}
           </div>
         )}
 
