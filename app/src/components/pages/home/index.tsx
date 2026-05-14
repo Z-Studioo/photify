@@ -349,61 +349,67 @@ export function HomePage({
         </div>
       </section> */}
 
-      {/* Stock Images Section — Pixabay-style photo gallery */}
-      <section className='py-10 sm:py-14'>
-        <div className='max-w-[1400px] mx-auto px-4'>
-          <div className='flex items-end justify-between gap-4 mb-6 sm:mb-8'>
-            <div>
-              <motion.h2
-                initial={{ opacity: 0, x: -20 }}
-                whileInView={{ opacity: 1, x: 0 }}
-                viewport={{ once: true }}
-                transition={{ duration: 0.5 }}
-                className="font-['Bricolage_Grotesque',_sans-serif] text-left"
-                style={{
-                  fontSize: '24px',
-                  lineHeight: '1.2',
-                  fontWeight: '600',
-                }}
-              >
-                Stock Images
-              </motion.h2>
-              <p className='text-gray-600 text-base sm:text-lg mt-2 sm:mt-3 max-w-2xl'>
-                A curated gallery of prints — from abstract to traditional.
-                Tap any photo to make it yours.
-              </p>
-            </div>
-            <button
-              onClick={() => navigate('/stock-images')}
-              className='hidden sm:inline-flex items-center gap-1.5 text-[#f63a9e] hover:text-[#e02a8e] font-semibold text-sm transition-colors'
-            >
-              View all
-              <ArrowRight className='w-4 h-4' />
-            </button>
-          </div>
-
-          {/* Category chips */}
-          {initialArtTags.length > 0 && (
-            <div className='flex flex-nowrap sm:flex-wrap gap-2 mb-6 sm:mb-8 overflow-x-auto pb-2 -mx-4 px-4 sm:mx-0 sm:px-0 sm:overflow-visible'>
-              <span className='flex-shrink-0 px-4 py-1.5 rounded-full bg-[#f63a9e] text-white text-xs sm:text-sm font-semibold'>
-                All
-              </span>
-              {initialArtTags.slice(0, 8).map(tag => (
-                <button
-                  key={tag}
-                  onClick={() =>
-                    navigate(`/stock-images?category=${encodeURIComponent(tag)}`)
-                  }
-                  className='flex-shrink-0 px-4 py-1.5 rounded-full bg-gray-100 text-gray-700 hover:bg-gray-200 hover:text-gray-900 text-xs sm:text-sm font-medium transition-colors'
+      {/* Stock Images Section — Pixabay-style photo gallery.
+          Only rendered when there are real entries in the `art_products` table.
+          We deliberately do NOT fall back to `products` here, otherwise deleting
+          all art photos in admin would still leak featured products into this
+          section (confusing for admins). */}
+      {artProducts.length > 0 && (
+        <section className='py-10 sm:py-14'>
+          <div className='max-w-[1400px] mx-auto px-4'>
+            <div className='flex items-end justify-between gap-4 mb-6 sm:mb-8'>
+              <div>
+                <motion.h2
+                  initial={{ opacity: 0, x: -20 }}
+                  whileInView={{ opacity: 1, x: 0 }}
+                  viewport={{ once: true }}
+                  transition={{ duration: 0.5 }}
+                  className="font-['Bricolage_Grotesque',_sans-serif] text-left"
+                  style={{
+                    fontSize: '24px',
+                    lineHeight: '1.2',
+                    fontWeight: '600',
+                  }}
                 >
-                  {tag}
-                </button>
-              ))}
+                  Stock Images
+                </motion.h2>
+                <p className='text-gray-600 text-base sm:text-lg mt-2 sm:mt-3 max-w-2xl'>
+                  A curated gallery of prints — from abstract to traditional.
+                  Tap any photo to make it yours.
+                </p>
+              </div>
+              <button
+                onClick={() => navigate('/stock-images')}
+                className='hidden sm:inline-flex items-center gap-1.5 text-[#f63a9e] hover:text-[#e02a8e] font-semibold text-sm transition-colors'
+              >
+                View all
+                <ArrowRight className='w-4 h-4' />
+              </button>
             </div>
-          )}
 
-          {/* Masonry photo grid */}
-          {artProducts.length > 0 ? (
+            {/* Category chips */}
+            {initialArtTags.length > 0 && (
+              <div className='flex flex-nowrap sm:flex-wrap gap-2 mb-6 sm:mb-8 overflow-x-auto pb-2 -mx-4 px-4 sm:mx-0 sm:px-0 sm:overflow-visible'>
+                <span className='flex-shrink-0 px-4 py-1.5 rounded-full bg-[#f63a9e] text-white text-xs sm:text-sm font-semibold'>
+                  All
+                </span>
+                {initialArtTags.slice(0, 8).map(tag => (
+                  <button
+                    key={tag}
+                    onClick={() =>
+                      navigate(
+                        `/stock-images?category=${encodeURIComponent(tag)}`
+                      )
+                    }
+                    className='flex-shrink-0 px-4 py-1.5 rounded-full bg-gray-100 text-gray-700 hover:bg-gray-200 hover:text-gray-900 text-xs sm:text-sm font-medium transition-colors'
+                  >
+                    {tag}
+                  </button>
+                ))}
+              </div>
+            )}
+
+            {/* Masonry photo grid — only `art_products` rows are shown here. */}
             <div className='columns-2 md:columns-3 lg:columns-4 gap-3 sm:gap-4'>
               {artProducts.slice(0, 9).map((product, index) => (
                 <ArtPhotoTile
@@ -441,37 +447,19 @@ export function HomePage({
                 </div>
               </button>
             </div>
-          ) : (
-            // Fallback: when no art products yet, show featured products in same masonry feel
-            <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4'>
-              {featuredProducts.slice(0, 7).map((product, index) => (
-                <ProductCard
-                  key={product.id}
-                  id={product.id}
-                  name={product.name}
-                  slug={product.slug}
-                  images={product.images}
-                  price={product.price}
-                  config={(product as ProductCardProps).config}
-                  fixed_price={(product as ProductCardProps).fixed_price}
-                  isFeatured={false}
-                  index={index}
-                />
-              ))}
-            </div>
-          )}
 
-          <div className='mt-6 sm:hidden text-center'>
-            <button
-              onClick={() => navigate('/stock-images')}
-              className='inline-flex items-center gap-1.5 text-[#f63a9e] font-semibold text-sm'
-            >
-              View all
-              <ArrowRight className='w-4 h-4' />
-            </button>
+            <div className='mt-6 sm:hidden text-center'>
+              <button
+                onClick={() => navigate('/stock-images')}
+                className='inline-flex items-center gap-1.5 text-[#f63a9e] font-semibold text-sm'
+              >
+                View all
+                <ArrowRight className='w-4 h-4' />
+              </button>
+            </div>
           </div>
-        </div>
-      </section>
+        </section>
+      )}
 
       {/* AI Tools Section */}
       {/* <AIToolsSection /> */}
