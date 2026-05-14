@@ -35,7 +35,7 @@ export function ArtPhotoTile({
   images = [],
   category,
   price,
-  isBestSeller = false,
+  isBestSeller: _isBestSeller = false,
   index = 0,
 }: ArtPhotoTileProps) {
   const [showSelector, setShowSelector] = useState(false);
@@ -67,13 +67,6 @@ export function ArtPhotoTile({
           alt={name}
           className='block w-full h-auto transition-transform duration-700 ease-out group-hover:scale-[1.04]'
         />
-
-        {/* Best seller badge */}
-        {isBestSeller && (
-          <span className='absolute top-2.5 left-2.5 z-10 inline-flex items-center gap-1 px-2 py-0.5 bg-white/95 backdrop-blur-sm text-[#f63a9e] rounded-full text-[10px] sm:text-[11px] font-bold tracking-wide shadow-sm'>
-            BEST SELLER
-          </span>
-        )}
 
         {/* Quick-favorite (decorative; no behavior change) */}
         <span

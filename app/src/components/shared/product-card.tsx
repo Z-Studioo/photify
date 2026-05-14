@@ -27,7 +27,7 @@ export function ProductCard({
   config,
   fixed_price,
   size,
-  isFeatured = false,
+  isFeatured: _isFeatured = false,
   index = 0,
   className = '',
 }: ProductCardProps) {
@@ -55,15 +55,6 @@ export function ProductCard({
       onClick={handleClick}
     >
       <div className='relative'>
-        {/* Best Seller Badge */}
-        {isFeatured && (
-          <div className='absolute top-3 left-3 z-10'>
-            <div className='px-3 py-1.5 bg-gradient-to-r from-[#f63a9e] to-[#e02d8d] text-white rounded-full text-xs font-bold shadow-lg'>
-              ⭐ BEST SELLER
-            </div>
-          </div>
-        )}
-
         {/* Product Image */}
         <div className='relative aspect-square overflow-hidden bg-gray-100'>
           <ImageWithFallback

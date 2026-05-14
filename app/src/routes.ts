@@ -28,6 +28,7 @@ export default [
   // route('room/:id', 'pages/room/[id]/index.tsx'),
   route('products', 'pages/products/index.tsx'),
   route('product/:id', 'pages/product/[id]/index.tsx'),
+  route('category', 'pages/category/index.tsx'),
   route('stock-images', 'pages/stock-images/index.tsx'),
 
   route(
