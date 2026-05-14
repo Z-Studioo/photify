@@ -1,276 +1,442 @@
+import { useEffect, useState } from 'react';
 import { Header } from '@/components/layout/header';
 import { Footer } from '@/components/layout/footer';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { RotateCcw, ChevronRight, AlertCircle, Package, Truck, ShieldCheck, Info } from 'lucide-react';
+import { RotateCcw, Mail, ArrowUpRight } from 'lucide-react';
 
-const sections = [
-  { id: 'eligibility', label: 'Refund Eligibility' },
-  { id: 'returns', label: 'Returns & Replacements' },
-  { id: 'shipping', label: 'Shipping Costs' },
-  { id: 'damaged', label: 'Damaged or Defective Items' },
-  { id: 'notes', label: 'Important Notes' },
+type SectionItem = { id: string; label: string; number: string };
+
+const sections: SectionItem[] = [
+  { id: 'eligibility', label: 'Refund eligibility', number: '1' },
+  { id: 'returns', label: 'Returns & replacements', number: '2' },
+  { id: 'shipping', label: 'Shipping costs', number: '3' },
+  { id: 'damaged', label: 'Damaged or defective items', number: '4' },
+  { id: 'notes', label: 'Important notes', number: '5' },
 ];
 
-const highlights = [
-  { icon: AlertCircle, title: '7-Day Window', desc: 'Report issues within 7 days of receiving your order.' },
-  { icon: Package, title: 'Pre-Authorised Returns', desc: 'All returns must be approved before sending back.' },
-  { icon: Truck, title: 'Customer Covers Shipping', desc: 'Return shipping costs are borne by the customer.' },
-  { icon: ShieldCheck, title: 'Defects Covered', desc: 'Damaged or defective items qualify for a free replacement.' },
+const summary = [
+  {
+    title: '7-day window',
+    desc: 'Report issues within 7 days of receiving your order.',
+  },
+  {
+    title: 'Pre-authorised returns',
+    desc: 'All returns must be approved before sending back.',
+  },
+  {
+    title: 'Return shipping',
+    desc: 'Return postage is the customer\u2019s responsibility.',
+  },
+  {
+    title: 'Defects covered',
+    desc: 'Damaged or defective items qualify for a free replacement.',
+  },
 ];
+
+function SubSection({
+  id,
+  number,
+  title,
+  description,
+  children,
+}: {
+  id: string;
+  number: string;
+  title: string;
+  description?: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <section id={id} className='scroll-mt-24'>
+      <div className='mb-5'>
+        <p className='text-xs text-gray-400 mb-1.5 tabular-nums'>{number}</p>
+        <h3
+          className="font-['Bricolage_Grotesque',_sans-serif] text-gray-900"
+          style={{
+            fontSize: '22px',
+            fontWeight: 600,
+            letterSpacing: '-0.01em',
+          }}
+        >
+          {title}
+        </h3>
+        {description && (
+          <p className='text-gray-500 text-[15px] mt-2 leading-relaxed'>
+            {description}
+          </p>
+        )}
+      </div>
+      <div className='text-gray-700 leading-relaxed space-y-4 text-[15px]'>
+        {children}
+      </div>
+    </section>
+  );
+}
+
+function BulletList({ items }: { items: React.ReactNode[] }) {
+  return (
+    <ul className='space-y-2 list-disc pl-5 marker:text-gray-300'>
+      {items.map((item, i) => (
+        <li key={i}>{item}</li>
+      ))}
+    </ul>
+  );
+}
 
 export function RefundReturnPolicyPage() {
+  const [activeId, setActiveId] = useState<string>(sections[0].id);
+
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      entries => {
+        const visible = entries
+          .filter(e => e.isIntersecting)
+          .sort(
+            (a, b) =>
+              (a.target as HTMLElement).offsetTop -
+              (b.target as HTMLElement).offsetTop,
+          );
+        if (visible.length > 0) {
+          setActiveId(visible[0].target.id);
+        }
+      },
+      { rootMargin: '-96px 0px -70% 0px', threshold: [0, 1] },
+    );
+    sections.forEach(s => {
+      const el = document.getElementById(s.id);
+      if (el) observer.observe(el);
+    });
+    return () => observer.disconnect();
+  }, []);
+
   return (
     <div className="min-h-screen flex flex-col bg-white font-['Mona_Sans',_sans-serif]">
       <Header />
 
-      <main className="flex-1">
+      <main className='flex-1'>
         {/* Hero */}
-        <div className="bg-[#FFF5FB] border-b border-[#f63a9e]/20">
-          <div className="max-w-[1400px] mx-auto px-6 md:px-12 py-16">
+        <div className='border-b border-gray-200'>
+          <div className='max-w-[1200px] mx-auto px-6 md:px-12 pt-20 pb-16'>
             <motion.div
-              initial={{ opacity: 0, y: 20 }}
+              initial={{ opacity: 0, y: 12 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5 }}
-              className="flex flex-col items-center text-center"
+              transition={{ duration: 0.5, ease: 'easeOut' }}
+              className='max-w-2xl'
             >
-              <div className="w-20 h-20 rounded-2xl bg-[#f63a9e] flex items-center justify-center shadow-xl mb-6">
-                <RotateCcw className="w-10 h-10 text-white" />
+              <div className='flex items-center gap-2 mb-6'>
+                <RotateCcw className='w-4 h-4 text-[#f63a9e]' />
+                <p
+                  className='text-[11px] uppercase tracking-[0.18em] text-gray-500'
+                  style={{ fontWeight: 600 }}
+                >
+                  Refund &amp; Returns
+                </p>
               </div>
               <h1
-                className="font-['Bricolage_Grotesque',_sans-serif] text-gray-900 mb-4"
-                style={{ fontSize: '40px', fontWeight: '800', lineHeight: '1.2' }}
+                className="font-['Bricolage_Grotesque',_sans-serif] text-gray-900 mb-5"
+                style={{
+                  fontSize: 'clamp(36px, 5vw, 52px)',
+                  fontWeight: 700,
+                  letterSpacing: '-0.025em',
+                  lineHeight: 1.05,
+                }}
               >
-                Refund & Returns Policy
+                If something isn&apos;t right, we&apos;ll fix it.
               </h1>
-              <p className="text-gray-500 max-w-2xl text-lg">
-                At Photify.co, we aim to deliver high-quality products that meet your expectations. Please review our refund policy below.
+              <p className='text-gray-600 text-[17px] leading-relaxed mb-6'>
+                Every print is made to order, so refunds work a little
+                differently than off-the-shelf goods. Here&apos;s exactly when a
+                refund or replacement applies, and how to get one if you need
+                it.
               </p>
-              <p className="text-sm text-gray-400 mt-4">Last updated: February 2026</p>
+              <p className='text-sm text-gray-400'>
+                Last updated 14 February 2026 ·{' '}
+                <a
+                  href='mailto:support@photify.co'
+                  className='text-gray-500 hover:text-[#f63a9e] underline-offset-4 hover:underline'
+                >
+                  support@photify.co
+                </a>
+              </p>
             </motion.div>
           </div>
         </div>
 
-        {/* Quick Highlights */}
-        <div className="border-b border-gray-100 bg-white">
-          <div className="max-w-[1400px] mx-auto px-6 md:px-12 py-10">
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-              {highlights.map((h, i) => (
-                <motion.div
-                  key={i}
-                  initial={{ opacity: 0, y: 16 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: i * 0.1, duration: 0.4 }}
-                  className="flex items-start gap-4 bg-[#FFF5FB] border border-[#f63a9e]/20 rounded-2xl p-5"
-                >
-                  <div className="w-10 h-10 rounded-xl bg-[#f63a9e] flex items-center justify-center flex-shrink-0">
-                    <h.icon className="w-5 h-5 text-white" />
-                  </div>
-                  <div>
-                    <p className="text-gray-900 text-sm" style={{ fontWeight: '700' }}>{h.title}</p>
-                    <p className="text-gray-500 text-xs mt-0.5">{h.desc}</p>
-                  </div>
-                </motion.div>
+        {/* Summary strip */}
+        <div className='border-b border-gray-200 bg-gray-50/60'>
+          <div className='max-w-[1200px] mx-auto px-6 md:px-12 py-10'>
+            <div className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-x-10 gap-y-6'>
+              {summary.map((item, i) => (
+                <div key={i} className='border-l-2 border-[#f63a9e]/60 pl-4'>
+                  <p
+                    className='text-gray-900 mb-1 text-[15px]'
+                    style={{ fontWeight: 600 }}
+                  >
+                    {item.title}
+                  </p>
+                  <p className='text-gray-500 text-sm leading-relaxed'>
+                    {item.desc}
+                  </p>
+                </div>
               ))}
             </div>
           </div>
         </div>
 
         {/* Content */}
-        <div className="max-w-[1400px] mx-auto px-6 md:px-12 py-16">
-          <div className="flex flex-col lg:flex-row gap-12">
+        <div className='max-w-[1200px] mx-auto px-6 md:px-12 py-16'>
+          <div className='flex flex-col lg:flex-row gap-16'>
             {/* Sidebar TOC */}
-            <aside className="lg:w-72 flex-shrink-0">
-              <div className="sticky top-8 bg-[#FFF5FB] border border-[#f63a9e]/20 rounded-2xl p-6">
+            <aside className='lg:w-64 flex-shrink-0'>
+              <div className='sticky top-24'>
                 <p
-                  className="font-['Bricolage_Grotesque',_sans-serif] text-gray-900 mb-4"
-                  style={{ fontWeight: '700', fontSize: '16px' }}
+                  className='text-[11px] uppercase tracking-[0.18em] text-gray-400 mb-5'
+                  style={{ fontWeight: 600 }}
                 >
-                  Table of Contents
+                  On this page
                 </p>
-                <ul className="space-y-1">
-                  {sections.map((s) => (
-                    <li key={s.id}>
-                      <a
-                        href={`#${s.id}`}
-                        className="flex items-center gap-2 text-sm text-gray-600 hover:text-[#f63a9e] transition-colors py-1"
-                      >
-                        <ChevronRight className="w-3 h-3 flex-shrink-0 text-[#f63a9e]" />
-                        {s.label}
-                      </a>
-                    </li>
-                  ))}
+                <ul className='space-y-0.5 border-l border-gray-200'>
+                  {sections.map(s => {
+                    const isActive = activeId === s.id;
+                    return (
+                      <li key={s.id}>
+                        <a
+                          href={`#${s.id}`}
+                          className={`flex gap-3 text-[13.5px] py-1.5 pl-4 -ml-px border-l transition-colors ${
+                            isActive
+                              ? 'text-[#f63a9e] border-[#f63a9e]'
+                              : 'text-gray-500 hover:text-gray-900 border-transparent'
+                          }`}
+                        >
+                          <span className='tabular-nums text-gray-400 w-5'>
+                            {s.number.padStart(2, '0')}
+                          </span>
+                          <span>{s.label}</span>
+                        </a>
+                      </li>
+                    );
+                  })}
                 </ul>
-
-                <div className="mt-6 pt-6 border-t border-[#f63a9e]/20">
-                  <p className="text-xs text-gray-500 mb-3">Need help with a return?</p>
+                <div className='mt-8 pt-6 border-t border-gray-200'>
+                  <p className='text-xs text-gray-500 mb-2'>
+                    Need help with a return?
+                  </p>
                   <Link
-                    to="/contact"
-                    className="block w-full text-center bg-[#f63a9e] text-white text-sm px-4 py-2.5 rounded-xl hover:bg-[#e02d8d] transition-colors font-semibold"
+                    to='/contact'
+                    className='inline-flex items-center gap-1.5 text-[13px] text-gray-900 hover:text-[#f63a9e]'
+                    style={{ fontWeight: 500 }}
                   >
-                    Contact Support
+                    Contact support
+                    <ArrowUpRight className='w-3.5 h-3.5' />
                   </Link>
                 </div>
               </div>
             </aside>
 
             {/* Main content */}
-            <div className="flex-1 max-w-3xl space-y-12 text-gray-700 leading-relaxed">
-
-              {/* Refund Eligibility */}
-              <section id="eligibility" className="scroll-mt-8">
-                <div className="flex items-center gap-3 mb-4 pb-3 border-b-2 border-[#f63a9e]/30">
-                  <div className="w-9 h-9 rounded-xl bg-[#f63a9e] flex items-center justify-center flex-shrink-0">
-                    <AlertCircle className="w-5 h-5 text-white" />
-                  </div>
-                  <h2
-                    className="font-['Bricolage_Grotesque',_sans-serif] text-gray-900"
-                    style={{ fontSize: '22px', fontWeight: '700' }}
-                  >
-                    Refund Eligibility
-                  </h2>
-                </div>
-                <ul className="space-y-3">
-                  <li className="flex items-start gap-3">
-                    <span className="w-1.5 h-1.5 rounded-full bg-[#f63a9e] mt-2 flex-shrink-0" />
-                    Refunds are accepted within <strong>7 days</strong> of receiving your order.
-                  </li>
-                  <li className="flex items-start gap-3">
-                    <span className="w-1.5 h-1.5 rounded-full bg-[#f63a9e] mt-2 flex-shrink-0" />
-                    Personalized or custom items are <strong>non-refundable</strong> unless they are damaged upon delivery or contain a manufacturing defect.
-                  </li>
-                </ul>
-              </section>
-
-              {/* Returns & Replacements */}
-              <section id="returns" className="scroll-mt-8">
-                <div className="flex items-center gap-3 mb-4 pb-3 border-b-2 border-[#f63a9e]/30">
-                  <div className="w-9 h-9 rounded-xl bg-[#f63a9e] flex items-center justify-center flex-shrink-0">
-                    <Package className="w-5 h-5 text-white" />
-                  </div>
-                  <h2
-                    className="font-['Bricolage_Grotesque',_sans-serif] text-gray-900"
-                    style={{ fontSize: '22px', fontWeight: '700' }}
-                  >
-                    Returns and Replacements
-                  </h2>
-                </div>
-                <ul className="space-y-3">
-                  <li className="flex items-start gap-3">
-                    <span className="w-1.5 h-1.5 rounded-full bg-[#f63a9e] mt-2 flex-shrink-0" />
-                    For eligible returns, we will provide a <strong>replacement</strong> for the item. However, delivery charges will be deducted from the refund amount.
-                  </li>
-                  <li className="flex items-start gap-3">
-                    <span className="w-1.5 h-1.5 rounded-full bg-[#f63a9e] mt-2 flex-shrink-0" />
-                    All returns must be <strong>pre-authorised</strong>. Items sent back without prior approval will not be accepted.
-                  </li>
-                </ul>
-              </section>
-
-              {/* Shipping Costs */}
-              <section id="shipping" className="scroll-mt-8">
-                <div className="flex items-center gap-3 mb-4 pb-3 border-b-2 border-[#f63a9e]/30">
-                  <div className="w-9 h-9 rounded-xl bg-[#f63a9e] flex items-center justify-center flex-shrink-0">
-                    <Truck className="w-5 h-5 text-white" />
-                  </div>
-                  <h2
-                    className="font-['Bricolage_Grotesque',_sans-serif] text-gray-900"
-                    style={{ fontSize: '22px', fontWeight: '700' }}
-                  >
-                    Shipping Costs
-                  </h2>
-                </div>
-                <p>
-                  If a return is approved, the <strong>customer is responsible</strong> for covering the shipping costs to return the item.
-                </p>
-              </section>
-
-              {/* Damaged or Defective */}
-              <section id="damaged" className="scroll-mt-8">
-                <div className="flex items-center gap-3 mb-4 pb-3 border-b-2 border-[#f63a9e]/30">
-                  <div className="w-9 h-9 rounded-xl bg-[#f63a9e] flex items-center justify-center flex-shrink-0">
-                    <ShieldCheck className="w-5 h-5 text-white" />
-                  </div>
-                  <h2
-                    className="font-['Bricolage_Grotesque',_sans-serif] text-gray-900"
-                    style={{ fontSize: '22px', fontWeight: '700' }}
-                  >
-                    Damaged or Defective Items
-                  </h2>
-                </div>
-                <p className="mb-4">
-                  If your order arrives damaged or defective, please notify us <strong>within 7 days</strong> with your order details and photos of the issue.
-                </p>
-                <div className="bg-[#FFF5FB] border border-[#f63a9e]/30 rounded-xl p-5">
-                  <p className="text-sm text-gray-700 mb-2">Contact us for assistance:</p>
-                  <div className="space-y-1">
-                    <a href="mailto:support@photify.co" className="block text-[#f63a9e] hover:underline font-semibold text-sm">
-                      support@photify.co
-                    </a>
-                    <a href="mailto:info@photify.co" className="block text-[#f63a9e] hover:underline font-semibold text-sm">
-                      info@photify.co
-                    </a>
-                  </div>
-                  <p className="text-sm text-gray-600 mt-3">
-                    We will assess the situation and arrange a replacement if necessary.
-                  </p>
-                </div>
-              </section>
-
-              {/* Important Notes */}
-              <section id="notes" className="scroll-mt-8">
-                <div className="flex items-center gap-3 mb-4 pb-3 border-b-2 border-[#f63a9e]/30">
-                  <div className="w-9 h-9 rounded-xl bg-[#f63a9e] flex items-center justify-center flex-shrink-0">
-                    <Info className="w-5 h-5 text-white" />
-                  </div>
-                  <h2
-                    className="font-['Bricolage_Grotesque',_sans-serif] text-gray-900"
-                    style={{ fontSize: '22px', fontWeight: '700' }}
-                  >
-                    Important Notes
-                  </h2>
-                </div>
-                <div className="space-y-3">
-                  {[
-                    'Refunds or replacements will only be processed after the returned item has been inspected and approved.',
-                    'Delivery charges are non-refundable.',
-                  ].map((note, i) => (
-                    <div key={i} className="flex items-start gap-3 bg-gray-50 rounded-xl px-4 py-3 border border-gray-200">
-                      <span className="w-1.5 h-1.5 rounded-full bg-[#f63a9e] mt-2 flex-shrink-0" />
-                      {note}
-                    </div>
-                  ))}
-                </div>
-              </section>
-
-              {/* CTA */}
-              <div className="bg-[#FFF5FB] border-2 border-[#f63a9e]/30 rounded-2xl p-8 text-center">
-                <h3
-                  className="font-['Bricolage_Grotesque',_sans-serif] text-gray-900 mb-3"
-                  style={{ fontSize: '22px', fontWeight: '700' }}
+            <article className='flex-1 max-w-2xl'>
+              <div className='border-t border-gray-200 pt-12 mb-12'>
+                <p
+                  className='text-[11px] uppercase tracking-[0.18em] text-[#f63a9e] mb-3'
+                  style={{ fontWeight: 600 }}
                 >
-                  Thank you for choosing Photify.co!
-                </h3>
-                <p className="text-gray-600 mb-6">
-                  If you have any questions or need further assistance, we're here to help.
+                  Photify Limited · UK
                 </p>
-                <div className="flex flex-col sm:flex-row gap-3 justify-center">
-                  <Link
-                    to="/contact"
-                    className="inline-flex items-center justify-center gap-2 bg-[#f63a9e] text-white px-8 py-3 rounded-xl hover:bg-[#e02d8d] transition-colors font-semibold"
-                  >
-                    Contact Us
-                  </Link>
-                  <Link
-                    to="/track-order"
-                    className="inline-flex items-center justify-center gap-2 bg-white border-2 border-gray-200 text-gray-700 px-8 py-3 rounded-xl hover:border-[#f63a9e] transition-colors font-semibold"
-                  >
-                    Track Your Order
-                  </Link>
-                </div>
+                <h2
+                  className="font-['Bricolage_Grotesque',_sans-serif] text-gray-900 mb-3"
+                  style={{
+                    fontSize: '32px',
+                    fontWeight: 700,
+                    letterSpacing: '-0.02em',
+                    lineHeight: 1.15,
+                  }}
+                >
+                  Refund and Returns Policy
+                </h2>
+                <p className='text-gray-500 text-[16px] leading-relaxed max-w-2xl'>
+                  At photify.co we aim to deliver high-quality prints that meet
+                  your expectations. The sections below explain how refunds and
+                  replacements work — please read them before getting in touch.
+                </p>
               </div>
 
-            </div>
+              <div className='space-y-14'>
+                <SubSection
+                  id='eligibility'
+                  number='01'
+                  title='Refund eligibility'
+                >
+                  <BulletList
+                    items={[
+                      <>
+                        Refunds are accepted within{' '}
+                        <span
+                          className='text-gray-900'
+                          style={{ fontWeight: 500 }}
+                        >
+                          7 days
+                        </span>{' '}
+                        of receiving your order.
+                      </>,
+                      <>
+                        Personalised or custom items are{' '}
+                        <span
+                          className='text-gray-900'
+                          style={{ fontWeight: 500 }}
+                        >
+                          non-refundable
+                        </span>{' '}
+                        unless they are damaged on delivery or contain a
+                        manufacturing defect.
+                      </>,
+                    ]}
+                  />
+                </SubSection>
+
+                <SubSection
+                  id='returns'
+                  number='02'
+                  title='Returns and replacements'
+                >
+                  <BulletList
+                    items={[
+                      <>
+                        For eligible returns we will provide a{' '}
+                        <span
+                          className='text-gray-900'
+                          style={{ fontWeight: 500 }}
+                        >
+                          replacement
+                        </span>{' '}
+                        for the item. Delivery charges will be deducted from
+                        the refund amount.
+                      </>,
+                      <>
+                        All returns must be{' '}
+                        <span
+                          className='text-gray-900'
+                          style={{ fontWeight: 500 }}
+                        >
+                          pre-authorised
+                        </span>
+                        . Items sent back without prior approval will not be
+                        accepted.
+                      </>,
+                    ]}
+                  />
+                </SubSection>
+
+                <SubSection
+                  id='shipping'
+                  number='03'
+                  title='Shipping costs'
+                >
+                  <p>
+                    If a return is approved, the{' '}
+                    <span
+                      className='text-gray-900'
+                      style={{ fontWeight: 500 }}
+                    >
+                      customer is responsible
+                    </span>{' '}
+                    for covering the shipping cost of returning the item.
+                  </p>
+                </SubSection>
+
+                <SubSection
+                  id='damaged'
+                  number='04'
+                  title='Damaged or defective items'
+                  description='If something arrives in poor condition, get in touch within 7 days and we&rsquo;ll sort it out.'
+                >
+                  <p>
+                    Please include your order number and a few clear photos of
+                    the issue. We will assess the situation and arrange a
+                    replacement if necessary.
+                  </p>
+                  <dl className='grid grid-cols-1 sm:grid-cols-2 gap-y-3 gap-x-8 text-[14.5px] border border-gray-200 rounded-xl p-5'>
+                    <div>
+                      <dt className='text-gray-500 text-xs mb-0.5'>
+                        Support email
+                      </dt>
+                      <dd>
+                        <a
+                          href='mailto:support@photify.co'
+                          className='text-gray-900 hover:text-[#f63a9e] underline-offset-4 hover:underline'
+                          style={{ fontWeight: 500 }}
+                        >
+                          support@photify.co
+                        </a>
+                      </dd>
+                    </div>
+                    <div>
+                      <dt className='text-gray-500 text-xs mb-0.5'>
+                        General enquiries
+                      </dt>
+                      <dd>
+                        <a
+                          href='mailto:info@photify.co'
+                          className='text-gray-900 hover:text-[#f63a9e] underline-offset-4 hover:underline'
+                          style={{ fontWeight: 500 }}
+                        >
+                          info@photify.co
+                        </a>
+                      </dd>
+                    </div>
+                  </dl>
+                </SubSection>
+
+                <SubSection id='notes' number='05' title='Important notes'>
+                  <BulletList
+                    items={[
+                      'Refunds or replacements will only be processed after the returned item has been inspected and approved.',
+                      'Delivery charges are non-refundable.',
+                    ]}
+                  />
+                </SubSection>
+              </div>
+
+              {/* Footer CTA */}
+              <div className='mt-20 border-t border-gray-200 pt-12'>
+                <div className='flex flex-col sm:flex-row sm:items-end sm:justify-between gap-6'>
+                  <div className='max-w-md'>
+                    <h3
+                      className="font-['Bricolage_Grotesque',_sans-serif] text-gray-900 mb-2"
+                      style={{
+                        fontSize: '22px',
+                        fontWeight: 700,
+                        letterSpacing: '-0.015em',
+                      }}
+                    >
+                      Need help with an order?
+                    </h3>
+                    <p className='text-gray-500 text-[15px] leading-relaxed'>
+                      Get in touch and we&apos;ll be back to you within one
+                      working day — or track your order to see where it is.
+                    </p>
+                  </div>
+                  <div className='flex flex-wrap gap-3'>
+                    <a
+                      href='mailto:support@photify.co'
+                      className='inline-flex items-center gap-2 bg-gray-900 hover:bg-black text-white px-5 py-2.5 rounded-lg text-sm transition-colors'
+                      style={{ fontWeight: 500 }}
+                    >
+                      <Mail className='w-4 h-4' />
+                      Email us
+                    </a>
+                    <Link
+                      to='/track-order'
+                      className='inline-flex items-center gap-2 border border-gray-300 hover:border-gray-900 text-gray-900 px-5 py-2.5 rounded-lg text-sm transition-colors'
+                      style={{ fontWeight: 500 }}
+                    >
+                      Track your order
+                      <ArrowUpRight className='w-4 h-4' />
+                    </Link>
+                  </div>
+                </div>
+              </div>
+            </article>
           </div>
         </div>
       </main>

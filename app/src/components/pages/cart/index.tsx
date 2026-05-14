@@ -26,7 +26,6 @@ import { Footer } from '@/components/layout/footer';
 import { useSiteSetting } from '@/lib/supabase/hooks';
 import { createClient } from '@/lib/supabase/client';
 import { toast } from 'sonner';
-import { StripeExpressCheckout } from '@/components/shared/stripe-express-checkout';
 
 // Returns just the base product name for a cart line item by stripping
 // any trailing ratio/size segments. Item names are built like
@@ -596,37 +595,13 @@ export function CartPage() {
                   </p>
                 </div>
 
-                {/* Express checkout (Apple Pay / Google Pay / Link) */}
-                <div className='mt-4'>
-                  <StripeExpressCheckout
-                    cartItems={cartItems}
-                    subtotal={subtotal}
-                    deliveryFee={deliveryPrice}
-                    discount={discount}
-                    promoCode={appliedPromoCode || undefined}
-                    total={total}
-                    deliveryLabel={`${deliveryOptions[deliveryMethod].name} delivery`}
-                  />
-                </div>
-
-                <div className='flex items-center gap-3 my-3'>
-                  <div className='flex-1 h-px bg-gray-200' />
-                  <span
-                    className='text-[11px] text-gray-400 uppercase tracking-wider'
-                    style={{ fontWeight: '600' }}
-                  >
-                    or
-                  </span>
-                  <div className='flex-1 h-px bg-gray-200' />
-                </div>
-
                 {/* Desktop CTA (mobile uses sticky bar) */}
                 <Button
                   onClick={() => navigate('/checkout')}
-                  className='hidden lg:flex w-full bg-[#f63a9e] hover:bg-[#e02d8d] text-white rounded-xl shadow-md transition-colors'
+                  className='mt-4 hidden lg:flex w-full bg-[#f63a9e] hover:bg-[#e02d8d] text-white rounded-xl shadow-md transition-colors'
                   style={{ height: '52px', fontSize: '15px', fontWeight: '700' }}
                 >
-                  Checkout with card
+                  Checkout
                   <ArrowRight className='ml-2 w-4 h-4' />
                 </Button>
 

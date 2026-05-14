@@ -1,332 +1,447 @@
+import { useEffect, useState } from 'react';
 import { Header } from '@/components/layout/header';
 import { Footer } from '@/components/layout/footer';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { ScrollText, ChevronRight } from 'lucide-react';
+import { ScrollText, Mail, ArrowUpRight } from 'lucide-react';
 
-const sections = [
-  { id: 'overview', label: 'Overview' },
-  { id: 'general', label: '1. General Conditions' },
-  { id: 'modifications', label: '2. Modifications to Services & Pricing' },
-  { id: 'accuracy', label: '3. Accuracy of Information' },
-  { id: 'third-party', label: '4. Third-Party Links & Tools' },
-  { id: 'ugc', label: '5. User-Generated Content' },
-  { id: 'personal-info', label: '6. Personal Information' },
-  { id: 'prohibited', label: '7. Prohibited Uses' },
-  { id: 'disclaimer', label: '8. Disclaimer & Liability' },
-  { id: 'governing', label: '9. Governing Law' },
-  { id: 'contact', label: '10. Contact Information' },
+type SectionItem = { id: string; label: string; number: string };
+
+const sections: SectionItem[] = [
+  { id: 'overview', label: 'Overview', number: '0' },
+  { id: 'general', label: 'General conditions', number: '1' },
+  { id: 'modifications', label: 'Modifications to services & pricing', number: '2' },
+  { id: 'accuracy', label: 'Accuracy of information', number: '3' },
+  { id: 'third-party', label: 'Third-party links & tools', number: '4' },
+  { id: 'ugc', label: 'User-generated content', number: '5' },
+  { id: 'personal-info', label: 'Personal information', number: '6' },
+  { id: 'prohibited', label: 'Prohibited uses', number: '7' },
+  { id: 'disclaimer', label: 'Disclaimer & liability', number: '8' },
+  { id: 'governing', label: 'Governing law', number: '9' },
+  { id: 'contact', label: 'Contact information', number: '10' },
 ];
 
+function SubSection({
+  id,
+  number,
+  title,
+  description,
+  children,
+}: {
+  id: string;
+  number: string;
+  title: string;
+  description?: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <section id={id} className='scroll-mt-24'>
+      <div className='mb-5'>
+        <p className='text-xs text-gray-400 mb-1.5 tabular-nums'>{number}</p>
+        <h3
+          className="font-['Bricolage_Grotesque',_sans-serif] text-gray-900"
+          style={{
+            fontSize: '22px',
+            fontWeight: 600,
+            letterSpacing: '-0.01em',
+          }}
+        >
+          {title}
+        </h3>
+        {description && (
+          <p className='text-gray-500 text-[15px] mt-2 leading-relaxed'>
+            {description}
+          </p>
+        )}
+      </div>
+      <div className='text-gray-700 leading-relaxed space-y-4 text-[15px]'>
+        {children}
+      </div>
+    </section>
+  );
+}
+
+function BulletList({ items }: { items: React.ReactNode[] }) {
+  return (
+    <ul className='space-y-2 list-disc pl-5 marker:text-gray-300'>
+      {items.map((item, i) => (
+        <li key={i}>{item}</li>
+      ))}
+    </ul>
+  );
+}
+
 export function TermsOfUsePage() {
+  const [activeId, setActiveId] = useState<string>(sections[0].id);
+
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      entries => {
+        const visible = entries
+          .filter(e => e.isIntersecting)
+          .sort(
+            (a, b) =>
+              (a.target as HTMLElement).offsetTop -
+              (b.target as HTMLElement).offsetTop,
+          );
+        if (visible.length > 0) {
+          setActiveId(visible[0].target.id);
+        }
+      },
+      { rootMargin: '-96px 0px -70% 0px', threshold: [0, 1] },
+    );
+    sections.forEach(s => {
+      const el = document.getElementById(s.id);
+      if (el) observer.observe(el);
+    });
+    return () => observer.disconnect();
+  }, []);
+
   return (
     <div className="min-h-screen flex flex-col bg-white font-['Mona_Sans',_sans-serif]">
       <Header />
 
-      <main className="flex-1">
+      <main className='flex-1'>
         {/* Hero */}
-        <div className="bg-[#FFF5FB] border-b border-[#f63a9e]/20">
-          <div className="max-w-[1400px] mx-auto px-6 md:px-12 py-16">
+        <div className='border-b border-gray-200'>
+          <div className='max-w-[1200px] mx-auto px-6 md:px-12 pt-20 pb-16'>
             <motion.div
-              initial={{ opacity: 0, y: 20 }}
+              initial={{ opacity: 0, y: 12 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5 }}
-              className="flex flex-col items-center text-center"
+              transition={{ duration: 0.5, ease: 'easeOut' }}
+              className='max-w-2xl'
             >
-              <div className="w-20 h-20 rounded-2xl bg-[#f63a9e] flex items-center justify-center shadow-xl mb-6">
-                <ScrollText className="w-10 h-10 text-white" />
+              <div className='flex items-center gap-2 mb-6'>
+                <ScrollText className='w-4 h-4 text-[#f63a9e]' />
+                <p
+                  className='text-[11px] uppercase tracking-[0.18em] text-gray-500'
+                  style={{ fontWeight: 600 }}
+                >
+                  Terms of Use
+                </p>
               </div>
               <h1
-                className="font-['Bricolage_Grotesque',_sans-serif] text-gray-900 mb-4"
-                style={{ fontSize: '40px', fontWeight: '800', lineHeight: '1.2' }}
+                className="font-['Bricolage_Grotesque',_sans-serif] text-gray-900 mb-5"
+                style={{
+                  fontSize: 'clamp(36px, 5vw, 52px)',
+                  fontWeight: 700,
+                  letterSpacing: '-0.025em',
+                  lineHeight: 1.05,
+                }}
               >
-                Terms of Use
+                The agreement between us.
               </h1>
-              <p className="text-gray-500 max-w-2xl text-lg">
-                Welcome to Photify.co. By accessing our website and using our services, you agree to comply with and be bound by these Terms of Service.
+              <p className='text-gray-600 text-[17px] leading-relaxed mb-6'>
+                These Terms set out the basic rules for using photify.co — what
+                you can expect from us, what we expect from you, and the legal
+                bits we&apos;re both bound by. By using the site, you accept
+                them.
               </p>
-              <p className="text-sm text-gray-400 mt-4">Last updated: February 2026</p>
+              <p className='text-sm text-gray-400'>
+                Last updated 14 February 2026 ·{' '}
+                <a
+                  href='mailto:support@photify.co'
+                  className='text-gray-500 hover:text-[#f63a9e] underline-offset-4 hover:underline'
+                >
+                  support@photify.co
+                </a>
+              </p>
             </motion.div>
           </div>
         </div>
 
         {/* Content */}
-        <div className="max-w-[1400px] mx-auto px-6 md:px-12 py-16">
-          <div className="flex flex-col lg:flex-row gap-12">
+        <div className='max-w-[1200px] mx-auto px-6 md:px-12 py-16'>
+          <div className='flex flex-col lg:flex-row gap-16'>
             {/* Sidebar TOC */}
-            <aside className="lg:w-72 flex-shrink-0">
-              <div className="sticky top-8 bg-[#FFF5FB] border border-[#f63a9e]/20 rounded-2xl p-6">
+            <aside className='lg:w-64 flex-shrink-0'>
+              <div className='sticky top-24'>
                 <p
-                  className="font-['Bricolage_Grotesque',_sans-serif] text-gray-900 mb-4"
-                  style={{ fontWeight: '700', fontSize: '16px' }}
+                  className='text-[11px] uppercase tracking-[0.18em] text-gray-400 mb-5'
+                  style={{ fontWeight: 600 }}
                 >
-                  Table of Contents
+                  On this page
                 </p>
-                <ul className="space-y-1">
-                  {sections.map((s) => (
-                    <li key={s.id}>
-                      <a
-                        href={`#${s.id}`}
-                        className="flex items-center gap-2 text-sm text-gray-600 hover:text-[#f63a9e] transition-colors py-1"
-                      >
-                        <ChevronRight className="w-3 h-3 flex-shrink-0 text-[#f63a9e]" />
-                        {s.label}
-                      </a>
-                    </li>
-                  ))}
+                <ul className='space-y-0.5 border-l border-gray-200'>
+                  {sections.map(s => {
+                    const isActive = activeId === s.id;
+                    return (
+                      <li key={s.id}>
+                        <a
+                          href={`#${s.id}`}
+                          className={`flex gap-3 text-[13.5px] py-1.5 pl-4 -ml-px border-l transition-colors ${
+                            isActive
+                              ? 'text-[#f63a9e] border-[#f63a9e]'
+                              : 'text-gray-500 hover:text-gray-900 border-transparent'
+                          }`}
+                        >
+                          <span className='tabular-nums text-gray-400 w-5'>
+                            {s.number.padStart(2, '0')}
+                          </span>
+                          <span>{s.label}</span>
+                        </a>
+                      </li>
+                    );
+                  })}
                 </ul>
+                <div className='mt-8 pt-6 border-t border-gray-200'>
+                  <p className='text-xs text-gray-500 mb-2'>Need help?</p>
+                  <a
+                    href='mailto:support@photify.co'
+                    className='inline-flex items-center gap-1.5 text-[13px] text-gray-900 hover:text-[#f63a9e]'
+                    style={{ fontWeight: 500 }}
+                  >
+                    <Mail className='w-3.5 h-3.5' />
+                    support@photify.co
+                  </a>
+                </div>
               </div>
             </aside>
 
             {/* Main content */}
-            <div className="flex-1 max-w-3xl space-y-12 text-gray-700 leading-relaxed">
-
-              {/* Intro */}
-              <div className="bg-[#FFF5FB] border border-[#f63a9e]/20 rounded-2xl p-6 text-sm text-gray-600">
-                This website is operated by Photify. Throughout the site, the terms &quot;we,&quot; &quot;us,&quot; and &quot;our&quot; refer to Photify. These Terms apply to all users of the site, including but not limited to browsers, customers, and contributors of content.
+            <article className='flex-1 max-w-2xl'>
+              <div className='border-t border-gray-200 pt-12 mb-12'>
+                <p
+                  className='text-[11px] uppercase tracking-[0.18em] text-[#f63a9e] mb-3'
+                  style={{ fontWeight: 600 }}
+                >
+                  Photify Limited · UK
+                </p>
+                <h2
+                  className="font-['Bricolage_Grotesque',_sans-serif] text-gray-900 mb-3"
+                  style={{
+                    fontSize: '32px',
+                    fontWeight: 700,
+                    letterSpacing: '-0.02em',
+                    lineHeight: 1.15,
+                  }}
+                >
+                  Terms of Service
+                </h2>
+                <p className='text-gray-500 text-[16px] leading-relaxed max-w-2xl'>
+                  This website is operated by Photify. Throughout the site, the
+                  terms &quot;we&quot;, &quot;us&quot; and &quot;our&quot; refer
+                  to Photify. These Terms apply to all users of the site,
+                  including browsers, customers and contributors of content.
+                </p>
               </div>
 
-              {/* Overview */}
-              <section id="overview" className="scroll-mt-8">
-                <h2
-                  className="font-['Bricolage_Grotesque',_sans-serif] text-gray-900 mb-4 pb-3 border-b-2 border-[#f63a9e]/30"
-                  style={{ fontSize: '22px', fontWeight: '700' }}
-                >
-                  Overview
-                </h2>
-                <p className="mb-4">
-                  Please review these Terms carefully. If you do not agree to these Terms, you should not access or use our website or services.
-                </p>
-                <p>
-                  We reserve the right to update, change, or replace any part of these Terms at any time without prior notice by posting the changes on this page. It is your responsibility to check this page periodically for updates. Your continued use of the website constitutes acceptance of any changes.
-                </p>
-              </section>
+              <div className='space-y-14'>
+                <SubSection id='overview' number='00' title='Overview'>
+                  <p>
+                    Please review these Terms carefully. If you do not agree to
+                    these Terms, you should not access or use our website or
+                    services.
+                  </p>
+                  <p>
+                    We reserve the right to update, change or replace any part
+                    of these Terms at any time without prior notice by posting
+                    the changes on this page. It is your responsibility to
+                    check this page periodically for updates. Your continued
+                    use of the website constitutes acceptance of any changes.
+                  </p>
+                </SubSection>
 
-              {/* 1 */}
-              <section id="general" className="scroll-mt-8">
-                <h2
-                  className="font-['Bricolage_Grotesque',_sans-serif] text-gray-900 mb-4 pb-3 border-b-2 border-[#f63a9e]/30"
-                  style={{ fontSize: '22px', fontWeight: '700' }}
-                >
-                  1. General Conditions
-                </h2>
-                <ul className="space-y-3">
-                  {[
-                    'You must be at least the age of majority in your jurisdiction to use this site. By using our website, you confirm that you meet this requirement or have obtained parental consent.',
-                    'You agree not to use our site or services for any unlawful purposes or to violate any applicable laws.',
-                    'We reserve the right to refuse service to anyone for any reason at any time.',
-                    'The content and materials provided on this site are for general information only and should not be relied upon for decision-making without consulting more accurate or timely sources.',
-                  ].map((item, i) => (
-                    <li key={i} className="flex items-start gap-3">
-                      <span className="w-1.5 h-1.5 rounded-full bg-[#f63a9e] mt-2 flex-shrink-0" />
-                      {item}
-                    </li>
-                  ))}
-                </ul>
-              </section>
+                <SubSection id='general' number='01' title='General conditions'>
+                  <BulletList
+                    items={[
+                      'You must be at least the age of majority in your jurisdiction to use this site. By using our website, you confirm that you meet this requirement or have obtained parental consent.',
+                      'You agree not to use our site or services for any unlawful purposes or to violate any applicable laws.',
+                      'We reserve the right to refuse service to anyone for any reason at any time.',
+                      'The content and materials provided on this site are for general information only and should not be relied upon for decision-making without consulting more accurate or timely sources.',
+                    ]}
+                  />
+                </SubSection>
 
-              {/* 2 */}
-              <section id="modifications" className="scroll-mt-8">
-                <h2
-                  className="font-['Bricolage_Grotesque',_sans-serif] text-gray-900 mb-4 pb-3 border-b-2 border-[#f63a9e]/30"
-                  style={{ fontSize: '22px', fontWeight: '700' }}
+                <SubSection
+                  id='modifications'
+                  number='02'
+                  title='Modifications to services and pricing'
                 >
-                  2. Modifications to Services and Pricing
-                </h2>
-                <ul className="space-y-3">
-                  {[
-                    'We may update or discontinue any part of our services without notice.',
-                    'Prices for any products or services listed on our site are subject to change at our discretion.',
-                  ].map((item, i) => (
-                    <li key={i} className="flex items-start gap-3">
-                      <span className="w-1.5 h-1.5 rounded-full bg-[#f63a9e] mt-2 flex-shrink-0" />
-                      {item}
-                    </li>
-                  ))}
-                </ul>
-              </section>
+                  <BulletList
+                    items={[
+                      'We may update or discontinue any part of our services without notice.',
+                      'Prices for any products or services listed on our site are subject to change at our discretion.',
+                    ]}
+                  />
+                </SubSection>
 
-              {/* 3 */}
-              <section id="accuracy" className="scroll-mt-8">
-                <h2
-                  className="font-['Bricolage_Grotesque',_sans-serif] text-gray-900 mb-4 pb-3 border-b-2 border-[#f63a9e]/30"
-                  style={{ fontSize: '22px', fontWeight: '700' }}
+                <SubSection
+                  id='accuracy'
+                  number='03'
+                  title='Accuracy of information'
                 >
-                  3. Accuracy of Information
-                </h2>
-                <ul className="space-y-3">
-                  {[
-                    'While we strive for accuracy, we do not guarantee that all information on the site is complete or current. Any reliance on the information provided is at your own risk.',
-                    'We reserve the right to correct any errors, omissions, or inaccuracies in the content at any time.',
-                  ].map((item, i) => (
-                    <li key={i} className="flex items-start gap-3">
-                      <span className="w-1.5 h-1.5 rounded-full bg-[#f63a9e] mt-2 flex-shrink-0" />
-                      {item}
-                    </li>
-                  ))}
-                </ul>
-              </section>
+                  <BulletList
+                    items={[
+                      'While we strive for accuracy, we do not guarantee that all information on the site is complete or current. Any reliance on the information provided is at your own risk.',
+                      'We reserve the right to correct any errors, omissions or inaccuracies in the content at any time.',
+                    ]}
+                  />
+                </SubSection>
 
-              {/* 4 */}
-              <section id="third-party" className="scroll-mt-8">
-                <h2
-                  className="font-['Bricolage_Grotesque',_sans-serif] text-gray-900 mb-4 pb-3 border-b-2 border-[#f63a9e]/30"
-                  style={{ fontSize: '22px', fontWeight: '700' }}
+                <SubSection
+                  id='third-party'
+                  number='04'
+                  title='Third-party links and tools'
                 >
-                  4. Third-Party Links and Tools
-                </h2>
-                <ul className="space-y-3">
-                  {[
-                    'Our site may contain links to third-party websites or services. We are not responsible for the content, accuracy, or practices of these third parties and are not liable for any issues arising from their use.',
-                    'Access to third-party tools through our site is provided "as is" without warranties or endorsements.',
-                  ].map((item, i) => (
-                    <li key={i} className="flex items-start gap-3">
-                      <span className="w-1.5 h-1.5 rounded-full bg-[#f63a9e] mt-2 flex-shrink-0" />
-                      {item}
-                    </li>
-                  ))}
-                </ul>
-              </section>
+                  <BulletList
+                    items={[
+                      'Our site may contain links to third-party websites or services. We are not responsible for the content, accuracy or practices of these third parties and are not liable for any issues arising from their use.',
+                      'Access to third-party tools through our site is provided "as is" without warranties or endorsements.',
+                    ]}
+                  />
+                </SubSection>
 
-              {/* 5 */}
-              <section id="ugc" className="scroll-mt-8">
-                <h2
-                  className="font-['Bricolage_Grotesque',_sans-serif] text-gray-900 mb-4 pb-3 border-b-2 border-[#f63a9e]/30"
-                  style={{ fontSize: '22px', fontWeight: '700' }}
+                <SubSection
+                  id='ugc'
+                  number='05'
+                  title='User-generated content'
                 >
-                  5. User-Generated Content
-                </h2>
-                <ul className="space-y-3">
-                  {[
-                    'By submitting comments, suggestions, or other content, you grant us the right to use, edit, and distribute your submissions without restriction.',
-                    'You agree that your submissions will not violate any laws, contain harmful or unlawful material, or infringe upon the rights of others.',
-                  ].map((item, i) => (
-                    <li key={i} className="flex items-start gap-3">
-                      <span className="w-1.5 h-1.5 rounded-full bg-[#f63a9e] mt-2 flex-shrink-0" />
-                      {item}
-                    </li>
-                  ))}
-                </ul>
-              </section>
+                  <BulletList
+                    items={[
+                      'By submitting comments, suggestions or other content, you grant us the right to use, edit and distribute your submissions without restriction.',
+                      'You agree that your submissions will not violate any laws, contain harmful or unlawful material, or infringe upon the rights of others.',
+                    ]}
+                  />
+                </SubSection>
 
-              {/* 6 */}
-              <section id="personal-info" className="scroll-mt-8">
-                <h2
-                  className="font-['Bricolage_Grotesque',_sans-serif] text-gray-900 mb-4 pb-3 border-b-2 border-[#f63a9e]/30"
-                  style={{ fontSize: '22px', fontWeight: '700' }}
+                <SubSection
+                  id='personal-info'
+                  number='06'
+                  title='Personal information'
                 >
-                  6. Personal Information
-                </h2>
-                <p>
-                  Your submission of personal information through the site is governed by our{' '}
-                  <Link to="/privacy-policy" className="text-[#f63a9e] hover:underline font-semibold">
-                    Privacy Policy
-                  </Link>
-                  , which outlines how we collect, use, and protect your data.
-                </p>
-              </section>
+                  <p>
+                    Your submission of personal information through the site is
+                    governed by our{' '}
+                    <Link
+                      to='/privacy-policy'
+                      className='text-[#f63a9e] underline-offset-4 hover:underline'
+                      style={{ fontWeight: 500 }}
+                    >
+                      Privacy Policy
+                    </Link>
+                    , which outlines how we collect, use and protect your
+                    data.
+                  </p>
+                </SubSection>
 
-              {/* 7 */}
-              <section id="prohibited" className="scroll-mt-8">
-                <h2
-                  className="font-['Bricolage_Grotesque',_sans-serif] text-gray-900 mb-4 pb-3 border-b-2 border-[#f63a9e]/30"
-                  style={{ fontSize: '22px', fontWeight: '700' }}
+                <SubSection
+                  id='prohibited'
+                  number='07'
+                  title='Prohibited uses'
+                  description='You may not use the site or its content for any of the following.'
                 >
-                  7. Prohibited Uses
-                </h2>
-                <p className="mb-4">You are prohibited from using the site or its content for any of the following purposes:</p>
-                <div className="space-y-2">
-                  {[
-                    'Engaging in unlawful activities.',
-                    'Violating intellectual property rights.',
-                    'Harassing, abusing, or discriminating against others.',
-                    'Transmitting harmful or malicious software.',
-                    'Collecting or tracking the personal information of others without consent.',
-                  ].map((item, i) => (
-                    <div key={i} className="flex items-start gap-3 bg-gray-50 rounded-xl px-4 py-3 border border-gray-200">
-                      <span className="w-1.5 h-1.5 rounded-full bg-[#f63a9e] mt-2 flex-shrink-0" />
-                      {item}
-                    </div>
-                  ))}
-                </div>
-              </section>
+                  <ul className='border border-gray-200 rounded-xl divide-y divide-gray-100 text-[14.5px]'>
+                    {[
+                      'Engaging in unlawful activities.',
+                      'Violating intellectual property rights.',
+                      'Harassing, abusing or discriminating against others.',
+                      'Transmitting harmful or malicious software.',
+                      'Collecting or tracking the personal information of others without consent.',
+                    ].map((item, i) => (
+                      <li
+                        key={i}
+                        className='flex items-center gap-4 px-4 py-3'
+                      >
+                        <span
+                          className='text-gray-400 tabular-nums text-xs w-6'
+                          style={{ fontWeight: 500 }}
+                        >
+                          {String(i + 1).padStart(2, '0')}
+                        </span>
+                        <span className='text-gray-700'>{item}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </SubSection>
 
-              {/* 8 */}
-              <section id="disclaimer" className="scroll-mt-8">
-                <h2
-                  className="font-['Bricolage_Grotesque',_sans-serif] text-gray-900 mb-4 pb-3 border-b-2 border-[#f63a9e]/30"
-                  style={{ fontSize: '22px', fontWeight: '700' }}
+                <SubSection
+                  id='disclaimer'
+                  number='08'
+                  title='Disclaimer of warranties and limitation of liability'
                 >
-                  8. Disclaimer of Warranties and Limitation of Liability
-                </h2>
-                <ul className="space-y-3">
-                  {[
-                    'We provide the website and services "as is" and "as available," without any warranties of any kind.',
-                    'We do not guarantee uninterrupted or error-free access to the website.',
-                    'In no event shall Photify or its affiliates be liable for any damages arising from the use or inability to use the site or services.',
-                  ].map((item, i) => (
-                    <li key={i} className="flex items-start gap-3">
-                      <span className="w-1.5 h-1.5 rounded-full bg-[#f63a9e] mt-2 flex-shrink-0" />
-                      {item}
-                    </li>
-                  ))}
-                </ul>
-              </section>
+                  <BulletList
+                    items={[
+                      'We provide the website and services "as is" and "as available", without any warranties of any kind.',
+                      'We do not guarantee uninterrupted or error-free access to the website.',
+                      'In no event shall Photify or its affiliates be liable for any damages arising from the use or inability to use the site or services.',
+                    ]}
+                  />
+                </SubSection>
 
-              {/* 9 */}
-              <section id="governing" className="scroll-mt-8">
-                <h2
-                  className="font-['Bricolage_Grotesque',_sans-serif] text-gray-900 mb-4 pb-3 border-b-2 border-[#f63a9e]/30"
-                  style={{ fontSize: '22px', fontWeight: '700' }}
-                >
-                  9. Governing Law
-                </h2>
-                <p>
-                  These Terms of Service are governed by the laws of your jurisdiction. Any disputes arising from these Terms shall be resolved in the courts of the applicable jurisdiction.
-                </p>
-              </section>
+                <SubSection id='governing' number='09' title='Governing law'>
+                  <p>
+                    These Terms of Service are governed by the laws of your
+                    jurisdiction. Any disputes arising from these Terms shall be
+                    resolved in the courts of the applicable jurisdiction.
+                  </p>
+                </SubSection>
 
-              {/* 10 */}
-              <section id="contact" className="scroll-mt-8">
-                <h2
-                  className="font-['Bricolage_Grotesque',_sans-serif] text-gray-900 mb-4 pb-3 border-b-2 border-[#f63a9e]/30"
-                  style={{ fontSize: '22px', fontWeight: '700' }}
+                <SubSection
+                  id='contact'
+                  number='10'
+                  title='Contact information'
                 >
-                  10. Contact Information
-                </h2>
-                <p>
-                  If you have any questions about these Terms of Service, please contact us at{' '}
-                  <a href="mailto:support@photify.co" className="text-[#f63a9e] hover:underline font-semibold">
-                    support@photify.co
-                  </a>.
-                </p>
-              </section>
+                  <p>
+                    If you have any questions about these Terms of Service,
+                    please contact us at{' '}
+                    <a
+                      href='mailto:support@photify.co'
+                      className='text-[#f63a9e] underline-offset-4 hover:underline'
+                    >
+                      support@photify.co
+                    </a>
+                    .
+                  </p>
+                </SubSection>
+              </div>
 
               {/* Acknowledgement */}
-              <div className="bg-[#FFF5FB] border-2 border-[#f63a9e]/30 rounded-2xl p-6 text-sm text-gray-600 text-center">
-                By using Photify.co, you acknowledge that you have read, understood, and agree to these Terms of Service.
+              <div className='mt-16 border border-gray-200 rounded-xl px-6 py-5 text-[14px] text-gray-600 leading-relaxed'>
+                By using photify.co, you acknowledge that you have read,
+                understood and agree to these Terms of Service.
               </div>
 
-              {/* CTA */}
-              <div className="bg-gray-50 border-2 border-gray-200 rounded-2xl p-8 text-center">
-                <h3
-                  className="font-['Bricolage_Grotesque',_sans-serif] text-gray-900 mb-3"
-                  style={{ fontSize: '22px', fontWeight: '700' }}
-                >
-                  Have questions?
-                </h3>
-                <p className="text-gray-600 mb-6">
-                  Our team is happy to help clarify anything about our terms.
-                </p>
-                <Link
-                  to="/contact"
-                  className="inline-flex items-center gap-2 bg-[#f63a9e] text-white px-8 py-3 rounded-xl hover:bg-[#e02d8d] transition-colors font-semibold"
-                >
-                  Contact Us
-                </Link>
+              {/* Footer CTA */}
+              <div className='mt-12 border-t border-gray-200 pt-12'>
+                <div className='flex flex-col sm:flex-row sm:items-end sm:justify-between gap-6'>
+                  <div className='max-w-md'>
+                    <h3
+                      className="font-['Bricolage_Grotesque',_sans-serif] text-gray-900 mb-2"
+                      style={{
+                        fontSize: '22px',
+                        fontWeight: 700,
+                        letterSpacing: '-0.015em',
+                      }}
+                    >
+                      Anything unclear?
+                    </h3>
+                    <p className='text-gray-500 text-[15px] leading-relaxed'>
+                      Our team is happy to clarify anything about these terms —
+                      we usually reply within one working day.
+                    </p>
+                  </div>
+                  <div className='flex flex-wrap gap-3'>
+                    <a
+                      href='mailto:support@photify.co'
+                      className='inline-flex items-center gap-2 bg-gray-900 hover:bg-black text-white px-5 py-2.5 rounded-lg text-sm transition-colors'
+                      style={{ fontWeight: 500 }}
+                    >
+                      <Mail className='w-4 h-4' />
+                      Email us
+                    </a>
+                    <Link
+                      to='/contact'
+                      className='inline-flex items-center gap-2 border border-gray-300 hover:border-gray-900 text-gray-900 px-5 py-2.5 rounded-lg text-sm transition-colors'
+                      style={{ fontWeight: 500 }}
+                    >
+                      Contact form
+                      <ArrowUpRight className='w-4 h-4' />
+                    </Link>
+                  </div>
+                </div>
               </div>
-
-            </div>
+            </article>
           </div>
         </div>
       </main>
