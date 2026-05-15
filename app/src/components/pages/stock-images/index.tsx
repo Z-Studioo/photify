@@ -5,6 +5,7 @@ import { ArtPhotoTile } from '@/components/shared/art-photo-tile';
 import { useSearchParams, useNavigate } from 'react-router';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Search, Sparkles, X } from 'lucide-react';
+import { getTransformedImageUrl } from '@/lib/supabase/image-url';
 
 interface ArtProduct {
   id: string;
@@ -131,8 +132,24 @@ export function StockImagesPage({
     });
   }, [artProducts, selectedCategory, searchQuery]);
 
+  // Hero backdrop strip is rendered at 0.18 opacity behind a heavy gradient,
+  // so it does not need anywhere near full resolution. Request tiny WebP
+  // variants (~240px wide, low quality) — these are CSS background images so
+  // the browser cannot pick a srcset for us; we have to be deliberate.
   const heroBackdrops = useMemo(
-    () => artProducts.slice(0, 6).map(p => p.image).filter(Boolean),
+    () =>
+      artProducts
+        .slice(0, 6)
+        .map(p =>
+          p.image
+            ? getTransformedImageUrl(p.image, {
+                width: 240,
+                quality: 40,
+                resize: 'cover',
+              })
+            : ''
+        )
+        .filter(Boolean),
     [artProducts]
   );
 
