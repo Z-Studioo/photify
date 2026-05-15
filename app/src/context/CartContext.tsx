@@ -71,45 +71,37 @@ interface CartContextType {
 const CartContext = createContext<CartContextType | undefined>(undefined);
 
 export function CartProvider({ children }: { children: ReactNode }) {
-  // Initial render always uses defaults so SSR markup matches the first
-  // client paint. Real persisted state is hydrated below in an effect to
-  // avoid hydration mismatches.
-  // Seed cart state lazily from localStorage so the very first render
-  // already has the persisted values. This avoids a race where a subsequent
-  // "persist" effect could observe the initial empty state before the
-  // hydration effect has applied the stored data, and accidentally wipe
-  // localStorage.
-  const [cartItems, setCartItems] = useState<CartItem[]>(() => {
-    const stored = loadPersistedCart();
-    return Array.isArray(stored?.cartItems) ? stored!.cartItems! : [];
-  });
+  // SSR-safe initial state: server and first client render both produce the
+  // same defaults so React hydration succeeds without mismatches. The real
+  // persisted values are loaded in a post-mount effect (see `hydrated`).
+  const [cartItems, setCartItems] = useState<CartItem[]>([]);
   const [isCartOpen, setIsCartOpen] = useState(false);
-  const [deliveryMethod, setDeliveryMethod] = useState<DeliveryMethod>(() => {
-    const stored = loadPersistedCart();
-    return stored?.deliveryMethod === 'express' ? 'express' : 'standard';
-  });
-  const [shippingCost, setShippingCost] = useState<number>(() => {
-    const stored = loadPersistedCart();
-    return typeof stored?.shippingCost === 'number' ? stored.shippingCost : 4.99;
-  });
-  const [discount, setDiscount] = useState<number>(() => {
-    const stored = loadPersistedCart();
-    return typeof stored?.discount === 'number' ? stored.discount : 0;
-  });
-  const [appliedPromoCode, setAppliedPromoCode] = useState<string>(() => {
-    const stored = loadPersistedCart();
-    return typeof stored?.appliedPromoCode === 'string' ? stored.appliedPromoCode : '';
-  });
-  const [promoApplied, setPromoApplied] = useState<boolean>(() => {
-    const stored = loadPersistedCart();
-    return typeof stored?.promoApplied === 'boolean' ? stored.promoApplied : false;
-  });
+  const [deliveryMethod, setDeliveryMethod] = useState<DeliveryMethod>('standard');
+  const [shippingCost, setShippingCost] = useState<number>(4.99);
+  const [discount, setDiscount] = useState<number>(0);
+  const [appliedPromoCode, setAppliedPromoCode] = useState<string>('');
+  const [promoApplied, setPromoApplied] = useState<boolean>(false);
+  // Tracks whether we've already pulled from localStorage on the client. We
+  // use it to gate the persist effect so the first run doesn't immediately
+  // overwrite stored data with our default state.
+  const [hydrated, setHydrated] = useState(false);
 
-  // Persist on every meaningful change. Safe to run immediately because
-  // the initial state above already reflects what's in localStorage, so
-  // writing it back on first mount is a no-op.
   useEffect(() => {
-    if (typeof window === 'undefined') return;
+    const stored = loadPersistedCart();
+    if (stored) {
+      if (Array.isArray(stored.cartItems)) setCartItems(stored.cartItems);
+      if (stored.deliveryMethod === 'express') setDeliveryMethod('express');
+      if (typeof stored.shippingCost === 'number') setShippingCost(stored.shippingCost);
+      if (typeof stored.discount === 'number') setDiscount(stored.discount);
+      if (typeof stored.appliedPromoCode === 'string')
+        setAppliedPromoCode(stored.appliedPromoCode);
+      if (typeof stored.promoApplied === 'boolean') setPromoApplied(stored.promoApplied);
+    }
+    setHydrated(true);
+  }, []);
+
+  useEffect(() => {
+    if (!hydrated || typeof window === 'undefined') return;
     try {
       const payload: PersistedCart = {
         cartItems,
@@ -125,6 +117,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
       // in-memory for this session.
     }
   }, [
+    hydrated,
     cartItems,
     deliveryMethod,
     shippingCost,

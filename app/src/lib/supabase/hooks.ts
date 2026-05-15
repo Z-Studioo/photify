@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import type { SupabaseClient } from '@supabase/supabase-js';
 import { createClient } from './client';
 import type { 
   Product, 
@@ -9,7 +10,26 @@ import type {
   Category 
 } from '../data/types';
 
-const supabase = createClient();
+// Lazy singleton: deferring instantiation keeps the SSR bundle importable
+// even when VITE_SUPABASE_URL / VITE_SUPABASE_ANON_KEY aren't defined at
+// module-evaluation time (e.g. during build-time prerender or in any other
+// context where `createBrowserClient` would otherwise throw).
+let _supabase: SupabaseClient | null = null;
+function getSupabase(): SupabaseClient {
+  if (!_supabase) {
+    _supabase = createClient();
+  }
+  return _supabase;
+}
+const supabase = new Proxy({} as SupabaseClient, {
+  get(_target, prop) {
+    const client = getSupabase();
+    const value = client[prop as keyof SupabaseClient];
+    // Bind methods so chained calls (e.g. supabase.from(...).select(...))
+    // keep the right `this` despite the proxy indirection.
+    return typeof value === 'function' ? value.bind(client) : value;
+  },
+});
 
 interface UseDataResult<T> {
   data: T | null;

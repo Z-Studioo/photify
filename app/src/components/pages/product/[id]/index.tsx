@@ -106,20 +106,32 @@ export function ProductDetailPage({
   const supabase = createClient();
   const [mainImage, setMainImage] = useState(0);
   const productId = initialProduct?.id as string | undefined;
-  const [isWishlisted, setIsWishlisted] = useState(() => {
-    if (typeof window === 'undefined' || !productId) return false;
-    try {
-      const raw = window.localStorage.getItem(WISHLIST_STORAGE_KEY);
-      const ids: string[] = raw ? JSON.parse(raw) : [];
-      return Array.isArray(ids) && ids.includes(productId);
-    } catch {
-      return false;
-    }
-  });
+  // Initial value matches what the server will render (no localStorage on the
+  // server). The client hydrates the real value in the effect below to avoid
+  // SSR hydration mismatches.
+  const [isWishlisted, setIsWishlisted] = useState(false);
+  const [wishlistHydrated, setWishlistHydrated] = useState(false);
   const [showStickyBar, setShowStickyBar] = useState(false);
   const [relatedProducts, setRelatedProducts] = useState<any[]>([]);
   const heroRef = useRef<HTMLDivElement>(null);
   const ctaRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!productId) {
+      setWishlistHydrated(true);
+      return;
+    }
+    try {
+      const raw = window.localStorage.getItem(WISHLIST_STORAGE_KEY);
+      const ids: string[] = raw ? JSON.parse(raw) : [];
+      if (Array.isArray(ids) && ids.includes(productId)) {
+        setIsWishlisted(true);
+      }
+    } catch {
+      /* ignore storage errors */
+    }
+    setWishlistHydrated(true);
+  }, [productId]);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -133,7 +145,9 @@ export function ProductDetailPage({
   }, []);
 
   useEffect(() => {
-    if (typeof window === 'undefined' || !productId) return;
+    // Don't persist before we've read the existing list, otherwise we'd
+    // immediately clobber the user's stored wishlist with the initial `false`.
+    if (!wishlistHydrated || !productId) return;
     try {
       const raw = window.localStorage.getItem(WISHLIST_STORAGE_KEY);
       const ids: string[] = raw ? JSON.parse(raw) : [];
@@ -147,7 +161,7 @@ export function ProductDetailPage({
     } catch {
       /* ignore storage errors */
     }
-  }, [isWishlisted, productId]);
+  }, [isWishlisted, productId, wishlistHydrated]);
 
   useEffect(() => {
     async function fetchRelated() {

@@ -1,11 +1,12 @@
 import { Outlet } from 'react-router';
 import { buildMeta } from '@/lib/seo';
+import { ClientOnly } from '@/components/shared/client-only';
 import type { Route } from './+types/admin-layout';
 
 /**
- * Admin area layout. The only purpose here (for now) is to inject a
- * `noindex,nofollow` robots meta for every admin route without having to
- * duplicate a `meta()` export in every child page.
+ * Admin area layout. Injects a `noindex,nofollow` robots meta for every
+ * admin route and renders the entire admin subtree client-only so
+ * dashboards / editors with heavy browser-only deps don't run during SSR.
  */
 export const meta: Route.MetaFunction = () =>
   buildMeta({
@@ -16,5 +17,9 @@ export const meta: Route.MetaFunction = () =>
   });
 
 export default function AdminLayout() {
-  return <Outlet />;
+  return (
+    <ClientOnly>
+      <Outlet />
+    </ClientOnly>
+  );
 }

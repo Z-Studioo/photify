@@ -16,40 +16,45 @@ interface EdgeContextType {
 const EdgeContext = createContext<EdgeContextType | undefined>(undefined);
 
 export const EdgeProvider = ({ children }: { children: ReactNode }) => {
-  const [edgeType, setEdgeType] = useState<EdgeType>(() => {
-    if (typeof window !== 'undefined') {
-      try {
-        const storedMeta = localStorage.getItem('photify_metadata');
-        if (storedMeta) {
-          const meta = JSON.parse(storedMeta);
-          if (meta.edgeType === 'wrapped' || meta.edgeType === 'mirrored') {
-            return meta.edgeType;
-          }
-        }
-      } catch {}
-    }
-    return 'wrapped';
-  });
-
+  // SSR-safe defaults; localStorage is read in the post-mount effect below.
+  const [edgeType, setEdgeType] = useState<EdgeType>('wrapped');
   const [pendingEdgeType, setPendingEdgeType] = useState<EdgeType | null>(null);
   const [committedEdgeType, setCommittedEdgeType] =
-    useState<EdgeType>(edgeType);
+    useState<EdgeType>('wrapped');
+  const [hydrated, setHydrated] = useState(false);
 
   useEffect(() => {
-    if (typeof window !== 'undefined') {
-      try {
-        const storedMeta = localStorage.getItem('photify_metadata');
-        const currentMeta = storedMeta ? JSON.parse(storedMeta) : {};
-
-        const updatedMeta = {
-          ...currentMeta,
-          edgeType: edgeType,
-        };
-
-        localStorage.setItem('photify_metadata', JSON.stringify(updatedMeta));
-      } catch {}
+    try {
+      const storedMeta = localStorage.getItem('photify_metadata');
+      if (storedMeta) {
+        const meta = JSON.parse(storedMeta);
+        if (meta.edgeType === 'wrapped' || meta.edgeType === 'mirrored') {
+          setEdgeType(meta.edgeType);
+          setCommittedEdgeType(meta.edgeType);
+        }
+      }
+    } catch {
+      // Ignore parse errors; fall back to default.
     }
-  }, [edgeType]);
+    setHydrated(true);
+  }, []);
+
+  useEffect(() => {
+    if (!hydrated) return;
+    try {
+      const storedMeta = localStorage.getItem('photify_metadata');
+      const currentMeta = storedMeta ? JSON.parse(storedMeta) : {};
+
+      const updatedMeta = {
+        ...currentMeta,
+        edgeType: edgeType,
+      };
+
+      localStorage.setItem('photify_metadata', JSON.stringify(updatedMeta));
+    } catch {
+      // Storage disabled or quota exceeded — non-fatal.
+    }
+  }, [edgeType, hydrated]);
 
   const applyPendingEdgeType = () => {
     if (pendingEdgeType) {

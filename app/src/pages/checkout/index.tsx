@@ -1,6 +1,11 @@
-import { CheckoutPage } from '@/components/pages/checkout';
+import { lazy, Suspense } from 'react';
+import { ClientOnly } from '@/components/shared/client-only';
 import { buildMeta } from '@/lib/seo';
 import type { Route } from './+types/index';
+
+const CheckoutPage = lazy(() =>
+  import('@/components/pages/checkout').then(m => ({ default: m.CheckoutPage }))
+);
 
 export const meta: Route.MetaFunction = () =>
   buildMeta({
@@ -11,5 +16,11 @@ export const meta: Route.MetaFunction = () =>
   });
 
 export default function Checkout() {
-  return <CheckoutPage />;
+  return (
+    <ClientOnly>
+      <Suspense fallback={null}>
+        <CheckoutPage />
+      </Suspense>
+    </ClientOnly>
+  );
 }
