@@ -4,6 +4,7 @@ import { Footer } from '@/components/layout/footer';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { motion } from 'framer-motion';
+import { track } from '@/lib/analytics';
 import {
   Mail,
   Phone,
@@ -50,6 +51,12 @@ export function ContactPage() {
 
       setIsSubmitting(false);
       setIsSubmitted(true);
+
+      try {
+        track({ name: 'contact_form_submitted', params: {} });
+      } catch {
+        /* swallow */
+      }
 
       setTimeout(() => {
         setIsSubmitted(false);

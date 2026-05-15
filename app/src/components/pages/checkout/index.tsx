@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useCart } from '@/context/CartContext';
 import { Button } from '@/components/ui/button';
@@ -8,6 +8,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { toast } from 'sonner';
 import { useSiteSetting } from '@/lib/supabase/hooks';
 import { StripePaymentForm } from '@/components/shared/stripe-payment-form';
+import { track, cleanProductName } from '@/lib/analytics';
 import {
   ArrowLeft,
   ArrowRight,
@@ -179,6 +180,39 @@ export function CheckoutPage() {
   const deliveryFee = shippingCost;
   const total = Math.max(0, subtotal + deliveryFee - discount);
 
+  // Snapshot the cart in GA4 Item format. Memoised by content rather
+  // than reference so we don't re-emit funnel events on every keystroke.
+  const analyticsItems = cartItems.map(i => ({
+    item_id: i.id,
+    item_name: cleanProductName(i.name),
+    item_variant: i.size,
+    price: i.price,
+    quantity: i.quantity,
+  }));
+
+  // GA4 begin_checkout — fired once when the user lands on /checkout
+  // with a non-empty cart. Step transitions inside the page emit
+  // add_shipping_info / add_payment_info further down.
+  useEffect(() => {
+    if (cartItems.length === 0) return;
+    try {
+      track({
+        name: 'begin_checkout',
+        params: {
+          currency: 'GBP',
+          value: total,
+          items: analyticsItems,
+          coupon: appliedPromoCode || undefined,
+        },
+      });
+    } catch {
+      /* swallow */
+    }
+    // Run exactly once per cart shape — re-emit if the user changed the
+    // cart in another tab and came back.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [cartItems.length]);
+
   const handleContinue = () => {
     if (!validateDetails()) {
       if (!formData.postcode.trim() || !formData.address.trim()) {
@@ -192,6 +226,24 @@ export function CheckoutPage() {
     if (typeof window !== 'undefined') {
       window.scrollTo({ top: 0, behavior: 'smooth' });
     }
+
+    // GA4 add_shipping_info — user has supplied a valid address and is
+    // moving to the payment step. We treat the delivery method already
+    // chosen on /cart as the shipping_tier.
+    try {
+      track({
+        name: 'add_shipping_info',
+        params: {
+          currency: 'GBP',
+          value: total,
+          items: analyticsItems,
+          shipping_tier: shippingCost > 5 ? 'express' : 'standard',
+          coupon: appliedPromoCode || undefined,
+        },
+      });
+    } catch {
+      /* swallow */
+    }
   };
 
   const handleBack = () => {
@@ -200,6 +252,30 @@ export function CheckoutPage() {
       window.scrollTo({ top: 0, behavior: 'smooth' });
     }
   };
+
+  // GA4 add_payment_info — fired when the Review & Pay step becomes
+  // visible. We don't have a granular "payment method selected" hook
+  // (Stripe Elements is the form), so this is the closest defensible
+  // moment in the funnel.
+  useEffect(() => {
+    if (currentStep !== 2) return;
+    if (cartItems.length === 0) return;
+    try {
+      track({
+        name: 'add_payment_info',
+        params: {
+          currency: 'GBP',
+          value: total,
+          items: analyticsItems,
+          payment_type: 'card',
+          coupon: appliedPromoCode || undefined,
+        },
+      });
+    } catch {
+      /* swallow */
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentStep]);
 
   const handlePostcodeSearch = async () => {
     if (!formData.postcode.trim()) {
@@ -228,6 +304,11 @@ export function CheckoutPage() {
           throw new Error('Failed to search postcode');
         }
         setShowAddresses(true);
+        try {
+          track({ name: 'address_lookup', params: { success: false } });
+        } catch {
+          /* swallow */
+        }
         return;
       }
 
@@ -236,16 +317,31 @@ export function CheckoutPage() {
       if (!Array.isArray(data) || data.length === 0) {
         toast.error('No addresses found for this postcode. Please check and try again.');
         setShowAddresses(true);
+        try {
+          track({ name: 'address_lookup', params: { success: false } });
+        } catch {
+          /* swallow */
+        }
         return;
       }
 
       setSearchedAddresses(data);
       setShowAddresses(true);
       toast.success(`Found ${data.length} address${data.length !== 1 ? 'es' : ''}`);
+      try {
+        track({ name: 'address_lookup', params: { success: true } });
+      } catch {
+        /* swallow */
+      }
     } catch (error) {
       console.error('Postcode search error:', error);
       toast.error('Failed to search postcode. Please try again.');
       setShowAddresses(true);
+      try {
+        track({ name: 'address_lookup', params: { success: false } });
+      } catch {
+        /* swallow */
+      }
     } finally {
       setIsSearchingAddress(false);
     }

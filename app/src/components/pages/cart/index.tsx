@@ -1,6 +1,7 @@
 import { useCart } from '@/context/CartContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { track, cleanProductName } from '@/lib/analytics';
 import {
   X,
   Plus,
@@ -87,6 +88,37 @@ export function CartPage() {
     fetchFeaturedPromotion();
   }, []);
 
+  // GA4 view_cart — fires once when the cart page mounts with items.
+  // Re-fires if the cart contents change so funnel reporting reflects
+  // the *most recent* cart state the user actually looked at.
+  useEffect(() => {
+    if (cartItems.length === 0) return;
+    try {
+      const subtotal = cartItems.reduce(
+        (sum, i) => sum + i.price * i.quantity,
+        0
+      );
+      track({
+        name: 'view_cart',
+        params: {
+          currency: 'GBP',
+          value: subtotal,
+          items: cartItems.map(i => ({
+            item_id: i.id,
+            item_name: cleanProductName(i.name),
+            item_variant: i.size,
+            price: i.price,
+            quantity: i.quantity,
+          })),
+        },
+      });
+    } catch {
+      /* swallow */
+    }
+    // Intentionally only depends on the *length* of cartItems: we want
+    // a view_cart on mount and on add/remove, not on every quantity tick.
+  }, [cartItems.length]);
+
   const { data: standardShipping } = useSiteSetting('shipping_flat_rate');
   const { data: expressShipping } = useSiteSetting('shipping_express_cost');
 
@@ -136,21 +168,52 @@ export function CartPage() {
         const result = data[0];
 
         if (result.valid) {
+          const code = promoCode.toUpperCase().trim();
           setPromoApplied(true);
           setDiscount(result.discount_amount);
-          setAppliedPromoCode(promoCode.toUpperCase().trim());
+          setAppliedPromoCode(code);
           toast.success(
             `Promo code applied! You saved £${result.discount_amount.toFixed(2)}`
           );
+          try {
+            track({
+              name: 'promo_applied',
+              params: { code, discount_value: result.discount_amount },
+            });
+          } catch {
+            /* swallow */
+          }
         } else {
           toast.error(result.error_message || 'Invalid promo code');
           setPromoApplied(false);
           setDiscount(0);
+          try {
+            track({
+              name: 'promo_failed',
+              params: {
+                code: promoCode.toUpperCase().trim(),
+                reason: result.error_message || 'invalid',
+              },
+            });
+          } catch {
+            /* swallow */
+          }
         }
       } else {
         toast.error('Invalid promo code');
         setPromoApplied(false);
         setDiscount(0);
+        try {
+          track({
+            name: 'promo_failed',
+            params: {
+              code: promoCode.toUpperCase().trim(),
+              reason: 'unknown',
+            },
+          });
+        } catch {
+          /* swallow */
+        }
       }
     } catch (error) {
       console.error('Error validating promo:', error);

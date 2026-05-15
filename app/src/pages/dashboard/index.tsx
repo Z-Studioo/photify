@@ -30,6 +30,7 @@ import { resolveCanvasSizePrice } from '@/lib/canvas-size-price';
 import { useProductCanvasPricingProduct } from '@/hooks/use-product-canvas-pricing';
 import { cn } from '@/lib/utils';
 import { buildMeta } from '@/lib/seo';
+import { track } from '@/lib/analytics';
 import type { Route } from './+types/index';
 
 export const meta: Route.MetaFunction = () =>
@@ -72,6 +73,19 @@ const Dashboard: React.FC = () => {
     );
     if (defaultFeature) {
       setSelectedFeature(defaultFeature);
+    }
+
+    // GA4 customizer_start — fires once when the canvas configurer
+    // mounts. We default to single_canvas here since this dashboard is
+    // the entry point for the single-canvas flow; the dedicated
+    // multi-canvas / event / collage pages emit their own product_type.
+    try {
+      track({
+        name: 'customizer_start',
+        params: { product_type: 'single_canvas' },
+      });
+    } catch {
+      /* swallow */
     }
   }, [setSelectedFeature]);
 

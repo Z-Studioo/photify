@@ -2,6 +2,7 @@ import { useState, useEffect, useMemo } from 'react';
 import { Header } from '@/components/layout/header';
 import { Footer } from '@/components/layout/footer';
 import { ProductCard } from '@/components/shared/product-card';
+import { track, cleanProductName } from '@/lib/analytics';
 import {
   Frame,
   Search,
@@ -67,6 +68,30 @@ export function ProductsPage({
   useEffect(() => {
     const timer = setTimeout(() => setIsLoading(false), 500);
     return () => clearTimeout(timer);
+  }, []);
+
+  // GA4 view_item_list — emit once the SSR-provided product list is
+  // available. Limited to 20 items per emission to stay within GA4's
+  // 25-item-per-event guidance.
+  useEffect(() => {
+    if (!initialProducts || initialProducts.length === 0) return;
+    try {
+      track({
+        name: 'view_item_list',
+        params: {
+          item_list_id: 'products',
+          item_list_name: 'All Products',
+          items: initialProducts.slice(0, 20).map(p => ({
+            item_id: p.id,
+            item_name: cleanProductName(p.name),
+            item_category: p.product_type,
+            price: Number(p.price) || 0,
+          })),
+        },
+      });
+    } catch {
+      /* swallow */
+    }
   }, []);
 
   // Product list for grid

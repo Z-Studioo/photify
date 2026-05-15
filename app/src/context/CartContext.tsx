@@ -1,5 +1,17 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from 'react';
 import { uploadDataURLToStorage } from '@/lib/supabase/storage';
+import { track, cleanProductName, type AnalyticsItem } from '@/lib/analytics';
+
+/** Map a CartItem to GA4's Item shape for ecommerce events. */
+function toAnalyticsItem(item: CartItem): AnalyticsItem {
+  return {
+    item_id: item.id,
+    item_name: cleanProductName(item.name),
+    item_variant: item.size,
+    price: item.price,
+    quantity: item.quantity,
+  };
+}
 
 const CART_STORAGE_KEY = 'photify_cart_v1';
 
@@ -180,10 +192,42 @@ export function CartProvider({ children }: { children: ReactNode }) {
       }
       return [...prev, resolvedItem];
     });
+
+    // GA4 add_to_cart — fire on every add (even merges into existing
+    // line) since the user's intent is "add this many more".
+    try {
+      const analyticsItem = toAnalyticsItem(resolvedItem);
+      track({
+        name: 'add_to_cart',
+        params: {
+          currency: 'GBP',
+          value: (resolvedItem.price ?? 0) * (resolvedItem.quantity ?? 1),
+          items: [analyticsItem],
+        },
+      });
+    } catch {
+      /* analytics must never break the cart */
+    }
   };
 
   const removeFromCart = (id: string) => {
+    const removed = cartItems.find((item) => item.id === id);
     setCartItems((prev) => prev.filter((item) => item.id !== id));
+    if (removed) {
+      try {
+        const analyticsItem = toAnalyticsItem(removed);
+        track({
+          name: 'remove_from_cart',
+          params: {
+            currency: 'GBP',
+            value: (removed.price ?? 0) * (removed.quantity ?? 1),
+            items: [analyticsItem],
+          },
+        });
+      } catch {
+        /* swallow */
+      }
+    }
   };
 
   const updateQuantity = (id: string, quantity: number) => {

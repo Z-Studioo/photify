@@ -29,6 +29,7 @@ import {
 import { motion, AnimatePresence } from 'framer-motion';
 import { getConfigurerById } from '@/lib/configures/registry';
 import { createClient } from '@/lib/supabase/client';
+import { track, cleanProductName } from '@/lib/analytics';
 import {
   getFeatureLucideIcon,
   isFeatureIconUrl,
@@ -115,6 +116,33 @@ export function ProductDetailPage({
   const [relatedProducts, setRelatedProducts] = useState<any[]>([]);
   const heroRef = useRef<HTMLDivElement>(null);
   const ctaRef = useRef<HTMLDivElement>(null);
+
+  // GA4 view_item — fired once when the product page mounts. Using
+  // productId in the dep array ensures we re-emit when the user
+  // navigates to a different product via the related-products grid.
+  useEffect(() => {
+    if (!initialProduct?.id) return;
+    try {
+      track({
+        name: 'view_item',
+        params: {
+          currency: 'GBP',
+          value: Number(initialProduct.price) || 0,
+          items: [
+            {
+              item_id: String(initialProduct.id),
+              item_name: cleanProductName(initialProduct.name || ''),
+              item_category: initialProduct.product_type,
+              price: Number(initialProduct.price) || 0,
+              quantity: 1,
+            },
+          ],
+        },
+      });
+    } catch {
+      /* swallow */
+    }
+  }, [initialProduct?.id]);
 
   useEffect(() => {
     if (!productId) {

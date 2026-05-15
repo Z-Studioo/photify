@@ -13,6 +13,7 @@ import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { track } from '@/lib/analytics';
 
 export function AIBackgroundRemoverPage() {
   const navigate = useNavigate();
@@ -60,6 +61,7 @@ export function AIBackgroundRemoverPage() {
   const handleRemoveBackground = () => {
     if (!uploadedImage) return;
 
+    const startedAt = Date.now();
     setIsProcessing(true);
     setProgress(0);
 
@@ -79,6 +81,18 @@ export function AIBackgroundRemoverPage() {
       clearInterval(interval);
       setProcessedImage(uploadedImage); // In real app, this would be with transparent background
       setIsProcessing(false);
+      try {
+        track({
+          name: 'ai_tool_used',
+          params: {
+            tool: 'background_remover',
+            duration_ms: Date.now() - startedAt,
+            success: true,
+          },
+        });
+      } catch {
+        /* swallow */
+      }
     }, 2500);
   };
 

@@ -108,6 +108,9 @@ pnpm-lock.yaml
 
 .claude
 
+# Cursor local MCP config (contains user-specific paths/credentials)
+.cursor/mcp.json
+
 # Supabase CLI local state
 server/supabase/.branches/
 server/supabase/.temp/
