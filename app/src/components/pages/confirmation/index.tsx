@@ -6,6 +6,12 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { createClient } from '@/lib/supabase/client';
 import { useCart } from '@/context/CartContext';
 import { toast } from 'sonner';
+import { track, cleanProductName } from '@/lib/analytics';
+
+// Per-tab dedupe: GA4 dedupes against the server-side `purchase` by
+// transaction_id, but PostHog does not. This prevents reloading
+// /confirmation?order_id=... from triple-counting in PostHog.
+const PURCHASE_TRACKED_KEY_PREFIX = 'photify_purchase_tracked_';
 import {
   CheckCircle2,
   Package,
@@ -263,6 +269,43 @@ export function ConfirmationPage() {
           clearCart();
           // Clear sessionStorage
           sessionStorage.removeItem('pendingOrderId');
+
+          // Fire GA4 `purchase`. Dedupe across page reloads via
+          // sessionStorage; transaction_id matches the server-side
+          // event so GA4 itself dedupes against the webhook ping.
+          const transactionId =
+            order.stripe_payment_intent_id || order.order_number;
+          if (transactionId) {
+            const dedupeKey = PURCHASE_TRACKED_KEY_PREFIX + transactionId;
+            try {
+              if (!sessionStorage.getItem(dedupeKey)) {
+                sessionStorage.setItem(dedupeKey, '1');
+                track({
+                  name: 'purchase',
+                  params: {
+                    transaction_id: transactionId,
+                    currency: 'GBP',
+                    value: parseFloat(order.total) || 0,
+                    tax: parseFloat(order.tax || 0) || 0,
+                    shipping: shippingCost,
+                    coupon: order.promo_code ?? undefined,
+                    items: (order.items || []).map(
+                      (item: OrderItem & { product_type?: string }, idx) => ({
+                        item_id: String(item.id ?? `line_${idx}`),
+                        item_name: cleanProductName(item.name),
+                        item_variant: item.size,
+                        item_category: item.product_type,
+                        price: Number(item.price) || 0,
+                        quantity: item.quantity ?? 1,
+                      })
+                    ),
+                  },
+                });
+              }
+            } catch {
+              /* analytics must never break the confirmation page */
+            }
+          }
         }
       } catch (err) {
         console.error('Error:', err);

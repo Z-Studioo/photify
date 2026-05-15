@@ -3,6 +3,7 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import { createClient } from '@/lib/supabase/client';
 import { Header } from '@/components/layout/header';
 import { Footer } from '@/components/layout/footer';
+import { track } from '@/lib/analytics';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -266,6 +267,11 @@ export function OrderTrackPage() {
         setSearchedOrder(transformedOrder);
         setNotFound(false);
         toast.success('Order found');
+        try {
+          track({ name: 'track_order_view', params: { has_order: true } });
+        } catch {
+          /* swallow */
+        }
         setTimeout(() => {
           orderDetailsRef.current?.scrollIntoView({
             behavior: 'smooth',

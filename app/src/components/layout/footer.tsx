@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom';
 import { Facebook, Instagram } from 'lucide-react';
+import { reopenCookieBanner } from '@/lib/analytics/consent';
 
 export function Footer() {
   return (
@@ -90,6 +91,15 @@ export function Footer() {
                 >
                   Refund &amp; Returns
                 </Link>
+              </li>
+              <li>
+                <button
+                  type='button'
+                  onClick={reopenCookieBanner}
+                  className='text-gray-400 hover:text-[#f63a9e] transition-colors text-left'
+                >
+                  Cookie Settings
+                </button>
               </li>
              
               <li>

@@ -17,6 +17,7 @@ import { Header } from '@/components/layout/header';
 import { ClientOnly } from '@/components/shared/client-only';
 import { cn } from '@/lib/utils';
 import { buildMeta } from '@/lib/seo';
+import { track } from '@/lib/analytics';
 import type { Route } from './+types/index';
 
 export const meta: Route.MetaFunction = () =>
@@ -47,6 +48,14 @@ const UploadPageInner = () => {
       const errorMessage = 'Please upload a valid image file';
       setUploadError(errorMessage);
       toast.error(errorMessage);
+      try {
+        track({
+          name: 'image_upload_failed',
+          params: { reason: 'invalid_type' },
+        });
+      } catch {
+        /* swallow */
+      }
       return;
     }
 
@@ -54,6 +63,14 @@ const UploadPageInner = () => {
       const errorMessage = `Image is too large. Please upload a file smaller than ${MAX_FILE_SIZE_MB}MB.`;
       setUploadError(errorMessage);
       toast.error(errorMessage);
+      try {
+        track({
+          name: 'image_upload_failed',
+          params: { reason: 'too_large' },
+        });
+      } catch {
+        /* swallow */
+      }
       return;
     }
 
@@ -65,6 +82,42 @@ const UploadPageInner = () => {
     setFile(file);
     setPreview(newPreview);
     setUploadError(null);
+
+    // GA4 image_upload — fires after validation passes. Measuring the
+    // image dimensions requires loading it into an Image element; do
+    // that asynchronously so the upload UX isn't blocked.
+    try {
+      const sizeMb = Math.round((file.size / (1024 * 1024)) * 10) / 10;
+      const img = new Image();
+      img.onload = () => {
+        try {
+          track({
+            name: 'image_upload',
+            params: {
+              source: 'device',
+              mb: sizeMb,
+              width: img.naturalWidth,
+              height: img.naturalHeight,
+            },
+          });
+        } catch {
+          /* swallow */
+        }
+      };
+      img.onerror = () => {
+        try {
+          track({
+            name: 'image_upload',
+            params: { source: 'device', mb: sizeMb },
+          });
+        } catch {
+          /* swallow */
+        }
+      };
+      img.src = newPreview;
+    } catch {
+      /* swallow */
+    }
   };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {

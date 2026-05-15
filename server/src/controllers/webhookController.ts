@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 import { stripe } from '@/lib/stripe';
 import { supabase } from '@/lib/supabase';
 import { sendOrderConfirmationEmail, sendAdminNewOrderEmail, getDeliveryInfo } from '@/lib/sendgrid';
+import { trackPurchase, trackRefund } from '@/lib/ga4';
 import Stripe from 'stripe';
 
 /**
@@ -187,6 +188,12 @@ export async function handleStripeWebhook(
 
           // Send order confirmation email
           await sendConfirmationEmailForOrder(order);
+
+          // Fire server-side GA4 `purchase` event. GA4 dedupes against
+          // the client-side event from /confirmation by `transaction_id`
+          // (= Stripe payment_intent.id), so this is safe to call even
+          // when the customer's browser also reports the purchase.
+          await trackPurchase(order);
         }
 
         break;
@@ -252,8 +259,47 @@ export async function handleStripeWebhook(
         } else if (updatedOrder) {
           await upsertCustomer(updatedOrder);
           await sendConfirmationEmailForOrder(updatedOrder);
+
+          // Server-side GA4 `purchase` (Express / inline checkout flow).
+          // Dedupes with the client event by transaction_id.
+          await trackPurchase(updatedOrder);
         }
 
+        break;
+      }
+
+      case 'charge.refunded': {
+        const charge = event.data.object as Stripe.Charge;
+        const paymentIntentId =
+          typeof charge.payment_intent === 'string'
+            ? charge.payment_intent
+            : charge.payment_intent?.id;
+
+        if (!paymentIntentId) {
+          console.warn(
+            'charge.refunded received without payment_intent — cannot reconcile order'
+          );
+          break;
+        }
+
+        const { data: refundedOrder, error: lookupErr } = await supabase
+          .from('orders')
+          .select('*')
+          .eq('stripe_payment_intent_id', paymentIntentId)
+          .maybeSingle();
+
+        if (lookupErr || !refundedOrder) {
+          console.warn(
+            'charge.refunded: no matching order for PI',
+            paymentIntentId
+          );
+          break;
+        }
+
+        // Stripe reports `amount_refunded` in the smallest currency
+        // unit (pence). Convert to pounds for the GA4 `value`.
+        const refundAmount = (charge.amount_refunded || 0) / 100;
+        await trackRefund(refundedOrder, refundAmount);
         break;
       }
 

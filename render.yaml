@@ -63,6 +63,15 @@ services:
         sync: false
       - key: VITE_FIREBASE_APP_ID
         sync: false
+      # Analytics — PostHog (EU region). Setting these in the Dashboard
+      # enables product analytics + session replay on the live site only;
+      # PR preview deploys still won't load the SDK because the runtime
+      # hostname gate in `lib/analytics/posthog.ts` rejects anything
+      # outside photify.co / www.photify.co.
+      - key: VITE_POSTHOG_KEY
+        sync: false
+      - key: VITE_POSTHOG_HOST
+        value: https://eu.i.posthog.com
 
   # ---------------------------------------------------------------------------
   # Backend — Node/Express API. Runs the compiled output from `tsc`.
@@ -111,4 +120,13 @@ services:
       - key: POSTCODER_API_KEY
         sync: false
       - key: OPENAI_API_KEY
+        sync: false
+      # Analytics — GA4 server-side Measurement Protocol. The webhook
+      # uses these to send a deduplicated `purchase` event for every
+      # Stripe payment, capturing revenue even when the customer's
+      # browser blocks gtag. Measurement ID is public; API secret is
+      # the value you generated in GA4 → Admin → Data streams.
+      - key: GA4_MEASUREMENT_ID
+        value: G-36QQ67296N
+      - key: GA4_API_SECRET
         sync: false

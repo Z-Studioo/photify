@@ -3,16 +3,17 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Cookie, X, ShieldCheck, XCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Link } from 'react-router';
-
-const COOKIE_KEY = 'photify_cookie_consent';
-
-type ConsentValue = 'accepted' | 'denied';
+import {
+  getConsent,
+  setConsent,
+  REOPEN_BANNER_EVENT,
+} from '@/lib/analytics/consent';
 
 export function CookieConsent() {
   const [visible, setVisible] = useState(false);
 
   useEffect(() => {
-    const stored = localStorage.getItem(COOKIE_KEY) as ConsentValue | null;
+    const stored = getConsent();
     if (!stored) {
       // Small delay so it doesn't flash immediately on page load
       const t = setTimeout(() => setVisible(true), 1200);
@@ -20,13 +21,22 @@ export function CookieConsent() {
     }
   }, []);
 
+  // Allow the footer "Cookie settings" link to re-open the banner so
+  // users can change their mind without us forcing them to clear their
+  // browser storage manually.
+  useEffect(() => {
+    const handler = () => setVisible(true);
+    window.addEventListener(REOPEN_BANNER_EVENT, handler);
+    return () => window.removeEventListener(REOPEN_BANNER_EVENT, handler);
+  }, []);
+
   const handleAccept = () => {
-    localStorage.setItem(COOKIE_KEY, 'accepted');
+    setConsent('accepted');
     setVisible(false);
   };
 
   const handleDeny = () => {
-    localStorage.setItem(COOKIE_KEY, 'denied');
+    setConsent('denied');
     setVisible(false);
   };
 

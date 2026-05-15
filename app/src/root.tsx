@@ -17,6 +17,7 @@ import { UploadProvider } from '@/context/UploadContext';
 import { PresetProvider } from '@/context/PresetContext';
 import { ToastProvider } from '@/components/shared/common/toast';
 import { CookieConsent } from '@/components/shared/cookie-consent';
+import { PageViewTracker } from '@/components/shared/page-view-tracker';
 import stylesheet from './index.css?url';
 import {
   SITE_LANG,
@@ -105,27 +106,77 @@ export const meta: Route.MetaFunction = () => [
   { 'script:ld+json': websiteJsonLd() },
 ];
 
-// Google Analytics (gtag.js) loader, gated by runtime hostname so it only
-// fires on the live photify.co domains. Staging, preview deploys and local
-// development never load the gtag script even though the snippet is in the
-// shipped bundle. Inlined in <head> (rather than a React component) so it
-// runs before hydration and matches the ordering Google recommends.
+// Google Analytics (gtag.js) loader with Google Consent Mode v2.
+//
+// Two layers of gating:
+//   1. Hostname allow-list — only photify.co / www.photify.co ever load
+//      the gtag script. Staging, *.onrender.com preview deploys, and
+//      localhost never make any network call to Google.
+//   2. Consent Mode v2 — even on the live site, all storage defaults to
+//      `denied` until the user accepts via the cookie banner, at which
+//      point `setConsent('accepted')` in `lib/analytics/consent.ts`
+//      fires `gtag('consent', 'update', {...: 'granted'})`.
+//
+// The snippet is inlined in <head> (rather than a React component) so
+// it runs before hydration and matches the ordering Google recommends:
+//   - dataLayer + gtag stubs first
+//   - `consent default` *before* `config`
+//   - tag library loaded asynchronously last
+//
+// If we ever read a previously-granted choice from localStorage we
+// upgrade consent immediately so returning customers don't get
+// consent-mode-pinged data for a request they already approved.
 const GA_MEASUREMENT_ID = 'G-36QQ67296N';
 const GA_ALLOWED_HOSTNAMES = ['photify.co', 'www.photify.co'];
+const GA_CONSENT_STORAGE_KEY = 'photify_cookie_consent';
 const GA_INLINE_SNIPPET = `(function(){
   try {
     var allowed = ${JSON.stringify(GA_ALLOWED_HOSTNAMES)};
     var host = (window.location && window.location.hostname) || '';
     if (allowed.indexOf(host) === -1) return;
+
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){ window.dataLayer.push(arguments); }
+    window.gtag = gtag;
+
+    // Consent Mode v2 — default everything to denied. The cookie
+    // banner upgrades these via gtag('consent','update',...) on Accept.
+    gtag('consent', 'default', {
+      ad_storage: 'denied',
+      ad_user_data: 'denied',
+      ad_personalization: 'denied',
+      analytics_storage: 'denied',
+      wait_for_update: 500
+    });
+
+    // If the visitor already accepted on a previous visit, upgrade
+    // immediately so we don't lose the very first page_view of the
+    // session to consent-mode pinging.
+    try {
+      var stored = window.localStorage.getItem('${GA_CONSENT_STORAGE_KEY}');
+      if (stored === 'accepted') {
+        gtag('consent', 'update', {
+          ad_storage: 'granted',
+          ad_user_data: 'granted',
+          ad_personalization: 'granted',
+          analytics_storage: 'granted'
+        });
+      }
+    } catch (_) { /* localStorage disabled — fall back to denied */ }
+
+    gtag('js', new Date());
+    gtag('config', '${GA_MEASUREMENT_ID}', {
+      // SPA: page_view is fired manually by <PageViewTracker/> on each
+      // React Router navigation. Disable the auto event so we don't
+      // double-count the initial load.
+      send_page_view: false,
+      anonymize_ip: true
+    });
+
     var s = document.createElement('script');
     s.async = true;
     s.src = 'https://www.googletagmanager.com/gtag/js?id=${GA_MEASUREMENT_ID}';
     document.head.appendChild(s);
-    window.dataLayer = window.dataLayer || [];
-    function gtag(){ window.dataLayer.push(arguments); }
-    window.gtag = gtag;
-    gtag('js', new Date());
-    gtag('config', '${GA_MEASUREMENT_ID}');
   } catch (_) { /* analytics must never break the app */ }
 })();`;
 
@@ -159,6 +210,7 @@ export default function Root() {
             <AdminProvider>
               <UploadProvider>
                 <PresetProvider>
+                  <PageViewTracker />
                   <Outlet />
                   <CookieConsent />
                 </PresetProvider>

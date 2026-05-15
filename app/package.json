@@ -51,6 +51,7 @@
     "isbot": "^5.1.39",
     "lucide-react": "^0.544.0",
     "motion": "^12.23.24",
+    "posthog-js": "^1.373.4",
     "radix-ui": "^1.4.3",
     "react": "^19.1.1",
     "react-compare-image": "^3.5.10",
