@@ -105,12 +105,37 @@ export const meta: Route.MetaFunction = () => [
   { 'script:ld+json': websiteJsonLd() },
 ];
 
+// Google Analytics (gtag.js) loader, gated by runtime hostname so it only
+// fires on the live photify.co domains. Staging, preview deploys and local
+// development never load the gtag script even though the snippet is in the
+// shipped bundle. Inlined in <head> (rather than a React component) so it
+// runs before hydration and matches the ordering Google recommends.
+const GA_MEASUREMENT_ID = 'G-36QQ67296N';
+const GA_ALLOWED_HOSTNAMES = ['photify.co', 'www.photify.co'];
+const GA_INLINE_SNIPPET = `(function(){
+  try {
+    var allowed = ${JSON.stringify(GA_ALLOWED_HOSTNAMES)};
+    var host = (window.location && window.location.hostname) || '';
+    if (allowed.indexOf(host) === -1) return;
+    var s = document.createElement('script');
+    s.async = true;
+    s.src = 'https://www.googletagmanager.com/gtag/js?id=${GA_MEASUREMENT_ID}';
+    document.head.appendChild(s);
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){ window.dataLayer.push(arguments); }
+    window.gtag = gtag;
+    gtag('js', new Date());
+    gtag('config', '${GA_MEASUREMENT_ID}');
+  } catch (_) { /* analytics must never break the app */ }
+})();`;
+
 export function Layout({ children }: { children: React.ReactNode }) {
   return (
     <html lang={SITE_LANG}>
       <head>
         <Meta />
         <Links />
+        <script dangerouslySetInnerHTML={{ __html: GA_INLINE_SNIPPET }} />
       </head>
       <body>
         {children}

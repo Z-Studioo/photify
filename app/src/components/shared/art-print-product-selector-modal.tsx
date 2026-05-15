@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
@@ -6,6 +6,7 @@ import {
   DialogContent,
 } from '@/components/ui/dialog';
 import { useUpload } from '@/context/UploadContext';
+import { getTransformedImageUrl } from '@/lib/supabase/image-url';
 import {
   ArrowRight,
   Image as ImageIcon,
@@ -54,6 +55,36 @@ export function ArtPrintProductSelectorModal({
   const mockups = art?.mockups ?? [];
   const hasMockups = mockups.length > 0;
 
+  // Display variants — the originals are still uploaded to Supabase Storage
+  // untouched; we only request lighter on-the-fly renders for the on-screen
+  // preview. The full-resolution `art.image` is preserved separately and used
+  // when the customer actually proceeds to the canvas configurer.
+  const displayMockups = useMemo(
+    () =>
+      mockups.map(src =>
+        getTransformedImageUrl(src, { width: 1200, quality: 80, resize: 'cover' })
+      ),
+    [mockups]
+  );
+  const previewImage = useMemo(
+    () =>
+      art?.image
+        ? getTransformedImageUrl(art.image, { width: 1000, quality: 80 })
+        : '',
+    [art?.image]
+  );
+  const blurredBackdrop = useMemo(
+    () =>
+      art?.image
+        ? getTransformedImageUrl(art.image, {
+            width: 80,
+            quality: 30,
+            resize: 'cover',
+          })
+        : '',
+    [art?.image]
+  );
+
   // Reset slide whenever the art changes or the modal re-opens.
   useEffect(() => {
     setSlideIndex(0);
@@ -69,7 +100,7 @@ export function ArtPrintProductSelectorModal({
   }, [open, mockups.length]);
 
   const currentMockup = hasMockups
-    ? mockups[slideIndex % mockups.length]
+    ? displayMockups[slideIndex % displayMockups.length]
     : null;
 
   const handleSelectSingleCanvas = async () => {
@@ -158,12 +189,16 @@ export function ArtPrintProductSelectorModal({
               </>
             ) : (
               <>
-                {/* Fallback: blurred backdrop + framed canvas of the original art */}
+                {/* Fallback: blurred backdrop + framed canvas of the original art.
+                    Backdrop uses a tiny render-image variant since it's
+                    aggressively blurred; the framed preview uses a moderate
+                    variant. The full-res original is reserved for the
+                    configurer step (see handleSelectSingleCanvas). */}
                 {art?.image && (
                   <>
                     <div
                       className='absolute inset-0 bg-cover bg-center scale-110 opacity-50 blur-2xl'
-                      style={{ backgroundImage: `url(${art.image})` }}
+                      style={{ backgroundImage: `url(${blurredBackdrop})` }}
                       aria-hidden
                     />
                     <div className='absolute inset-0 bg-gradient-to-br from-black/35 via-transparent to-black/55' />
@@ -189,8 +224,10 @@ export function ArtPrintProductSelectorModal({
                           }}
                         >
                           <img
-                            src={art.image}
+                            src={previewImage}
                             alt={art.name}
+                            loading='lazy'
+                            decoding='async'
                             className='block max-w-[55vw] sm:max-w-[420px] max-h-[44vh] sm:max-h-[420px] object-contain'
                             draggable={false}
                           />

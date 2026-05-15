@@ -2,7 +2,19 @@ import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { ImageWithFallback } from '@/components/figma/image-with-fallback';
 import { ArtPrintProductSelectorModal } from '@/components/shared/art-print-product-selector-modal';
+import {
+  buildImageSrcSet,
+  getTransformedImageUrl,
+} from '@/lib/supabase/image-url';
 import { ArrowUpRight, Heart } from 'lucide-react';
+
+// Tile widths in CSS pixels at various breakpoints (matches the masonry
+// `columns-{2,3,4,5}` layout in the gallery — keep in sync with the parent).
+// We request 2 variants per tile so retina screens still get a crisp image
+// without forcing every visitor to download the multi-MB original.
+const TILE_THUMBNAIL_WIDTHS = [400, 800];
+const TILE_SIZES_ATTR =
+  '(min-width: 1280px) 280px, (min-width: 1024px) 25vw, (min-width: 768px) 33vw, 50vw';
 
 export interface ArtPhotoTileProps {
   id: string;
@@ -46,8 +58,19 @@ export function ArtPhotoTile({
     '/assets/placeholder.png';
 
   // Mockups are stored as `images.slice(1)` — index 0 is the original art.
+  // Originals are kept untouched; we only resize for the *display* layer.
   const mockups =
     Array.isArray(images) && images.length > 1 ? images.slice(1) : [];
+
+  const thumbnailSrc = getTransformedImageUrl(primaryImage, {
+    width: 600,
+    quality: 75,
+  });
+  const thumbnailSrcSet = buildImageSrcSet(
+    primaryImage,
+    TILE_THUMBNAIL_WIDTHS,
+    { quality: 75 }
+  );
 
   return (
     <>
@@ -61,9 +84,13 @@ export function ArtPhotoTile({
         aria-label={`Print ${name}`}
         className='group relative block w-full overflow-hidden bg-gray-100 mb-3 sm:mb-4 break-inside-avoid cursor-pointer text-left border-0 p-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#f63a9e] focus-visible:ring-offset-2'
       >
-        {/* Image dictates the tile height — no cropping, full photo visible */}
+        {/* Image dictates the tile height — no cropping, full photo visible.
+            We serve a Supabase render-image variant (~600w base, srcset for
+            retina) instead of the multi-MB original the admin uploaded. */}
         <ImageWithFallback
-          src={primaryImage}
+          src={thumbnailSrc}
+          srcSet={thumbnailSrcSet}
+          sizes={TILE_SIZES_ATTR}
           alt={name}
           className='block w-full h-auto transition-transform duration-700 ease-out group-hover:scale-[1.04]'
         />
