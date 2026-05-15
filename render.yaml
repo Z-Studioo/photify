@@ -11,51 +11,31 @@
 
 services:
   # ---------------------------------------------------------------------------
-  # Frontend — React Router v7 SPA (prerender + ssr:false), served as a
-  # static site.
+  # Frontend — React Router v7 Node SSR server (hybrid: SEO routes are
+  # server-rendered, tool/admin routes hydrate client-only via ClientOnly).
   #
-  # The wildcard rewrite is the permanent fix for unknown / mistyped URLs
-  # (e.g. /foobar) showing Render's default "Not Found" page instead of our
-  # styled 404. Render evaluates this rule ONLY when no real file exists on
-  # disk, so prerendered routes (/cart, /checkout, every /admin/* index,
-  # every /customize/* tool, /product/:slug, /category/:slug) are still
-  # served natively as <path>/index.html with no rewrite involved.
+  # `react-router-serve` is a minimal Express wrapper that mounts the
+  # framework's request handler at `/` and serves the prerendered legal
+  # pages (/privacy-policy, /terms-of-use, /refund-return-policy) as static
+  # HTML. Everything else is rendered on each request from
+  # `build/server/index.js`.
   #
-  # For any path with no prerendered file, Render rewrites (status 200) to
-  # /__spa-fallback.html — which React Router generates automatically
-  # because ssr:false + "/" is in the prerender list. The SPA shell then
-  # hydrates against window.location, and the `route('*', 'pages/not-found.tsx')`
-  # wildcard renders the styled 404 page client-side.
-  #
-  # Note: this also restores the original deep-link / reload behaviour for
-  # dynamic admin routes that intentionally are NOT prerendered (e.g.
-  # /admin/orders/:orderId, /admin/products/edit/:productId). Hitting them
-  # directly now loads the SPA shell instead of 404'ing.
+  # Build-time VITE_* env vars stay as before — they're still inlined into
+  # the client bundle. Runtime env (e.g. NODE_ENV, PORT) is read by the
+  # Node process at boot.
   # ---------------------------------------------------------------------------
   - type: web
-    runtime: static
+    runtime: node
     name: photify-frontend
     buildCommand: cd app && npm install && npm run build
-    staticPublishPath: ./app/build/client
+    startCommand: cd app && npm start
+    healthCheckPath: /
     pullRequestPreviewsEnabled: true
-    routes:
-      - type: rewrite
-        source: /*
-        destination: /__spa-fallback.html
-    headers:
-      - path: /assets/*
-        name: Cache-Control
-        value: public, max-age=31536000, immutable
-      - path: /*
-        name: X-Frame-Options
-        value: SAMEORIGIN
-      - path: /*
-        name: X-Content-Type-Options
-        value: nosniff
-      - path: /*
-        name: Referrer-Policy
-        value: strict-origin-when-cross-origin
     envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: "3000"
       - key: VITE_API_URL
         value: https://photify-backend.onrender.com
       - key: VITE_APP_URL

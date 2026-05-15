@@ -1,6 +1,13 @@
-import { MultiCanvasWallCustomizer } from '@/components/product-configs/multi-canvas-wall/customer-customizer';
+import { lazy, Suspense } from 'react';
+import { ClientOnly } from '@/components/shared/client-only';
 import { buildMeta } from '@/lib/seo';
 import type { Route } from './+types/index';
+
+const MultiCanvasWallCustomizer = lazy(() =>
+  import(
+    '@/components/product-configs/multi-canvas-wall/customer-customizer'
+  ).then(m => ({ default: m.MultiCanvasWallCustomizer }))
+);
 
 export const meta: Route.MetaFunction = () =>
   buildMeta({
@@ -11,5 +18,11 @@ export const meta: Route.MetaFunction = () =>
   });
 
 export default function MultiCanvasWallPage() {
-  return <MultiCanvasWallCustomizer />;
+  return (
+    <ClientOnly>
+      <Suspense fallback={null}>
+        <MultiCanvasWallCustomizer />
+      </Suspense>
+    </ClientOnly>
+  );
 }

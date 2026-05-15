@@ -5,6 +5,7 @@ import { SingleCanvasSizeSelector } from '@/components/product-configs/single-ca
 import { usesSingleCanvasConfigurator } from '@/components/product-configs';
 import { Loader2, AlertCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { ClientOnly } from '@/components/shared/client-only';
 import { buildMeta } from '@/lib/seo';
 import type { Route } from './+types/index';
 
@@ -73,17 +74,19 @@ function Product3DViewContent() {
 
 export default function Product3DViewPage() {
   return (
-    <Suspense
-      fallback={
-        <div className="flex items-center justify-center min-h-screen bg-[#f5f3ef]">
-          <div className="text-center">
-            <Loader2 className="w-12 h-12 animate-spin text-[#f63a9e] mx-auto mb-4" />
-            <p className="text-gray-600">Loading 3D preview...</p>
+    <ClientOnly>
+      <Suspense
+        fallback={
+          <div className="flex items-center justify-center min-h-screen bg-[#f5f3ef]">
+            <div className="text-center">
+              <Loader2 className="w-12 h-12 animate-spin text-[#f63a9e] mx-auto mb-4" />
+              <p className="text-gray-600">Loading 3D preview...</p>
+            </div>
           </div>
-        </div>
-      }
-    >
-      <Product3DViewContent />
-    </Suspense>
+        }
+      >
+        <Product3DViewContent />
+      </Suspense>
+    </ClientOnly>
   );
 }

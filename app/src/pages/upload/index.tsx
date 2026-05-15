@@ -14,6 +14,7 @@ import { toast } from 'sonner';
 import { useEffect, useRef, useState } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import { Header } from '@/components/layout/header';
+import { ClientOnly } from '@/components/shared/client-only';
 import { cn } from '@/lib/utils';
 import { buildMeta } from '@/lib/seo';
 import type { Route } from './+types/index';
@@ -26,7 +27,7 @@ export const meta: Route.MetaFunction = () =>
     noindex: true,
   });
 
-const Page = () => {
+const UploadPageInner = () => {
   const MAX_FILE_SIZE_MB = 20;
   const {
     file: _file,
@@ -354,4 +355,10 @@ const Page = () => {
     </div>
   );
 };
-export default Page;
+export default function Page() {
+  return (
+    <ClientOnly>
+      <UploadPageInner />
+    </ClientOnly>
+  );
+}

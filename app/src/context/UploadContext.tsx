@@ -181,24 +181,18 @@ export const UploadProvider = ({ children }: { children: React.ReactNode }) => {
   const [pendingRatio, setPendingRatio] = useState<string | null>(null);
   const [pendingSize, setPendingSize] = useState<InchData | null>(null);
 
-  const [quality, setQuality] = useState<number[]>(
-    () => getStoredMetadata().quality || [70]
-  );
-  const [cornerStyle, setCornerStyle] = useState<CornerStyle>(
-    () => getStoredMetadata().cornerStyle || 'rounded'
-  );
+  // Initial values are SSR-safe defaults; the restore() effect below
+  // hydrates them from localStorage/IndexedDB on the client after mount.
+  const [quality, setQuality] = useState<number[]>([70]);
+  const [cornerStyle, setCornerStyle] = useState<CornerStyle>('rounded');
   const [pendingCornerStyle, setPendingCornerStyle] = useState<CornerStyle | null>(null);
 
   const [pendingQuality, setPendingQuality] = useState<number[] | null>(null);
 
-  const [edgeType, setEdgeType] = useState<EdgeType>(
-    () => getStoredMetadata().edgeType || 'wrapped'
-  );
+  const [edgeType, setEdgeType] = useState<EdgeType>('wrapped');
   const [pendingEdgeType, setPendingEdgeType] = useState<EdgeType | null>(null);
 
-  const [quantity, setQuantity] = useState<number>(
-    () => getStoredMetadata().quantity || 1
-  );
+  const [quantity, setQuantity] = useState<number>(1);
   const [pendingQuantity, setPendingQuantity] = useState<number | null>(null);
 
   const [hasUserOverriddenRatio, setHasUserOverriddenRatio] = useState(false);

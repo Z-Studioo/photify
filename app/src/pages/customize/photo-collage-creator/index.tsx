@@ -1,6 +1,13 @@
-import { CollageCustomizer } from '@/components/product-configs/1PhotoCollageCreator/customer-customizer';
+import { lazy, Suspense } from 'react';
+import { ClientOnly } from '@/components/shared/client-only';
 import { buildMeta } from '@/lib/seo';
 import type { Route } from './+types/index';
+
+const CollageCustomizer = lazy(() =>
+  import(
+    '@/components/product-configs/1PhotoCollageCreator/customer-customizer'
+  ).then(m => ({ default: m.CollageCustomizer }))
+);
 
 export const meta: Route.MetaFunction = () =>
   buildMeta({
@@ -11,5 +18,11 @@ export const meta: Route.MetaFunction = () =>
   });
 
 export default function PhotoCollageCreatorPage() {
-  return <CollageCustomizer />;
+  return (
+    <ClientOnly>
+      <Suspense fallback={null}>
+        <CollageCustomizer />
+      </Suspense>
+    </ClientOnly>
+  );
 }

@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import {
   Links,
   Meta,
@@ -104,8 +105,6 @@ export const meta: Route.MetaFunction = () => [
   { 'script:ld+json': websiteJsonLd() },
 ];
 
-const queryClient = new QueryClient();
-
 export function Layout({ children }: { children: React.ReactNode }) {
   return (
     <html lang={SITE_LANG}>
@@ -123,6 +122,10 @@ export function Layout({ children }: { children: React.ReactNode }) {
 }
 
 export default function Root() {
+  // Create the QueryClient per request to avoid leaking cache across SSR
+  // responses on the Node server.
+  const [queryClient] = useState(() => new QueryClient());
+
   return (
     <QueryClientProvider client={queryClient}>
       <HelmetProvider>
