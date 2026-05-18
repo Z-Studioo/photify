@@ -180,6 +180,29 @@ const GA_INLINE_SNIPPET = `(function(){
   } catch (_) { /* analytics must never break the app */ }
 })();`;
 
+// TikTok Pixel loader.
+//
+// Same hostname allow-list as GA so the pixel only loads on the live
+// site (photify.co / www.photify.co) and never on staging, *.onrender.com
+// preview deploys, or localhost. Cookie consent for advertising vendors
+// is managed downstream via the existing CookieConsent component; the
+// loader stub itself is safe to mount before consent because TikTok's
+// `ttq.holdConsent` / `ttq.revokeConsent` API is available on the queue
+// and can be wired up later without changing this snippet.
+const TIKTOK_PIXEL_ID = 'D85CEC3C77U49872QGAG';
+const TIKTOK_INLINE_SNIPPET = `(function(w, d, t){
+  try {
+    var allowed = ${JSON.stringify(GA_ALLOWED_HOSTNAMES)};
+    var host = (w.location && w.location.hostname) || '';
+    if (allowed.indexOf(host) === -1) return;
+
+    w.TiktokAnalyticsObject=t;var ttq=w[t]=w[t]||[];ttq.methods=["page","track","identify","instances","debug","on","off","once","ready","alias","group","enableCookie","disableCookie","holdConsent","revokeConsent","grantConsent"],ttq.setAndDefer=function(t,e){t[e]=function(){t.push([e].concat(Array.prototype.slice.call(arguments,0)))}};for(var i=0;i<ttq.methods.length;i++)ttq.setAndDefer(ttq,ttq.methods[i]);ttq.instance=function(t){for(var e=ttq._i[t]||[],n=0;n<ttq.methods.length;n++)ttq.setAndDefer(e,ttq.methods[n]);return e},ttq.load=function(e,n){var r="https://analytics.tiktok.com/i18n/pixel/events.js",o=n&&n.partner;ttq._i=ttq._i||{},ttq._i[e]=[],ttq._i[e]._u=r,ttq._t=ttq._t||{},ttq._t[e]=+new Date,ttq._o=ttq._o||{},ttq._o[e]=n||{};n=document.createElement("script");n.type="text/javascript",n.async=!0,n.src=r+"?sdkid="+e+"&lib="+t;e=document.getElementsByTagName("script")[0];e.parentNode.insertBefore(n,e)};
+
+    ttq.load('${TIKTOK_PIXEL_ID}');
+    ttq.page();
+  } catch (_) { /* analytics must never break the app */ }
+})(window, document, 'ttq');`;
+
 export function Layout({ children }: { children: React.ReactNode }) {
   return (
     <html lang={SITE_LANG}>
@@ -187,6 +210,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
         <Meta />
         <Links />
         <script dangerouslySetInnerHTML={{ __html: GA_INLINE_SNIPPET }} />
+        <script dangerouslySetInnerHTML={{ __html: TIKTOK_INLINE_SNIPPET }} />
       </head>
       <body>
         {children}
