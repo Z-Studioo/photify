@@ -1,7 +1,15 @@
 import dotenv from 'dotenv';
 
-// Load environment variables
 dotenv.config();
+
+// Normalises a URL env var by stripping trailing slashes so callers can safely
+// do `${URL}/some/path` without producing `https://host//some/path`. Returns
+// undefined for empty/missing values so existing `|| fallback` patterns work.
+function normalizeOriginEnv(value: string | undefined): string | undefined {
+  if (!value) return undefined;
+  const trimmed = value.trim().replace(/\/+$/, '');
+  return trimmed || undefined;
+}
 
 interface Config {
   NODE_ENV: string;
@@ -23,7 +31,7 @@ interface Config {
 export const config: Config = {
   NODE_ENV: process.env.NODE_ENV || 'development',
   PORT: parseInt(process.env.PORT || '5000', 10),
-  CLIENT_URL: process.env.CLIENT_URL,
+  CLIENT_URL: normalizeOriginEnv(process.env.CLIENT_URL),
   JWT_SECRET: process.env.JWT_SECRET,
   DB_URL: process.env.DB_URL,
   LOG_LEVEL: process.env.LOG_LEVEL || 'info',
