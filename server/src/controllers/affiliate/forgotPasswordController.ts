@@ -54,16 +54,27 @@ export async function requestAffiliatePasswordReset(
       options: { redirectTo: affiliateSetPasswordUrl() },
     });
 
-    if (linkErr || !linkData?.properties?.action_link) {
+    const hashedToken = linkData?.properties?.hashed_token;
+    if (linkErr || !hashedToken) {
       console.error('Failed to generate affiliate password reset link:', linkErr);
       res.status(200).json(GENERIC_SUCCESS);
       return;
     }
 
+    // We deliberately email a URL into our own app rather than the Supabase
+    // /auth/v1/verify action_link. The Supabase URL consumes the single-use
+    // token on GET, which means email scanners (Outlook safe-links, Gmail
+    // image proxies, corporate spam gateways) and chat link previewers
+    // burn the token before the user can click it. Our URL only triggers
+    // verifyOtp() in the browser via JS, which prefetchers cannot execute.
+    const resetLink = `${affiliateSetPasswordUrl()}?token_hash=${encodeURIComponent(
+      hashedToken
+    )}&type=recovery`;
+
     await sendAffiliatePasswordResetEmail({
       name: affiliate.name,
       email: affiliate.email,
-      reset_link: linkData.properties.action_link,
+      reset_link: resetLink,
     });
 
     res.status(200).json(GENERIC_SUCCESS);

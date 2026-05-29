@@ -284,10 +284,19 @@ export async function approveAffiliate(req: Request, res: Response): Promise<voi
   // We deliberately avoid `auth.admin.inviteUserByEmail` because it sends an
   // email through Supabase's mailer (very low rate limit, separate template).
   // `generateLink({ type: 'invite' })` creates the auth user (or no-ops if it
-  // already exists in some flows) and returns the same `action_link` token
-  // *without* sending any email — we then deliver it ourselves via SendGrid
-  // in `sendAffiliateApprovedEmail` below.
-  let actionLink: string | undefined;
+  // already exists in some flows) and returns the same `hashed_token` *without*
+  // sending any email — we then deliver it ourselves via SendGrid in
+  // `sendAffiliateApprovedEmail` below.
+  //
+  // We also build our own URL pointing at /affiliate/set-password rather than
+  // emailing Supabase's /auth/v1/verify action_link directly. The Supabase
+  // URL consumes the single-use token on any GET request, so email scanners
+  // (Outlook safe-links, Gmail proxies, corporate spam gateways) and chat
+  // link previewers were burning the token before the user could click it.
+  // Our URL is exchanged via `verifyOtp({ token_hash })` in the browser,
+  // which prefetchers cannot trigger because they do not execute JS.
+  let hashedToken: string | undefined;
+  let inviteType: 'invite' | 'recovery' = 'invite';
 
   const { data: inviteData, error: inviteErr } = await supabase.auth.admin.generateLink({
     type: 'invite',
@@ -346,9 +355,11 @@ export async function approveAffiliate(req: Request, res: Response): Promise<voi
     if (recoveryErr) {
       console.error('Failed to generate affiliate recovery link:', recoveryErr);
     }
-    actionLink = recoveryData?.properties?.action_link;
+    hashedToken = recoveryData?.properties?.hashed_token;
+    inviteType = 'recovery';
   } else {
-    actionLink = inviteData?.properties?.action_link;
+    hashedToken = inviteData?.properties?.hashed_token;
+    inviteType = 'invite';
     if (inviteData?.user) {
       await linkAuthUserToAffiliate(
         inviteData.user.id,
@@ -359,7 +370,10 @@ export async function approveAffiliate(req: Request, res: Response): Promise<voi
     }
   }
 
-  const magicLink = actionLink || `${config.CLIENT_URL || 'https://photify.co'}/affiliate/login`;
+  const setPasswordBase = `${config.CLIENT_URL || 'https://photify.co'}/affiliate/set-password`;
+  const magicLink = hashedToken
+    ? `${setPasswordBase}?token_hash=${encodeURIComponent(hashedToken)}&type=${inviteType}`
+    : `${config.CLIENT_URL || 'https://photify.co'}/affiliate/login`;
 
   const { error: updateErr } = await supabase
     .from('affiliates')

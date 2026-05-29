@@ -26,20 +26,34 @@ export function AffiliateSetPasswordPage() {
   useEffect(() => {
     if (typeof window === 'undefined') return;
 
+    const url = new URL(window.location.href);
     const hash = window.location.hash;
 
     // Supabase signals failure by redirecting with `#error=...&error_code=...
     // &error_description=...` instead of `#access_token=...`. Surface that
     // verbatim so users know the link itself is dead, not the page.
-    const params = new URLSearchParams(hash.startsWith('#') ? hash.slice(1) : hash);
-    const hashError = params.get('error_description') || params.get('error');
+    const hashParams = new URLSearchParams(hash.startsWith('#') ? hash.slice(1) : hash);
+    const hashError = hashParams.get('error_description') || hashParams.get('error');
     if (hashError) {
       setError(decodeURIComponent(hashError.replace(/\+/g, ' ')));
       setChecking(false);
       return;
     }
 
-    setIsRecovery(hash.includes('type=recovery'));
+    // Modern PKCE / verifyOtp flow: emails point at this page with
+    // `?token_hash=...&type=recovery|invite`. We exchange the hashed token
+    // for a session via JS POST so that single-use tokens cannot be burned
+    // by email scanners or link previewers (which only issue GETs).
+    const tokenHash = url.searchParams.get('token_hash');
+    const otpType = url.searchParams.get('type') as
+      | 'recovery'
+      | 'invite'
+      | 'magiclink'
+      | 'signup'
+      | 'email_change'
+      | null;
+
+    setIsRecovery((tokenHash ? otpType === 'recovery' : hash.includes('type=recovery')));
 
     const markReady = () => {
       sessionReadyRef.current = true;
@@ -48,10 +62,8 @@ export function AffiliateSetPasswordPage() {
       setError(null);
     };
 
-    // The @supabase/ssr browser client parses the URL hash asynchronously, so
-    // a synchronous getSession() right after mount typically returns null
-    // even when the link is valid. Subscribe to auth state changes instead,
-    // which fire as soon as the hash is consumed.
+    // Subscribe first so we don't miss the SIGNED_IN event from verifyOtp /
+    // hash parsing, regardless of which path establishes the session.
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((event, session) => {
@@ -66,15 +78,36 @@ export function AffiliateSetPasswordPage() {
       }
     });
 
-    // Also fire an explicit check in case the hash was already processed
-    // before our listener attached (e.g. on a fast hydration path).
-    void supabase.auth.getSession().then(({ data: { session } }) => {
-      if (session) markReady();
-    });
+    if (tokenHash && otpType) {
+      void (async () => {
+        const { error: verifyErr } = await supabase.auth.verifyOtp({
+          token_hash: tokenHash,
+          type: otpType,
+        });
+        if (verifyErr) {
+          setChecking(false);
+          setError(verifyErr.message);
+          return;
+        }
+        // Strip the token from the URL so a refresh can't try to redeem
+        // it twice (which would 4xx) and so it doesn't sit in browser
+        // history.
+        url.searchParams.delete('token_hash');
+        url.searchParams.delete('type');
+        window.history.replaceState({}, '', url.toString());
+      })();
+    } else {
+      // Legacy hash-based flow (older emails still in inboxes): the
+      // @supabase/ssr browser client parses the URL hash asynchronously, so
+      // we can't synchronously call getSession() and trust the result.
+      // The onAuthStateChange listener above will pick up the session as
+      // soon as the hash is consumed; we also fire an explicit getSession
+      // for the fast-hydration case.
+      void supabase.auth.getSession().then(({ data: { session } }) => {
+        if (session) markReady();
+      });
+    }
 
-    // If neither path produced a session within a generous window, the link
-    // really is dead (consumed, expired, or this page was opened without a
-    // token in the URL).
     const expiry = window.setTimeout(() => {
       if (!sessionReadyRef.current) {
         setChecking(false);
@@ -82,7 +115,7 @@ export function AffiliateSetPasswordPage() {
           'This link has expired or already been used. Request a new reset link from the login page.'
         );
       }
-    }, 4000);
+    }, 6000);
 
     return () => {
       subscription.unsubscribe();
