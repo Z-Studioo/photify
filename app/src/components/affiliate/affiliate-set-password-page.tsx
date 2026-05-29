@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { createClient } from '@/lib/supabase/client';
 import { Button } from '@/components/ui/button';
@@ -19,23 +19,75 @@ export function AffiliateSetPasswordPage() {
   const [done, setDone] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [sessionReady, setSessionReady] = useState(false);
+  const [checking, setChecking] = useState(true);
   const [isRecovery, setIsRecovery] = useState(false);
+  const sessionReadyRef = useRef(false);
 
   useEffect(() => {
-    const hash = typeof window !== 'undefined' ? window.location.hash : '';
+    if (typeof window === 'undefined') return;
+
+    const hash = window.location.hash;
+
+    // Supabase signals failure by redirecting with `#error=...&error_code=...
+    // &error_description=...` instead of `#access_token=...`. Surface that
+    // verbatim so users know the link itself is dead, not the page.
+    const params = new URLSearchParams(hash.startsWith('#') ? hash.slice(1) : hash);
+    const hashError = params.get('error_description') || params.get('error');
+    if (hashError) {
+      setError(decodeURIComponent(hashError.replace(/\+/g, ' ')));
+      setChecking(false);
+      return;
+    }
+
     setIsRecovery(hash.includes('type=recovery'));
 
-    (async () => {
-      const {
-        data: { session },
-      } = await supabase.auth.getSession();
-      setSessionReady(!!session);
-      if (!session) {
+    const markReady = () => {
+      sessionReadyRef.current = true;
+      setSessionReady(true);
+      setChecking(false);
+      setError(null);
+    };
+
+    // The @supabase/ssr browser client parses the URL hash asynchronously, so
+    // a synchronous getSession() right after mount typically returns null
+    // even when the link is valid. Subscribe to auth state changes instead,
+    // which fire as soon as the hash is consumed.
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((event, session) => {
+      if (
+        session &&
+        (event === 'PASSWORD_RECOVERY' ||
+          event === 'SIGNED_IN' ||
+          event === 'INITIAL_SESSION' ||
+          event === 'TOKEN_REFRESHED')
+      ) {
+        markReady();
+      }
+    });
+
+    // Also fire an explicit check in case the hash was already processed
+    // before our listener attached (e.g. on a fast hydration path).
+    void supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session) markReady();
+    });
+
+    // If neither path produced a session within a generous window, the link
+    // really is dead (consumed, expired, or this page was opened without a
+    // token in the URL).
+    const expiry = window.setTimeout(() => {
+      if (!sessionReadyRef.current) {
+        setChecking(false);
         setError(
           'This link has expired or already been used. Request a new reset link from the login page.'
         );
       }
-    })();
+    }, 4000);
+
+    return () => {
+      subscription.unsubscribe();
+      window.clearTimeout(expiry);
+    };
   }, [supabase]);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -83,6 +135,12 @@ export function AffiliateSetPasswordPage() {
 
         <div className='bg-white rounded-lg shadow-sm border border-gray-200 p-8'>
           <form onSubmit={handleSubmit} className='space-y-6'>
+            {checking && !error && (
+              <div className='bg-blue-50 border border-blue-200 rounded-lg p-4 flex items-start gap-3'>
+                <div className='w-5 h-5 border-2 border-blue-600 border-t-transparent rounded-full animate-spin flex-shrink-0 mt-0.5' />
+                <p className='text-blue-800 text-sm'>Verifying your link…</p>
+              </div>
+            )}
             {error && (
               <div className='bg-red-50 border border-red-200 rounded-lg p-4 flex items-start gap-3'>
                 <AlertCircle className='w-5 h-5 text-red-600 flex-shrink-0 mt-0.5' />
