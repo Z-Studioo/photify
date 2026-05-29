@@ -34,6 +34,7 @@ interface StripePaymentFormProps {
   deliveryFee: number;
   discount: number;
   promoCode?: string;
+  affiliateCode?: string;
   total: number;
   customer: CustomerInfo;
   shippingAddress: ShippingAddressInfo;
@@ -66,6 +67,7 @@ function PaymentFormInner({
   deliveryFee,
   discount,
   promoCode,
+  affiliateCode,
   total,
   customer,
   shippingAddress,
@@ -160,6 +162,7 @@ function PaymentFormInner({
     deliveryFee,
     discount,
     promoCode: promoCode || undefined,
+    affiliateCode: affiliateCode || undefined,
     total,
     source,
   });

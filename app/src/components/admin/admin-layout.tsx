@@ -11,10 +11,11 @@ import {
   BarChart3,
   Users,
   Grid3x3,
-  Home,
   Tag,
   Loader2,
+  Sparkles,
 } from 'lucide-react';
+import { createClient } from '@/lib/supabase/client';
 
 interface AdminLayoutProps {
   children: ReactNode;
@@ -48,9 +49,36 @@ export function AdminLayout({ children }: AdminLayoutProps) {
     // Rooms management is temporarily hidden (kept for future re-enable).
     // { icon: Home, label: 'Rooms', path: '/admin/rooms' },
     { icon: Tag, label: 'Promotions', path: '/admin/promotions' },
+    { icon: Sparkles, label: 'Affiliates', path: '/admin/affiliates' },
     { icon: BarChart3, label: 'Analytics', path: '/admin/analytics' },
     { icon: Settings, label: 'Settings', path: '/admin/settings' },
   ];
+
+  // Fire-and-forget: kick the debounced commission-approval batch whenever an
+  // admin opens any admin page. The endpoint no-ops if it ran within the last
+  // 15 minutes, so this is cheap to call on every route change.
+  useEffect(() => {
+    if (!isAuthenticated) return;
+    const supabase = createClient();
+    void (async () => {
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+      if (!session?.access_token) return;
+      try {
+        void fetch(
+          `${import.meta.env.VITE_API_URL}/api/affiliates/admin/run-commission-approval`,
+          {
+            method: 'POST',
+            headers: { Authorization: `Bearer ${session.access_token}` },
+            keepalive: true,
+          }
+        ).catch(() => {});
+      } catch {
+        /* swallow */
+      }
+    })();
+  }, [isAuthenticated, pathname]);
 
   // Show loading state while checking authentication
   if (loading) {

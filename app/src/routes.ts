@@ -21,6 +21,10 @@ export default [
   route('contact', 'pages/contact/index.tsx'),
   route('privacy-policy', 'pages/privacy-policy/index.tsx'),
   route('terms-of-use', 'pages/terms-of-use/index.tsx'),
+  route(
+    'legal/affiliate-terms',
+    'pages/legal/affiliate-terms/index.tsx'
+  ),
   route('refund-return-policy', 'pages/refund-return-policy/index.tsx'),
   route('track-order', 'pages/track-order/index.tsx'),
 
@@ -55,6 +59,21 @@ export default [
   route('cart', 'pages/cart/index.tsx'),
   route('checkout', 'pages/checkout/index.tsx'),
   route('confirmation', 'pages/confirmation/index.tsx'),
+
+  // Public affiliate signup + referral landing
+  route('affiliate', 'pages/affiliate/index.tsx'),
+  route('affiliate/apply', 'pages/affiliate/apply/index.tsx'),
+  route('r/:code', 'pages/r/[code]/index.tsx'),
+
+  // Affiliate dashboard area (client-only, role-gated)
+  layout('layouts/affiliate-layout.tsx', [
+    route('affiliate/login', 'pages/affiliate/login/index.tsx'),
+    route('affiliate/set-password', 'pages/affiliate/set-password/index.tsx'),
+    route('affiliate/dashboard', 'pages/affiliate/dashboard/index.tsx'),
+    route('affiliate/sales', 'pages/affiliate/sales/index.tsx'),
+    route('affiliate/payouts', 'pages/affiliate/payouts/index.tsx'),
+    route('affiliate/settings', 'pages/affiliate/settings/index.tsx'),
+  ]),
 
   layout('layouts/admin-layout.tsx', [
     route('admin/login', 'pages/admin/login/index.tsx'),
@@ -101,6 +120,12 @@ export default [
     ),
 
     route('admin/customers', 'pages/admin/customers/index.tsx'),
+
+    route('admin/affiliates', 'pages/admin/affiliates/index.tsx'),
+    route(
+      'admin/affiliates/:id',
+      'pages/admin/affiliates/[id]/index.tsx'
+    ),
   ]),
 
   route('category/:category', 'pages/category/[category]/CategoryPageRoute.tsx'),

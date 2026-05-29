@@ -1,6 +1,7 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from 'react';
 import { uploadDataURLToStorage } from '@/lib/supabase/storage';
 import { track, cleanProductName, type AnalyticsItem } from '@/lib/analytics';
+import { getAffiliateRef } from '@/lib/affiliate-ref';
 
 /** Map a CartItem to GA4's Item shape for ecommerce events. */
 function toAnalyticsItem(item: CartItem): AnalyticsItem {
@@ -78,6 +79,13 @@ interface CartContextType {
   promoApplied: boolean;
   setPromoApplied: (applied: boolean) => void;
   clearPromo: () => void;
+  /**
+   * Affiliate referral code (uppercase) currently attributed to this
+   * browser session via the /r/:code landing flow. Sent through to the
+   * payment-intent endpoint so the resulting order is stamped with the
+   * correct affiliate. Resets to null when the 30-day cookie expires.
+   */
+  affiliateRef: string | null;
 }
 
 const CartContext = createContext<CartContextType | undefined>(undefined);
@@ -97,6 +105,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
   // use it to gate the persist effect so the first run doesn't immediately
   // overwrite stored data with our default state.
   const [hydrated, setHydrated] = useState(false);
+  const [affiliateRef, setAffiliateRefState] = useState<string | null>(null);
 
   useEffect(() => {
     const stored = loadPersistedCart();
@@ -109,6 +118,8 @@ export function CartProvider({ children }: { children: ReactNode }) {
         setAppliedPromoCode(stored.appliedPromoCode);
       if (typeof stored.promoApplied === 'boolean') setPromoApplied(stored.promoApplied);
     }
+    const ref = getAffiliateRef();
+    setAffiliateRefState(ref?.code ?? null);
     setHydrated(true);
   }, []);
 
@@ -269,6 +280,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
         promoApplied,
         setPromoApplied,
         clearPromo,
+        affiliateRef,
       }}
     >
       {children}

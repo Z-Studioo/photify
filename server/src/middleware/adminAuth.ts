@@ -1,10 +1,13 @@
 import { Request, Response, NextFunction } from 'express';
-import { createClient } from '@supabase/supabase-js';
 import { config } from '@/config/environment';
+import { supabase } from '@/lib/supabase';
 
 /**
- * Admin authentication middleware
- * Verifies the Supabase JWT token from the Authorization header
+ * Admin authentication middleware.
+ *
+ * Validates the Supabase JWT in the Authorization header and asserts that the
+ * authenticated user has `role = 'admin'` in either `user_metadata` or
+ * `app_metadata`. Affiliates and unscoped users are rejected.
  */
 export async function adminAuth(
   req: Request,
@@ -21,7 +24,7 @@ export async function adminAuth(
     return;
   }
 
-  const token = authHeader.substring(7); // Remove 'Bearer ' prefix
+  const token = authHeader.substring(7);
 
   if (!config.SUPABASE_URL || !config.SUPABASE_SERVICE_KEY) {
     console.error('Supabase configuration is missing');
@@ -33,19 +36,6 @@ export async function adminAuth(
   }
 
   try {
-    // Create Supabase client with service key for verification
-    const supabase = createClient(
-      config.SUPABASE_URL,
-      config.SUPABASE_SERVICE_KEY,
-      {
-        auth: {
-          autoRefreshToken: false,
-          persistSession: false,
-        },
-      }
-    );
-
-    // Verify the JWT token
     const {
       data: { user },
       error,
@@ -59,16 +49,34 @@ export async function adminAuth(
       return;
     }
 
-    // Token is valid and user is authenticated
-    // You can add additional role checks here if needed
-    // For example: check if user has admin role in your users table
+    const role =
+      (user.user_metadata as Record<string, unknown> | undefined)?.role ??
+      (user.app_metadata as Record<string, unknown> | undefined)?.role;
 
-    // Attach user to request for use in route handlers
+    // Explicit affiliate accounts must never use admin routes.
+    if (role === 'affiliate') {
+      res.status(403).json({
+        error: 'Forbidden',
+        message: 'Admin role required',
+      });
+      return;
+    }
+
+    // Require role=admin. Legacy admin accounts created before the affiliate
+    // rollout may not have user_metadata.role yet — allow them through until
+    // `node server/scripts/backfill-admin-role.js` has been run once.
+    if (role && role !== 'admin') {
+      res.status(403).json({
+        error: 'Forbidden',
+        message: 'Admin role required',
+      });
+      return;
+    }
+
     (req as any).user = user;
-
     next();
-  } catch (error) {
-    console.error('Authentication error:', error);
+  } catch (err) {
+    console.error('Authentication error:', err);
     res.status(401).json({
       error: 'Unauthorized',
       message: 'Authentication failed',

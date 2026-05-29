@@ -253,6 +253,101 @@ CMD ["node", "dist/index.js"]
 4. Set up proper database connections
 5. Configure reverse proxy (nginx) if needed
 
+## 🤝 Affiliate Program
+
+The affiliate program lets approved partners share a unique short link
+(`/r/:code`) and earn commission on every paid order attributed to that link.
+Implementation lives in `src/controllers/affiliate/`, `src/routes/affiliates.ts`,
+and migration `supabase/migrations/004_affiliates.sql`.
+
+### Roles
+
+Authentication uses Supabase Auth with a `user_metadata.role` claim:
+
+- `admin` — full access to the admin dashboard and admin affiliate endpoints.
+- `affiliate` — access to the affiliate dashboard and self-service endpoints
+  only.
+
+Existing admins created before the role model was introduced need to be
+stamped once with `role: 'admin'`. Run the one-off backfill script:
+
+```bash
+cd server
+node scripts/backfill-admin-role.js
+```
+
+New affiliate accounts are stamped with `role: 'affiliate'` automatically by
+the admin approval flow (which also issues a Supabase magic-link invite).
+
+### Lifecycle
+
+1. **Apply** — `POST /api/affiliates/apply` creates an `affiliates` row with
+   `status='pending'`. Confirmation email goes to the applicant; notification
+   to `ADMIN_EMAIL`.
+2. **Approve** — `POST /api/affiliates/:id/approve` (admin only) generates a
+   unique referral code, mints a matching `promotions` row (auto-applied
+   discount), issues a Supabase magic-link invite (`/affiliate/set-password`),
+   and emails the affiliate with their dashboard URL.
+3. **Refer** — visitors landing on `/r/:code` get a 30-day localStorage cookie
+   and a fire-and-forget click ping
+   (`POST /api/affiliates/track-click`, aggregated by day).
+4. **Order** — checkout sends `affiliateCode` to `/api/payment-intent` (or
+   `/api/checkout`); the server resolves it to `affiliate_id` and stamps the
+   `orders` row. The Stripe webhook (`payment_intent.succeeded` /
+   `checkout.session.completed`) idempotently inserts an
+   `affiliate_commissions` row (`status='pending'`) and emails the affiliate.
+5. **Deliver** — when the admin flips `orders.status` to `delivered`, a DB
+   trigger sets `affiliate_commissions.available_at = now() + holding_days`
+   (default 14).
+6. **Approve commissions** — `POST /api/affiliates/admin/run-commission-approval`
+   runs a debounced (15min) set-based RPC (`approve_due_commissions`) that
+   flips `pending` → `approved` and emails affected affiliates. The admin
+   layout fires this in the background on every admin page load.
+7. **Pay out** — admin records a payout via
+   `POST /api/affiliates/:id/payouts`. Eligible approved commissions are
+   marked `paid` and the affiliate is emailed.
+8. **Refund** — Stripe `charge.refunded` reverses the linked commission
+   (`pending`/`approved` → `reversed`).
+
+### Email templates
+
+All 7 affiliate emails go through SendGrid dynamic templates. Template IDs
+are inline `const` strings in `src/lib/sendgrid.ts` (see
+`server/email-templates/affiliates/README.md`). Upload each HTML reference,
+set the template Subject to `{{{subject}}}`, then paste the `d-…` ID into
+`sendgrid.ts`.
+
+**Forgot password** — `POST /api/affiliates/forgot-password` emails approved
+affiliates a recovery link via SendGrid (`affiliate-password-reset.html`).
+Reset links redirect to `{CLIENT_URL}/affiliate/set-password` (add this URL
+under Supabase → Authentication → URL configuration → Redirect URLs).
+
+### Environment variables
+
+No new environment variables are required. The affiliate flow reuses:
+
+- `CLIENT_URL` — used to construct dashboard, magic-link / password-reset
+  redirects, and referral URLs.
+- `ADMIN_EMAIL` — receives the "new affiliate application" notification.
+- `SENDGRID_API_KEY` / `SENDGRID_FROM_EMAIL` — drive all email sends.
+- `SUPABASE_URL` / `SUPABASE_SERVICE_KEY` — power admin user invites and
+  bypass RLS for commission writes from the webhook.
+
+### Database
+
+Schema lives in `supabase/migrations/004_affiliates.sql` and introduces:
+
+- `affiliates`, `affiliate_commissions`, `affiliate_payouts`,
+  `affiliate_referrals_daily`, `system_jobs`
+- Columns `orders.affiliate_id`, `orders.affiliate_code`
+- RLS policies (`is_admin()` / `is_affiliate()` helpers)
+- RPCs `get_affiliate_stats`, `approve_due_commissions`,
+  `increment_affiliate_click`
+- Trigger `trg_set_commission_available_at` on `orders`
+
+Apply via the Supabase MCP, CLI (`supabase db push`), or by running the SQL
+manually in the Supabase SQL editor.
+
 ## 📝 Contributing
 
 1. Follow the existing code style

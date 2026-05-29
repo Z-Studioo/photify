@@ -118,6 +118,14 @@ export function Footer() {
                   Contact us
                 </Link>
               </li>
+              <li>
+                <Link
+                  to='/affiliate'
+                  className='text-gray-400 hover:text-[#f63a9e] transition-colors'
+                >
+                  Become an affiliate
+                </Link>
+              </li>
             </ul>
           </div>
 

@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 import { stripe } from '@/lib/stripe';
 import { supabase } from '@/lib/supabase';
 import { config } from '@/config/environment';
+import { resolveAffiliateByCode } from '@/lib/affiliate';
 
 interface CartItem {
   name: string;
@@ -35,6 +36,7 @@ interface CheckoutRequestBody {
   discount?: number;
   promoCode?: string;
   total: number;
+  affiliateCode?: string;
 }
 
 /**
@@ -56,7 +58,10 @@ export async function createCheckoutSession(
       discount = 0,
       promoCode,
       total,
+      affiliateCode,
     } = req.body;
+
+    const affiliate = await resolveAffiliateByCode(affiliateCode);
 
     // Validate required fields
     if (!cartItems || cartItems.length === 0) {
@@ -111,6 +116,8 @@ export async function createCheckoutSession(
         estimated_delivery: estimatedDelivery.toISOString().split('T')[0],
         payment_status: 'pending',
         status: 'pending',
+        affiliate_id: affiliate?.id || null,
+        affiliate_code: affiliate?.code || null,
       })
       .select()
       .single();
@@ -202,6 +209,8 @@ export async function createCheckoutSession(
       metadata: {
         order_id: order.id,
         order_number: orderNumber,
+        affiliate_id: affiliate?.id || '',
+        affiliate_code: affiliate?.code || '',
       },
       invoice_creation: {
         enabled: true,

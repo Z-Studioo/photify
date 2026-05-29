@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 import { stripe } from '@/lib/stripe';
 import { supabase } from '@/lib/supabase';
+import { resolveAffiliateByCode } from '@/lib/affiliate';
 
 interface CartItem {
   name: string;
@@ -36,6 +37,7 @@ interface PaymentIntentRequestBody {
   total: number;
   // Optional hint so the webhook handler can pick the right post-processing path.
   source?: 'express_checkout' | 'payment_element' | 'checkout_session';
+  affiliateCode?: string;
 }
 
 /**
@@ -62,7 +64,10 @@ export async function createPaymentIntent(
       promoCode,
       total,
       source,
+      affiliateCode,
     } = req.body;
+
+    const affiliate = await resolveAffiliateByCode(affiliateCode);
 
     if (!cartItems || cartItems.length === 0) {
       res.status(400).json({ error: 'Cart is empty' });
@@ -118,6 +123,8 @@ export async function createPaymentIntent(
         estimated_delivery: estimatedDelivery.toISOString().split('T')[0],
         payment_status: 'pending',
         status: 'pending',
+        affiliate_id: affiliate?.id || null,
+        affiliate_code: affiliate?.code || null,
       })
       .select()
       .single();
@@ -152,6 +159,8 @@ export async function createPaymentIntent(
         customer_email: customerInfo.email,
         promo_code: promoCode || '',
         source: source || 'payment_element',
+        affiliate_id: affiliate?.id || '',
+        affiliate_code: affiliate?.code || '',
       },
     });
 

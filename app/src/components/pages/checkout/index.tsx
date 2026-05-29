@@ -73,7 +73,8 @@ interface FormData {
 
 export function CheckoutPage() {
   const navigate = useNavigate();
-  const { cartItems, shippingCost, discount, appliedPromoCode } = useCart();
+  const { cartItems, shippingCost, discount, appliedPromoCode, affiliateRef } =
+    useCart();
   // 2-step flow: 1 = Your Details (contact + address), 2 = Review & Pay
   const [currentStep, setCurrentStep] = useState<1 | 2>(1);
   const [formData, setFormData] = useState<FormData>({
@@ -947,6 +948,7 @@ export function CheckoutPage() {
                       deliveryFee={deliveryFee}
                       discount={discount}
                       promoCode={appliedPromoCode || undefined}
+                      affiliateCode={affiliateRef || undefined}
                       total={total}
                       customer={{
                         name: formData.name,

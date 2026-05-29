@@ -55,6 +55,7 @@ export function CartPage() {
     setAppliedPromoCode,
     promoApplied,
     setPromoApplied,
+    affiliateRef,
   } = useCart();
   const navigate = useNavigate();
   const [promoCode, setPromoCode] = useState('');
@@ -146,6 +147,35 @@ export function CartPage() {
   useEffect(() => {
     setShippingCost(deliveryPrice);
   }, [deliveryPrice, setShippingCost]);
+
+  // Auto-apply the affiliate's promo code when the visitor arrived via /r/:code
+  // and no other promo is currently applied. Uses the existing
+  // `is_promotion_valid` RPC so it follows the same validation rules as
+  // manually-entered codes (min order, date window, etc).
+  useEffect(() => {
+    if (!affiliateRef || promoApplied || cartItems.length === 0 || subtotal <= 0) return;
+    let cancelled = false;
+    (async () => {
+      try {
+        const supabase = createClient();
+        const { data, error } = await supabase.rpc('is_promotion_valid', {
+          promotion_code: affiliateRef,
+          order_total: subtotal,
+        });
+        if (cancelled || error) return;
+        if (data && data.length > 0 && data[0].valid) {
+          setPromoApplied(true);
+          setDiscount(data[0].discount_amount);
+          setAppliedPromoCode(affiliateRef);
+        }
+      } catch {
+        /* swallow — affiliate auto-apply is best-effort */
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [affiliateRef, promoApplied, cartItems.length, subtotal, setPromoApplied, setDiscount, setAppliedPromoCode]);
 
   const handleApplyPromo = async () => {
     if (!promoCode.trim()) {
