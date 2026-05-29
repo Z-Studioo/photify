@@ -233,11 +233,14 @@ async function linkAuthUserToAffiliate(
  * Steps:
  *   1. Generate unique code (or use provided).
  *   2. Create matching `promotions` row (percentage, value = discount%).
- *   3. Issue Supabase magic-link invite for the affiliate's email.
- *   4. Stamp affiliate role + link user_id once invite is accepted (we set role
- *      in user_metadata at invite time so the first session is already roled).
+ *   3. Generate a Supabase invite link via `auth.admin.generateLink` (no email
+ *      is sent by Supabase — we deliver the link ourselves via SendGrid to
+ *      avoid Supabase's very low default email rate limit). For users that
+ *      already exist we issue a recovery link instead.
+ *   4. Stamp affiliate role + link user_id (role is also baked into
+ *      user_metadata at invite time so the first session is already roled).
  *   5. Flip affiliate row to status=approved.
- *   6. Fire approval email with the magic-link URL.
+ *   6. Send the approval email through SendGrid containing the action link.
  */
 export async function approveAffiliate(req: Request, res: Response): Promise<void> {
   const { id } = req.params;
@@ -278,18 +281,27 @@ export async function approveAffiliate(req: Request, res: Response): Promise<voi
 
   const redirectTo = `${config.CLIENT_URL || 'https://photify.co'}/affiliate/set-password`;
 
-  const { data: inviteData, error: inviteErr } = await supabase.auth.admin.inviteUserByEmail(
-    affiliate.email,
-    {
+  // We deliberately avoid `auth.admin.inviteUserByEmail` because it sends an
+  // email through Supabase's mailer (very low rate limit, separate template).
+  // `generateLink({ type: 'invite' })` creates the auth user (or no-ops if it
+  // already exists in some flows) and returns the same `action_link` token
+  // *without* sending any email — we then deliver it ourselves via SendGrid
+  // in `sendAffiliateApprovedEmail` below.
+  let actionLink: string | undefined;
+
+  const { data: inviteData, error: inviteErr } = await supabase.auth.admin.generateLink({
+    type: 'invite',
+    email: affiliate.email,
+    options: {
       redirectTo,
       data: { role: 'affiliate', affiliate_id: affiliate.id, name: affiliate.name },
-    }
-  );
+    },
+  });
 
   if (inviteErr) {
     if (!isInviteEmailAlreadyRegistered(inviteErr.message)) {
-      console.error('Failed to invite affiliate user:', inviteErr);
-      res.status(500).json({ error: 'Failed to send affiliate invite' });
+      console.error('Failed to generate affiliate invite link:', inviteErr);
+      res.status(500).json({ error: 'Failed to create affiliate account' });
       return;
     }
 
@@ -323,22 +335,31 @@ export async function approveAffiliate(req: Request, res: Response): Promise<voi
       affiliate.name,
       existingUser.user_metadata as Record<string, unknown> | undefined
     );
-  } else if (inviteData?.user) {
-    await linkAuthUserToAffiliate(
-      inviteData.user.id,
-      affiliate.id,
-      affiliate.name,
-      inviteData.user.user_metadata as Record<string, unknown> | undefined
-    );
+
+    // For an existing user we issue a recovery link so they can set/reset
+    // their password via the same /affiliate/set-password screen.
+    const { data: recoveryData, error: recoveryErr } = await supabase.auth.admin.generateLink({
+      type: 'recovery',
+      email: affiliate.email,
+      options: { redirectTo },
+    });
+    if (recoveryErr) {
+      console.error('Failed to generate affiliate recovery link:', recoveryErr);
+    }
+    actionLink = recoveryData?.properties?.action_link;
+  } else {
+    actionLink = inviteData?.properties?.action_link;
+    if (inviteData?.user) {
+      await linkAuthUserToAffiliate(
+        inviteData.user.id,
+        affiliate.id,
+        affiliate.name,
+        inviteData.user.user_metadata as Record<string, unknown> | undefined
+      );
+    }
   }
 
-  const { data: linkData } = await supabase.auth.admin.generateLink({
-    type: 'magiclink',
-    email: affiliate.email,
-    options: { redirectTo },
-  });
-
-  const magicLink = linkData?.properties?.action_link || `${config.CLIENT_URL || 'https://photify.co'}/affiliate/login`;
+  const magicLink = actionLink || `${config.CLIENT_URL || 'https://photify.co'}/affiliate/login`;
 
   const { error: updateErr } = await supabase
     .from('affiliates')
