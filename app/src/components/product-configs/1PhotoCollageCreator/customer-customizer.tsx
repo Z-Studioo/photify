@@ -39,7 +39,7 @@ import {
 } from '@/components/ui/alert-dialog';
 import { motion, AnimatePresence } from 'framer-motion';
 import { toast } from 'sonner';
-import { CollageEditor } from './collage-editor';
+import { CollageEditor, type CollageEditorHandle } from './collage-editor';
 import { TemplateSelector } from './template-selector';
 import {
   type CollageSelection,
@@ -141,6 +141,9 @@ export function CollageCustomizer() {
   const [activeTab, setActiveTab] = useState<TabType>('templates');
   const [showRuler, setShowRuler] = useState(false);
   const [collageDataURL, setCollageDataURL] = useState<string | null>(null);
+  // Imperative handle on the editor used to pull a print-ready PNG
+  // out of the fabric canvas at checkout time (see handleNext).
+  const collageEditorRef = useRef<CollageEditorHandle | null>(null);
   const [loading, setLoading] = useState(false);
   const [showMobilePanel, setShowMobilePanel] = useState(false);
   const [isDesktop, setIsDesktop] = useState(true); // Default to true to avoid layout shift
@@ -623,10 +626,19 @@ export function CollageCustomizer() {
     setLoading(true);
 
     try {
-      // Upload collage image to storage
+      // Render the print-ready PNG at PRINT_DPI (see config.ts).
+      // The editor canvas itself runs at 50 DPI for performance, so we ask the
+      // editor to re-render at the print multiplier just for this upload.
+      toast.info('Preparing print-quality file...');
+      const printDataURL = collageEditorRef.current?.exportForPrint();
+
+      if (!printDataURL) {
+        throw new Error('Failed to generate print-quality collage');
+      }
+
       toast.info('Uploading your collage...');
       const publicUrl = await uploadDataURLToStorage(
-        collageDataURL,
+        printDataURL,
         'collages',
         `collage-${Date.now()}.png`
       );
@@ -2161,6 +2173,7 @@ export function CollageCustomizer() {
             /* Canvas Editor - Show after template selection */
             <div className='flex-1 overflow-hidden'>
               <CollageEditor
+                ref={collageEditorRef}
                 width={selection.canvasWidth}
                 height={selection.canvasHeight}
                 backgroundColor={selection.backgroundColor}

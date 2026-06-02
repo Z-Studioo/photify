@@ -54,8 +54,20 @@ export const DEFAULT_COLLAGE_SIZES = [
   { width: 30, height: 40, label: '30" x 40"' },
 ];
 
-// DPI for fabric.js canvas rendering (lower for better viewport fit)
-export const CANVAS_DPI = 50; // 50 DPI for viewport-friendly preview (can export at higher res later)
+// DPI used for the in-browser fabric.js editor canvas. Kept intentionally low
+// so the editor stays responsive (a 24" canvas only needs ~1200 px on screen);
+// the final print-ready export is upscaled separately via PRINT_EXPORT_MULTIPLIER.
+export const CANVAS_DPI = 50;
+
+// Target DPI for the final print-ready PNG that gets uploaded to storage and
+// sent to the printer. 300 DPI is the industry standard for canvas/photo
+// prints and keeps the exported file size manageable for uploads.
+export const PRINT_DPI = 300;
+
+// Multiplier passed to fabric.Canvas#toDataURL when generating the print file.
+// Upscales the low-res editor render (CANVAS_DPI) to print resolution (PRINT_DPI)
+// without ever materialising a 600 DPI canvas in the browser.
+export const PRINT_EXPORT_MULTIPLIER = PRINT_DPI / CANVAS_DPI;
 
 // Pixels per inch conversion
 export function inchesToPixels(inches: number): number {
