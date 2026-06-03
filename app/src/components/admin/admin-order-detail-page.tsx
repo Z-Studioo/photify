@@ -186,6 +186,19 @@ export function AdminOrderDetailPage() {
             deliveryPrice: `£${parseFloat(data.shipping_cost || 0).toFixed(2)}`,
             subtotal: `£${parseFloat(data.subtotal).toFixed(2)}`,
             deliveryCharge: `£${parseFloat(data.shipping_cost || 0).toFixed(2)}`,
+            // Orders store the post-discount total, so recover the saving from
+            // the breakdown (subtotal + delivery - total).
+            discount: Math.max(
+              0,
+              Number(
+                (
+                  parseFloat(data.subtotal) +
+                  parseFloat(data.shipping_cost || 0) -
+                  parseFloat(data.total)
+                ).toFixed(2)
+              )
+            ),
+            promoCode: data.promo_code ?? null,
             total: `£${parseFloat(data.total).toFixed(2)}`,
             timeline: generateTimeline({ ...data, status: dbStatus }),
             payment_status: data.payment_status,
@@ -475,6 +488,9 @@ export function AdminOrderDetailPage() {
               .join('')}
           </tbody>
         </table>
+        <p><strong>Subtotal:</strong> ${order.subtotal}</p>
+        <p><strong>Delivery:</strong> ${order.deliveryCharge}</p>
+        ${order.discount > 0 ? `<p><strong>Discount${order.promoCode ? ` (${order.promoCode})` : ''}:</strong> -£${order.discount.toFixed(2)}</p>` : ''}
         <h3>Total: ${order.total}</h3>
       </body>
     </html>
@@ -512,7 +528,7 @@ export function AdminOrderDetailPage() {
 
   const handleDownloadInvoice = () => {
     if (!order) return;
-    const invoiceHtml = `<html><head><title>Invoice #${order.id}</title><style>body{font-family:Arial,sans-serif;padding:20px}h1{color:#f63a9e}table{width:100%;border-collapse:collapse;margin-top:20px}th,td{border:1px solid #ccc;padding:8px;text-align:left}</style></head><body><h1>Invoice #${order.id}</h1><p><strong>Customer:</strong> ${order.customer}</p><p><strong>Email:</strong> ${order.email}</p><p><strong>Phone:</strong> ${order.phone}</p><table><thead><tr><th>Product</th><th>Size</th><th>Unit Price</th><th>Qty</th></tr></thead><tbody>${order.items.map((item: any) => `<tr><td>${item.product}</td><td>${item.size}</td><td>${item.unitPrice}</td><td>${item.quantity ?? 1}</td></tr>`).join('')}</tbody></table><h3>Total: ${order.total}</h3></body></html>`;
+    const invoiceHtml = `<html><head><title>Invoice #${order.id}</title><style>body{font-family:Arial,sans-serif;padding:20px}h1{color:#f63a9e}table{width:100%;border-collapse:collapse;margin-top:20px}th,td{border:1px solid #ccc;padding:8px;text-align:left}</style></head><body><h1>Invoice #${order.id}</h1><p><strong>Customer:</strong> ${order.customer}</p><p><strong>Email:</strong> ${order.email}</p><p><strong>Phone:</strong> ${order.phone}</p><table><thead><tr><th>Product</th><th>Size</th><th>Unit Price</th><th>Qty</th></tr></thead><tbody>${order.items.map((item: any) => `<tr><td>${item.product}</td><td>${item.size}</td><td>${item.unitPrice}</td><td>${item.quantity ?? 1}</td></tr>`).join('')}</tbody></table><p><strong>Subtotal:</strong> ${order.subtotal}</p><p><strong>Delivery:</strong> ${order.deliveryCharge}</p>${order.discount > 0 ? `<p><strong>Discount${order.promoCode ? ` (${order.promoCode})` : ''}:</strong> -£${order.discount.toFixed(2)}</p>` : ''}<h3>Total: ${order.total}</h3></body></html>`;
     const blob = new Blob([invoiceHtml], { type: 'text/html' });
     const blobUrl = URL.createObjectURL(blob);
     const a = document.createElement('a');
@@ -1262,6 +1278,15 @@ export function AdminOrderDetailPage() {
                     <span className='text-gray-600'>Delivery:</span>
                     <span>{order.deliveryCharge}</span>
                   </div>
+                  {order.discount > 0 && (
+                    <div className='flex justify-between text-sm text-green-600'>
+                      <span>
+                        Discount
+                        {order.promoCode ? ` (${order.promoCode})` : ''}:
+                      </span>
+                      <span>-£{order.discount.toFixed(2)}</span>
+                    </div>
+                  )}
                   <Separator />
                   <div className='flex justify-between font-semibold'>
                     <span>Total:</span>

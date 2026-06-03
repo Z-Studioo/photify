@@ -27,6 +27,7 @@ import {
   Star,
   Clock,
   Loader2,
+  Gift,
 } from 'lucide-react';
 
 // Returns just the base product name for an order line item by stripping
@@ -63,6 +64,8 @@ interface OrderData {
   deliveryFee: number;
   deliveryType: string;
   estimatedDays: string;
+  discount: number;
+  promoCode?: string;
   total: number;
   videoPermission: boolean;
   estimatedDelivery: string;
@@ -232,6 +235,15 @@ export function ConfirmationPage() {
           ? '3-5 business days'
           : '7-10 business days';
 
+        const subtotalAmount = parseFloat(order.subtotal);
+        const totalAmount = parseFloat(order.total);
+        // Orders store the post-discount total, so recover the saving from the
+        // breakdown. Works for every order without needing a dedicated column.
+        const discountAmount = Math.max(
+          0,
+          Number((subtotalAmount + shippingCost - totalAmount).toFixed(2))
+        );
+
         const formattedOrder: OrderData = {
           orderNumber: order.order_number,
           name: order.customer_name,
@@ -239,11 +251,13 @@ export function ConfirmationPage() {
           phone: order.customer_phone || '',
           address: shippingAddress,
           items: order.items || [],
-          subtotal: parseFloat(order.subtotal),
+          subtotal: subtotalAmount,
           deliveryFee: shippingCost,
           deliveryType: deliveryType,
           estimatedDays: estimatedDays,
-          total: parseFloat(order.total),
+          discount: discountAmount,
+          promoCode: order.promo_code ?? undefined,
+          total: totalAmount,
           videoPermission: order.video_permission || false,
           estimatedDelivery: order.estimated_delivery
             ? new Date(order.estimated_delivery).toLocaleDateString('en-US', {
@@ -843,6 +857,21 @@ export function ConfirmationPage() {
                           </p>
                         </div>
                       </div>
+
+                      {orderData.discount > 0 && (
+                        <div className='flex justify-between items-center text-green-600'>
+                          <span className='flex items-center gap-2'>
+                            <Gift className='w-4 h-4' />
+                            Discount
+                            {orderData.promoCode
+                              ? ` (${orderData.promoCode})`
+                              : ''}
+                          </span>
+                          <span style={{ fontWeight: '700', fontSize: '18px' }}>
+                            -£{orderData.discount.toFixed(2)}
+                          </span>
+                        </div>
+                      )}
 
                       <div className='h-px bg-gray-200 my-4' />
 

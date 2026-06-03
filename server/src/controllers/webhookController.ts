@@ -168,6 +168,18 @@ async function sendConfirmationEmailForOrder(order: any): Promise<void> {
       ? order.shipping_address
       : order.shipping_address?.address || 'N/A';
 
+    // Recover the discount from the stored breakdown (subtotal + shipping - total).
+    const discountAmount = Math.max(
+      0,
+      Number(
+        (
+          parseFloat(order.subtotal) +
+          shippingCost -
+          parseFloat(order.total)
+        ).toFixed(2)
+      )
+    );
+
     // Prepare email data
     const emailData = {
       order_number: order.order_number,
@@ -186,6 +198,13 @@ async function sendConfirmationEmailForOrder(order: any): Promise<void> {
       customer_email: order.customer_email,
       subtotal: `£${parseFloat(order.subtotal).toFixed(2)}`,
       shipping_cost: `£${parseFloat(order.shipping_cost || 0).toFixed(2)}`,
+      // Orders store the post-discount total, so recover the saving from the
+      // breakdown. `discount` is blank when there was none so the template can
+      // hide the row conditionally.
+      discount:
+        discountAmount > 0 ? `£${discountAmount.toFixed(2)}` : '',
+      discount_amount: discountAmount,
+      promo_code: order.promo_code || '',
       total_amount: `£${parseFloat(order.total).toFixed(2)}`,
       order_items: (order.items || []).map((item: any) => ({
         name: item.name,

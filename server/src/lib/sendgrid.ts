@@ -417,6 +417,9 @@ export interface OrderConfirmationEmailData {
   customer_email: string;
   subtotal: string;
   shipping_cost: string;
+  discount?: string;
+  discount_amount?: number;
+  promo_code?: string;
   total_amount: string;
   order_items: Array<{
     name: string;
@@ -453,6 +456,9 @@ export async function sendOrderConfirmationEmail(data: OrderConfirmationEmailDat
       user_email: data.customer_email,
       subtotal: data.subtotal,
       shipping_cost: data.shipping_cost,
+      discount: data.discount || '',
+      discount_amount: data.discount_amount ?? 0,
+      promo_code: data.promo_code || '',
       total_amount: data.total_amount,
       support_url: `${config.CLIENT_URL || 'https://photify.co'}/contact_us`,
       track_order_url: `${config.CLIENT_URL || 'https://photify.co'}/track-order?order_id=${data.order_number}&email=${encodeURIComponent(data.customer_email)}`,
@@ -500,6 +506,9 @@ export async function sendAdminNewOrderEmail(data: OrderConfirmationEmailData): 
       customer_name: data.customer_name,
       subtotal: data.subtotal,
       shipping_cost: data.shipping_cost,
+      discount: data.discount || '',
+      discount_amount: data.discount_amount ?? 0,
+      promo_code: data.promo_code || '',
       total_amount: data.total_amount,
       support_url: `${config.CLIENT_URL || 'https://photify.co'}/contact_us`,
       order_items: data.order_items,
