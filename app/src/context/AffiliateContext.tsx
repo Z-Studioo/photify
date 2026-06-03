@@ -2,6 +2,7 @@ import {
   createContext,
   useContext,
   useEffect,
+  useMemo,
   useState,
   type ReactNode,
 } from 'react';
@@ -55,7 +56,7 @@ export function AffiliateProvider({ children }: { children: ReactNode }) {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [affiliate, setAffiliate] = useState<AffiliateProfile | null>(null);
   const [loading, setLoading] = useState(true);
-  const supabase = createClient();
+  const supabase = useMemo(() => createClient(), []);
 
   const fetchAffiliate = async () => {
     if (!isAffiliateAreaPath()) {
@@ -110,12 +111,14 @@ export function AffiliateProvider({ children }: { children: ReactNode }) {
 
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange(async (_event, session) => {
+    } = supabase.auth.onAuthStateChange(() => {
       if (!isAffiliateAreaPath()) return;
-      if (session) {
-        await supabase.auth.refreshSession();
-      }
-      await fetchAffiliate();
+
+      // Supabase can deadlock if auth APIs are awaited inside this callback.
+      // Defer profile refresh until after the auth event has fully resolved.
+      window.setTimeout(() => {
+        void fetchAffiliate();
+      }, 0);
     });
 
     return () => {

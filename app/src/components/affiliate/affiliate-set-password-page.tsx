@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { createClient } from '@/lib/supabase/client';
 import { Button } from '@/components/ui/button';
@@ -11,7 +11,7 @@ import { AlertCircle, CheckCircle2, Lock } from 'lucide-react';
  * Supabase establishes a session from URL tokens; we collect the new password here.
  */
 export function AffiliateSetPasswordPage() {
-  const supabase = createClient();
+  const supabase = useMemo(() => createClient(), []);
   const navigate = useNavigate();
   const [password, setPassword] = useState('');
   const [confirm, setConfirm] = useState('');
@@ -136,7 +136,19 @@ export function AffiliateSetPasswordPage() {
     setError(null);
     setSubmitting(true);
 
-    const { error: upErr } = await supabase.auth.updateUser({ password });
+    const updateResult = await Promise.race([
+      supabase.auth.updateUser({ password }),
+      new Promise<{ error: Error }>(resolve => {
+        window.setTimeout(
+          () =>
+            resolve({
+              error: new Error('Password update timed out. Please refresh and try again.'),
+            }),
+          15000
+        );
+      }),
+    ]);
+    const { error: upErr } = updateResult;
     if (upErr) {
       setSubmitting(false);
       setError(upErr.message);
