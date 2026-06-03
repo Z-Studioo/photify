@@ -1,6 +1,8 @@
 import { Request, Response } from 'express';
 import { stripe } from '@/lib/stripe';
 import { supabase } from '@/lib/supabase';
+import { resolveAffiliateByCode } from '@/lib/affiliate';
+import { getEstimatedDeliveryDate } from '@/lib/sendgrid';
 
 interface CartItem {
   name: string;
@@ -36,6 +38,7 @@ interface PaymentIntentRequestBody {
   total: number;
   // Optional hint so the webhook handler can pick the right post-processing path.
   source?: 'express_checkout' | 'payment_element' | 'checkout_session';
+  affiliateCode?: string;
 }
 
 /**
@@ -62,7 +65,15 @@ export async function createPaymentIntent(
       promoCode,
       total,
       source,
+      affiliateCode,
     } = req.body;
+
+    // Attribute the order to an affiliate from the explicit referral code
+    // (cookie set via /r/:code) when present, otherwise fall back to the
+    // applied promo code — affiliates often share just their code, and a
+    // referral code doubles as a matching promotion code. resolveAffiliateByCode
+    // safely returns null for non-affiliate promo codes.
+    const affiliate = await resolveAffiliateByCode(affiliateCode || promoCode);
 
     if (!cartItems || cartItems.length === 0) {
       res.status(400).json({ error: 'Cart is empty' });
@@ -95,8 +106,9 @@ export async function createPaymentIntent(
 
     const orderNumber = orderNumberData as string;
 
-    const estimatedDelivery = new Date();
-    estimatedDelivery.setDate(estimatedDelivery.getDate() + 7);
+    // Express (£6.99) delivers in 5 days, standard in 10. This is the single
+    // source of truth for delivery dates shown across the app and emails.
+    const estimatedDelivery = getEstimatedDeliveryDate(deliveryFee);
 
     const { data: order, error: orderError } = await supabase
       .from('orders')
@@ -118,6 +130,8 @@ export async function createPaymentIntent(
         estimated_delivery: estimatedDelivery.toISOString().split('T')[0],
         payment_status: 'pending',
         status: 'pending',
+        affiliate_id: affiliate?.id || null,
+        affiliate_code: affiliate?.code || null,
       })
       .select()
       .single();
@@ -152,6 +166,8 @@ export async function createPaymentIntent(
         customer_email: customerInfo.email,
         promo_code: promoCode || '',
         source: source || 'payment_element',
+        affiliate_id: affiliate?.id || '',
+        affiliate_code: affiliate?.code || '',
       },
     });
 

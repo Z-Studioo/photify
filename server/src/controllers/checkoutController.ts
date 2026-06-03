@@ -2,6 +2,8 @@ import { Request, Response } from 'express';
 import { stripe } from '@/lib/stripe';
 import { supabase } from '@/lib/supabase';
 import { config } from '@/config/environment';
+import { resolveAffiliateByCode } from '@/lib/affiliate';
+import { getEstimatedDeliveryDate } from '@/lib/sendgrid';
 
 interface CartItem {
   name: string;
@@ -35,6 +37,7 @@ interface CheckoutRequestBody {
   discount?: number;
   promoCode?: string;
   total: number;
+  affiliateCode?: string;
 }
 
 /**
@@ -56,7 +59,15 @@ export async function createCheckoutSession(
       discount = 0,
       promoCode,
       total,
+      affiliateCode,
     } = req.body;
+
+    // Attribute the order to an affiliate from the explicit referral code
+    // (cookie set via /r/:code) when present, otherwise fall back to the
+    // applied promo code — affiliates often share just their code, and a
+    // referral code doubles as a matching promotion code. resolveAffiliateByCode
+    // safely returns null for non-affiliate promo codes.
+    const affiliate = await resolveAffiliateByCode(affiliateCode || promoCode);
 
     // Validate required fields
     if (!cartItems || cartItems.length === 0) {
@@ -86,9 +97,9 @@ export async function createCheckoutSession(
 
     const orderNumber = orderNumberData as string;
 
-    // Calculate estimated delivery (7 days from now)
-    const estimatedDelivery = new Date();
-    estimatedDelivery.setDate(estimatedDelivery.getDate() + 7);
+    // Express (£6.99) delivers in 5 days, standard in 10. This is the single
+    // source of truth for delivery dates shown across the app and emails.
+    const estimatedDelivery = getEstimatedDeliveryDate(deliveryFee);
 
     // Create order in database with pending status
     const { data: order, error: orderError } = await supabase
@@ -111,6 +122,8 @@ export async function createCheckoutSession(
         estimated_delivery: estimatedDelivery.toISOString().split('T')[0],
         payment_status: 'pending',
         status: 'pending',
+        affiliate_id: affiliate?.id || null,
+        affiliate_code: affiliate?.code || null,
       })
       .select()
       .single();
@@ -202,6 +215,8 @@ export async function createCheckoutSession(
       metadata: {
         order_id: order.id,
         order_number: orderNumber,
+        affiliate_id: affiliate?.id || '',
+        affiliate_code: affiliate?.code || '',
       },
       invoice_creation: {
         enabled: true,

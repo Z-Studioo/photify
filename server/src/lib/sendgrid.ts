@@ -408,6 +408,28 @@ export function getDeliveryInfo(shippingCost: number): { delivery_type: string; 
   };
 }
 
+/**
+ * Number of days to add to the order date to get the estimated delivery date.
+ * Express (£6.99) ships in 5 days, standard in 10. Single source of truth for
+ * the concrete `orders.estimated_delivery` value computed at order creation.
+ */
+export function getEstimatedDeliveryDays(shippingCost: number): number {
+  return Math.abs(shippingCost - 6.99) < 0.01 ? 5 : 10;
+}
+
+/**
+ * Compute the estimated delivery date for an order based on its shipping cost.
+ * Defaults to "now" as the base date (order creation time).
+ */
+export function getEstimatedDeliveryDate(
+  shippingCost: number,
+  from: Date = new Date()
+): Date {
+  const date = new Date(from);
+  date.setDate(date.getDate() + getEstimatedDeliveryDays(shippingCost));
+  return date;
+}
+
 export interface OrderConfirmationEmailData {
   order_number: string;
   order_date: string;
@@ -417,6 +439,9 @@ export interface OrderConfirmationEmailData {
   customer_email: string;
   subtotal: string;
   shipping_cost: string;
+  discount?: string;
+  discount_amount?: number;
+  promo_code?: string;
   total_amount: string;
   order_items: Array<{
     name: string;
@@ -439,12 +464,12 @@ export async function sendOrderConfirmationEmail(data: OrderConfirmationEmailDat
     return;
   }
 
+  const subject = `Order Confirmed! ${data.order_number} - Photify`;
   const email = {
     to: data.customer_email,
     from: config.SENDGRID_FROM_EMAIL || 'noreply@photify.co',
-    subject: `Order Confirmed! ${data.order_number} - Photify`,
     templateId: 'd-0298ed47f3264fc88d08d07d6eb459a6', // customer-new-order template
-    dynamicTemplateData: {
+    dynamicTemplateData: withTemplateSubject(subject, {
       order_number: data.order_number,
       order_date: data.order_date,
       delivery_type: data.delivery_type,
@@ -453,12 +478,15 @@ export async function sendOrderConfirmationEmail(data: OrderConfirmationEmailDat
       user_email: data.customer_email,
       subtotal: data.subtotal,
       shipping_cost: data.shipping_cost,
+      discount: data.discount || '',
+      discount_amount: data.discount_amount ?? 0,
+      promo_code: data.promo_code || '',
       total_amount: data.total_amount,
       support_url: `${config.CLIENT_URL || 'https://photify.co'}/contact_us`,
       track_order_url: `${config.CLIENT_URL || 'https://photify.co'}/track-order?order_id=${data.order_number}&email=${encodeURIComponent(data.customer_email)}`,
       order_items: data.order_items,
       shipping_address: data.shipping_address,
-    },
+    }),
   };
 
   try {
@@ -487,12 +515,12 @@ export async function sendAdminNewOrderEmail(data: OrderConfirmationEmailData): 
     return;
   }
 
+  const subject = `New Order Received: ${data.order_number}`;
   const email = {
     to: config.ADMIN_EMAIL,
     from: config.SENDGRID_FROM_EMAIL || 'noreply@photify.co',
-    subject: `New Order Received: ${data.order_number}`,
     templateId: 'd-ca90ec611b284c8ca5c7121a1be2b4ad', // admin-new-order template
-    dynamicTemplateData: {
+    dynamicTemplateData: withTemplateSubject(subject, {
       order_number: data.order_number,
       order_date: data.order_date,
       delivery_type: data.delivery_type,
@@ -500,11 +528,14 @@ export async function sendAdminNewOrderEmail(data: OrderConfirmationEmailData): 
       customer_name: data.customer_name,
       subtotal: data.subtotal,
       shipping_cost: data.shipping_cost,
+      discount: data.discount || '',
+      discount_amount: data.discount_amount ?? 0,
+      promo_code: data.promo_code || '',
       total_amount: data.total_amount,
       support_url: `${config.CLIENT_URL || 'https://photify.co'}/contact_us`,
       order_items: data.order_items,
       shipping_address: data.shipping_address,
-    },
+    }),
   };
 
   try {
@@ -599,12 +630,12 @@ export async function sendOrderDispatchedEmail(data: OrderDispatchedEmailData): 
     return;
   }
 
+  const subject = `Your Order ${data.order_number} Has Been Dispatched! 📦`;
   const email = {
     to: data.customer_email,
     from: config.SENDGRID_FROM_EMAIL || 'noreply@photify.co',
-    subject: `Your Order ${data.order_number} Has Been Dispatched! 📦`,
     templateId: 'd-64c380c91be649c9bd654df6acb9e811', // customer-order-dispatched template
-    dynamicTemplateData: {
+    dynamicTemplateData: withTemplateSubject(subject, {
       customer_name: data.customer_name,
       order_number: data.order_number,
       order_date: data.order_date,
@@ -618,7 +649,7 @@ export async function sendOrderDispatchedEmail(data: OrderDispatchedEmailData): 
       total_amount: data.total_amount,
       order_items: data.order_items,
       shipping_address: data.shipping_address,
-    },
+    }),
   };
 
   try {
@@ -642,12 +673,12 @@ export async function sendOrderDeliveredEmail(data: OrderDeliveredEmailData): Pr
     return;
   }
 
+  const subject = `Your Order ${data.order_number} Has Been Delivered! 🎉`;
   const email = {
     to: data.customer_email,
     from: config.SENDGRID_FROM_EMAIL || 'noreply@photify.co',
-    subject: `Your Order ${data.order_number} Has Been Delivered! 🎉`,
     templateId: 'd-9fe879c616ec4371a7ebd35aed34c8c1', // customer-order-delivered template
-    dynamicTemplateData: {
+    dynamicTemplateData: withTemplateSubject(subject, {
       customer_name: data.customer_name,
       order_number: data.order_number,
       delivery_date: data.delivery_date,
@@ -658,7 +689,7 @@ export async function sendOrderDeliveredEmail(data: OrderDeliveredEmailData): Pr
       shipping_cost: data.shipping_cost,
       total_amount: data.total_amount,
       order_items: data.order_items,
-    },
+    }),
   };
 
   try {
@@ -682,12 +713,12 @@ export async function sendOrderCancelledEmail(data: OrderCancelledEmailData): Pr
     return;
   }
 
+  const subject = `Order ${data.order_number} Cancelled - Photify`;
   const email = {
     to: data.customer_email,
     from: config.SENDGRID_FROM_EMAIL || 'noreply@photify.co',
-    subject: `Order ${data.order_number} Cancelled - Photify`,
     templateId: 'd-9ce9bc4cef0442509087e9b6ea10060e', // customer-order-cancelled template
-    dynamicTemplateData: {
+    dynamicTemplateData: withTemplateSubject(subject, {
       customer_name: data.customer_name,
       order_number: data.order_number,
       order_date: data.order_date,
@@ -701,7 +732,7 @@ export async function sendOrderCancelledEmail(data: OrderCancelledEmailData): Pr
       total_amount: data.total_amount,
       support_url: `${config.CLIENT_URL || 'https://photify.co'}/contact_us`,
       order_items: data.order_items,
-    },
+    }),
   };
 
   try {
@@ -713,6 +744,280 @@ export async function sendOrderCancelledEmail(data: OrderCancelledEmailData): Pr
       console.error('SendGrid error response:', error.response.body);
     }
     throw error;
+  }
+}
+
+// ============================================================================
+// Affiliate program emails
+// ============================================================================
+//
+// Template IDs are inline constants (matching the order-email pattern above).
+// Replace the placeholder `d-AFFILIATE_*` strings once the SendGrid dynamic
+// templates have been created.
+
+const AFFILIATE_APPLIED_TEMPLATE = 'd-050b3975f3b14126b776cd897476fd9f';
+const AFFILIATE_APPROVED_TEMPLATE = 'd-8edad83dc0e94e7a9ead84dacc7911f4';
+const AFFILIATE_REJECTED_TEMPLATE = 'd-9f206057669d45318e426c701b5bf98e';
+const AFFILIATE_NEW_SALE_TEMPLATE = 'd-52db41a0ffaa403081abc59c7d3f2f48';
+const AFFILIATE_COMMISSION_APPROVED_TEMPLATE = 'd-186d03e23c4b49f992320d9db06aba5f';
+const AFFILIATE_PAYOUT_SENT_TEMPLATE = 'd-aec795055ce84b77b153d525122fc67b';
+/** Replace with your SendGrid dynamic template ID after uploading affiliate-password-reset.html */
+const AFFILIATE_PASSWORD_RESET_TEMPLATE = 'd-96786b9ce7074e2c95d2b814de373cd2';
+
+/**
+ * SendGrid dynamic templates ignore top-level `subject` on the mail object.
+ * The template's Subject field (in the SendGrid UI) must be `{{{subject}}}`,
+ * and the value is supplied here in dynamic_template_data.
+ */
+function withTemplateSubject(
+  subject: string,
+  data: Record<string, unknown>
+): Record<string, unknown> {
+  return { subject, ...data };
+}
+
+function affiliateDashboardUrl(): string {
+  return `${config.CLIENT_URL || 'https://photify.co'}/affiliate/dashboard`;
+}
+
+function affiliateLoginUrl(): string {
+  return `${config.CLIENT_URL || 'https://photify.co'}/affiliate/login`;
+}
+
+function affiliateReferralUrl(code: string): string {
+  return `${config.CLIENT_URL || 'https://photify.co'}/r/${code}`;
+}
+
+export interface AffiliateAppliedEmailData {
+  name: string;
+  email: string;
+}
+
+export async function sendAffiliateAppliedEmail(
+  data: AffiliateAppliedEmailData
+): Promise<void> {
+  if (!config.SENDGRID_API_KEY) return;
+
+  const subject = 'We received your Photify affiliate application';
+  const email = {
+    to: data.email,
+    from: config.SENDGRID_FROM_EMAIL || 'noreply@photify.co',
+    templateId: AFFILIATE_APPLIED_TEMPLATE,
+    dynamicTemplateData: withTemplateSubject(subject, {
+      name: data.name,
+      support_url: `${config.CLIENT_URL || 'https://photify.co'}/contact`,
+    }),
+  };
+
+  try {
+    await sgMail.send(email);
+  } catch (error: any) {
+    console.error('Failed to send affiliate applied email:', error?.response?.body || error);
+  }
+}
+
+export interface AffiliateApprovedEmailData {
+  name: string;
+  email: string;
+  code: string;
+  customer_discount_pct: number;
+  commission_rate: number;
+  /**
+   * Magic-link URL generated via Supabase admin invite. When the affiliate
+   * clicks it they land on `/affiliate/set-password`.
+   */
+  magic_link: string;
+}
+
+export async function sendAffiliateApprovedEmail(
+  data: AffiliateApprovedEmailData
+): Promise<void> {
+  if (!config.SENDGRID_API_KEY) return;
+
+  const subject = 'Welcome to the Photify Affiliate Program!';
+  const email = {
+    to: data.email,
+    from: config.SENDGRID_FROM_EMAIL || 'noreply@photify.co',
+    templateId: AFFILIATE_APPROVED_TEMPLATE,
+    dynamicTemplateData: withTemplateSubject(subject, {
+      name: data.name,
+      affiliate_code: data.code,
+      customer_discount: `${Math.round(data.customer_discount_pct * 100)}%`,
+      commission_rate: `${Math.round(data.commission_rate * 100)}%`,
+      referral_url: affiliateReferralUrl(data.code),
+      magic_link: data.magic_link,
+      dashboard_url: affiliateDashboardUrl(),
+      login_url: affiliateLoginUrl(),
+    }),
+  };
+
+  try {
+    await sgMail.send(email);
+  } catch (error: any) {
+    console.error('Failed to send affiliate approved email:', error?.response?.body || error);
+  }
+}
+
+export interface AffiliateRejectedEmailData {
+  name: string;
+  email: string;
+  reason?: string | null;
+}
+
+export async function sendAffiliateRejectedEmail(
+  data: AffiliateRejectedEmailData
+): Promise<void> {
+  if (!config.SENDGRID_API_KEY) return;
+
+  const subject = 'Update on your Photify affiliate application';
+  const email = {
+    to: data.email,
+    from: config.SENDGRID_FROM_EMAIL || 'noreply@photify.co',
+    templateId: AFFILIATE_REJECTED_TEMPLATE,
+    dynamicTemplateData: withTemplateSubject(subject, {
+      name: data.name,
+      reason: data.reason || 'We are unable to accept new affiliates at this time.',
+      support_url: `${config.CLIENT_URL || 'https://photify.co'}/contact`,
+    }),
+  };
+
+  try {
+    await sgMail.send(email);
+  } catch (error: any) {
+    console.error('Failed to send affiliate rejected email:', error?.response?.body || error);
+  }
+}
+
+export interface AffiliateNewSaleEmailData {
+  name: string;
+  email: string;
+  order_number: string;
+  commission_amount: string;
+  order_total: string;
+}
+
+export async function sendAffiliateNewSaleEmail(
+  data: AffiliateNewSaleEmailData
+): Promise<void> {
+  if (!config.SENDGRID_API_KEY) return;
+
+  const subject = `New affiliate sale — ${data.order_number}`;
+  const email = {
+    to: data.email,
+    from: config.SENDGRID_FROM_EMAIL || 'noreply@photify.co',
+    templateId: AFFILIATE_NEW_SALE_TEMPLATE,
+    dynamicTemplateData: withTemplateSubject(subject, {
+      name: data.name,
+      order_number: data.order_number,
+      commission_amount: data.commission_amount,
+      order_total: data.order_total,
+      dashboard_url: affiliateDashboardUrl(),
+    }),
+  };
+
+  try {
+    await sgMail.send(email);
+  } catch (error: any) {
+    console.error('Failed to send affiliate new sale email:', error?.response?.body || error);
+  }
+}
+
+export interface AffiliateCommissionApprovedEmailData {
+  name: string;
+  email: string;
+  order_number: string;
+  commission_amount: string;
+}
+
+export async function sendAffiliateCommissionApprovedEmail(
+  data: AffiliateCommissionApprovedEmailData
+): Promise<void> {
+  if (!config.SENDGRID_API_KEY) return;
+
+  const subject = `Commission approved — ${data.order_number}`;
+  const email = {
+    to: data.email,
+    from: config.SENDGRID_FROM_EMAIL || 'noreply@photify.co',
+    templateId: AFFILIATE_COMMISSION_APPROVED_TEMPLATE,
+    dynamicTemplateData: withTemplateSubject(subject, {
+      name: data.name,
+      order_number: data.order_number,
+      commission_amount: data.commission_amount,
+      dashboard_url: affiliateDashboardUrl(),
+    }),
+  };
+
+  try {
+    await sgMail.send(email);
+  } catch (error: any) {
+    console.error('Failed to send commission approved email:', error?.response?.body || error);
+  }
+}
+
+export interface AffiliatePayoutSentEmailData {
+  name: string;
+  email: string;
+  amount: string;
+  method?: string | null;
+  reference?: string | null;
+  paid_at: string;
+}
+
+export async function sendAffiliatePayoutSentEmail(
+  data: AffiliatePayoutSentEmailData
+): Promise<void> {
+  if (!config.SENDGRID_API_KEY) return;
+
+  const subject = `Your Photify affiliate payout of ${data.amount} has been sent`;
+  const email = {
+    to: data.email,
+    from: config.SENDGRID_FROM_EMAIL || 'noreply@photify.co',
+    templateId: AFFILIATE_PAYOUT_SENT_TEMPLATE,
+    dynamicTemplateData: withTemplateSubject(subject, {
+      name: data.name,
+      amount: data.amount,
+      method: data.method || '—',
+      reference: data.reference || '—',
+      paid_at: data.paid_at,
+      dashboard_url: affiliateDashboardUrl(),
+    }),
+  };
+
+  try {
+    await sgMail.send(email);
+  } catch (error: any) {
+    console.error('Failed to send affiliate payout email:', error?.response?.body || error);
+  }
+}
+
+export interface AffiliatePasswordResetEmailData {
+  name: string;
+  email: string;
+  reset_link: string;
+}
+
+export async function sendAffiliatePasswordResetEmail(
+  data: AffiliatePasswordResetEmailData
+): Promise<void> {
+  if (!config.SENDGRID_API_KEY) return;
+
+  const subject = 'Reset your Photify affiliate password';
+  const email = {
+    to: data.email,
+    from: config.SENDGRID_FROM_EMAIL || 'noreply@photify.co',
+    templateId: AFFILIATE_PASSWORD_RESET_TEMPLATE,
+    dynamicTemplateData: withTemplateSubject(subject, {
+      name: data.name,
+      reset_link: data.reset_link,
+      login_url: affiliateLoginUrl(),
+      support_url: `${config.CLIENT_URL || 'https://photify.co'}/contact`,
+    }),
+  };
+
+  try {
+    await sgMail.send(email);
+  } catch (error: any) {
+    console.error('Failed to send affiliate password reset email:', error?.response?.body || error);
   }
 }
 

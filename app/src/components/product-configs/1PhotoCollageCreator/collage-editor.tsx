@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { forwardRef, useEffect, useImperativeHandle, useRef, useState } from 'react';
 import * as fabric from 'fabric';
 import { Button } from '@/components/ui/button';
 import { ZoomIn, ZoomOut, Trash2, Loader2, Crop, Upload } from 'lucide-react';
@@ -9,7 +9,7 @@ import {
   type GridConfig,
   type FixedSlotsConfig,
 } from './types';
-import { inchesToPixels } from './config';
+import { inchesToPixels, PRINT_EXPORT_MULTIPLIER } from './config';
 import { CropModal } from './crop-modal';
 
 interface CollageEditorProps {
@@ -35,7 +35,14 @@ interface CollageEditorProps {
   ) => void;
 }
 
-export function CollageEditor({
+// Imperative handle exposed to parents (e.g. the customizer) so they can
+// trigger a high-resolution, print-ready export on demand without us having
+// to materialise that huge image on every editor interaction.
+export interface CollageEditorHandle {
+  exportForPrint: () => string | null;
+}
+
+export const CollageEditor = forwardRef<CollageEditorHandle, CollageEditorProps>(function CollageEditor({
   width,
   height,
   backgroundColor,
@@ -44,7 +51,7 @@ export function CollageEditor({
   onPhotosChange,
   onCanvasUpdate,
   onOpenPhotoModal,
-}: CollageEditorProps) {
+}, ref) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const fabricCanvasRef = useRef<fabric.Canvas | null>(null);
@@ -77,11 +84,17 @@ export function CollageEditor({
     return `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
   };
 
-  // Export canvas to a PNG data URL, hiding empty-slot guides (the dashed
-  // boxes with the pink "+" icons) so the exported image used for the 3D
-  // preview only contains actual placed photos. Returns null if the canvas
-  // is not ready or there are no real photos to export.
-  const exportCanvasForPreview = (canvas: fabric.Canvas): string | null => {
+  // Export the canvas to a PNG data URL with an arbitrary scale multiplier,
+  // hiding empty-slot guides (the dashed boxes with the pink "+" icons) so the
+  // exported image only contains actual placed photos. Returns null if the
+  // canvas is not ready or there are no real photos to export.
+  //
+  // - multiplier = 1 -> live 3D preview (cheap, matches CANVAS_DPI = 50)
+  // - multiplier = PRINT_EXPORT_MULTIPLIER -> print-ready file for upload
+  const exportCanvasAtMultiplier = (
+    canvas: fabric.Canvas,
+    multiplier: number
+  ): string | null => {
     const objects = canvas.getObjects();
     const photoObjects = objects.filter((obj: any) => obj.data?.id);
 
@@ -102,7 +115,7 @@ export function CollageEditor({
       dataURL = canvas.toDataURL({
         format: 'png',
         quality: 1.0,
-        multiplier: 1,
+        multiplier,
       });
     } finally {
       guideObjects.forEach((g, i) => {
@@ -113,6 +126,24 @@ export function CollageEditor({
 
     return dataURL;
   };
+
+  const exportCanvasForPreview = (canvas: fabric.Canvas): string | null =>
+    exportCanvasAtMultiplier(canvas, 1);
+
+  // Expose a high-resolution print export to the parent component. Generating
+  // the print-ready PNG is expensive, so we only do this on demand when the
+  // user is checking out, never during interactive editing.
+  useImperativeHandle(
+    ref,
+    () => ({
+      exportForPrint: () => {
+        const canvas = fabricCanvasRef.current;
+        if (!canvas) return null;
+        return exportCanvasAtMultiplier(canvas, PRINT_EXPORT_MULTIPLIER);
+      },
+    }),
+    []
+  );
 
   // Calculate viewport scale to fit canvas
   useEffect(() => {
@@ -1220,4 +1251,4 @@ export function CollageEditor({
       )}
     </div>
   );
-}
+});

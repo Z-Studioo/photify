@@ -5,6 +5,7 @@ import paymentIntentRoutes from './payment-intent';
 import contactRoutes from './contact';
 import ordersRoutes from './orders';
 import addressRoutes from './address';
+import affiliatesRoutes from './affiliates';
 
 const router = Router();
 
@@ -79,6 +80,10 @@ router.get('/', (_req: Request, res: Response) => {
       webhook: 'POST /api/webhook',
       contact: 'POST /api/contact',
       orderNotification: 'POST /api/orders/:orderNumber/status-notification',
+      affiliateApply: 'POST /api/affiliates/apply',
+      affiliateTrackClick: 'POST /api/affiliates/track-click',
+      affiliateMe: 'GET /api/affiliates/me',
+      affiliateAdmin: 'GET /api/affiliates',
     },
   });
 });
@@ -90,5 +95,6 @@ router.use('/payment-intent', paymentIntentRoutes);
 router.use('/contact', contactRoutes);
 router.use('/orders', ordersRoutes);
 router.use('/address', addressRoutes);
+router.use('/affiliates', affiliatesRoutes);
 
 export default router;

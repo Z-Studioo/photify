@@ -1,9 +1,90 @@
 import { Request, Response } from 'express';
 import { stripe } from '@/lib/stripe';
 import { supabase } from '@/lib/supabase';
-import { sendOrderConfirmationEmail, sendAdminNewOrderEmail, getDeliveryInfo } from '@/lib/sendgrid';
+import { sendOrderConfirmationEmail, sendAdminNewOrderEmail, getDeliveryInfo, getEstimatedDeliveryDate } from '@/lib/sendgrid';
 import { trackPurchase, trackRefund } from '@/lib/ga4';
+import { notifyAffiliateOfNewSale } from '@/controllers/affiliate/adminController';
 import Stripe from 'stripe';
+
+/**
+ * Idempotently create an `affiliate_commissions` row for an order. Safe to
+ * call multiple times — uses unique constraint on order_id to no-op duplicates.
+ *
+ * Commission base excludes delivery (shipping_cost). Discount is therefore
+ * subtotal - (total - shipping_cost), clamped to >= 0.
+ */
+async function createAffiliateCommissionForOrder(order: any): Promise<void> {
+  try {
+    if (!order?.affiliate_id) return;
+
+    const { data: affiliate, error: affErr } = await supabase
+      .from('affiliates')
+      .select('id, commission_rate, status')
+      .eq('id', order.affiliate_id)
+      .maybeSingle();
+
+    if (affErr || !affiliate || affiliate.status !== 'approved') {
+      console.warn(
+        `Skipping commission for order ${order.id}: affiliate missing or not approved`
+      );
+      return;
+    }
+
+    const subtotal = Number(order.subtotal) || 0;
+    const shipping = Number(order.shipping_cost) || 0;
+    const total = Number(order.total) || 0;
+    const itemsTotal = Math.max(total - shipping, 0);
+    const commissionBase = Math.max(Math.min(itemsTotal, subtotal), 0);
+    const rate = Number(affiliate.commission_rate) || 0;
+    const commissionAmount = Number((commissionBase * rate).toFixed(2));
+
+    const { data: inserted, error: insErr } = await supabase
+      .from('affiliate_commissions')
+      .upsert(
+        {
+          affiliate_id: order.affiliate_id,
+          order_id: order.id,
+          commission_base: commissionBase,
+          commission_amount: commissionAmount,
+          rate,
+          status: 'pending',
+        },
+        { onConflict: 'order_id', ignoreDuplicates: true }
+      )
+      .select('id')
+      .maybeSingle();
+
+    if (insErr) {
+      console.error('Failed to insert affiliate commission:', insErr);
+      return;
+    }
+
+    if (inserted) {
+      await notifyAffiliateOfNewSale(order.affiliate_id, order.id, commissionAmount);
+    }
+  } catch (err) {
+    console.error('createAffiliateCommissionForOrder error:', err);
+  }
+}
+
+/**
+ * Mark commission as reversed when the underlying order is refunded.
+ */
+async function reverseAffiliateCommissionForOrder(orderId: string): Promise<void> {
+  try {
+    const { error } = await supabase
+      .from('affiliate_commissions')
+      .update({ status: 'reversed', reversed_at: new Date().toISOString() })
+      .eq('order_id', orderId)
+      .in('status', ['pending', 'approved']);
+
+    if (error) {
+      console.error('Failed to reverse commission:', error);
+    }
+  } catch (err) {
+    console.error('reverseAffiliateCommissionForOrder error:', err);
+  }
+}
 
 /**
  * Helper function to upert customer record
@@ -77,15 +158,29 @@ async function sendConfirmationEmailForOrder(order: any): Promise<void> {
     const shippingCost = parseFloat(order.shipping_cost || 0);
     const deliveryInfo = getDeliveryInfo(shippingCost);
 
-    // Calculate estimated delivery date based on delivery type
-    const estimatedDelivery = new Date();
-    const daysToAdd = deliveryInfo.delivery_type === 'Express Shipping' ? 3 : 7;
-    estimatedDelivery.setDate(estimatedDelivery.getDate() + daysToAdd);
+    // Use the estimated delivery stored on the order (the single source of
+    // truth, set at creation). Fall back to a computed date for legacy orders
+    // that predate the stored value.
+    const estimatedDelivery = order.estimated_delivery
+      ? new Date(order.estimated_delivery)
+      : getEstimatedDeliveryDate(shippingCost);
 
     // Format shipping address
     const shippingAddress = typeof order.shipping_address === 'string'
       ? order.shipping_address
       : order.shipping_address?.address || 'N/A';
+
+    // Recover the discount from the stored breakdown (subtotal + shipping - total).
+    const discountAmount = Math.max(
+      0,
+      Number(
+        (
+          parseFloat(order.subtotal) +
+          shippingCost -
+          parseFloat(order.total)
+        ).toFixed(2)
+      )
+    );
 
     // Prepare email data
     const emailData = {
@@ -105,6 +200,13 @@ async function sendConfirmationEmailForOrder(order: any): Promise<void> {
       customer_email: order.customer_email,
       subtotal: `£${parseFloat(order.subtotal).toFixed(2)}`,
       shipping_cost: `£${parseFloat(order.shipping_cost || 0).toFixed(2)}`,
+      // Orders store the post-discount total, so recover the saving from the
+      // breakdown. `discount` is blank when there was none so the template can
+      // hide the row conditionally.
+      discount:
+        discountAmount > 0 ? `£${discountAmount.toFixed(2)}` : '',
+      discount_amount: discountAmount,
+      promo_code: order.promo_code || '',
       total_amount: `£${parseFloat(order.total).toFixed(2)}`,
       order_items: (order.items || []).map((item: any) => ({
         name: item.name,
@@ -189,6 +291,9 @@ export async function handleStripeWebhook(
           // Send order confirmation email
           await sendConfirmationEmailForOrder(order);
 
+          // Create affiliate commission row (idempotent) and notify affiliate.
+          await createAffiliateCommissionForOrder(order);
+
           // Fire server-side GA4 `purchase` event. GA4 dedupes against
           // the client-side event from /confirmation by `transaction_id`
           // (= Stripe payment_intent.id), so this is safe to call even
@@ -259,6 +364,7 @@ export async function handleStripeWebhook(
         } else if (updatedOrder) {
           await upsertCustomer(updatedOrder);
           await sendConfirmationEmailForOrder(updatedOrder);
+          await createAffiliateCommissionForOrder(updatedOrder);
 
           // Server-side GA4 `purchase` (Express / inline checkout flow).
           // Dedupes with the client event by transaction_id.
@@ -300,6 +406,10 @@ export async function handleStripeWebhook(
         // unit (pence). Convert to pounds for the GA4 `value`.
         const refundAmount = (charge.amount_refunded || 0) / 100;
         await trackRefund(refundedOrder, refundAmount);
+
+        if (refundedOrder.affiliate_id) {
+          await reverseAffiliateCommissionForOrder(refundedOrder.id);
+        }
         break;
       }
 

@@ -13,6 +13,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Toaster } from 'sonner';
 import { CartProvider } from '@/context/CartContext';
 import { AdminProvider } from '@/context/AdminContext';
+import { AffiliateProvider } from '@/context/AffiliateContext';
 import { UploadProvider } from '@/context/UploadContext';
 import { PresetProvider } from '@/context/PresetContext';
 import { ToastProvider } from '@/components/shared/common/toast';
@@ -232,13 +233,15 @@ export default function Root() {
         <ToastProvider>
           <CartProvider>
             <AdminProvider>
-              <UploadProvider>
-                <PresetProvider>
-                  <PageViewTracker />
-                  <Outlet />
-                  <CookieConsent />
-                </PresetProvider>
-              </UploadProvider>
+              <AffiliateProvider>
+                <UploadProvider>
+                  <PresetProvider>
+                    <PageViewTracker />
+                    <Outlet />
+                    <CookieConsent />
+                  </PresetProvider>
+                </UploadProvider>
+              </AffiliateProvider>
             </AdminProvider>
           </CartProvider>
         </ToastProvider>
