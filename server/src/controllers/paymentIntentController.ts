@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 import { stripe } from '@/lib/stripe';
 import { supabase } from '@/lib/supabase';
 import { resolveAffiliateByCode } from '@/lib/affiliate';
+import { getEstimatedDeliveryDate } from '@/lib/sendgrid';
 
 interface CartItem {
   name: string;
@@ -105,8 +106,9 @@ export async function createPaymentIntent(
 
     const orderNumber = orderNumberData as string;
 
-    const estimatedDelivery = new Date();
-    estimatedDelivery.setDate(estimatedDelivery.getDate() + 7);
+    // Express (£6.99) delivers in 5 days, standard in 10. This is the single
+    // source of truth for delivery dates shown across the app and emails.
+    const estimatedDelivery = getEstimatedDeliveryDate(deliveryFee);
 
     const { data: order, error: orderError } = await supabase
       .from('orders')

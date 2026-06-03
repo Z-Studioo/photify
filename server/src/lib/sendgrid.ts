@@ -408,6 +408,28 @@ export function getDeliveryInfo(shippingCost: number): { delivery_type: string; 
   };
 }
 
+/**
+ * Number of days to add to the order date to get the estimated delivery date.
+ * Express (£6.99) ships in 5 days, standard in 10. Single source of truth for
+ * the concrete `orders.estimated_delivery` value computed at order creation.
+ */
+export function getEstimatedDeliveryDays(shippingCost: number): number {
+  return Math.abs(shippingCost - 6.99) < 0.01 ? 5 : 10;
+}
+
+/**
+ * Compute the estimated delivery date for an order based on its shipping cost.
+ * Defaults to "now" as the base date (order creation time).
+ */
+export function getEstimatedDeliveryDate(
+  shippingCost: number,
+  from: Date = new Date()
+): Date {
+  const date = new Date(from);
+  date.setDate(date.getDate() + getEstimatedDeliveryDays(shippingCost));
+  return date;
+}
+
 export interface OrderConfirmationEmailData {
   order_number: string;
   order_date: string;

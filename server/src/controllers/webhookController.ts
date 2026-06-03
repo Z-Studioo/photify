@@ -1,7 +1,7 @@
 import { Request, Response } from 'express';
 import { stripe } from '@/lib/stripe';
 import { supabase } from '@/lib/supabase';
-import { sendOrderConfirmationEmail, sendAdminNewOrderEmail, getDeliveryInfo } from '@/lib/sendgrid';
+import { sendOrderConfirmationEmail, sendAdminNewOrderEmail, getDeliveryInfo, getEstimatedDeliveryDate } from '@/lib/sendgrid';
 import { trackPurchase, trackRefund } from '@/lib/ga4';
 import { notifyAffiliateOfNewSale } from '@/controllers/affiliate/adminController';
 import Stripe from 'stripe';
@@ -158,10 +158,12 @@ async function sendConfirmationEmailForOrder(order: any): Promise<void> {
     const shippingCost = parseFloat(order.shipping_cost || 0);
     const deliveryInfo = getDeliveryInfo(shippingCost);
 
-    // Calculate estimated delivery date based on delivery type
-    const estimatedDelivery = new Date();
-    const daysToAdd = deliveryInfo.delivery_type === 'Express Shipping' ? 3 : 7;
-    estimatedDelivery.setDate(estimatedDelivery.getDate() + daysToAdd);
+    // Use the estimated delivery stored on the order (the single source of
+    // truth, set at creation). Fall back to a computed date for legacy orders
+    // that predate the stored value.
+    const estimatedDelivery = order.estimated_delivery
+      ? new Date(order.estimated_delivery)
+      : getEstimatedDeliveryDate(shippingCost);
 
     // Format shipping address
     const shippingAddress = typeof order.shipping_address === 'string'

@@ -5,6 +5,7 @@ import {
   sendOrderDeliveredEmail,
   sendOrderCancelledEmail,
   getDeliveryInfo,
+  getEstimatedDeliveryDate,
 } from '@/lib/sendgrid';
 
 /**
@@ -61,11 +62,13 @@ export async function sendOrderStatusNotification(
         // Get delivery info based on shipping cost
         const shippingCost = parseFloat(order.shipping_cost || 0);
         const deliveryInfo = getDeliveryInfo(shippingCost);
-        
-        // Calculate estimated delivery based on delivery type
-        const estimatedDelivery = new Date();
-        const daysToAdd = deliveryInfo.delivery_type === 'Express Shipping' ? 3 : 7;
-        estimatedDelivery.setDate(estimatedDelivery.getDate() + daysToAdd);
+
+        // Use the estimated delivery stored on the order (single source of
+        // truth, set at creation). Fall back to a computed date for legacy
+        // orders that predate the stored value.
+        const estimatedDelivery = order.estimated_delivery
+          ? new Date(order.estimated_delivery)
+          : getEstimatedDeliveryDate(shippingCost);
 
         const dispatchData = {
           customer_name: order.customer_name,

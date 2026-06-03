@@ -170,6 +170,13 @@ export function AdminOrderDetailPage() {
             amount: `£${parseFloat(data.total).toFixed(2)}`,
             status: dbStatus, // lowercase
             date: new Date(data.created_at).toLocaleDateString('en-GB'),
+            estimatedDelivery: data.estimated_delivery
+              ? new Date(data.estimated_delivery).toLocaleDateString('en-GB', {
+                  day: 'numeric',
+                  month: 'short',
+                  year: 'numeric',
+                })
+              : 'N/A',
             shipping: 'Standard Delivery',
             paymentMethod:
               data.payment_status === 'paid'
@@ -701,7 +708,7 @@ export function AdminOrderDetailPage() {
                   <span className='text-xs text-gray-500'>
                     Est. Delivery:{' '}
                     <span className='text-[#f63a9e] font-medium'>
-                      {order.timeline[0]?.date || 'Oct 24th - Oct 28th'}
+                      {order.estimatedDelivery}
                     </span>
                   </span>
                 </div>
