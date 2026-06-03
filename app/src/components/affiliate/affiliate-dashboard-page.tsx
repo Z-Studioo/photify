@@ -25,6 +25,12 @@ interface ClickPoint {
   click_count: number;
 }
 
+interface CommissionRow {
+  commission_amount: number | string;
+  status: 'pending' | 'approved' | 'reversed' | 'paid';
+  created_at: string;
+}
+
 function money(value: number | string | null | undefined): string {
   const n = typeof value === 'number' ? value : Number(value) || 0;
   return `£${n.toFixed(2)}`;
@@ -40,6 +46,7 @@ export function AffiliateDashboardPage() {
   const { getAccessToken, affiliate } = useAffiliate();
   const [stats, setStats] = useState<Stats | null>(null);
   const [clicks, setClicks] = useState<ClickPoint[]>([]);
+  const [commission30d, setCommission30d] = useState(0);
   const [loading, setLoading] = useState(true);
   const [copied, setCopied] = useState(false);
 
@@ -48,15 +55,29 @@ export function AffiliateDashboardPage() {
     (async () => {
       const token = await getAccessToken();
       try {
-        const [statsRes, clicksRes] = await Promise.all([
+        const [statsRes, clicksRes, commissionsRes] = await Promise.all([
           affiliateFetch<{ data: Stats | null }>('/api/affiliates/me/stats', { token }),
           affiliateFetch<{ data: ClickPoint[] }>('/api/affiliates/me/clicks?days=30', {
             token,
           }),
+          affiliateFetch<{ data: CommissionRow[] }>(
+            '/api/affiliates/me/commissions?limit=100',
+            { token }
+          ),
         ]);
         if (cancelled) return;
         setStats(statsRes.data);
         setClicks(clicksRes.data || []);
+
+        // Sum the affiliate's earned commission (excluding reversed/clawed-back)
+        // over the last 30 days from the most recent commission rows.
+        const cutoff = Date.now() - 30 * 24 * 60 * 60 * 1000;
+        const earned30 = (commissionsRes.data || []).reduce((sum, c) => {
+          if (c.status === 'reversed') return sum;
+          if (new Date(c.created_at).getTime() < cutoff) return sum;
+          return sum + (Number(c.commission_amount) || 0);
+        }, 0);
+        setCommission30d(earned30);
       } catch {
         /* swallow */
       } finally {
@@ -113,6 +134,12 @@ export function AffiliateDashboardPage() {
   const payable = Number(stats?.payable_amount ?? 0);
   const payoutProgress = Math.min(100, (payable / payoutMin) * 100);
 
+  // Total commission the affiliate has actually earned (excludes reversed).
+  const lifetimeEarned =
+    Number(stats?.pending_amount ?? 0) +
+    Number(stats?.approved_amount ?? 0) +
+    Number(stats?.paid_amount ?? 0);
+
   if (loading) {
     return (
       <AffiliateLayout>
@@ -153,8 +180,8 @@ export function AffiliateDashboardPage() {
           <p className='font-semibold text-lg lg:text-xl mt-0.5'>{money(stats?.paid_amount)}</p>
         </div>
         <div className='hidden lg:block'>
-          <p className='text-white/70 text-xs uppercase tracking-wide'>Lifetime revenue</p>
-          <p className='font-semibold text-lg lg:text-xl mt-0.5'>{money(stats?.revenue_total)}</p>
+          <p className='text-white/70 text-xs uppercase tracking-wide'>Total earned</p>
+          <p className='font-semibold text-lg lg:text-xl mt-0.5'>{money(lifetimeEarned)}</p>
         </div>
       </div>
     </section>
@@ -191,7 +218,7 @@ export function AffiliateDashboardPage() {
         <section className='grid grid-cols-2 lg:grid-cols-4 gap-3 lg:gap-4'>
           <MiniStat label='Clicks (30 days)' value={String(stats?.clicks_30d ?? 0)} />
           <MiniStat label='Sales (30 days)' value={String(stats?.orders_count_30d ?? 0)} />
-          <MiniStat label='Revenue (30 days)' value={money(stats?.revenue_30d)} />
+          <MiniStat label='Commission (30 days)' value={money(commission30d)} />
           <MiniStat label='Lifetime sales' value={String(stats?.orders_count ?? 0)} />
         </section>
 
