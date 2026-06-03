@@ -1,7 +1,7 @@
 import { useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router';
 import { ClientOnly } from '@/components/shared/client-only';
-import { setAffiliateRef } from '@/lib/affiliate-ref';
+import { useCart } from '@/context/CartContext';
 import { buildMeta } from '@/lib/seo';
 import type { Route } from './+types/index';
 
@@ -16,6 +16,7 @@ export const meta: Route.MetaFunction = () =>
 function ReferralRedirect() {
   const { code } = useParams();
   const navigate = useNavigate();
+  const { setAffiliateRef } = useCart();
 
   useEffect(() => {
     const slug = (code || '').trim().toUpperCase();
@@ -34,7 +35,7 @@ function ReferralRedirect() {
       }
     }
     navigate('/', { replace: true });
-  }, [code, navigate]);
+  }, [code, navigate, setAffiliateRef]);
 
   return (
     <div className='min-h-screen flex items-center justify-center text-gray-500 text-sm'>

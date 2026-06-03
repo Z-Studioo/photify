@@ -61,7 +61,12 @@ export async function createCheckoutSession(
       affiliateCode,
     } = req.body;
 
-    const affiliate = await resolveAffiliateByCode(affiliateCode);
+    // Attribute the order to an affiliate from the explicit referral code
+    // (cookie set via /r/:code) when present, otherwise fall back to the
+    // applied promo code — affiliates often share just their code, and a
+    // referral code doubles as a matching promotion code. resolveAffiliateByCode
+    // safely returns null for non-affiliate promo codes.
+    const affiliate = await resolveAffiliateByCode(affiliateCode || promoCode);
 
     // Validate required fields
     if (!cartItems || cartItems.length === 0) {
