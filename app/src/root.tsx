@@ -12,6 +12,7 @@ import { HelmetProvider } from '@dr.pogodin/react-helmet';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Toaster } from 'sonner';
 import { CartProvider } from '@/context/CartContext';
+import { PromoDiscountProvider } from '@/context/PromoDiscountContext';
 import { AdminProvider } from '@/context/AdminContext';
 import { AffiliateProvider } from '@/context/AffiliateContext';
 import { UploadProvider } from '@/context/UploadContext';
@@ -232,17 +233,19 @@ export default function Root() {
       <HelmetProvider>
         <ToastProvider>
           <CartProvider>
-            <AdminProvider>
-              <AffiliateProvider>
-                <UploadProvider>
-                  <PresetProvider>
-                    <PageViewTracker />
-                    <Outlet />
-                    <CookieConsent />
-                  </PresetProvider>
-                </UploadProvider>
-              </AffiliateProvider>
-            </AdminProvider>
+            <PromoDiscountProvider>
+              <AdminProvider>
+                <AffiliateProvider>
+                  <UploadProvider>
+                    <PresetProvider>
+                      <PageViewTracker />
+                      <Outlet />
+                      <CookieConsent />
+                    </PresetProvider>
+                  </UploadProvider>
+                </AffiliateProvider>
+              </AdminProvider>
+            </PromoDiscountProvider>
           </CartProvider>
         </ToastProvider>
       </HelmetProvider>

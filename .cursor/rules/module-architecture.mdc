@@ -1,0 +1,52 @@
+---
+description: Frontend module vs feature structure, and reminders to consolidate fragmented domains into stand-alone modules
+globs: app/src/**
+alwaysApply: false
+---
+
+# Frontend Module Architecture
+
+> Decision workflow (module-vs-feature, ask-before-refactor) lives in
+> `scalable-architecture.mdc`. The current map of domains lives in
+> `module-registry.md`. This file defines the structure we are heading toward.
+
+## Definitions
+
+- **Module** = a business/domain area that owns its code: `affiliate`, `admin`, `catalog`, `checkout`, `ai-tools`, `configurator`. Has one public entry (`index.ts`) and a clear owner.
+- **Feature** = a user-facing capability inside a module: `affiliate/dashboard`, `admin/orders`, `checkout/payment`. One module has many features.
+- **Shared module** = reusable, domain-free code: `components/ui`, `components/layout`, `lib/*`.
+
+Rule of thumb: a new business area becomes a new **module**; a new capability inside an existing area becomes a new **feature** in that module.
+
+## Target structure (where we are heading)
+
+```
+app/src/modules/<area>/
+  index.ts        # public surface (only thing other modules may import)
+  types.ts
+  api/            # per-module data access (hooks, API client)
+  context/
+  components/     # module-shared UI
+  <feature>/      # one folder per feature: route module + page UI
+app/src/shared/   # ui, layout, lib (cross-module, domain-free)
+```
+
+## Dependency laws
+
+- Features may import shared modules; shared modules must never import features.
+- A feature must not deep-import another module's internals — only that module's `index.ts`.
+- Keep behavior identical when relocating files; never mix logic changes into a move.
+
+## Consolidation reminder (important)
+
+This codebase is mid-migration. Many domains are still split across `components/`, `pages/`, `context/`, and `lib/`. Example: **affiliate** currently lives in `components/affiliate`, `components/pages/affiliate`, `pages/affiliate`, `pages/r/[code]`, `context/AffiliateContext.tsx`, and `lib/affiliate-ref.ts`.
+
+When working in a fragmented domain like this, remind the user that the area could be promoted to a stand-alone module under `modules/<area>/`, and offer to do it incrementally.
+
+## Migration safety
+
+- Move ONE module at a time; do not big-bang.
+- After each move, run `npm run type-check && npm run build` in `app/` before committing.
+- Prefer editor "move file + update imports" to rewrite `@/` imports automatically.
+- When moving a route module, update its file-path string in `app/src/routes.ts`.
+- Commit per module so each step is an easy rollback point.

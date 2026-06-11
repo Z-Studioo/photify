@@ -8,13 +8,6 @@ import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
 import { Separator } from '@/components/ui/separator';
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
-import {
   ArrowLeft,
   Save,
   Trash2,
@@ -49,6 +42,7 @@ export function AdminPromotionEditPage() {
     active: true,
     firstOrderOnly: false,
     isFeatured: false,
+    autoApply: false,
     categories: ['all'],
   });
 
@@ -70,6 +64,7 @@ export function AdminPromotionEditPage() {
         active: existingPromo.is_active,
         firstOrderOnly: existingPromo.first_order_only || false,
         isFeatured: existingPromo.is_featured || false,
+        autoApply: existingPromo.auto_apply || false,
         categories: existingPromo.categories || ['all'],
       });
     }
@@ -100,7 +95,7 @@ export function AdminPromotionEditPage() {
       const promotionData = {
         code: formData.code.toUpperCase().trim(),
         description: formData.description,
-        type: formData.type,
+        type: 'percentage',
         value: parseFloat(formData.value.toString()),
         min_order: parseFloat(formData.minOrder.toString()),
         max_uses: formData.maxUses
@@ -111,8 +106,21 @@ export function AdminPromotionEditPage() {
         is_active: formData.active,
         first_order_only: formData.firstOrderOnly,
         is_featured: formData.isFeatured,
+        auto_apply: formData.autoApply,
         categories: formData.categories,
       };
+
+      if (formData.autoApply) {
+        let clearQuery = supabase
+          .from('promotions')
+          .update({ auto_apply: false })
+          .eq('auto_apply', true);
+        if (isEditing && promotionId) {
+          clearQuery = clearQuery.neq('id', promotionId);
+        }
+        const { error: clearError } = await clearQuery;
+        if (clearError) throw clearError;
+      }
 
       if (isEditing && promotionId) {
         // Update existing promotion
@@ -292,48 +300,22 @@ export function AdminPromotionEditPage() {
 
               <div className='space-y-4'>
                 <div>
-                  <Label htmlFor='type'>Discount Type *</Label>
-                  <Select
-                    value={formData.type}
-                    onValueChange={value =>
-                      setFormData({ ...formData, type: value })
+                  <Label htmlFor='value'>Percentage (%)</Label>
+                  <Input
+                    id='value'
+                    type='number'
+                    value={formData.value}
+                    onChange={e =>
+                      setFormData({
+                        ...formData,
+                        value: parseFloat(e.target.value) || 0,
+                      })
                     }
-                  >
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value='percentage'>Percentage</SelectItem>
-                      <SelectItem value='fixed_amount'>Fixed Amount</SelectItem>
-                      <SelectItem value='free_shipping'>
-                        Free Shipping
-                      </SelectItem>
-                    </SelectContent>
-                  </Select>
+                    min='0'
+                    max='100'
+                    step='1'
+                  />
                 </div>
-
-                {formData.type !== 'free_shipping' && (
-                  <div>
-                    <Label htmlFor='value'>
-                      {formData.type === 'percentage'
-                        ? 'Percentage (%)'
-                        : 'Amount (£)'}
-                    </Label>
-                    <Input
-                      id='value'
-                      type='number'
-                      value={formData.value}
-                      onChange={e =>
-                        setFormData({
-                          ...formData,
-                          value: parseFloat(e.target.value) || 0,
-                        })
-                      }
-                      min='0'
-                      step={formData.type === 'percentage' ? '1' : '0.01'}
-                    />
-                  </div>
-                )}
 
                 <div>
                   <Label htmlFor='minOrder'>Minimum Order Value (£)</Label>
@@ -502,6 +484,24 @@ export function AdminPromotionEditPage() {
                     checked={formData.isFeatured}
                     onCheckedChange={checked =>
                       setFormData({ ...formData, isFeatured: checked })
+                    }
+                  />
+                </div>
+
+                <Separator />
+
+                <div className='flex items-center justify-between'>
+                  <div>
+                    <Label htmlFor='autoApply'>Auto-apply on landing</Label>
+                    <p className='text-xs text-gray-600 mt-1'>
+                      Apply this discount to every visitor automatically
+                    </p>
+                  </div>
+                  <Switch
+                    id='autoApply'
+                    checked={formData.autoApply}
+                    onCheckedChange={checked =>
+                      setFormData({ ...formData, autoApply: checked })
                     }
                   />
                 </div>

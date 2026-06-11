@@ -15,6 +15,7 @@ import { useQuery } from '@tanstack/react-query';
 import { cn } from '@/lib/utils';
 import { resolveCanvasSizePrice } from '@/lib/canvas-size-price';
 import { useProductCanvasPricingProduct } from '@/hooks/use-product-canvas-pricing';
+import { Price } from '@/components/shared/Price';
 
 interface RatioSizePanelProps {
   onSelectionChange?: (ratio: string, size: InchData | null) => void;
@@ -374,9 +375,7 @@ const RatioSizePanel: React.FC<RatioSizePanelProps> = ({
                 </div>
                 <div className='shrink-0 text-right'>
                   {price !== null ? (
-                    <span className='text-[15px] font-semibold tabular-nums text-primary'>
-                      £{price}
-                    </span>
+                    <Price amount={parseFloat(price)} variant='compact' />
                   ) : (
                     <span className='text-xs text-zinc-400'>No price</span>
                   )}

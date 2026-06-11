@@ -27,6 +27,7 @@ import { Footer } from '@/components/layout/footer';
 import { useSiteSetting } from '@/lib/supabase/hooks';
 import { createClient } from '@/lib/supabase/client';
 import { toast } from 'sonner';
+import { DiscountedAmount } from '@/components/shared/Price';
 
 // Returns just the base product name for a cart line item by stripping
 // any trailing ratio/size segments. Item names are built like
@@ -55,6 +56,8 @@ export function CartPage() {
     setAppliedPromoCode,
     promoApplied,
     setPromoApplied,
+    setUserAppliedPromoCode,
+    clearUserAppliedPromo,
   } = useCart();
   const navigate = useNavigate();
   const [promoCode, setPromoCode] = useState('');
@@ -169,6 +172,7 @@ export function CartPage() {
 
         if (result.valid) {
           const code = promoCode.toUpperCase().trim();
+          setUserAppliedPromoCode(code);
           setPromoApplied(true);
           setDiscount(result.discount_amount);
           setAppliedPromoCode(code);
@@ -226,6 +230,7 @@ export function CartPage() {
   };
 
   const handleRemovePromo = () => {
+    clearUserAppliedPromo();
     setPromoApplied(false);
     setDiscount(0);
     setAppliedPromoCode('');
@@ -392,14 +397,14 @@ export function CartPage() {
                           <div className='text-right'>
                             {item.quantity > 1 && (
                               <p className='text-[11px] text-gray-400 leading-tight'>
-                                £{item.price.toFixed(2)} each
+                                <DiscountedAmount amount={item.price} /> each
                               </p>
                             )}
                             <p
                               className='text-gray-900 text-base sm:text-lg leading-tight'
                               style={{ fontWeight: '700' }}
                             >
-                              £{(item.price * item.quantity).toFixed(2)}
+                              <DiscountedAmount amount={item.price * item.quantity} />
                             </p>
                           </div>
                         </div>

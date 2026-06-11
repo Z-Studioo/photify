@@ -599,10 +599,6 @@ const Dashboard: React.FC = () => {
                   <ApplyChangesControl
                     pricePerItem={pricePerItem}
                     quantity={quantity}
-                    selectedSize={{
-                      actual_price: pricePerItem,
-                      sell_price: pricePerItem,
-                    }}
                     onApply={() => {
                       void applyPendingChanges();
                       applyPendingEdgeType();

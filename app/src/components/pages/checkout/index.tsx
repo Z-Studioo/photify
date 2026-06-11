@@ -8,6 +8,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { toast } from 'sonner';
 import { useSiteSetting } from '@/lib/supabase/hooks';
 import { StripePaymentForm } from '@/components/shared/stripe-payment-form';
+import { DiscountedAmount } from '@/components/shared/Price';
 import { track, cleanProductName } from '@/lib/analytics';
 import {
   ArrowLeft,
@@ -1064,7 +1065,7 @@ export function CheckoutPage() {
                           className='text-gray-900 text-sm whitespace-nowrap'
                           style={{ fontWeight: '700' }}
                         >
-                          £{(item.price * item.quantity).toFixed(2)}
+                          <DiscountedAmount amount={item.price * item.quantity} />
                         </span>
                       </li>
                     );

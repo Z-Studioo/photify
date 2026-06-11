@@ -55,8 +55,48 @@ import {
 import { Room3DPreview } from '../shared/3d/room-3d-preview';
 import { CollageMesh } from './collage-mesh';
 import { uploadDataURLToStorage } from '@/lib/supabase/storage';
+import { useDiscountedPrice } from '@/components/shared/Price';
 
 type TabType = 'templates' | 'photos' | 'background';
+
+function PromoPriceDisplay({
+  amount,
+  size = 'lg',
+}: {
+  amount: number;
+  size?: 'lg' | 'md';
+}) {
+  const { original, discounted, percentOff, hasDiscount } =
+    useDiscountedPrice(amount);
+  const priceClass =
+    size === 'lg' ? 'text-2xl font-bold text-[#f63a9e]' : 'text-lg font-semibold text-[#f63a9e]';
+
+  return (
+    <div className='text-right'>
+      <div className={priceClass}>£{discounted.toFixed(2)}</div>
+      {hasDiscount && (
+        <>
+          <div className='text-sm text-gray-400 line-through'>
+            £{original.toFixed(2)}
+          </div>
+          <div className='text-xs text-green-600 font-semibold'>
+            Save {percentOff}%
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
+
+function PromoSaveBadge() {
+  const { percentOff, hasDiscount } = useDiscountedPrice(100);
+  if (!hasDiscount) return null;
+  return (
+    <span className='bg-green-100 text-green-700 text-xs font-semibold px-2 py-1 rounded'>
+      Save {percentOff}%
+    </span>
+  );
+}
 
 // ─── Session persistence ────────────────────────────────────────────────────
 const COLLAGE_SESSION_KEY = 'photify_collage_state';
@@ -860,10 +900,6 @@ export function CollageCustomizer() {
                       {sizes.map(size => {
                         const isSelected = selectedSizeId === size.id;
                         const priceValue = resolveSizePrice(size);
-                        const price = priceValue.toFixed(2);
-                        // "Original" (pre-discount) price is a 10%-off presentation flourish
-                        // relative to whichever price source we actually used.
-                        const originalPrice = (priceValue * 1.11).toFixed(2);
 
                         return (
                           <button
@@ -883,22 +919,13 @@ export function CollageCustomizer() {
                                   >
                                     {size.display_label}
                                   </span>
-                                  <span className='bg-green-100 text-green-700 text-xs font-semibold px-2 py-1 rounded'>
-                                    Save 10%
-                                  </span>
+                                  <PromoSaveBadge />
                                 </div>
                                 <p className='text-sm text-gray-500'>
                                   {size.area_in2} sq in
                                 </p>
                               </div>
-                              <div className='text-right'>
-                                <div className='text-2xl font-bold text-[#f63a9e]'>
-                                  £{price}
-                                </div>
-                                <div className='text-sm text-gray-400 line-through'>
-                                  £{originalPrice}
-                                </div>
-                              </div>
+                              <PromoPriceDisplay amount={priceValue} />
                             </div>
                           </button>
                         );
@@ -926,20 +953,11 @@ export function CollageCustomizer() {
                           </p>
                         </div>
                       </div>
-                      <div className='text-right'>
-                        <div className='text-2xl font-bold text-[#f63a9e]'>
-                          £{calculatePrice()}
-                        </div>
-                        <div className='text-sm text-gray-500 line-through'>
-                          £
-                          {selectedSize
-                            ? (resolveSizePrice(selectedSize) * 1.11).toFixed(2)
-                            : '0.00'}
-                        </div>
-                        <div className='text-xs text-green-600 font-semibold'>
-                          Save 10%
-                        </div>
-                      </div>
+                      <PromoPriceDisplay
+                        amount={
+                          selectedSize ? resolveSizePrice(selectedSize) : 0
+                        }
+                      />
                     </div>
                   </div>
                 )}

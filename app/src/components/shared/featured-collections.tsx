@@ -5,17 +5,44 @@ import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { createClient } from '@/lib/supabase/client';
 import {
-  formatGbpAmount,
   getListingDisplayAmount,
 } from '@/lib/product-starting-price';
+import { useDiscountedPrice } from '@/components/shared/Price';
 
 interface FeaturedCollection {
   image: string;
   badge: string;
   badgeColor?: string;
   title: string;
-  price: string;
+  priceAmount: number | null;
   productId: string;
+}
+
+function FeaturedFromPrice({ amount }: { amount: number | null }) {
+  const { original, discounted, percentOff, hasDiscount } =
+    useDiscountedPrice(amount);
+
+  if (amount == null || !Number.isFinite(amount)) {
+    return <>—</>;
+  }
+
+  if (!hasDiscount) {
+    return <>£{discounted.toFixed(2)}</>;
+  }
+
+  return (
+    <span className='inline-flex flex-col items-start gap-0.5'>
+      <span className='inline-flex items-center gap-1.5'>
+        <span>£{discounted.toFixed(2)}</span>
+        <span className='rounded bg-green-500/90 px-1 py-0.5 text-[9px] font-bold uppercase tracking-wide text-white'>
+          {percentOff}% off
+        </span>
+      </span>
+      <span className='text-[10px] font-medium text-white/60 line-through xs:text-xs'>
+        £{original.toFixed(2)}
+      </span>
+    </span>
+  );
 }
 
 // Sparse slot array: index 0 = featured_index 1 (large left),
@@ -36,7 +63,7 @@ export function FeaturedCollections() {
       badge: 'New',
       badgeColor: 'bg-[#f63a9e]',
       title: 'Single Customized Canvas',
-      price: '$89.99',
+      priceAmount: 89.99,
       productId: 'single-canvas',
     },
     {
@@ -45,7 +72,7 @@ export function FeaturedCollections() {
       badge: 'Limited Edition',
       badgeColor: 'bg-[#FFC739]',
       title: '3 Piece Collage',
-      price: '$149.99',
+      priceAmount: 149.99,
       productId: 'collage-3',
     },
     {
@@ -54,7 +81,7 @@ export function FeaturedCollections() {
       badge: 'New',
       badgeColor: 'bg-[#f63a9e]',
       title: 'Framed Photo Prints',
-      price: '$119.99',
+      priceAmount: 119.99,
       productId: 'framed-prints',
     },
     {
@@ -63,7 +90,7 @@ export function FeaturedCollections() {
       badge: 'Special Offer',
       badgeColor: 'bg-[#0051BA]',
       title: 'Photo Cushions',
-      price: '$39.99',
+      priceAmount: 39.99,
       productId: 'photo-cushions',
     },
   ];
@@ -98,14 +125,12 @@ export function FeaturedCollections() {
             fixed_price: product.fixed_price,
             price: product.price,
           });
-          const priceLabel =
-            amount != null ? `£${formatGbpAmount(amount)}` : '—';
           positionedSlots[slotIndex] = {
             image: product.featured_image || '',
             badge: 'Featured',
             badgeColor: 'bg-[#f63a9e]',
             title: product.name,
-            price: priceLabel,
+            priceAmount: amount,
             productId: product.slug || product.id,
           };
         });
@@ -184,7 +209,7 @@ export function FeaturedCollections() {
             </h3>
             <div className='flex items-baseline gap-1 xs:gap-1.5 sm:gap-2 mb-1.5 xs:mb-2 sm:mb-2.5 md:mb-3'>
               <p className='text-sm xs:text-base sm:text-lg md:text-xl text-left' style={{ fontWeight: '700' }}>
-                From {displayCollections[0].price}
+                From <FeaturedFromPrice amount={displayCollections[0].priceAmount} />
               </p>
             </div>
             <ArrowRight className='w-4 h-4 xs:w-5 xs:h-5 sm:w-5.5 sm:h-5.5 md:w-6 md:h-6' />
@@ -240,7 +265,7 @@ export function FeaturedCollections() {
                         className='text-left text-[11px] xs:text-xs sm:text-[13px] md:text-[14px]'
                         style={{ fontWeight: '700' }}
                       >
-                        From {collection.price}
+                        From <FeaturedFromPrice amount={collection.priceAmount} />
                       </p>
                     </div>
                     <ArrowRight className='w-3 h-3 xs:w-3.5 xs:h-3.5 sm:w-4 sm:h-4 md:w-5 md:h-5' />
@@ -287,7 +312,7 @@ export function FeaturedCollections() {
                     className='text-left text-xs xs:text-sm sm:text-[15px] md:text-[16px]'
                     style={{ fontWeight: '700' }}
                   >
-                    From {displayCollections[3].price}
+                    From <FeaturedFromPrice amount={displayCollections[3].priceAmount} />
                   </p>
                 </div>
                 <ArrowRight className='w-3.5 h-3.5 xs:w-4 xs:h-4 sm:w-4.5 sm:h-4.5 md:w-5 md:h-5' />

@@ -7,6 +7,7 @@ import { createClient } from '@/lib/supabase/client';
 import { useCart } from '@/context/CartContext';
 import { toast } from 'sonner';
 import { track, cleanProductName } from '@/lib/analytics';
+import { computeDiscountedPrice, formatGbp } from '@/lib/pricing';
 
 // Per-tab dedupe: GA4 dedupes against the server-side `purchase` by
 // transaction_id, but PostHog does not. This prevents reloading
@@ -387,6 +388,11 @@ export function ConfirmationPage() {
   if (!orderData) {
     return null;
   }
+
+  const orderDiscountPercent =
+    orderData.subtotal > 0 && orderData.discount > 0
+      ? (orderData.discount / orderData.subtotal) * 100
+      : 0;
 
   return (
     <div className="min-h-screen flex flex-col bg-gradient-to-br from-gray-50 via-white to-gray-50 font-['Mona_Sans',_sans-serif] relative overflow-hidden">
@@ -789,6 +795,15 @@ export function ConfirmationPage() {
                   <ul className='divide-y divide-gray-100 mb-6'>
                     {orderData.items.map((item, index) => {
                       const displayName = getDisplayName(item.name);
+                      const lineTotal = item.price * item.quantity;
+                      const linePricing = computeDiscountedPrice(
+                        lineTotal,
+                        orderDiscountPercent
+                      );
+                      const unitPricing = computeDiscountedPrice(
+                        item.price,
+                        orderDiscountPercent
+                      );
                       return (
                         <motion.li
                           key={item.id}
@@ -814,7 +829,12 @@ export function ConfirmationPage() {
                                 Qty: {item.quantity}
                                 {item.quantity > 1 && (
                                   <span className='ml-2'>
-                                    · £{item.price.toFixed(2)} each
+                                    · {formatGbp(unitPricing.discounted, { alwaysDecimals: true })} each
+                                    {unitPricing.hasDiscount && (
+                                      <span className='ml-1 line-through text-gray-300'>
+                                        {formatGbp(unitPricing.original, { alwaysDecimals: true })}
+                                      </span>
+                                    )}
                                   </span>
                                 )}
                               </p>
@@ -823,7 +843,12 @@ export function ConfirmationPage() {
                               className='text-gray-900 text-lg leading-tight whitespace-nowrap'
                               style={{ fontWeight: '700' }}
                             >
-                              £{(item.price * item.quantity).toFixed(2)}
+                              {formatGbp(linePricing.discounted, { alwaysDecimals: true })}
+                              {linePricing.hasDiscount && (
+                                <span className='ml-2 text-sm font-normal text-gray-400 line-through'>
+                                  {formatGbp(linePricing.original, { alwaysDecimals: true })}
+                                </span>
+                              )}
                             </p>
                           </div>
                         </motion.li>

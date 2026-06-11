@@ -35,9 +35,9 @@ import {
   isFeatureIconUrl,
 } from '@/lib/product-feature-icons';
 import {
-  formatGbpAmount,
   getLowestSizePriceFromConfig,
 } from '@/lib/product-starting-price';
+import { Price } from '@/components/shared/Price';
 
 const mockReviews = [
   {
@@ -580,12 +580,11 @@ export function ProductDetailPage({
                   <div className='flex items-baseline gap-2'>
                     <span className='text-gray-400 text-sm font-medium'>Starting at</span>
                     {product.startingPrice != null ? (
-                      <span
-                        className='text-[#f63a9e] text-3xl sm:text-4xl'
-                        style={{ fontWeight: '800' }}
-                      >
-                        £{formatGbpAmount(product.startingPrice)}
-                      </span>
+                      <Price
+                        amount={product.startingPrice}
+                        variant='lg'
+                        className='inline-flex'
+                      />
                     ) : (
                       <span
                         className='text-gray-400 text-2xl sm:text-3xl'
@@ -1085,24 +1084,11 @@ export function ProductDetailPage({
                           </span>
 
                           <div className='flex items-start'>
-                            <div className='flex items-start text-[#f63a9e]'>
-                              <span className='font-bold text-xs xs:text-sm sm:text-base md:text-lg mt-1 xs:mt-1.5 sm:mt-2 mr-0.5'>
-                                £
-                              </span>
-
-                              <span className='font-extrabold text-xl xs:text-2xl sm:text-3xl md:text-4xl tracking-tighter leading-none font-bricolage'>
-                                {relStarting != null
-                                  ? formatGbpAmount(relStarting).split('.')[0]
-                                  : '—'}
-                              </span>
-
-                              <span className='font-bold text-sm xs:text-base sm:text-lg md:text-xl mt-1 xs:mt-1.5 sm:mt-2'>
-                                {relStarting != null &&
-                                formatGbpAmount(relStarting).includes('.')
-                                  ? `.${formatGbpAmount(relStarting).split('.')[1]}`
-                                  : ''}
-                              </span>
-                            </div>
+                            {relStarting != null ? (
+                              <Price amount={relStarting} variant='card' />
+                            ) : (
+                              <span className='font-extrabold text-xl text-[#f63a9e]'>—</span>
+                            )}
                           </div>
                         </div>
 

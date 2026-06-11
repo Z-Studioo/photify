@@ -12,6 +12,7 @@ import { toast } from 'sonner';
 import { uploadFileToStorage } from '@/lib/supabase/storage';
 import { resolveCanvasSizePrice } from '@/lib/canvas-size-price';
 import { useProductCanvasPricingProduct } from '@/hooks/use-product-canvas-pricing';
+import { useDiscountedPrice, DiscountedAmount } from '@/components/shared/Price';
 
 interface QuantityControlProps {
   onConfirm: () => Promise<void> | void;
@@ -33,12 +34,8 @@ const QuantityControl: React.FC<QuantityControlProps> = ({
 }) => {
   const [showConfirmation, setShowConfirmation] = useState(false);
   const [localConfirming, setLocalConfirming] = useState(false);
-  const [priceData, setPriceData] = useState<{
-    sellPrice: number;
-    actualPrice: number;
-  }>({
+  const [priceData, setPriceData] = useState<{ sellPrice: number }>({
     sellPrice: 0,
-    actualPrice: 0,
   });
   const { addToast } = useToast();
   const { addToCart } = useCart();
@@ -64,7 +61,6 @@ const QuantityControl: React.FC<QuantityControlProps> = ({
         resolveCanvasSizePrice(selectedSize, pricingProduct) ?? 0;
       setPriceData({
         sellPrice: canvasPrice + artFixedPrice,
-        actualPrice: canvasPrice + artFixedPrice,
       });
     }
   }, [pricingProduct, selectedSize, artFixedPrice]);
@@ -137,14 +133,9 @@ const QuantityControl: React.FC<QuantityControlProps> = ({
   };
 
   const isProcessing = isConfirming || localConfirming;
-  const unitSell = priceData.sellPrice;
-  const unitActual = priceData.actualPrice;
-  const hasDiscount = unitActual > unitSell;
-  const discountPercentage = hasDiscount
-    ? Math.round(
-        ((unitActual - unitSell) / unitActual) * 100
-      )
-    : 0;
+  const unitBase = priceData.sellPrice;
+  const { discounted: unitSell, original: unitActual, percentOff, hasDiscount } =
+    useDiscountedPrice(unitBase);
 
   const sellWhole = Math.trunc(unitSell);
   const sellCents = unitSell.toFixed(2).split('.')[1];
@@ -175,7 +166,7 @@ const QuantityControl: React.FC<QuantityControlProps> = ({
               variant='secondary'
               className='bg-green-100 px-1 py-0 text-[10px] font-medium text-green-700 sm:text-xs'
             >
-              {discountPercentage}% OFF
+              {percentOff}% OFF
             </Badge>
             {bigPrice}
           </div>

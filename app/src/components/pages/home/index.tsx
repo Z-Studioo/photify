@@ -3,7 +3,6 @@ import { FeaturedCollections } from '@/components/shared/featured-collections';
 import { ProductCard, type ProductCardProps } from '@/components/shared/product-card';
 import { RoomInspiration } from '@/components/shared/room-inspiration';
 import { ArtPhotoTile } from '@/components/shared/art-photo-tile';
-// import { AIToolsSection } from '@/components/ai-tools/ai-tools-section';
 import { Footer } from '@/components/layout/footer';
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
@@ -460,10 +459,6 @@ export function HomePage({
           </div>
         </section>
       )}
-
-      {/* AI Tools Section */}
-      {/* <AIToolsSection /> */}
-
       <Footer />
     </div>
   );

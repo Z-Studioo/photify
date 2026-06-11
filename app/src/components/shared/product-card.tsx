@@ -3,6 +3,7 @@ import { motion } from 'framer-motion';
 import { ImageWithFallback } from '@/components/figma/image-with-fallback';
 import { Ruler } from 'lucide-react';
 import { getListingDisplayAmount } from '@/lib/product-starting-price';
+import { Price } from '@/components/shared/Price';
 
 export interface ProductCardProps {
   id: string;
@@ -95,27 +96,13 @@ export function ProductCard({
             </span>
 
             <div className='flex items-start'>
-              {/* Price */}
-              <div className='flex items-start text-[#f63a9e]'>
-                {displayAmount != null ? (
-                  <>
-                    <span className='font-bold text-lg mt-2 mr-0.5'>£</span>
-
-                    <span className='font-extrabold text-4xl tracking-tighter leading-none font-bricolage'>
-                      {Math.floor(displayAmount)}
-                    </span>
-
-                    <span className='font-bold text-xl mt-2'>
-                      .
-                      {displayAmount.toFixed(2).split('.')[1]}
-                    </span>
-                  </>
-                ) : (
-                  <span className='font-extrabold text-2xl tracking-tight font-bricolage'>
-                    —
-                  </span>
-                )}
-              </div>
+              {displayAmount != null ? (
+                <Price amount={displayAmount} variant='card' />
+              ) : (
+                <span className='font-extrabold text-2xl tracking-tight font-bricolage text-[#f63a9e]'>
+                  —
+                </span>
+              )}
             </div>
           </div>
           <div className='w-10 h-10 bg-[#f63a9e] text-white rounded-full flex items-center justify-center hover:bg-[#e02d8d] transition-colors shadow-md'>

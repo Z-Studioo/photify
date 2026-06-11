@@ -5,8 +5,6 @@ import type {
   Product, 
   ArtProduct, 
   RoomInspiration, 
-  AITool, 
-  PrintSize, 
   Category 
 } from '../data/types';
 
@@ -256,29 +254,6 @@ export const useRoom = (id: string) => {
   });
 };
 
-// AI Tools hooks
-export const useAITools = () => {
-  return useSupabaseQuery<AITool[]>(async () => {
-    const { data, error } = await supabase
-      .from('ai_tools')
-      .select('*')
-      .eq('is_active', true)
-      .order('title');
-    return { data, error };
-  });
-};
-
-// Print Sizes hooks
-export const usePrintSizes = () => {
-  return useSupabaseQuery<PrintSize[]>(async () => {
-    const { data, error } = await supabase
-      .from('print_sizes')
-      .select('*')
-      .order('name');
-    return { data, error };
-  });
-};
-
 // ============================================
 // NEW HOOKS - Promotions, Settings, Hotspots, Reviews
 // ============================================
@@ -357,89 +332,6 @@ export const useSettingsByCategory = (category: string) => {
       .select('*')
       .eq('category', category)
       .order('setting_key', { ascending: true });
-    return { data, error };
-  });
-};
-
-// Room Hotspots hooks
-export const useRoomHotspots = (roomId: string) => {
-  return useSupabaseQuery<any[]>(async () => {
-    const { data, error } = await supabase
-      .rpc('get_room_hotspots', { room_uuid: roomId });
-    return { data, error };
-  });
-};
-
-export const useRoomHotspotsWithDetails = (roomId: string) => {
-  return useSupabaseQuery<any[]>(async () => {
-    const { data, error } = await supabase
-      .from('v_room_hotspots_with_products')
-      .select('*')
-      .eq('room_id', roomId)
-      .order('display_order', { ascending: true });
-    return { data, error };
-  });
-};
-
-export const useAllHotspots = () => {
-  return useSupabaseQuery<any[]>(async () => {
-    const { data, error } = await supabase
-      .from('room_hotspots')
-      .select(`
-        *,
-        room:rooms(*),
-        product:products(id, name, slug, images),
-        art_product:art_products(id, name, slug, images)
-      `)
-      .eq('is_active', true)
-      .order('display_order', { ascending: true });
-    return { data, error };
-  });
-};
-
-// Product Reviews hooks
-export const useProductReviews = (productId: string, limit = 10) => {
-  return useSupabaseQuery<any[]>(async () => {
-    const { data, error } = await supabase
-      .rpc('get_product_reviews', { 
-        product_uuid: productId,
-        limit_count: limit,
-        offset_count: 0
-      });
-    return { data, error };
-  });
-};
-
-export const useReviewsWithDetails = () => {
-  return useSupabaseQuery<any[]>(async () => {
-    const { data, error } = await supabase
-      .from('v_product_reviews_with_details')
-      .select('*')
-      .order('created_at', { ascending: false })
-      .limit(50);
-    return { data, error };
-  });
-};
-
-export const useRatingDistribution = (productId: string) => {
-  return useSupabaseQuery<any[]>(async () => {
-    const { data, error } = await supabase
-      .rpc('get_rating_distribution', { product_uuid: productId });
-    return { data, error };
-  });
-};
-
-export const usePendingReviews = () => {
-  return useSupabaseQuery<any[]>(async () => {
-    const { data, error } = await supabase
-      .from('product_reviews')
-      .select(`
-        *,
-        product:products(id, name, slug),
-        art_product:art_products(id, name, slug)
-      `)
-      .eq('status', 'pending')
-      .order('created_at', { ascending: false });
     return { data, error };
   });
 };
