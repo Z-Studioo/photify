@@ -34,6 +34,8 @@ interface StripePaymentFormProps {
   deliveryFee: number;
   discount: number;
   promoCode?: string;
+  /** Where the promo came from — only `manual` invalid codes block checkout. */
+  promoSource?: 'manual' | 'affiliate' | 'auto_apply' | null;
   affiliateCode?: string;
   total: number;
   customer: CustomerInfo;
@@ -67,6 +69,7 @@ function PaymentFormInner({
   deliveryFee,
   discount,
   promoCode,
+  promoSource,
   affiliateCode,
   total,
   customer,
@@ -162,6 +165,7 @@ function PaymentFormInner({
     deliveryFee,
     discount,
     promoCode: promoCode || undefined,
+    promoSource: promoSource || undefined,
     affiliateCode: affiliateCode || undefined,
     total,
     source,

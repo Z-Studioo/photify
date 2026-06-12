@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 import { stripe } from '@/lib/stripe';
 import { supabase } from '@/lib/supabase';
 import { resolveAffiliateByCode } from '@/lib/affiliate';
+import { computePromoCharge } from '@/lib/promo';
 import { getEstimatedDeliveryDate } from '@/lib/sendgrid';
 
 interface CartItem {
@@ -35,6 +36,11 @@ interface PaymentIntentRequestBody {
   deliveryFee: number;
   discount?: number;
   promoCode?: string;
+  // Where the promo came from. Only an explicitly typed-in `manual` code
+  // should hard-fail checkout when invalid; auto/affiliate promos are best
+  // effort and are silently dropped so a stale/expired promo never blocks a
+  // legitimate purchase.
+  promoSource?: 'manual' | 'affiliate' | 'auto_apply';
   total: number;
   // Optional hint so the webhook handler can pick the right post-processing path.
   source?: 'express_checkout' | 'payment_element' | 'checkout_session';
@@ -60,10 +66,9 @@ export async function createPaymentIntent(
       customerInfo,
       shippingAddress,
       videoPermission,
-      subtotal,
       deliveryFee,
       promoCode,
-      total,
+      promoSource,
       source,
       affiliateCode,
     } = req.body;
@@ -90,10 +95,34 @@ export async function createPaymentIntent(
       return;
     }
 
-    if (typeof total !== 'number' || total <= 0) {
+    const charge = await computePromoCharge({
+      cartItems,
+      deliveryFee,
+      promoCode,
+    });
+
+    // Only block when a user explicitly typed a code that turned out invalid.
+    // Auto-apply / affiliate promos are dropped silently (charge falls back to
+    // full price) so an expired promo can never wedge a paying customer.
+    if (!charge.valid && promoCode && promoSource === 'manual') {
+      res
+        .status(400)
+        .json({ error: charge.errorMessage || 'Invalid promotion' });
+      return;
+    }
+
+    if (!charge.valid && promoCode) {
+      console.warn(
+        `[payment-intent] dropping invalid ${promoSource || 'unknown'} promo "${promoCode}": ${charge.errorMessage}`
+      );
+    }
+
+    if (charge.total <= 0) {
       res.status(400).json({ error: 'Invalid order total' });
       return;
     }
+
+    const { subtotal, discount, total, promoCode: validatedPromo } = charge;
 
     const { data: orderNumberData, error: orderNumberError } =
       await supabase.rpc('generate_order_number');
@@ -126,6 +155,7 @@ export async function createPaymentIntent(
         subtotal,
         shipping_cost: deliveryFee,
         total,
+        promo_code: validatedPromo,
         video_permission: videoPermission || false,
         estimated_delivery: estimatedDelivery.toISOString().split('T')[0],
         payment_status: 'pending',
@@ -164,7 +194,8 @@ export async function createPaymentIntent(
         order_id: order.id,
         order_number: orderNumber,
         customer_email: customerInfo.email,
-        promo_code: promoCode || '',
+        promo_code: validatedPromo || '',
+        discount_amount: discount > 0 ? String(discount) : '',
         source: source || 'payment_element',
         affiliate_id: affiliate?.id || '',
         affiliate_code: affiliate?.code || '',

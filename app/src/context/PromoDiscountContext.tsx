@@ -8,19 +8,38 @@ import {
   type ReactNode,
 } from 'react';
 import { useCart } from '@/context/CartContext';
-import { getAffiliateRef } from '@/lib/affiliate-ref';
 import { createClient } from '@/lib/supabase/client';
-import { pickHighestPromo } from '@/lib/pricing/resolve-promo-candidates';
-import type { PromoCandidate, ResolvedPromo } from '@/lib/pricing/types';
+import {
+  clearPromoSession,
+  EMPTY_RESOLVED_PROMO,
+  getDiscountPercentForProduct,
+  getPromoSession,
+  normalizeScope,
+  pickHighestPromo,
+  savingsForItems,
+  savingsForSubtotal,
+  setPromoSession,
+  type ProductPromoContext,
+  type PromoCandidate,
+  type PromoLineItem,
+  type PromoScope,
+  type ResolvedPromo,
+} from '@/lib/pricing/promo';
 
 interface PromoRow {
   code: string;
   value: number;
   type: string;
+  categories?: string[] | null;
+  excluded_product_ids?: string[] | null;
+  end_date?: string | null;
 }
 
 interface PromoDiscountContextValue extends ResolvedPromo {
   loading: boolean;
+  getDiscountForProduct: (context?: ProductPromoContext) => number;
+  savingsForItems: (items: PromoLineItem[]) => number;
+  savingsFor: (subtotal: number) => number;
 }
 
 const PromoDiscountContext = createContext<PromoDiscountContextValue | undefined>(
@@ -30,6 +49,20 @@ const PromoDiscountContext = createContext<PromoDiscountContextValue | undefined
 function normalizePercent(value: unknown): number {
   const n = typeof value === 'number' ? value : Number(value);
   return Number.isFinite(n) && n > 0 ? n : 0;
+}
+
+function sessionToResolved(session: ReturnType<typeof getPromoSession>): ResolvedPromo {
+  if (!session) return EMPTY_RESOLVED_PROMO;
+  return {
+    winningCode: session.code,
+    discountPercent: session.percent,
+    source: session.source,
+    scope: session.scope,
+  };
+}
+
+function rowScope(row: PromoRow): PromoScope {
+  return normalizeScope(row.categories, row.excluded_product_ids);
 }
 
 export function PromoDiscountProvider({ children }: { children: ReactNode }) {
@@ -47,31 +80,46 @@ export function PromoDiscountProvider({ children }: { children: ReactNode }) {
   const [candidateRows, setCandidateRows] = useState<PromoRow[]>([]);
   const [loading, setLoading] = useState(true);
 
+  // Hydrate instantly from cookie before network.
+  const [resolved, setResolved] = useState<ResolvedPromo>(() =>
+    sessionToResolved(getPromoSession())
+  );
+
   const fetchAutoApplyPromo = useCallback(async () => {
     try {
       const supabase = createClient();
-      const { data, error } = await supabase
-        .from('promotions')
-        .select('code, value, type')
-        .eq('auto_apply', true)
-        .maybeSingle();
+      const { data, error } = await supabase.rpc('get_active_auto_promo');
 
-      if (error) {
-        // Column may not exist before migration — treat as no auto-apply.
-        if (error.code === '42703' || error.message?.includes('auto_apply')) {
-          setAutoApplyPromo(null);
+      if (!error && data && data.length > 0) {
+        const row = data[0] as PromoRow;
+        if (row.type === 'percentage') {
+          setAutoApplyPromo(row);
           return;
         }
-        console.warn('[PromoDiscount] auto_apply fetch failed:', error.message);
-        setAutoApplyPromo(null);
-        return;
       }
 
-      if (data && data.type === 'percentage') {
-        setAutoApplyPromo(data as PromoRow);
-      } else {
-        setAutoApplyPromo(null);
+      // Fallback when RPC not deployed yet. Mirror the RPC's active/date
+      // guards so we never hydrate an inactive or expired auto promo.
+      if (error) {
+        const today = new Date().toISOString().split('T')[0];
+        const { data: fallback, error: fbErr } = await supabase
+          .from('promotions')
+          .select(
+            'code, value, type, categories, excluded_product_ids, end_date'
+          )
+          .eq('auto_apply', true)
+          .eq('is_active', true)
+          .lte('start_date', today)
+          .gte('end_date', today)
+          .maybeSingle();
+
+        if (!fbErr && fallback && fallback.type === 'percentage') {
+          setAutoApplyPromo(fallback as PromoRow);
+          return;
+        }
       }
+
+      setAutoApplyPromo(null);
     } catch {
       setAutoApplyPromo(null);
     }
@@ -102,10 +150,17 @@ export function PromoDiscountProvider({ children }: { children: ReactNode }) {
       setLoading(true);
       try {
         const supabase = createClient();
+        // Case-insensitive match so codes resolve regardless of stored
+        // casing (DB validation also uses upper(code) = upper(...)).
+        const orFilter = candidateCodes
+          .map(code => `code.ilike.${code}`)
+          .join(',');
         const { data, error } = await supabase
           .from('promotions')
-          .select('code, value, type')
-          .in('code', candidateCodes);
+          .select(
+            'code, value, type, categories, excluded_product_ids, end_date'
+          )
+          .or(orFilter);
 
         if (cancelled) return;
 
@@ -128,7 +183,7 @@ export function PromoDiscountProvider({ children }: { children: ReactNode }) {
     };
   }, [candidateCodes.join('|')]);
 
-  const resolved = useMemo(() => {
+  const computedResolved = useMemo(() => {
     const byCode = new Map(candidateRows.map(row => [row.code.toUpperCase(), row]));
     const candidates: PromoCandidate[] = [];
 
@@ -140,6 +195,7 @@ export function PromoDiscountProvider({ children }: { children: ReactNode }) {
           code: userAppliedPromoCode.toUpperCase(),
           percent,
           source: 'manual',
+          scope: row ? rowScope(row) : normalizeScope(),
         });
       }
     }
@@ -152,6 +208,7 @@ export function PromoDiscountProvider({ children }: { children: ReactNode }) {
           code: affiliateRef.toUpperCase(),
           percent,
           source: 'affiliate',
+          scope: row ? rowScope(row) : normalizeScope(),
         });
       }
     }
@@ -163,6 +220,7 @@ export function PromoDiscountProvider({ children }: { children: ReactNode }) {
           code: autoApplyPromo.code.toUpperCase(),
           percent,
           source: 'auto_apply',
+          scope: rowScope(autoApplyPromo),
         });
       }
     }
@@ -170,7 +228,42 @@ export function PromoDiscountProvider({ children }: { children: ReactNode }) {
     return pickHighestPromo(candidates);
   }, [candidateRows, userAppliedPromoCode, affiliateRef, autoApplyPromo]);
 
-  // Sync the winning code to cart charge state when items exist.
+  // Update resolved state and persist cookie when network resolution completes.
+  // The cookie is reserved for sitewide auto-apply promos only: it exists to
+  // pre-paint discounted pricing on first paint before any network call.
+  // Manual codes live in cart storage and affiliate codes in `photify_ref`,
+  // so we never persist those here (and we clear any stale cookie).
+  useEffect(() => {
+    if (computedResolved.winningCode) {
+      setResolved(computedResolved);
+      if (computedResolved.source === 'auto_apply') {
+        const row =
+          candidateRows.find(
+            r =>
+              r.code.toUpperCase() ===
+              computedResolved.winningCode!.toUpperCase()
+          ) ?? autoApplyPromo;
+        setPromoSession(
+          {
+            code: computedResolved.winningCode,
+            percent: computedResolved.discountPercent,
+            source: computedResolved.source,
+            scope: computedResolved.scope,
+          },
+          row?.end_date
+        );
+      } else {
+        clearPromoSession();
+      }
+    } else if (!loading) {
+      // Resolution finished with no winner (no candidates, or all expired/
+      // inactive). Drop any previously cached cookie so pricing resets.
+      setResolved(EMPTY_RESOLVED_PROMO);
+      clearPromoSession();
+    }
+  }, [computedResolved, candidateRows, autoApplyPromo, loading]);
+
+  // Sync winning code to cart charge state when items exist.
   useEffect(() => {
     if (!hydrated) return;
 
@@ -226,12 +319,31 @@ export function PromoDiscountProvider({ children }: { children: ReactNode }) {
     setAppliedPromoCode,
   ]);
 
+  const getDiscountForProduct = useCallback(
+    (context?: ProductPromoContext) =>
+      getDiscountPercentForProduct(resolved, context),
+    [resolved]
+  );
+
+  const savingsForItemsFn = useCallback(
+    (items: PromoLineItem[]) => savingsForItems(resolved, items),
+    [resolved]
+  );
+
+  const savingsFor = useCallback(
+    (subtotal: number) => savingsForSubtotal(resolved, subtotal),
+    [resolved]
+  );
+
   const value = useMemo(
     () => ({
       ...resolved,
       loading,
+      getDiscountForProduct,
+      savingsForItems: savingsForItemsFn,
+      savingsFor,
     }),
-    [resolved, loading]
+    [resolved, loading, getDiscountForProduct, savingsForItemsFn, savingsFor]
   );
 
   return (

@@ -9,6 +9,7 @@ import { toast } from 'sonner';
 import { useSiteSetting } from '@/lib/supabase/hooks';
 import { StripePaymentForm } from '@/components/shared/stripe-payment-form';
 import { DiscountedAmount } from '@/components/shared/Price';
+import { usePromoDiscount } from '@/context/PromoDiscountContext';
 import { track, cleanProductName } from '@/lib/analytics';
 import {
   ArrowLeft,
@@ -76,6 +77,12 @@ export function CheckoutPage() {
   const navigate = useNavigate();
   const { cartItems, shippingCost, discount, appliedPromoCode, affiliateRef } =
     useCart();
+  const { winningCode, source: promoSource, savingsFor } = usePromoDiscount();
+  const checkoutPromoCode = appliedPromoCode || winningCode || '';
+  // The resolved promo source ('manual' | 'affiliate' | 'auto_apply' | null)
+  // drives server-side error handling: only an invalid `manual` code blocks
+  // checkout; auto/affiliate promos are dropped silently if they expire.
+  const checkoutPromoSource = promoSource;
   // 2-step flow: 1 = Your Details (contact + address), 2 = Review & Pay
   const [currentStep, setCurrentStep] = useState<1 | 2>(1);
   const [formData, setFormData] = useState<FormData>({
@@ -180,7 +187,13 @@ export function CheckoutPage() {
     0
   );
   const deliveryFee = shippingCost;
-  const total = Math.max(0, subtotal + deliveryFee - discount);
+  // Prefer the server-validated discount; fall back to the resolved-promo
+  // estimate (matches the per-line discounted prices and the server's
+  // subtotal-based calc) so the total never disagrees with the line items.
+  // The server re-validates and is authoritative for the actual charge.
+  const estimatedSavings = winningCode ? savingsFor(subtotal) : 0;
+  const effectiveDiscount = discount > 0 ? discount : estimatedSavings;
+  const total = Math.max(0, subtotal + deliveryFee - effectiveDiscount);
 
   // Snapshot the cart in GA4 Item format. Memoised by content rather
   // than reference so we don't re-emit funnel events on every keystroke.
@@ -204,7 +217,7 @@ export function CheckoutPage() {
           currency: 'GBP',
           value: total,
           items: analyticsItems,
-          coupon: appliedPromoCode || undefined,
+          coupon: checkoutPromoCode || undefined,
         },
       });
     } catch {
@@ -240,7 +253,7 @@ export function CheckoutPage() {
           value: total,
           items: analyticsItems,
           shipping_tier: shippingCost > 5 ? 'express' : 'standard',
-          coupon: appliedPromoCode || undefined,
+          coupon: checkoutPromoCode || undefined,
         },
       });
     } catch {
@@ -270,7 +283,7 @@ export function CheckoutPage() {
           value: total,
           items: analyticsItems,
           payment_type: 'card',
-          coupon: appliedPromoCode || undefined,
+          coupon: checkoutPromoCode || undefined,
         },
       });
     } catch {
@@ -947,8 +960,9 @@ export function CheckoutPage() {
                       cartItems={cartItems}
                       subtotal={subtotal}
                       deliveryFee={deliveryFee}
-                      discount={discount}
-                      promoCode={appliedPromoCode || undefined}
+                      discount={effectiveDiscount}
+                      promoCode={checkoutPromoCode || undefined}
+                      promoSource={checkoutPromoSource}
                       affiliateCode={affiliateRef || undefined}
                       total={total}
                       customer={{
@@ -1100,17 +1114,17 @@ export function CheckoutPage() {
                       </div>
                     </div>
                   </div>
-                  {discount > 0 && (
+                  {effectiveDiscount > 0 && (
                     <div className='flex justify-between items-center text-sm'>
                       <span className='text-green-700 inline-flex items-center gap-1.5'>
                         <Tag className='w-3.5 h-3.5' />
-                        Promo{appliedPromoCode ? ` (${appliedPromoCode})` : ''}
+                        Promo{checkoutPromoCode ? ` (${checkoutPromoCode})` : ''}
                       </span>
                       <span
                         className='text-green-600'
                         style={{ fontWeight: '700' }}
                       >
-                        -£{discount.toFixed(2)}
+                        -£{effectiveDiscount.toFixed(2)}
                       </span>
                     </div>
                   )}

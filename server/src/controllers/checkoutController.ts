@@ -3,6 +3,7 @@ import { stripe } from '@/lib/stripe';
 import { supabase } from '@/lib/supabase';
 import { config } from '@/config/environment';
 import { resolveAffiliateByCode } from '@/lib/affiliate';
+import { computePromoCharge } from '@/lib/promo';
 import { getEstimatedDeliveryDate } from '@/lib/sendgrid';
 
 interface CartItem {
@@ -36,6 +37,9 @@ interface CheckoutRequestBody {
   deliveryFee: number;
   discount?: number;
   promoCode?: string;
+  // Only an explicitly typed-in `manual` code hard-fails when invalid; auto/
+  // affiliate promos are dropped silently so a stale promo never blocks a sale.
+  promoSource?: 'manual' | 'affiliate' | 'auto_apply';
   total: number;
   affiliateCode?: string;
 }
@@ -54,11 +58,9 @@ export async function createCheckoutSession(
       customerInfo,
       shippingAddress,
       videoPermission,
-      subtotal,
       deliveryFee,
-      discount = 0,
       promoCode,
-      total,
+      promoSource,
       affiliateCode,
     } = req.body;
 
@@ -97,6 +99,29 @@ export async function createCheckoutSession(
 
     const orderNumber = orderNumberData as string;
 
+    const charge = await computePromoCharge({
+      cartItems,
+      deliveryFee,
+      promoCode,
+    });
+
+    // Only block when a user explicitly typed an invalid code. Auto/affiliate
+    // promos are dropped silently (charge falls back to full price).
+    if (!charge.valid && promoCode && promoSource === 'manual') {
+      res
+        .status(400)
+        .json({ error: charge.errorMessage || 'Invalid promotion' });
+      return;
+    }
+
+    if (!charge.valid && promoCode) {
+      console.warn(
+        `[checkout] dropping invalid ${promoSource || 'unknown'} promo "${promoCode}": ${charge.errorMessage}`
+      );
+    }
+
+    const { subtotal, discount, total, promoCode: validatedPromo } = charge;
+
     // Express (£6.99) delivers in 5 days, standard in 10. This is the single
     // source of truth for delivery dates shown across the app and emails.
     const estimatedDelivery = getEstimatedDeliveryDate(deliveryFee);
@@ -118,6 +143,7 @@ export async function createCheckoutSession(
         subtotal,
         shipping_cost: deliveryFee,
         total,
+        promo_code: validatedPromo,
         video_permission: videoPermission || false,
         estimated_delivery: estimatedDelivery.toISOString().split('T')[0],
         payment_status: 'pending',
@@ -172,7 +198,8 @@ export async function createCheckoutSession(
       // Build description: include size and promo info
       const descParts: string[] = [];
       if (item.size && item.size.trim()) descParts.push(item.size);
-      if (promoCode && discountRatio > 0) descParts.push(`Promo: ${promoCode}`);
+      if (validatedPromo && discountRatio > 0)
+        descParts.push(`Promo: ${validatedPromo}`);
       if (descParts.length > 0) productData.description = descParts.join(' · ');
 
       // Intentionally do NOT pass any images to Stripe so the hosted

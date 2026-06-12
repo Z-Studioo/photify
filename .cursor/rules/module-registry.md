@@ -36,6 +36,7 @@ folders) · `direct` (FE talks to Supabase with no BE route) · `none`.
 - **BE** (module-ish): `routes/checkout.ts`, `routes/payment-intent.ts`, `routes/orders.ts`, `routes/address.ts`, `controllers/checkoutController.ts`, `controllers/paymentIntentController.ts`, `controllers/orderStatusController.ts`, `controllers/cancelOrderController.ts`, `lib/stripe.ts`
 - **DB**: `orders` (+ tracking/discount columns)
 - **SSOT debt**: `CartItem`/checkout body shapes redefined in FE and in both BE controllers → one shared contract
+- **Promo/pricing** (partial): FE consolidated in `app/src/lib/pricing/promo/` + `PromoDiscountContext`; server charge recompute in `server/src/lib/promo.ts`; DB `is_promotion_valid` + `get_active_auto_promo()`. Affiliate attribution (`photify_ref`) stays separate from promo session (`photify_promo`).
 
 ### affiliate
 
@@ -78,14 +79,14 @@ folders) · `direct` (FE talks to Supabase with no BE route) · `none`.
 
 ## Cross-cutting / shared (domain-free — no business logic here)
 
-| Area                         | Frontend                                         | Backend                             |
-| ---------------------------- | ------------------------------------------------ | ----------------------------------- |
-| UI primitives                | `components/ui`, `components/shared/common`      | —                                   |
-| layout                       | `components/layout`, `layouts/*`                 | —                                   |
-| analytics                    | `lib/analytics/*` (GA + TikTok)                  | `lib/ga4.ts`                        |
-| platform clients             | `lib/supabase/*`                                 | `lib/supabase.ts`, `lib/stripe.ts`  |
-| SEO / pricing                | `lib/seo.ts`, `lib/canvas-size-price.ts`         | —                                   |
-| shared types (intended SSOT) | `lib/data/types.ts` (drifts from DB — reconcile) | `src/types/index.ts` (generic only) |
+| Area                         | Frontend                                                       | Backend                             |
+| ---------------------------- | -------------------------------------------------------------- | ----------------------------------- |
+| UI primitives                | `components/ui`, `components/shared/common`                    | —                                   |
+| layout                       | `components/layout`, `layouts/*`                               | —                                   |
+| analytics                    | `lib/analytics/*` (GA + TikTok)                                | `lib/ga4.ts`                        |
+| platform clients             | `lib/supabase/*`                                               | `lib/supabase.ts`, `lib/stripe.ts`  |
+| SEO / pricing / promo        | `lib/seo.ts`, `lib/canvas-size-price.ts`, `lib/pricing/promo/` | `lib/promo.ts` (charge recompute)   |
+| shared types (intended SSOT) | `lib/data/types.ts` (drifts from DB — reconcile)               | `src/types/index.ts` (generic only) |
 
 ---
 

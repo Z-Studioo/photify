@@ -17,37 +17,49 @@ interface PriceProps {
 function CardPrice({
   amount,
   accentClassName,
+  showBadge,
 }: {
   amount: number;
   accentClassName: string;
+  showBadge: boolean;
 }) {
   const { original, discounted, percentOff, hasDiscount } =
     useDiscountedPrice(amount);
   const display = hasDiscount ? discounted : original;
   const { whole, cents } = splitGbpParts(display);
+  const saving = original - discounted;
 
   return (
     <div className='flex flex-col'>
-      {hasDiscount && (
-        <div className='mb-1 flex items-center gap-1.5'>
+      {hasDiscount && showBadge && (
+        <div className='mb-1'>
           <Badge
             variant='secondary'
             className='bg-green-100 px-1.5 py-0 text-[10px] font-medium text-green-700'
           >
             {percentOff}% OFF
           </Badge>
-          <span className='text-xs text-gray-400 line-through'>
-            £{original.toFixed(2)}
-          </span>
         </div>
       )}
-      <div className={cn('flex items-start', accentClassName)}>
-        <span className='font-bold text-lg mt-2 mr-0.5'>£</span>
-        <span className='font-extrabold text-4xl tracking-tighter leading-none font-bricolage'>
-          {whole}
-        </span>
-        <span className='font-bold text-xl mt-2'>.{cents}</span>
+      <div className='flex items-end gap-2'>
+        <div className={cn('flex items-start', accentClassName)}>
+          <span className='font-bold text-lg mt-2 mr-0.5'>£</span>
+          <span className='font-extrabold text-4xl tracking-tighter leading-none font-bricolage'>
+            {whole}
+          </span>
+          <span className='font-bold text-xl mt-2'>.{cents}</span>
+        </div>
+        {hasDiscount && (
+          <span className='mb-1.5 text-sm text-gray-400 line-through tabular-nums'>
+            £{original.toFixed(2)}
+          </span>
+        )}
       </div>
+      {hasDiscount && (
+        <span className='mt-1 text-xs font-semibold text-green-600'>
+          Save £{saving.toFixed(2)}
+        </span>
+      )}
     </div>
   );
 }
@@ -168,7 +180,11 @@ export function Price({
   return (
     <div className={className}>
       {variant === 'card' && (
-        <CardPrice amount={amount} accentClassName={accentClassName} />
+        <CardPrice
+          amount={amount}
+          accentClassName={accentClassName}
+          showBadge={showBadge}
+        />
       )}
       {variant === 'inline' && (
         <InlinePrice

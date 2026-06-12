@@ -18,7 +18,19 @@ interface FeaturedCollection {
   productId: string;
 }
 
-function FeaturedFromPrice({ amount }: { amount: number | null }) {
+interface FeaturedFromPriceProps {
+  amount: number | null;
+  /** Render discounted + crossed original on one line instead of stacked. */
+  inline?: boolean;
+  /** Show the inline "% off" badge next to the price. */
+  showBadge?: boolean;
+}
+
+function FeaturedFromPrice({
+  amount,
+  inline = false,
+  showBadge = true,
+}: FeaturedFromPriceProps) {
   const { original, discounted, percentOff, hasDiscount } =
     useDiscountedPrice(amount);
 
@@ -30,19 +42,59 @@ function FeaturedFromPrice({ amount }: { amount: number | null }) {
     return <>£{discounted.toFixed(2)}</>;
   }
 
+  if (inline) {
+    return (
+      <span className='inline-flex items-baseline gap-1.5 xs:gap-2'>
+        <span>£{discounted.toFixed(2)}</span>
+        <span className='text-[11px] font-medium text-white/60 line-through xs:text-xs sm:text-sm'>
+          £{original.toFixed(2)}
+        </span>
+        {showBadge && (
+          <span className='rounded bg-green-500/90 px-1 py-0.5 text-[9px] font-bold uppercase tracking-wide text-white'>
+            {percentOff}% off
+          </span>
+        )}
+      </span>
+    );
+  }
+
   return (
     <span className='inline-flex flex-col items-start gap-0.5'>
       <span className='inline-flex items-center gap-1.5'>
         <span>£{discounted.toFixed(2)}</span>
-        <span className='rounded bg-green-500/90 px-1 py-0.5 text-[9px] font-bold uppercase tracking-wide text-white'>
-          {percentOff}% off
-        </span>
+        {showBadge && (
+          <span className='rounded bg-green-500/90 px-1 py-0.5 text-[9px] font-bold uppercase tracking-wide text-white'>
+            {percentOff}% off
+          </span>
+        )}
       </span>
       <span className='text-[10px] font-medium text-white/60 line-through xs:text-xs'>
         £{original.toFixed(2)}
       </span>
     </span>
   );
+}
+
+/** Absolutely-positioned "X% OFF" badge for a featured tile's top-right corner. */
+function FeaturedDiscountBadge({
+  amount,
+  size = 'lg',
+}: {
+  amount: number | null;
+  size?: 'lg' | 'sm';
+}) {
+  const { percentOff, hasDiscount } = useDiscountedPrice(amount);
+
+  if (!hasDiscount) return null;
+
+  const base =
+    'absolute z-10 rounded-lg bg-green-500 font-bold uppercase tracking-wide text-white shadow-lg ring-1 ring-white/20';
+  const sizing =
+    size === 'lg'
+      ? 'top-2.5 right-2.5 xs:top-3 xs:right-3 sm:top-4 sm:right-4 md:top-5 md:right-5 px-2.5 py-1 sm:px-3 sm:py-1.5 md:px-4 md:py-2 text-xs xs:text-sm sm:text-base md:text-lg'
+      : 'top-2 right-2 xs:top-2.5 xs:right-2.5 sm:top-3 sm:right-3 px-2 py-0.5 sm:px-2.5 sm:py-1 text-[10px] xs:text-xs sm:text-sm';
+
+  return <span className={`${base} ${sizing}`}>{percentOff}% off</span>;
 }
 
 // Sparse slot array: index 0 = featured_index 1 (large left),
@@ -192,6 +244,7 @@ export function FeaturedCollections() {
             className='absolute inset-0 w-full h-full object-cover transition-transform duration-300 group-hover:scale-105'
           />
           <div className='absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent' />
+          <FeaturedDiscountBadge amount={displayCollections[0].priceAmount} />
           <div className='absolute bottom-0 left-0 p-3 xs:p-4 sm:p-5 md:p-6 text-white text-left'>
             {displayCollections[0].badge &&
               displayCollections[0].badge !== 'Featured' && (
@@ -207,12 +260,17 @@ export function FeaturedCollections() {
             >
               {displayCollections[0].title}
             </h3>
-            <div className='flex items-baseline gap-1 xs:gap-1.5 sm:gap-2 mb-1.5 xs:mb-2 sm:mb-2.5 md:mb-3'>
+            <div className='flex items-center gap-2 xs:gap-2.5 sm:gap-3'>
               <p className='text-sm xs:text-base sm:text-lg md:text-xl text-left' style={{ fontWeight: '700' }}>
-                From <FeaturedFromPrice amount={displayCollections[0].priceAmount} />
+                From{' '}
+                <FeaturedFromPrice
+                  amount={displayCollections[0].priceAmount}
+                  inline
+                  showBadge={false}
+                />
               </p>
+              <ArrowRight className='w-4 h-4 xs:w-5 xs:h-5 sm:w-5.5 sm:h-5.5 md:w-6 md:h-6 transition-transform duration-200 group-hover:translate-x-1' />
             </div>
-            <ArrowRight className='w-4 h-4 xs:w-5 xs:h-5 sm:w-5.5 sm:h-5.5 md:w-6 md:h-6' />
           </div>
         </button>
 
@@ -243,6 +301,7 @@ export function FeaturedCollections() {
                     className='absolute inset-0 w-full h-full object-cover transition-transform duration-300 group-hover:scale-105'
                   />
                   <div className='absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent' />
+                  <FeaturedDiscountBadge amount={collection.priceAmount} size='sm' />
                   <div className='absolute bottom-0 left-0 p-2 xs:p-2.5 sm:p-3 md:p-4 text-white text-left'>
                     {collection.badge && collection.badge !== 'Featured' && (
                       <span
@@ -260,15 +319,20 @@ export function FeaturedCollections() {
                     >
                       {collection.title}
                     </h3>
-                    <div className='flex items-baseline gap-1 xs:gap-1.5 sm:gap-2 mb-1 xs:mb-1.5 sm:mb-2'>
+                    <div className='flex items-center gap-1.5 xs:gap-2 sm:gap-2.5'>
                       <p
                         className='text-left text-[11px] xs:text-xs sm:text-[13px] md:text-[14px]'
                         style={{ fontWeight: '700' }}
                       >
-                        From <FeaturedFromPrice amount={collection.priceAmount} />
+                        From{' '}
+                        <FeaturedFromPrice
+                          amount={collection.priceAmount}
+                          inline
+                          showBadge={false}
+                        />
                       </p>
+                      <ArrowRight className='w-3 h-3 xs:w-3.5 xs:h-3.5 sm:w-4 sm:h-4 md:w-5 md:h-5 transition-transform duration-200 group-hover:translate-x-1' />
                     </div>
-                    <ArrowRight className='w-3 h-3 xs:w-3.5 xs:h-3.5 sm:w-4 sm:h-4 md:w-5 md:h-5' />
                   </div>
                 </button>
               );
@@ -289,6 +353,10 @@ export function FeaturedCollections() {
                 className='absolute inset-0 w-full h-full object-cover transition-transform duration-300 group-hover:scale-105'
               />
               <div className='absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent' />
+              <FeaturedDiscountBadge
+                amount={displayCollections[3].priceAmount}
+                size='sm'
+              />
               <div className='absolute bottom-0 left-0 p-2.5 xs:p-3 sm:p-3.5 md:p-4 text-white text-left'>
                 {displayCollections[3].badge &&
                   displayCollections[3].badge !== 'Featured' && (
@@ -307,15 +375,20 @@ export function FeaturedCollections() {
                 >
                   {displayCollections[3].title}
                 </h3>
-                <div className='flex items-baseline gap-1 xs:gap-1.5 sm:gap-2 mb-1 xs:mb-1.5 sm:mb-2'>
+                <div className='flex items-center gap-1.5 xs:gap-2 sm:gap-2.5'>
                   <p
                     className='text-left text-xs xs:text-sm sm:text-[15px] md:text-[16px]'
                     style={{ fontWeight: '700' }}
                   >
-                    From <FeaturedFromPrice amount={displayCollections[3].priceAmount} />
+                    From{' '}
+                    <FeaturedFromPrice
+                      amount={displayCollections[3].priceAmount}
+                      inline
+                      showBadge={false}
+                    />
                   </p>
+                  <ArrowRight className='w-3.5 h-3.5 xs:w-4 xs:h-4 sm:w-4.5 sm:h-4.5 md:w-5 md:h-5 transition-transform duration-200 group-hover:translate-x-1' />
                 </div>
-                <ArrowRight className='w-3.5 h-3.5 xs:w-4 xs:h-4 sm:w-4.5 sm:h-4.5 md:w-5 md:h-5' />
               </div>
             </button>
           ) : (

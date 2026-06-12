@@ -3,7 +3,7 @@ import { motion } from 'framer-motion';
 import { ImageWithFallback } from '@/components/figma/image-with-fallback';
 import { Ruler } from 'lucide-react';
 import { getListingDisplayAmount } from '@/lib/product-starting-price';
-import { Price } from '@/components/shared/Price';
+import { Price, useDiscountedPrice } from '@/components/shared/Price';
 
 export interface ProductCardProps {
   id: string;
@@ -40,6 +40,8 @@ export function ProductCard({
     price,
   });
 
+  const { percentOff, hasDiscount } = useDiscountedPrice(displayAmount);
+
   const primaryImage =
     images && images.length > 0 ? images[0] : '/assets/placeholder.png';
 
@@ -63,6 +65,13 @@ export function ProductCard({
             alt={name}
             className='w-full h-full object-cover group-hover:scale-110 transition-transform duration-700'
           />
+
+          {/* Discount badge - top right (consistent with featured cards) */}
+          {hasDiscount && (
+            <span className='absolute top-2.5 right-2.5 sm:top-3 sm:right-3 z-10 rounded-lg bg-green-500 px-2.5 py-1 text-xs sm:text-sm font-bold uppercase tracking-wide text-white shadow-lg ring-1 ring-white/20'>
+              {percentOff}% OFF
+            </span>
+          )}
 
           {/* Overlay on hover */}
           <div className='absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-end p-4'>
@@ -97,7 +106,7 @@ export function ProductCard({
 
             <div className='flex items-start'>
               {displayAmount != null ? (
-                <Price amount={displayAmount} variant='card' />
+                <Price amount={displayAmount} variant='card' showBadge={false} />
               ) : (
                 <span className='font-extrabold text-2xl tracking-tight font-bricolage text-[#f63a9e]'>
                   —
