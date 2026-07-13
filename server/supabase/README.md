@@ -1,6 +1,6 @@
 # Photify Supabase Configuration
 
-Complete Supabase setup for the Photify project - migrations, seeds, functions, and documentation.
+Complete Supabase setup for the Photify project - migrations, functions, and documentation.
 
 ---
 
@@ -27,16 +27,7 @@ supabase/
 │       ├── 008_add_category_images.sql
 │       └── 009_add_category_seo.sql
 │
-├── seeds/                      # Seed data files
-│   ├── README.md              # Seed data guide
-│   ├── seed.sql               # Legacy complete seed
-│   ├── seed-aspect-ratios.sql # Aspect ratios & sizes ✅
-│   ├── seed-categories.sql    # Basic categories
-│   ├── seed-categories-with-images.sql  # Categories with images ✅
-│   ├── seed-products.sql      # Products with config ✅
-│   └── seed-single-canvas-seo.sql  # Single Canvas SEO ✅
-│
-├── setup/                      # Complete setup scripts (migrations + seeds)
+├── setup/                      # Complete setup scripts
 │   ├── README.md              # Setup script guide
 │   ├── setup-categories.sql   # Basic category setup
 │   └── setup-categories-complete.sql  # Complete category setup ⭐
@@ -67,13 +58,6 @@ psql ... -f 004_product_categories_many_to_many.sql
 psql ... -f 005_add_admin_policies.sql
 psql ... -f 006_add_product_seo_content.sql
 psql ... -f 007_categories_complete.sql
-
-# Step 2: Run essential seeds
-cd ../seeds
-psql ... -f seed-aspect-ratios.sql
-psql ... -f seed-categories-with-images.sql
-psql ... -f seed-products.sql
-psql ... -f seed-single-canvas-seo.sql
 ```
 
 ### Alternative: Use Supabase Dashboard
@@ -82,12 +66,11 @@ psql ... -f seed-single-canvas-seo.sql
 2. Copy migration file contents
 3. Paste and click **Run**
 4. Repeat for all migrations (001-007)
-5. Repeat for seed files
 
 ### Alternative: Quick Setup Script
 
 ```bash
-# One-command category setup (includes migration + seeds)
+# One-command category setup
 cd supabase/setup
 psql ... -f setup-categories-complete.sql
 
@@ -118,40 +101,15 @@ psql ... -f setup-categories-complete.sql
 
 ---
 
-### 📁 `seeds/` - Seed Data
-
-**Purpose:** Sample/initial data for populating tables
-
-**Files:** 6 seed files + 1 legacy
-
-**What they populate:**
-
-- Categories (with/without images)
-- Products (with configuration)
-- Aspect ratios & sizes
-- SEO data
-
-**Key File:** `README.md` - Detailed seed guide
-
-**Recommended:**
-
-- `seed-aspect-ratios.sql` - Essential for product config
-- `seed-categories-with-images.sql` - Categories with images
-- `seed-products.sql` - Modern products with config
-- `seed-single-canvas-seo.sql` - SEO data for Single Canvas
-
----
-
 ### 📁 `setup/` - Complete Setup Scripts
 
-**Purpose:** All-in-one scripts (migration + seeds combined)
+**Purpose:** All-in-one scripts
 
 **Files:** 2 setup scripts
 
 **What they do:**
 
 - Apply migrations
-- Seed data
 - Create views/functions
 - Verify setup
 
@@ -212,7 +170,6 @@ supabase functions deploy hello
 
 ```bash
 # Apply migrations 001-007
-# Run recommended seeds (aspect-ratios, categories, products)
 # See "Quick Start" section above
 ```
 
@@ -222,10 +179,6 @@ supabase functions deploy hello
 # If you have migrations 001-006 already applied:
 cd supabase/migrations
 psql ... -f 007_categories_complete.sql
-
-# Then seed categories:
-cd ../seeds
-psql ... -f seed-categories-with-images.sql
 ```
 
 ### 3. Reset Categories Only
@@ -252,20 +205,6 @@ touch 008_your_feature.sql
 # 5. Apply to production
 ```
 
-### 5. Create New Seed Data
-
-```bash
-# 1. Create new file
-cd supabase/seeds
-touch seed-your-data.sql
-
-# 2. Write INSERT statements
-
-# 3. Update seeds/README.md
-
-# 4. Test on fresh database
-```
-
 ---
 
 ## 📖 Documentation
@@ -276,7 +215,6 @@ touch seed-your-data.sql
 | -------------------------- | ----------------------------- | -------------------------------- |
 | **`MIGRATION_GUIDE.md`**   | Complete migration management | Creating/managing migrations     |
 | **`migrations/README.md`** | Migration index & details     | Understanding what migrations do |
-| **`seeds/README.md`**      | Seed data guide               | Populating database              |
 | **`setup/README.md`**      | Setup script usage            | Quick database initialization    |
 
 ### Documentation Highlights
@@ -295,13 +233,6 @@ touch seed-your-data.sql
 - What each creates
 - Verification queries
 - Migration checklist
-
-**seeds/README.md** (500+ lines):
-
-- 6 seed files explained
-- Dependencies
-- Recommended order
-- Customization guide
 
 **setup/README.md** (400+ lines):
 
@@ -348,22 +279,6 @@ WHERE table_name = 'categories'
 -- Should return: 3 rows
 ```
 
-### Check Seeds Applied
-
-```sql
--- Check categories
-SELECT COUNT(*) FROM categories;
--- Should return: 8 (if seeded)
-
--- Check aspect ratios
-SELECT COUNT(*) FROM aspect_ratios;
--- Should return: 15+ (if seeded)
-
--- Check products
-SELECT COUNT(*) FROM products;
--- Should return: 6-8 (if seeded)
-```
-
 ### Check Functions & Views
 
 ```sql
@@ -395,20 +310,6 @@ WHERE routine_schema = 'public';
 - Use `IF NOT EXISTS` in migrations (already done)
 - Check migration order
 - See `MIGRATION_GUIDE.md` troubleshooting section
-
-### Seed Failed
-
-**Check:**
-
-1. Are required migrations applied?
-2. Does table exist?
-3. Check for constraint violations
-
-**Fix:**
-
-- Apply migrations first
-- Check dependencies in `seeds/README.md`
-- Read error message carefully
 
 ### Function/View Missing
 
@@ -444,9 +345,8 @@ WHERE routine_schema = 'public';
 **Schema Version:** 7  
 **Latest Migration:** `007_categories_complete.sql`  
 **Total Migrations:** 7 (+ 3 archived)  
-**Total Seeds:** 6 (+ 1 legacy)  
 **Total Setup Scripts:** 2  
-**Documentation Files:** 5 comprehensive READMEs
+**Documentation Files:** 4 comprehensive READMEs
 
 ---
 
@@ -469,22 +369,16 @@ touch 008_feature_name.sql
 # 4. Test locally
 supabase db reset  # or apply migration only
 
-# 5. Create seed data if needed
-cd ../seeds
-touch seed-feature-data.sql
-
-# 6. Update documentation
+# 5. Update documentation
 # - migrations/README.md
-# - seeds/README.md (if seed created)
 # - .cursor/rules/ files (if new patterns established)
 
-# 7. Test complete flow
+# 6. Test complete flow
 # - Fresh database
 # - Apply migrations
-# - Run seeds
 # - Verify in app
 
-# 8. Commit
+# 7. Commit
 git add supabase/
 git commit -m "feat: add feature_name database support"
 ```
@@ -504,21 +398,18 @@ pg_dump ... > backup_YYYY-MM-DD.sql
 # - Copy migration contents
 # - Run and verify
 
-# 5. Run seeds if needed
+# 5. Test critical flows
 
-# 6. Test critical flows
-
-# 7. Monitor for errors
+# 6. Monitor for errors
 ```
 
 ---
 
 ## 📊 Statistics
 
-**Total SQL Files:** 20+  
-**Total Documentation:** 2000+ lines  
+**Total SQL Files:** 12+  
+**Total Documentation:** 1500+ lines  
 **Migration Files:** 7 active, 3 archived  
-**Seed Files:** 6 active, 1 legacy  
 **Setup Scripts:** 2  
 **Edge Functions:** 1 example
 
@@ -536,7 +427,6 @@ pg_dump ... > backup_YYYY-MM-DD.sql
 
 - `MIGRATION_GUIDE.md` - Migration management (700+ lines)
 - `migrations/README.md` - Migration index (250+ lines)
-- `seeds/README.md` - Seed guide (500+ lines)
 - `setup/README.md` - Setup script guide (400+ lines)
 - `archive-old/README.md` - Archived files explanation
 
@@ -549,12 +439,6 @@ pg_dump ... > backup_YYYY-MM-DD.sql
 - Read `MIGRATION_GUIDE.md`
 - Check `migrations/README.md`
 - See consolidation examples in `migrations/archive/`
-
-### For Seeds
-
-- Read `seeds/README.md`
-- Check dependencies section
-- See customization examples
 
 ### For Setup
 
@@ -580,8 +464,7 @@ pg_dump ... > backup_YYYY-MM-DD.sql
 6. ✅ **Consolidate related migrations** (see MIGRATION_GUIDE.md)
 7. ✅ **Keep documentation updated**
 8. ✅ **Use setup scripts for fresh databases**
-9. ✅ **Seed data after migrations**
-10. ✅ **Verify with queries** after applying changes
+9. ✅ **Verify with queries** after applying changes
 
 ---
 

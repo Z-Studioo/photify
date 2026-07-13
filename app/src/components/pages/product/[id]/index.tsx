@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Header } from '@/components/layout/header';
 import { Footer } from '@/components/layout/footer';
@@ -22,7 +22,7 @@ import {
   Shield,
   Sparkles,
   Clock,
-  Eye,
+  ShoppingBag,
   Package,
   Palette,
 } from 'lucide-react';
@@ -35,9 +35,11 @@ import {
   isFeatureIconUrl,
 } from '@/lib/product-feature-icons';
 import {
-  formatGbpAmount,
   getLowestSizePriceFromConfig,
 } from '@/lib/product-starting-price';
+import { Price } from '@/components/shared/Price';
+import { useDiscountedPrice } from '@/lib/pricing/use-discounted-price';
+import { formatGbp } from '@/lib/pricing';
 
 const mockReviews = [
   {
@@ -116,6 +118,18 @@ export function ProductDetailPage({
   const [relatedProducts, setRelatedProducts] = useState<any[]>([]);
   const heroRef = useRef<HTMLDivElement>(null);
   const ctaRef = useRef<HTMLDivElement>(null);
+
+  // "XX bought yesterday" — deterministic per product per calendar day (UTC),
+  // so the number stays stable for a given product all day and matches
+  // between server and client renders. Range: 20–60.
+  const boughtYesterday = useMemo(() => {
+    const seed = `${productId ?? 'product'}-${new Date().toISOString().slice(0, 10)}`;
+    let hash = 0;
+    for (let i = 0; i < seed.length; i++) {
+      hash = (hash * 31 + seed.charCodeAt(i)) | 0;
+    }
+    return 20 + (Math.abs(hash) % 41);
+  }, [productId]);
 
   // GA4 view_item — fired once when the product page mounts. Using
   // productId in the dep array ensures we re-emit when the user
@@ -208,6 +222,7 @@ export function ProductDetailPage({
   const productData = initialProduct;
   /** Lowest configured size price (same source as generic admin, e.g. dual-metal-harmony) */
   const startingPrice = getLowestSizePriceFromConfig(initialProduct.config);
+  const stickyFromPrice = useDiscountedPrice(startingPrice);
 
   const product = {
     id: initialProduct.id,
@@ -267,6 +282,7 @@ export function ProductDetailPage({
     configurerType === '1PhotoCollageCreator' ||
     configurerType === 'event-canvas' ||
     configurerType === 'multi-canvas-wall' ||
+    configurerType === 'photo-prints' ||
     productSlug === 'photo-collage-creator' ||
     productSlug === '1PhotoCollageCreator';
 
@@ -320,9 +336,22 @@ export function ProductDetailPage({
                         {product.title}
                       </h3>
                       <p className='text-[#f63a9e] font-bold text-sm sm:text-base'>
-                        {product.startingPrice != null
-                          ? `From £${formatGbpAmount(product.startingPrice)}`
-                          : 'From —'}
+                        {product.startingPrice != null ? (
+                          stickyFromPrice.hasDiscount ? (
+                            <span className='inline-flex items-baseline gap-1.5'>
+                              <span>
+                                From {formatGbp(stickyFromPrice.discounted, { alwaysDecimals: true })}
+                              </span>
+                              <span className='text-xs font-normal text-gray-400 line-through'>
+                                {formatGbp(stickyFromPrice.original, { alwaysDecimals: true })}
+                              </span>
+                            </span>
+                          ) : (
+                            `From ${formatGbp(product.startingPrice, { alwaysDecimals: true })}`
+                          )
+                        ) : (
+                          'From —'
+                        )}
                       </p>
                     </div>
                   </div>
@@ -551,9 +580,9 @@ export function ProductDetailPage({
                         <span className='animate-ping absolute inline-flex h-full w-full rounded-full bg-[#f63a9e] opacity-50' />
                         <span className='relative inline-flex h-2.5 w-2.5 rounded-full bg-[#f63a9e] shadow-[0_0_10px_rgba(246,58,158,0.65)]' />
                       </span>
-                      <Eye className='w-3.5 h-3.5 text-[#f63a9e]' />
+                      <ShoppingBag className='w-3.5 h-3.5 text-[#f63a9e]' />
                       <span>
-                        <strong className='text-gray-900'>15</strong> viewing now
+                        <strong className='text-gray-900'>{boughtYesterday}</strong> bought yesterday
                       </span>
                     </div>
                   </div>
@@ -580,12 +609,11 @@ export function ProductDetailPage({
                   <div className='flex items-baseline gap-2'>
                     <span className='text-gray-400 text-sm font-medium'>Starting at</span>
                     {product.startingPrice != null ? (
-                      <span
-                        className='text-[#f63a9e] text-3xl sm:text-4xl'
-                        style={{ fontWeight: '800' }}
-                      >
-                        £{formatGbpAmount(product.startingPrice)}
-                      </span>
+                      <Price
+                        amount={product.startingPrice}
+                        variant='lg'
+                        className='inline-flex'
+                      />
                     ) : (
                       <span
                         className='text-gray-400 text-2xl sm:text-3xl'
@@ -1085,24 +1113,11 @@ export function ProductDetailPage({
                           </span>
 
                           <div className='flex items-start'>
-                            <div className='flex items-start text-[#f63a9e]'>
-                              <span className='font-bold text-xs xs:text-sm sm:text-base md:text-lg mt-1 xs:mt-1.5 sm:mt-2 mr-0.5'>
-                                £
-                              </span>
-
-                              <span className='font-extrabold text-xl xs:text-2xl sm:text-3xl md:text-4xl tracking-tighter leading-none font-bricolage'>
-                                {relStarting != null
-                                  ? formatGbpAmount(relStarting).split('.')[0]
-                                  : '—'}
-                              </span>
-
-                              <span className='font-bold text-sm xs:text-base sm:text-lg md:text-xl mt-1 xs:mt-1.5 sm:mt-2'>
-                                {relStarting != null &&
-                                formatGbpAmount(relStarting).includes('.')
-                                  ? `.${formatGbpAmount(relStarting).split('.')[1]}`
-                                  : ''}
-                              </span>
-                            </div>
+                            {relStarting != null ? (
+                              <Price amount={relStarting} variant='card' />
+                            ) : (
+                              <span className='font-extrabold text-xl text-[#f63a9e]'>—</span>
+                            )}
                           </div>
                         </div>
 

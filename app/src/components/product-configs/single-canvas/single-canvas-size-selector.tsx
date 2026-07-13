@@ -7,6 +7,7 @@ import type { CustomSizeSelectorProps } from '../shared/product-3d-view';
 import { resolveCanvasSizePrice } from '@/lib/canvas-size-price';
 import type { InchData } from '@/utils/ratio-sizes';
 import type { Product as LibProduct } from '@/lib/data/types';
+import { DiscountedAmount } from '@/components/shared/Price';
 
 interface AspectRatio {
   id: string;
@@ -39,19 +40,6 @@ interface Product {
      */
     sizePrices?: Record<string, number | string>;
   };
-}
-
-/**
- * Resolve a display price string for a size. Prefers admin-configured
- * `config.sizePrices`, falls back to per-size `fixed_price`, and finally to
- * `area_in2 * products.price`. Returns `'0.00'` when nothing is available.
- */
-function formatSizePrice(size: Size, product: Product | null | undefined): string {
-  const resolved = resolveCanvasSizePrice(
-    size as unknown as InchData,
-    product as unknown as LibProduct
-  );
-  return resolved != null ? resolved.toFixed(2) : '0.00';
 }
 
 export function SingleCanvasSizeSelector({
@@ -212,7 +200,10 @@ export function SingleCanvasSizeSelector({
           </Label>
           <div className="grid grid-cols-1 gap-2 max-h-64 overflow-y-auto">
             {getRecommendedSizes().map((size) => {
-              const price = formatSizePrice(size, product);
+              const priceValue = resolveCanvasSizePrice(
+                size as unknown as InchData,
+                product as unknown as LibProduct
+              );
               const isSelected = selectedSizeId === size.id;
               return (
                 <button
@@ -224,11 +215,18 @@ export function SingleCanvasSizeSelector({
                   }`}
                   onClick={() => handleSizeClick(size)}
                 >
-                  <div className="flex items-center justify-between">
+                  <div className="flex items-center justify-between gap-3">
                     <span className={`font-medium text-sm md:text-base ${isSelected ? 'text-[#f63a9e]' : 'text-gray-900'}`}>
                       {size.display_label}
                     </span>
-                    <span className="text-[#f63a9e] font-semibold text-sm md:text-base">£{price}</span>
+                    {priceValue != null ? (
+                      <DiscountedAmount
+                        amount={priceValue}
+                        className='text-[#f63a9e] font-semibold text-sm md:text-base text-right'
+                      />
+                    ) : (
+                      <span className="text-gray-400 text-sm">—</span>
+                    )}
                   </div>
                 </button>
               );
@@ -252,7 +250,10 @@ export function SingleCanvasSizeSelector({
               </Label>
               <div className="grid grid-cols-1 gap-2">
                 {ratioSizes.map((size) => {
-                  const price = formatSizePrice(size, product);
+                  const priceValue = resolveCanvasSizePrice(
+                    size as unknown as InchData,
+                    product as unknown as LibProduct
+                  );
                   const isSelected = selectedSizeId === size.id;
                   return (
                     <button
@@ -264,11 +265,18 @@ export function SingleCanvasSizeSelector({
                       }`}
                       onClick={() => handleSizeClick(size)}
                     >
-                      <div className="flex items-center justify-between">
+                      <div className="flex items-center justify-between gap-3">
                         <span className={`font-medium text-sm md:text-base ${isSelected ? 'text-[#f63a9e]' : 'text-gray-900'}`}>
                           {size.display_label}
                         </span>
-                        <span className="text-[#f63a9e] font-semibold text-sm md:text-base">£{price}</span>
+                        {priceValue != null ? (
+                          <DiscountedAmount
+                            amount={priceValue}
+                            className='text-[#f63a9e] font-semibold text-sm md:text-base text-right'
+                          />
+                        ) : (
+                          <span className="text-gray-400 text-sm">—</span>
+                        )}
                       </div>
                     </button>
                   );

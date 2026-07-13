@@ -17,8 +17,44 @@ import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
 import { useCart } from '@/context/CartContext';
 import { Header } from '@/components/layout/header';
 import { Footer } from '@/components/layout/footer';
+import { useDiscountedPrice } from '@/components/shared/Price';
 import { createClient } from '@/lib/supabase/client';
 import { toast } from 'sonner';
+
+function RoomPromoPrice({
+  amount,
+  className,
+}: {
+  amount: number | undefined | null;
+  className?: string;
+}) {
+  const valid =
+    amount !== undefined && amount !== null && !isNaN(amount) && amount > 0;
+  const price = useDiscountedPrice(valid ? amount : 0);
+
+  if (!valid) {
+    return (
+      <span className={className ?? 'text-gray-400 text-xs sm:text-sm italic'}>
+        Not Available
+      </span>
+    );
+  }
+
+  if (!price.hasDiscount) {
+    return (
+      <span className={className}>£{price.original.toFixed(2)}</span>
+    );
+  }
+
+  return (
+    <span className={className}>
+      <span>£{price.discounted.toFixed(2)}</span>
+      <span className='ml-1.5 text-xs font-normal text-gray-400 line-through'>
+        £{price.original.toFixed(2)}
+      </span>
+    </span>
+  );
+}
 
 interface Product {
   id: string;
@@ -66,12 +102,6 @@ export function RoomInspirationPage({
   const supabase = createClient();
   const [addedProductIds, setAddedProductIds] = useState<Set<string>>(new Set());
   const [addedAll, setAddedAll] = useState(false);
-
-  const formatPrice = (price: number | undefined | null): string => {
-    if (price === undefined || price === null || isNaN(price) || price === 0)
-      return 'Not Available';
-    return `$${price.toFixed(2)}`;
-  };
 
   // Fetch room data from database
   useEffect(() => {
@@ -447,7 +477,6 @@ export function RoomInspirationPage({
     (sum, h) => sum + (hasPriceValid(h.product.price) ? h.product.price : 0),
     0
   );
-  const roomTotalLabel = roomTotal > 0 ? `$${roomTotal.toFixed(2)}` : 'Not Available';
 
   // Only art products with a valid price can be added to cart
   const canAddToCart = (product: Product) =>
@@ -501,7 +530,11 @@ export function RoomInspirationPage({
                 className="font-['Bricolage_Grotesque',_sans-serif] text-gray-900 text-lg sm:text-2xl"
                 style={{ fontWeight: '700' }}
               >
-                {roomTotalLabel}
+                {roomTotal > 0 ? (
+                  <RoomPromoPrice amount={roomTotal} />
+                ) : (
+                  'Not Available'
+                )}
               </p>
             </div>
           </div>
@@ -647,7 +680,14 @@ export function RoomInspirationPage({
                               className={priceOk ? 'text-[#f63a9e] text-sm sm:text-base' : 'text-gray-400 text-xs sm:text-sm italic'}
                               style={{ fontWeight: priceOk ? '700' : '500' }}
                             >
-                              {formatPrice(hotspot.product.price)}
+                              {priceOk ? (
+                                <RoomPromoPrice
+                                  amount={hotspot.product.price}
+                                  className='text-[#f63a9e] text-sm sm:text-base'
+                                />
+                              ) : (
+                                'Not Available'
+                              )}
                             </p>
                           </div>
                         </div>
@@ -693,7 +733,11 @@ export function RoomInspirationPage({
                   <div className='flex items-center justify-between mb-3 sm:mb-4'>
                     <span className='text-gray-600 text-sm sm:text-base'>Total for this room:</span>
                     <span className='text-gray-900 text-lg sm:text-xl' style={{ fontWeight: '700' }}>
-                      {roomTotalLabel}
+                      {roomTotal > 0 ? (
+                  <RoomPromoPrice amount={roomTotal} />
+                ) : (
+                  'Not Available'
+                )}
                     </span>
                   </div>
                   <Button
@@ -871,7 +915,7 @@ export function RoomInspirationPage({
                           {isAdded ? (
                             <><Check className='w-4 h-4 sm:w-5 sm:h-5 mr-2' />Added to Cart!</>
                           ) : priceOk ? (
-                            <><ShoppingCart className='w-4 h-4 sm:w-5 sm:h-5 mr-2' />Add to Cart — ${p.price.toFixed(2)}</>
+                            <><ShoppingCart className='w-4 h-4 sm:w-5 sm:h-5 mr-2' />Add to Cart — <RoomPromoPrice amount={p.price} className='inline' /></>
                           ) : (
                             'Price Not Available'
                           )}
@@ -899,12 +943,12 @@ export function RoomInspirationPage({
                       <div className='space-y-1.5 text-xs sm:text-sm'>
                         <div className='flex items-center justify-between text-gray-700'>
                           <span>Art Price</span>
-                          <span>${(p.artBasePrice ?? p.price).toFixed(2)}</span>
+                          <span>£{(p.artBasePrice ?? p.price).toFixed(2)}</span>
                         </div>
                         <div className='flex items-center justify-between text-gray-700'>
                           <span>Canvas {p.sizeName || 'Selected size'}</span>
                           <span>
-                            $
+                            £
                             {(
                               p.canvasPrice ??
                               Math.max(p.price - (p.artBasePrice ?? p.price), 0)
@@ -913,7 +957,10 @@ export function RoomInspirationPage({
                         </div>
                         <div className='border-t border-gray-200 pt-2 mt-2 flex items-center justify-between text-gray-900'>
                           <span style={{ fontWeight: '700' }}>Total</span>
-                          <span style={{ fontWeight: '700' }}>${p.price.toFixed(2)}</span>
+                          <RoomPromoPrice
+                            amount={p.price}
+                            className='font-bold'
+                          />
                         </div>
                       </div>
                     </div>

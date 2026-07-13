@@ -1,0 +1,19 @@
+---
+description: Always target the Supabase "test" branch (not main) for MCP operations.
+alwaysApply: true
+---
+
+# Supabase MCP — use the "test" branch
+
+When calling Supabase MCP tools that require a `project_id`/project ref
+(`execute_sql`, `apply_migration`, `list_tables`, `get_advisors`, etc.), target
+the **`test`** development branch, never the default `main` branch.
+
+- **test branch** (USE THIS): project ref `wzcppuywyisfhjxaejld`
+- **main / default** (DO NOT USE for writes/queries): `mhlmbpnyckrqyznwmbwo`
+
+Branch refs can change if a branch is recreated. If a call fails or the ref
+looks stale, re-run `list_branches` with `project_id: "mhlmbpnyckrqyznwmbwo"`
+(the parent project) and pick the branch named `test`.
+
+Only use `main` if the user explicitly asks for production/main.

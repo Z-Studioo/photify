@@ -3,6 +3,7 @@ import { motion } from 'framer-motion';
 import { ImageWithFallback } from '@/components/figma/image-with-fallback';
 import { Ruler } from 'lucide-react';
 import { getListingDisplayAmount } from '@/lib/product-starting-price';
+import { Price, useDiscountedPrice } from '@/components/shared/Price';
 
 export interface ProductCardProps {
   id: string;
@@ -39,6 +40,8 @@ export function ProductCard({
     price,
   });
 
+  const { percentOff, hasDiscount } = useDiscountedPrice(displayAmount);
+
   const primaryImage =
     images && images.length > 0 ? images[0] : '/assets/placeholder.png';
 
@@ -62,6 +65,13 @@ export function ProductCard({
             alt={name}
             className='w-full h-full object-cover group-hover:scale-110 transition-transform duration-700'
           />
+
+          {/* Discount badge - top right (consistent with featured cards) */}
+          {hasDiscount && (
+            <span className='absolute top-2.5 right-2.5 sm:top-3 sm:right-3 z-10 rounded-lg bg-green-500 px-2.5 py-1 text-xs sm:text-sm font-bold uppercase tracking-wide text-white shadow-lg ring-1 ring-white/20'>
+              {percentOff}% OFF
+            </span>
+          )}
 
           {/* Overlay on hover */}
           <div className='absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-end p-4'>
@@ -95,27 +105,13 @@ export function ProductCard({
             </span>
 
             <div className='flex items-start'>
-              {/* Price */}
-              <div className='flex items-start text-[#f63a9e]'>
-                {displayAmount != null ? (
-                  <>
-                    <span className='font-bold text-lg mt-2 mr-0.5'>£</span>
-
-                    <span className='font-extrabold text-4xl tracking-tighter leading-none font-bricolage'>
-                      {Math.floor(displayAmount)}
-                    </span>
-
-                    <span className='font-bold text-xl mt-2'>
-                      .
-                      {displayAmount.toFixed(2).split('.')[1]}
-                    </span>
-                  </>
-                ) : (
-                  <span className='font-extrabold text-2xl tracking-tight font-bricolage'>
-                    —
-                  </span>
-                )}
-              </div>
+              {displayAmount != null ? (
+                <Price amount={displayAmount} variant='card' showBadge={false} />
+              ) : (
+                <span className='font-extrabold text-2xl tracking-tight font-bricolage text-[#f63a9e]'>
+                  —
+                </span>
+              )}
             </div>
           </div>
           <div className='w-10 h-10 bg-[#f63a9e] text-white rounded-full flex items-center justify-center hover:bg-[#e02d8d] transition-colors shadow-md'>

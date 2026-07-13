@@ -51,11 +51,7 @@ export function AdminPromotionsPage() {
       status = 'Scheduled';
     }
 
-    // Capitalize type
-    let displayType = promo.type;
-    if (promo.type === 'percentage') displayType = 'Percentage';
-    if (promo.type === 'fixed_amount') displayType = 'Fixed Amount';
-    if (promo.type === 'free_shipping') displayType = 'Free Shipping';
+    const displayType = 'Percentage';
 
     return {
       id: promo.id,
@@ -72,6 +68,7 @@ export function AdminPromotionsPage() {
       startDate: promo.start_date,
       endDate: promo.end_date,
       isFeatured: promo.is_featured || false,
+      autoApply: promo.auto_apply || false,
       status,
     };
   });
@@ -263,6 +260,11 @@ export function AdminPromotionsPage() {
                         {promo.isFeatured && (
                           <span className='inline-flex items-center px-2 py-0.5 bg-gradient-to-r from-[#f63a9e] to-[#e02d8d] text-white rounded text-xs font-semibold'>
                             ⭐ Featured
+                          </span>
+                        )}
+                        {promo.autoApply && (
+                          <span className='inline-flex items-center px-2 py-0.5 bg-green-600 text-white rounded text-xs font-semibold'>
+                            Auto-apply
                           </span>
                         )}
                         <button

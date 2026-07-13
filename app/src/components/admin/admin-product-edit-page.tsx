@@ -9,6 +9,7 @@ import { AdminProductImageManager } from './admin-product-image-manager';
 import { AdminProductTagsEditor } from './admin-product-tags-editor';
 import { AdminConfigurerSelector } from './admin-configurer-selector';
 import { AdminProductRoomBackgroundsEditor } from './admin-product-room-backgrounds-editor';
+import { AdminPhotoPrintsConfigEditor } from './admin-photo-prints-config-editor';
 import { Button } from '@/components/ui/button';
 import {
   ArrowLeft,
@@ -335,6 +336,22 @@ export function AdminProductEditPage() {
               </div>
             )}
 
+            {product.config?.configurerType === 'photo-prints' ? (
+              <div className='rounded-xl border border-gray-200 bg-white p-6 shadow-sm'>
+                <h2 className="mb-1 font-['Bricolage_Grotesque',_sans-serif] text-xl font-semibold text-gray-900">
+                  Photo Prints — Sizes & Pricing
+                </h2>
+                <p className='mb-6 text-sm text-gray-500'>
+                  Configure print sizes and per-print prices stored in this
+                  product&apos;s config.
+                </p>
+                <AdminPhotoPrintsConfigEditor
+                  productId={product.id}
+                  currentConfig={product.config}
+                  onSave={handleConfigSave}
+                />
+              </div>
+            ) : (
             <div className='rounded-xl border border-gray-200 bg-white p-6 shadow-sm'>
               <h2 className="mb-1 font-['Bricolage_Grotesque',_sans-serif] text-xl font-semibold text-gray-900">
                 Size & Pricing Configuration
@@ -365,6 +382,7 @@ export function AdminProductEditPage() {
                 onSave={handleConfigSave}
               />
             </div>
+            )}
           </TabsContent>
 
           {/* Product Images Tab */}

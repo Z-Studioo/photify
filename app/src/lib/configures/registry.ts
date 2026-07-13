@@ -89,6 +89,15 @@ export const PRODUCT_CONFIGURERS: ProductConfigurer[] = [
     requiresProductId: false, // Simple upload flow
     isActive: true
   },
+  {
+    id: 'photo-prints',
+    name: 'Photo Prints',
+    description: 'Upload multiple photos from camera roll, crop to standard print sizes, and order prints in bulk',
+    route: 'photo-prints',
+    icon: 'Images',
+    requiresProductId: true,
+    isActive: true,
+  },
   // Add more configurers here as they are created
   // Example:
   // {

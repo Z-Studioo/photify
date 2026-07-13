@@ -14,6 +14,7 @@ import { motion } from 'framer-motion';
 import { toast } from 'sonner';
 import { resolveCanvasSizePrice } from '@/lib/canvas-size-price';
 import { useProductCanvasPricingProduct } from '@/hooks/use-product-canvas-pricing';
+import { useDiscountedPrice } from '@/components/shared/Price';
 
 interface CropPanelProps {
   onSelectionChange?: (ratio: string, size: InchData | null) => void;
@@ -79,8 +80,35 @@ const CropPanel: React.FC<CropPanelProps> = ({ onSelectionChange }) => {
     }
   }, [ratios]);
 
-  const calculateDiscount = (actual: number, sell: number) =>
-    Math.round(((actual - sell) / actual) * 100);
+  function SizePriceDisplay({ listPrice }: { listPrice: number }) {
+    const { original, discounted, percentOff, hasDiscount } =
+      useDiscountedPrice(listPrice);
+
+    return (
+      <>
+        <div className='font-bold text-lg leading-tight text-inherit'>
+          £{discounted.toFixed(2)}
+        </div>
+        {hasDiscount && (
+          <>
+            <div className='text-gray-400 text-xs line-through leading-tight mt-0.5'>
+              £{original.toFixed(2)}
+            </div>
+            <div className='mt-3 pt-3 border-t border-gray-100 flex items-center justify-between'>
+              <div className='inline-flex items-center gap-1.5 px-2 py-1 bg-green-50 border border-green-200 rounded-lg'>
+                <span className='text-xs font-bold text-green-700'>
+                  {percentOff}% OFF
+                </span>
+              </div>
+              <div className='text-xs text-green-600 font-semibold'>
+                Save £{(original - discounted).toFixed(2)}
+              </div>
+            </div>
+          </>
+        )}
+      </>
+    );
+  }
 
   const getSmallestSize = (sizes: InchData[]): InchData | null =>
     [...sizes].sort((a, b) => a.area_in2 - b.area_in2)[0] || null;
@@ -299,10 +327,6 @@ const CropPanel: React.FC<CropPanelProps> = ({ onSelectionChange }) => {
                   ? resolveCanvasSizePrice(size, pricingProduct) ??
                     Number(pricingProduct.price || 0) * size.area_in2
                   : 0;
-              const discount = calculateDiscount(
-                +(selectedProduct?.price ?? 0) * size.area_in2,
-                +(selectedProduct?.price ?? 0) * size.area_in2
-              );
               const isSelected = selectedSize?.id === size.id;
 
               return (
@@ -359,54 +383,9 @@ const CropPanel: React.FC<CropPanelProps> = ({ onSelectionChange }) => {
                     </div>
 
                     <div className='text-right shrink-0'>
-                      <div
-                        className={`font-bold text-lg leading-tight ${isSelected ? 'text-primary' : 'text-gray-900'}`}
-                      >
-                        £{listPrice.toFixed(2)}
-                      </div>
-                      {discount > 0 && (
-                        <>
-                          <div className='text-gray-400 text-xs line-through leading-tight mt-0.5'>
-                            £
-                            {(+selectedProduct!.price * size.area_in2).toFixed(
-                              2
-                            )}
-                          </div>
-                        </>
-                      )}
+                      <SizePriceDisplay listPrice={listPrice} />
                     </div>
                   </div>
-
-                  {discount > 0 && (
-                    <div className='mt-3 pt-3 border-t border-gray-100 flex items-center justify-between'>
-                      <div className='inline-flex items-center gap-1.5 px-2 py-1 bg-green-50 border border-green-200 rounded-lg'>
-                        <svg
-                          className='w-3.5 h-3.5 text-green-600'
-                          fill='currentColor'
-                          viewBox='0 0 20 20'
-                        >
-                          <path
-                            fillRule='evenodd'
-                            d='M10 18a8 8 0 100-16 8 8 0 000 16zm1-11a1 1 0 10-2 0v2H7a1 1 0 100 2h2v2a1 1 0 102 0v-2h2a1 1 0 100-2h-2V7z'
-                            clipRule='evenodd'
-                          />
-                        </svg>
-                        <span className='text-xs font-bold text-green-700'>
-                          {discount}% OFF
-                        </span>
-                      </div>
-                      <div className='text-xs text-green-600 font-semibold'>
-                        Save £
-                        {(
-                          -(
-                            +(selectedProduct?.price ?? 0) *
-                            size.area_in2 *
-                            discount
-                          ) / 100
-                        ).toFixed(2)}
-                      </div>
-                    </div>
-                  )}
                 </motion.button>
               );
             });

@@ -1,34 +1,19 @@
 import { motion } from 'motion/react';
 import { Button } from '@/components/ui/button';
-
-interface PriceData {
-  actual_price: number;
-  sell_price: number;
-}
+import { DiscountedAmount } from '@/components/shared/Price';
 
 interface ApplyChangesControlProps {
   pricePerItem: number;
   quantity: number;
-  selectedSize?: PriceData | null;
   onApply: () => void;
 }
 
 const ApplyChangesControl: React.FC<ApplyChangesControlProps> = ({
   pricePerItem,
   quantity,
-  selectedSize,
   onApply,
 }) => {
   const totalPrice = pricePerItem * quantity;
-  const hasDiscount =
-    selectedSize && selectedSize.actual_price > selectedSize.sell_price;
-  const discountPercentage = hasDiscount
-    ? Math.round(
-        ((selectedSize.actual_price - selectedSize.sell_price) /
-          selectedSize.actual_price) *
-          100
-      )
-    : 0;
 
   return (
     <motion.div
@@ -45,37 +30,12 @@ const ApplyChangesControl: React.FC<ApplyChangesControlProps> = ({
         animate={{ opacity: 1, x: 0 }}
         transition={{ delay: 0.1, duration: 0.3 }}
       >
-        <motion.span
-          className='flex items-baseline font-semibold tabular-nums tracking-tight text-zinc-900'
-          initial={{ scale: 0.9 }}
-          animate={{ scale: 1 }}
-          transition={{
-            delay: 0.15,
-            type: 'spring',
-            stiffness: 300,
-          }}
-        >
-          <span className='text-base sm:text-lg'>£{Math.trunc(totalPrice)}</span>
-          <span className='text-[10px] text-zinc-500 sm:text-xs'>
-            .{totalPrice.toFixed(2).split('.')[1]}
-          </span>
-        </motion.span>
-
-        {hasDiscount && (
-          <motion.div
-            className='text-[10px] whitespace-nowrap sm:text-xs'
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.2, duration: 0.3 }}
-          >
-            <span className='line-through text-gray-500'>
-              £{(selectedSize.actual_price * quantity).toFixed(2)}
-            </span>
-            <span className='ml-2 text-green-600 font-medium'>
-              {discountPercentage}% OFF
-            </span>
-          </motion.div>
-        )}
+        <DiscountedAmount
+          amount={totalPrice}
+          stacked
+          showBadge
+          className='min-w-0 flex-1 flex-col gap-0 text-left'
+        />
       </motion.div>
 
       <motion.div

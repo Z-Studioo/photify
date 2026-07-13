@@ -12,6 +12,7 @@ import { HelmetProvider } from '@dr.pogodin/react-helmet';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Toaster } from 'sonner';
 import { CartProvider } from '@/context/CartContext';
+import { PromoDiscountProvider } from '@/context/PromoDiscountContext';
 import { AdminProvider } from '@/context/AdminContext';
 import { AffiliateProvider } from '@/context/AffiliateContext';
 import { UploadProvider } from '@/context/UploadContext';
@@ -19,6 +20,7 @@ import { PresetProvider } from '@/context/PresetContext';
 import { ToastProvider } from '@/components/shared/common/toast';
 import { CookieConsent } from '@/components/shared/cookie-consent';
 import { PageViewTracker } from '@/components/shared/page-view-tracker';
+import { PromoQueryCapture } from '@/components/shared/promo-query-capture';
 import stylesheet from './index.css?url';
 import {
   SITE_LANG,
@@ -232,17 +234,20 @@ export default function Root() {
       <HelmetProvider>
         <ToastProvider>
           <CartProvider>
-            <AdminProvider>
-              <AffiliateProvider>
-                <UploadProvider>
-                  <PresetProvider>
-                    <PageViewTracker />
-                    <Outlet />
-                    <CookieConsent />
-                  </PresetProvider>
-                </UploadProvider>
-              </AffiliateProvider>
-            </AdminProvider>
+            <PromoDiscountProvider>
+              <AdminProvider>
+                <AffiliateProvider>
+                  <UploadProvider>
+                    <PresetProvider>
+                      <PageViewTracker />
+                      <PromoQueryCapture />
+                      <Outlet />
+                      <CookieConsent />
+                    </PresetProvider>
+                  </UploadProvider>
+                </AffiliateProvider>
+              </AdminProvider>
+            </PromoDiscountProvider>
           </CartProvider>
         </ToastProvider>
       </HelmetProvider>

@@ -1,0 +1,14 @@
+# Local-only migrations (pre main-sync, 2026-06-06)
+
+These files lived in `migrations/` but were **never recorded in the remote
+`main` branch's migration history**. On 2026-06-06 the `migrations/` folder was
+re-synced to mirror `main` exactly, so these were moved here for reference.
+
+| File                                     | What it did                                                                    | Status on `main`                                                                                                                                                                                                                                                                                                                                                |
+| ---------------------------------------- | ------------------------------------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `003_drop_unused_tables_and_columns.sql` | Drops `order_items`, `photify_uploads`, `product_pricings` and several columns | **Partially** present on `main`: `photify_uploads` + `product_pricings` were dropped via `20260514202040_branch_merge`, but `order_items` and the column drops (`products.meta_robots`, `content_sections`, `stock_quantity`, `art_products.customization_product_id`, `promotions.excluded_product_ids`, `site_settings.setting_type`) were **never applied**. |
+| `004_affiliates.sql`                     | Clean single-file affiliate program                                            | Superseded by `20260529165614_004_affiliates` + `20260606162817_004_affiliates_restore` on `main`.                                                                                                                                                                                                                                                              |
+| `005_storage_folders.sql`                | `photify` bucket policies + `.emptyFolderPlaceholder` folder scaffolding       | Bucket exists on `main`; folder placeholders were **never created**.                                                                                                                                                                                                                                                                                            |
+
+If any of these changes are still desired, re-add them as a **new** forward
+migration with `supabase migration new <name>` — do not move these files back.

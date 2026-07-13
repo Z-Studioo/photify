@@ -1,0 +1,22 @@
+---
+description: Require confirmation before touching protected project areas
+alwaysApply: true
+---
+
+# Protected Areas
+
+Ask the user for explicit confirmation before changing anything outside normal frontend UI work.
+
+Free-to-edit areas:
+- `app/src/**` for frontend UI work.
+- `docs/**` and Markdown documentation.
+
+Protected areas requiring confirmation:
+- Backend/API code: `server/**`.
+- Database/Supabase schema: `server/supabase/**`.
+- Payments and integrations: Stripe, SendGrid, webhooks, checkout, payment-intent.
+- Environment/config/infra: `.env*`, `render.yaml`, `.github/**`, `tsconfig*.json`, `vite.config.*`.
+- Dependencies and lockfiles: any `package.json` or `package-lock.json`.
+- Guardrails: `.cursor/hooks.json`, `.cursor/hooks/**`, `.husky/**`.
+
+If a task appears to require a protected change, pause and explain why before editing.

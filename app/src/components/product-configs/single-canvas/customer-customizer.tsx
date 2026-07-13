@@ -98,14 +98,14 @@ export function SingleCanvasCustomizer() {
           if (artImageUrl && sizesData && sizesData.length > 0 && ratiosData && ratiosData.length > 0) {
             const bestRatio = ratiosData[0];
             const bestSize = sizesData[0];
+            // Pass raw values — URLSearchParams encodes once; encodeURIComponent
+            // here would double-encode and break the 3D texture load.
             const params = new URLSearchParams({
-              image: encodeURIComponent(artImageUrl),
+              image: artImageUrl,
               width: bestSize.width_in.toString(),
               height: bestSize.height_in.toString(),
               productId: effectiveProductId,
-              productName: encodeURIComponent(
-                productData.name || SINGLE_CANVAS_PRODUCT.name
-              ),
+              productName: productData.name || SINGLE_CANVAS_PRODUCT.name,
               aspectRatioId: bestRatio.id,
               wrapImage: 'true',
               enableImageEditor: 'true',
@@ -214,12 +214,14 @@ export function SingleCanvasCustomizer() {
           if (bestSize) {
             toast.success(`Auto-selected ${bestSize.display_label} based on your image!`, { id: uploadToast });
             
+            // Pass raw values — URLSearchParams encodes once; encodeURIComponent
+            // here would double-encode and break the 3D texture load.
             const params = new URLSearchParams({
-              image: encodeURIComponent(publicUrl), // Use the uploaded public URL
+              image: publicUrl,
               width: bestSize.width_in.toString(),
               height: bestSize.height_in.toString(),
               productId: effectiveProductId,
-              productName: encodeURIComponent(productDisplayName),
+              productName: productDisplayName,
               aspectRatioId: bestRatio.id,
               wrapImage: 'true', // Single canvas wraps image around edges
               enableImageEditor: 'true', // Enable crop editor for single canvas

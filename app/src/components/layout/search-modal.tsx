@@ -5,6 +5,7 @@ import { Search, X, TrendingUp, Clock, ArrowRight } from 'lucide-react';
 import { ImageWithFallback } from '@/components/figma/image-with-fallback';
 import { motion, AnimatePresence } from 'framer-motion';
 import { getListingDisplayAmount } from '@/lib/product-starting-price';
+import { Price } from '@/components/shared/Price';
 
 interface Product {
   id: string;
@@ -302,12 +303,14 @@ export function SearchModal({ isOpen, onClose }: SearchModalProps) {
                             </h3>
 
                             <div className='flex items-center justify-between'>
-                              <p className='text-sm text-[#f63a9e] font-semibold'>
-                                From{' '}
-                                {displayAmount != null
-                                  ? `£${displayAmount.toFixed(2)}`
-                                  : '—'}
-                              </p>
+                              <div className='flex items-baseline gap-1 text-sm'>
+                                <span className='text-gray-600 font-medium'>From</span>
+                                {displayAmount != null ? (
+                                  <Price amount={displayAmount} variant='inline' />
+                                ) : (
+                                  <span className='text-gray-400'>—</span>
+                                )}
+                              </div>
                             </div>
                           </motion.div>
                           );
@@ -383,38 +386,13 @@ export function SearchModal({ isOpen, onClose }: SearchModalProps) {
                               </span>
 
                               <div className='flex items-start'>
-                                <div className='flex items-start text-[#f63a9e]'>
-                                  {displayAmount != null ? (
-                                    <>
-                                      <span className='font-bold text-lg mt-2 mr-0.5'>
-                                        £
-                                      </span>
-
-                                      <span className='font-extrabold text-4xl tracking-tighter leading-none font-bricolage'>
-                                        {Math.floor(displayAmount)}
-                                      </span>
-
-                                      <span className='font-bold text-xl mt-2'>
-                                        .
-                                        {displayAmount.toFixed(2).split('.')[1]}
-                                      </span>
-                                    </>
-                                  ) : (
-                                    <span className='font-extrabold text-2xl tracking-tight font-bricolage'>
-                                      —
-                                    </span>
-                                  )}
-                                </div>
-
-                                <div className='ml-3 flex flex-col justify-center border-l border-gray-200 pl-3'>
-                                  <span className='text-gray-400 text-[10px] font-bold uppercase tracking-widest leading-none'>
-                                    Per
+                                {displayAmount != null ? (
+                                  <Price amount={displayAmount} variant='card' />
+                                ) : (
+                                  <span className='font-extrabold text-2xl tracking-tight font-bricolage text-[#f63a9e]'>
+                                    —
                                   </span>
-
-                                  <span className='text-gray-600 text-sm font-bold leading-tight whitespace-nowrap'>
-                                    sq in
-                                  </span>
-                                </div>
+                                )}
                               </div>
                             </div>
                           </div>

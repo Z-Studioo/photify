@@ -1,0 +1,58 @@
+---
+description: Strict gate. Before touching or adding code, classify module vs feature and ask before any scalable refactor.
+alwaysApply: true
+---
+
+# Scalable Architecture Gate
+
+This repo is mid-migration toward single-source-of-truth modules. We do NOT
+rewrite existing code wholesale. But for anything we **touch or add**, we must
+consciously choose the scalable path and **ask the user first**.
+
+The canonical map of what exists today is `module-registry.md` (same folder).
+**Always read it before answering** and keep it updated when modules/features change.
+Module vs feature definitions and target structure live in `module-architecture.mdc`.
+
+A **domain spans layers** (frontend `app/src` + backend `server/src` + Supabase).
+Before changing a domain, look it up in the registry and check whether your change
+touches the other layers — keep one shared contract, not a separate one per layer.
+
+## Always pause and ask first
+
+Before writing any scalable refactor, STOP and ask the user to confirm. This
+applies even to small refactors. State the trade-off (effort vs. scalability)
+and let the user decide. Never silently restructure code.
+
+If the user declines, make the minimal in-place change and note the debt.
+
+## When ADDING something new
+
+Before creating files, classify the work and tell the user your classification:
+
+1. **Module** = a business/domain area that owns its code (e.g. `affiliate`,
+   `catalog`, `checkout`, `admin`). New business area → new module.
+2. **Feature** = a capability inside an existing module (e.g. `admin/orders`).
+   New capability in an existing area → feature in that module.
+
+Then ask: "This looks like a `<module|feature>` named `<x>`. Add it the
+scalable way (own `types` + data access + public `index.ts`), or quick in-place?"
+
+Check `module-registry.md` first — the area may already exist under a different name.
+
+## When TOUCHING existing code
+
+If the file is in a fragmented domain (see registry "Fragmented" column),
+surface it: "`<domain>` is fragmented across `pages/`, `components/`, `context/`.
+We could promote the part we're touching into a module. Proceed scalable, or
+patch in place?" — then wait for the answer.
+
+## Single-source-of-truth checklist (raise before proceeding)
+
+- Redefining `Product`/`Category`/`Order`/`CartItem`/affiliate shapes locally? → reuse the shared/generated type.
+- Adding a new `supabase.from(...)` call inside a component? → route through a domain API/hook.
+- Adding a second registry/config for something that already has one? → extend the existing source.
+
+## After any structural change
+
+Update `module-registry.md` so it stays the source of truth, and run
+`npm run type-check` in the affected package before committing.

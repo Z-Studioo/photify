@@ -1,4 +1,5 @@
 import { useCart } from '@/context/CartContext';
+import { usePromoDiscount } from '@/context/PromoDiscountContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { track, cleanProductName } from '@/lib/analytics';
@@ -27,6 +28,7 @@ import { Footer } from '@/components/layout/footer';
 import { useSiteSetting } from '@/lib/supabase/hooks';
 import { createClient } from '@/lib/supabase/client';
 import { toast } from 'sonner';
+import { DiscountedAmount } from '@/components/shared/Price';
 
 // Returns just the base product name for a cart line item by stripping
 // any trailing ratio/size segments. Item names are built like
@@ -53,9 +55,11 @@ export function CartPage() {
     setDiscount,
     appliedPromoCode,
     setAppliedPromoCode,
-    promoApplied,
     setPromoApplied,
+    setUserAppliedPromoCode,
+    clearUserAppliedPromo,
   } = useCart();
+  const { winningCode, source: promoSource, savingsFor } = usePromoDiscount();
   const navigate = useNavigate();
   const [promoCode, setPromoCode] = useState('');
   const [validatingPromo, setValidatingPromo] = useState(false);
@@ -140,7 +144,20 @@ export function CartPage() {
     0
   );
   const deliveryPrice = deliveryOptions[deliveryMethod].price;
-  const total = subtotal + deliveryPrice - discount;
+  // Discount shown in the cart total. Prefer the server-validated amount
+  // (synced into CartContext by the promo provider, which respects min order /
+  // usage limits); until that lands — or if it can't be reached — fall back to
+  // the subtotal-based estimate from the resolved promo. This estimate equals
+  // both the per-line discounted prices shown above AND the server's own
+  // subtotal-based calculation, so the total never disagrees with the items.
+  // The server re-validates and remains authoritative for the actual charge.
+  const estimatedSavings = winningCode ? savingsFor(subtotal) : 0;
+  const effectiveDiscount = discount > 0 ? discount : estimatedSavings;
+  const displayPromoCode = appliedPromoCode || winningCode || '';
+  const displaySavings = effectiveDiscount;
+  const showPromoInCart = Boolean(displayPromoCode);
+  const isAutoAppliedPromo = promoSource === 'auto_apply';
+  const total = subtotal + deliveryPrice - effectiveDiscount;
   const itemCount = cartItems.reduce((sum, item) => sum + item.quantity, 0);
 
   useEffect(() => {
@@ -169,6 +186,7 @@ export function CartPage() {
 
         if (result.valid) {
           const code = promoCode.toUpperCase().trim();
+          setUserAppliedPromoCode(code);
           setPromoApplied(true);
           setDiscount(result.discount_amount);
           setAppliedPromoCode(code);
@@ -226,6 +244,8 @@ export function CartPage() {
   };
 
   const handleRemovePromo = () => {
+    if (isAutoAppliedPromo) return;
+    clearUserAppliedPromo();
     setPromoApplied(false);
     setDiscount(0);
     setAppliedPromoCode('');
@@ -392,14 +412,14 @@ export function CartPage() {
                           <div className='text-right'>
                             {item.quantity > 1 && (
                               <p className='text-[11px] text-gray-400 leading-tight'>
-                                £{item.price.toFixed(2)} each
+                                <DiscountedAmount amount={item.price} /> each
                               </p>
                             )}
                             <p
                               className='text-gray-900 text-base sm:text-lg leading-tight'
                               style={{ fontWeight: '700' }}
                             >
-                              £{(item.price * item.quantity).toFixed(2)}
+                              <DiscountedAmount amount={item.price * item.quantity} />
                             </p>
                           </div>
                         </div>
@@ -471,7 +491,7 @@ export function CartPage() {
 
               {/* Promo — collapsed by default */}
               <section className='bg-white rounded-2xl shadow-sm border-2 border-gray-200 overflow-hidden'>
-                {promoApplied ? (
+                {showPromoInCart ? (
                   <div className='p-4 flex items-center gap-3'>
                     <div className='w-9 h-9 rounded-lg bg-green-500 flex items-center justify-center flex-shrink-0'>
                       <Check className='w-5 h-5 text-white' strokeWidth={3} />
@@ -481,19 +501,24 @@ export function CartPage() {
                         className='text-green-900 text-sm'
                         style={{ fontWeight: '700' }}
                       >
-                        {appliedPromoCode} applied
+                        {displayPromoCode}{' '}
+                        {isAutoAppliedPromo ? 'auto-applied' : 'applied'}
                       </p>
                       <p className='text-green-700 text-xs'>
-                        You saved £{discount.toFixed(2)}
+                        {displaySavings > 0
+                          ? `You save £${displaySavings.toFixed(2)}`
+                          : 'Discount applies to eligible items at checkout'}
                       </p>
                     </div>
-                    <button
-                      onClick={handleRemovePromo}
-                      className='text-xs text-gray-500 hover:text-red-500 underline underline-offset-2'
-                      style={{ fontWeight: '600' }}
-                    >
-                      Remove
-                    </button>
+                    {!isAutoAppliedPromo && (
+                      <button
+                        onClick={handleRemovePromo}
+                        className='text-xs text-gray-500 hover:text-red-500 underline underline-offset-2'
+                        style={{ fontWeight: '600' }}
+                      >
+                        Remove
+                      </button>
+                    )}
                   </div>
                 ) : (
                   <>
@@ -622,17 +647,18 @@ export function CartPage() {
                       £{deliveryPrice.toFixed(2)}
                     </dd>
                   </div>
-                  {promoApplied && (
+                  {showPromoInCart && displaySavings > 0 && (
                     <div className='flex items-center justify-between'>
                       <dt className='text-green-700 inline-flex items-center gap-1.5'>
                         <Gift className='w-3.5 h-3.5' />
                         Discount
+                        {displayPromoCode ? ` (${displayPromoCode})` : ''}
                       </dt>
                       <dd
                         className='text-green-600'
                         style={{ fontWeight: '700' }}
                       >
-                        -£{discount.toFixed(2)}
+                        -£{displaySavings.toFixed(2)}
                       </dd>
                     </div>
                   )}
