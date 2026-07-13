@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Header } from '@/components/layout/header';
 import { Footer } from '@/components/layout/footer';
@@ -22,7 +22,7 @@ import {
   Shield,
   Sparkles,
   Clock,
-  Eye,
+  ShoppingBag,
   Package,
   Palette,
 } from 'lucide-react';
@@ -118,6 +118,18 @@ export function ProductDetailPage({
   const [relatedProducts, setRelatedProducts] = useState<any[]>([]);
   const heroRef = useRef<HTMLDivElement>(null);
   const ctaRef = useRef<HTMLDivElement>(null);
+
+  // "XX bought yesterday" — deterministic per product per calendar day (UTC),
+  // so the number stays stable for a given product all day and matches
+  // between server and client renders. Range: 20–60.
+  const boughtYesterday = useMemo(() => {
+    const seed = `${productId ?? 'product'}-${new Date().toISOString().slice(0, 10)}`;
+    let hash = 0;
+    for (let i = 0; i < seed.length; i++) {
+      hash = (hash * 31 + seed.charCodeAt(i)) | 0;
+    }
+    return 20 + (Math.abs(hash) % 41);
+  }, [productId]);
 
   // GA4 view_item — fired once when the product page mounts. Using
   // productId in the dep array ensures we re-emit when the user
@@ -568,9 +580,9 @@ export function ProductDetailPage({
                         <span className='animate-ping absolute inline-flex h-full w-full rounded-full bg-[#f63a9e] opacity-50' />
                         <span className='relative inline-flex h-2.5 w-2.5 rounded-full bg-[#f63a9e] shadow-[0_0_10px_rgba(246,58,158,0.65)]' />
                       </span>
-                      <Eye className='w-3.5 h-3.5 text-[#f63a9e]' />
+                      <ShoppingBag className='w-3.5 h-3.5 text-[#f63a9e]' />
                       <span>
-                        <strong className='text-gray-900'>15</strong> viewing now
+                        <strong className='text-gray-900'>{boughtYesterday}</strong> bought yesterday
                       </span>
                     </div>
                   </div>

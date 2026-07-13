@@ -1,15 +1,22 @@
 /**
  * Promo landing cookie (non-affiliate).
  *
- * When a visitor lands on `/p/:code`, we store the promo code in a first-party
- * cookie with a 30-day expiry. Cart + PromoDiscountContext read this to apply
- * the matching promotions row sitewide — same cookie pattern as affiliate
- * `/r/:code`, but without affiliate attribution or commission.
+ * Visitors can land via:
+ * - `/p/:code` (dedicated landing → cookie → redirect home)
+ * - any page with `?promo=CODE` (e.g. `/product/single-canvas?promo=SAVE`)
+ *
+ * We store the promo code in a first-party cookie with a 30-day expiry.
+ * Cart + PromoDiscountContext read this to apply the matching promotions row
+ * sitewide — same cookie pattern as affiliate `/r/:code`, but without
+ * affiliate attribution or commission.
  */
 
 const COOKIE_NAME = 'photify_promo_land';
 const TTL_DAYS = 30;
 const TTL_SECONDS = TTL_DAYS * 24 * 60 * 60;
+
+/** Query key for product (and other) share URLs: `?promo=SAVE`. */
+export const PROMO_QUERY_KEY = 'promo';
 
 function normalizeCode(code: string): string {
   return code.trim().toUpperCase();
@@ -47,4 +54,24 @@ export function clearPromoLandingRef(): void {
 export function promoLandingPath(code: string): string {
   const normalized = normalizeCode(code);
   return normalized ? `/p/${encodeURIComponent(normalized)}` : '/p/';
+}
+
+/**
+ * Append `?promo=CODE` to a path (e.g. `/product/single-canvas?promo=SAVE`).
+ * Preserves any existing query string.
+ */
+export function withPromoQuery(path: string, code: string): string {
+  const normalized = normalizeCode(code);
+  if (!normalized) return path;
+
+  const hashIndex = path.indexOf('#');
+  const hash = hashIndex >= 0 ? path.slice(hashIndex) : '';
+  const withoutHash = hashIndex >= 0 ? path.slice(0, hashIndex) : path;
+  const qIndex = withoutHash.indexOf('?');
+  const pathname = qIndex >= 0 ? withoutHash.slice(0, qIndex) : withoutHash;
+  const search = qIndex >= 0 ? withoutHash.slice(qIndex + 1) : '';
+  const params = new URLSearchParams(search);
+  params.set(PROMO_QUERY_KEY, normalized);
+  const next = params.toString();
+  return `${pathname}?${next}${hash}`;
 }

@@ -523,7 +523,21 @@ export function AdminPromotionEditPage() {
                   <Label>Landing Via URL</Label>
                   <p className='text-xs text-gray-600 mt-1 mb-2'>
                     Share this link to apply the promo via cookie (not an
-                    affiliate link)
+                    affiliate link). For a product page, append{' '}
+                    <span className='font-mono'>
+                      ?promo=
+                      {formData.code.trim()
+                        ? formData.code.trim().toUpperCase()
+                        : 'CODE'}
+                    </span>{' '}
+                    instead, e.g.{' '}
+                    <span className='font-mono'>
+                      /product/single-canvas?promo=
+                      {formData.code.trim()
+                        ? formData.code.trim().toUpperCase()
+                        : 'SAVE'}
+                    </span>
+                    .
                   </p>
                   {landingUrl ? (
                     <div className='flex items-center gap-2'>

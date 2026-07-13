@@ -116,8 +116,8 @@ interface CartContextType {
    */
   setAffiliateRef: (code: string) => void;
   /**
-   * Promo code from `/p/:code` landing (cookie, not affiliate). Applied as a
-   * discount candidate sitewide via PromoDiscountContext.
+   * Promo code from `/p/:code` or `?promo=` landing (cookie, not affiliate).
+   * Applied as a discount candidate sitewide via PromoDiscountContext.
    */
   promoLandingRef: string | null;
   setPromoLandingRef: (code: string) => void;

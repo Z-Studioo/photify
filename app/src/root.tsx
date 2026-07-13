@@ -20,6 +20,7 @@ import { PresetProvider } from '@/context/PresetContext';
 import { ToastProvider } from '@/components/shared/common/toast';
 import { CookieConsent } from '@/components/shared/cookie-consent';
 import { PageViewTracker } from '@/components/shared/page-view-tracker';
+import { PromoQueryCapture } from '@/components/shared/promo-query-capture';
 import stylesheet from './index.css?url';
 import {
   SITE_LANG,
@@ -239,6 +240,7 @@ export default function Root() {
                   <UploadProvider>
                     <PresetProvider>
                       <PageViewTracker />
+                      <PromoQueryCapture />
                       <Outlet />
                       <CookieConsent />
                     </PresetProvider>
