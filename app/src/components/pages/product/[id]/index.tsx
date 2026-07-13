@@ -38,6 +38,8 @@ import {
   getLowestSizePriceFromConfig,
 } from '@/lib/product-starting-price';
 import { Price } from '@/components/shared/Price';
+import { useDiscountedPrice } from '@/lib/pricing/use-discounted-price';
+import { formatGbp } from '@/lib/pricing';
 
 const mockReviews = [
   {
@@ -208,6 +210,7 @@ export function ProductDetailPage({
   const productData = initialProduct;
   /** Lowest configured size price (same source as generic admin, e.g. dual-metal-harmony) */
   const startingPrice = getLowestSizePriceFromConfig(initialProduct.config);
+  const stickyFromPrice = useDiscountedPrice(startingPrice);
 
   const product = {
     id: initialProduct.id,
@@ -267,6 +270,7 @@ export function ProductDetailPage({
     configurerType === '1PhotoCollageCreator' ||
     configurerType === 'event-canvas' ||
     configurerType === 'multi-canvas-wall' ||
+    configurerType === 'photo-prints' ||
     productSlug === 'photo-collage-creator' ||
     productSlug === '1PhotoCollageCreator';
 
@@ -320,9 +324,22 @@ export function ProductDetailPage({
                         {product.title}
                       </h3>
                       <p className='text-[#f63a9e] font-bold text-sm sm:text-base'>
-                        {product.startingPrice != null
-                          ? `From £${formatGbpAmount(product.startingPrice)}`
-                          : 'From —'}
+                        {product.startingPrice != null ? (
+                          stickyFromPrice.hasDiscount ? (
+                            <span className='inline-flex items-baseline gap-1.5'>
+                              <span>
+                                From {formatGbp(stickyFromPrice.discounted, { alwaysDecimals: true })}
+                              </span>
+                              <span className='text-xs font-normal text-gray-400 line-through'>
+                                {formatGbp(stickyFromPrice.original, { alwaysDecimals: true })}
+                              </span>
+                            </span>
+                          ) : (
+                            `From ${formatGbp(product.startingPrice, { alwaysDecimals: true })}`
+                          )
+                        ) : (
+                          'From —'
+                        )}
                       </p>
                     </div>
                   </div>

@@ -2,6 +2,11 @@ import { createContext, useContext, useEffect, useState, type ReactNode } from '
 import { uploadDataURLToStorage } from '@/lib/supabase/storage';
 import { track, cleanProductName, type AnalyticsItem } from '@/lib/analytics';
 import { getAffiliateRef, setAffiliateRef as persistAffiliateRef } from '@/lib/affiliate-ref';
+import {
+  clearPromoLandingRef,
+  getPromoLandingRef,
+  setPromoLandingRef as persistPromoLandingRef,
+} from '@/lib/promo-landing-ref';
 
 /** Map a CartItem to GA4's Item shape for ecommerce events. */
 function toAnalyticsItem(item: CartItem): AnalyticsItem {
@@ -59,6 +64,19 @@ export interface CartItem {
 
 export type DeliveryMethod = 'standard' | 'express';
 
+/**
+ * Two cart entries are the same print only if their artwork matches.
+ * Guards against a new customization (different uploaded photo) being
+ * merged into an existing line just because the product id matches.
+ */
+function isSameArtwork(a: CartItem, b: CartItem): boolean {
+  if (a.image !== b.image) return false;
+  const aImages = a.images ?? [];
+  const bImages = b.images ?? [];
+  if (aImages.length !== bImages.length) return false;
+  return aImages.every((img, idx) => img === bImages[idx]);
+}
+
 interface CartContextType {
   cartItems: CartItem[];
   addToCart: (item: CartItem) => Promise<void>;
@@ -97,6 +115,12 @@ interface CartContextType {
    * even on same-session SPA navigations (no full reload required).
    */
   setAffiliateRef: (code: string) => void;
+  /**
+   * Promo code from `/p/:code` landing (cookie, not affiliate). Applied as a
+   * discount candidate sitewide via PromoDiscountContext.
+   */
+  promoLandingRef: string | null;
+  setPromoLandingRef: (code: string) => void;
 }
 
 const CartContext = createContext<CartContextType | undefined>(undefined);
@@ -118,6 +142,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
   // overwrite stored data with our default state.
   const [hydrated, setHydrated] = useState(false);
   const [affiliateRef, setAffiliateRefState] = useState<string | null>(null);
+  const [promoLandingRef, setPromoLandingRefState] = useState<string | null>(null);
 
   useEffect(() => {
     const stored = loadPersistedCart();
@@ -133,6 +158,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
         setUserAppliedPromoCodeState(stored.userAppliedPromoCode);
     }
     setAffiliateRefState(getAffiliateRef());
+    setPromoLandingRefState(getPromoLandingRef());
     setHydrated(true);
   }, []);
 
@@ -171,6 +197,13 @@ export function CartProvider({ children }: { children: ReactNode }) {
     setAffiliateRefState(normalized);
   };
 
+  const setPromoLandingRef = (code: string) => {
+    const normalized = (code || '').trim().toUpperCase();
+    if (!normalized) return;
+    persistPromoLandingRef(normalized);
+    setPromoLandingRefState(normalized);
+  };
+
   const setUserAppliedPromoCode = (code: string) => {
     setUserAppliedPromoCodeState((code || '').trim().toUpperCase());
   };
@@ -184,6 +217,8 @@ export function CartProvider({ children }: { children: ReactNode }) {
     setAppliedPromoCode('');
     setPromoApplied(false);
     clearUserAppliedPromo();
+    clearPromoLandingRef();
+    setPromoLandingRefState(null);
   };
 
   const addToCart = async (item: CartItem): Promise<void> => {
@@ -226,10 +261,17 @@ export function CartProvider({ children }: { children: ReactNode }) {
     };
 
     setCartItems((prev) => {
-      const existingItem = prev.find((i) => i.id === resolvedItem.id);
+      // Merge into an existing line only when it is genuinely the same
+      // print (same id AND same artwork). Customized products with
+      // different photos must stay separate line items so the admin can
+      // see and prepare every photo; quantity only means "more copies of
+      // this exact print".
+      const existingItem = prev.find(
+        (i) => i.id === resolvedItem.id && isSameArtwork(i, resolvedItem)
+      );
       if (existingItem) {
         return prev.map((i) =>
-          i.id === resolvedItem.id ? { ...i, quantity: i.quantity + resolvedItem.quantity } : i
+          i === existingItem ? { ...i, quantity: i.quantity + resolvedItem.quantity } : i
         );
       }
       return [...prev, resolvedItem];
@@ -316,6 +358,8 @@ export function CartProvider({ children }: { children: ReactNode }) {
         clearUserAppliedPromo,
         affiliateRef,
         setAffiliateRef,
+        promoLandingRef,
+        setPromoLandingRef,
       }}
     >
       {children}

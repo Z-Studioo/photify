@@ -21,6 +21,7 @@ import Canvas3DPreview from '../single-canvas/canvas-3d-preview.client';
 import { Room3DPreview } from './3d/room-3d-preview';
 import { SingleCanvasMesh } from '../single-canvas/single-canvas-mesh';
 import { resolveCanvasSizePrice } from '@/lib/canvas-size-price';
+import { DiscountedAmount, useDiscountedPrice } from '@/components/shared/Price';
 import type { InchData } from '@/utils/ratio-sizes';
 import type { Product as LibProduct } from '@/lib/data/types';
 
@@ -91,14 +92,16 @@ interface Product {
 /**
  * Admin-configured `config.sizePrices` takes precedence; falls back to the
  * shared `resolveCanvasSizePrice` logic (per-size fixed_price, then area × base).
- * Returns a `.toFixed(2)` string for rendering; `'0.00'` when unresolvable.
  */
-function formatSizePrice(size: Size, product: Product | null | undefined): string {
+function resolveSizePriceNumber(
+  size: Size,
+  product: Product | null | undefined
+): number {
   const resolved = resolveCanvasSizePrice(
     size as unknown as InchData,
     product as unknown as LibProduct
   );
-  return resolved != null ? resolved.toFixed(2) : '0.00';
+  return resolved != null ? resolved : 0;
 }
 
 export function Product3DView({
@@ -335,12 +338,15 @@ export function Product3DView({
 
   // Calculate price — prefers admin-configured per-size prices from
   // `products.config.sizePrices`; otherwise falls back to area × base price.
-  const calculatePrice = (): string => {
-    if (!selectedSizeId) return '0.00';
-    const selectedSize = sizes.find(s => s.id === selectedSizeId);
-    if (!selectedSize) return '0.00';
-    return formatSizePrice(selectedSize, product);
+  const calculatePrice = (): number => {
+    if (!selectedSizeId) return 0;
+    const size = sizes.find(s => s.id === selectedSizeId);
+    if (!size) return 0;
+    return resolveSizePriceNumber(size, product);
   };
+  const headerPrice = useDiscountedPrice(
+    selectedSizeId ? calculatePrice() : 10.99
+  );
 
   // Get available sizes for selected ratio
   const getAvailableSizes = () => {
@@ -377,7 +383,7 @@ export function Product3DView({
       return;
     }
 
-    const price = parseFloat(calculatePrice());
+    const price = calculatePrice();
 
     // Create cart item
     const cartItem = {
@@ -704,9 +710,20 @@ export function Product3DView({
                   : ''}
               </h2>
               <div className='flex items-baseline gap-2'>
-                <span className='text-[#f63a9e] text-2xl md:text-3xl font-bold'>
-                  £{selectedSizeId ? calculatePrice() : '10.99'}
-                </span>
+                {headerPrice.hasDiscount ? (
+                  <>
+                    <span className='text-[#f63a9e] text-2xl md:text-3xl font-bold'>
+                      £{headerPrice.discounted.toFixed(2)}
+                    </span>
+                    <span className='text-sm text-gray-400 line-through'>
+                      £{headerPrice.original.toFixed(2)}
+                    </span>
+                  </>
+                ) : (
+                  <span className='text-[#f63a9e] text-2xl md:text-3xl font-bold'>
+                    £{headerPrice.original.toFixed(2)}
+                  </span>
+                )}
               </div>
 
               {/* Add to Basket Button - Mobile Responsive */}
@@ -798,7 +815,7 @@ export function Product3DView({
                     </Label>
                     <div className='grid grid-cols-1 gap-2 max-h-64 overflow-y-auto'>
                       {getAvailableSizes().map(size => {
-                        const price = formatSizePrice(size, product);
+                        const price = resolveSizePriceNumber(size, product);
                         const isSelected = selectedSizeId === size.id;
                         return (
                           <button
@@ -820,9 +837,10 @@ export function Product3DView({
                               >
                                 {size.display_label}
                               </span>
-                              <span className='text-[#f63a9e] font-semibold text-sm md:text-base'>
-                                £{price}
-                              </span>
+                              <DiscountedAmount
+                                amount={price}
+                                className='text-[#f63a9e] font-semibold text-sm md:text-base'
+                              />
                             </div>
                           </button>
                         );

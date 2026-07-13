@@ -47,6 +47,13 @@ export function AdminPromotionEditPage() {
   });
 
   const [saving, setSaving] = useState(false);
+  const [siteOrigin, setSiteOrigin] = useState('');
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      setSiteOrigin(window.location.origin);
+    }
+  }, []);
 
   // Load existing promotion data
   useEffect(() => {
@@ -69,6 +76,10 @@ export function AdminPromotionEditPage() {
       });
     }
   }, [existingPromo]);
+
+  const landingUrl = formData.code.trim()
+    ? `${siteOrigin || ''}/p/${formData.code.trim().toUpperCase()}`
+    : '';
 
   const usageStats = {
     totalRevenue: '£4,892',
@@ -504,6 +515,44 @@ export function AdminPromotionEditPage() {
                       setFormData({ ...formData, autoApply: checked })
                     }
                   />
+                </div>
+
+                <Separator />
+
+                <div>
+                  <Label>Landing Via URL</Label>
+                  <p className='text-xs text-gray-600 mt-1 mb-2'>
+                    Share this link to apply the promo via cookie (not an
+                    affiliate link)
+                  </p>
+                  {landingUrl ? (
+                    <div className='flex items-center gap-2'>
+                      <Input
+                        readOnly
+                        value={landingUrl}
+                        className='text-xs font-mono'
+                      />
+                      <Button
+                        type='button'
+                        variant='outline'
+                        size='icon'
+                        className='flex-shrink-0'
+                        onClick={() => {
+                          void navigator.clipboard.writeText(landingUrl).then(
+                            () => toast.success('Landing URL copied'),
+                            () => toast.error('Could not copy URL')
+                          );
+                        }}
+                        title='Copy landing URL'
+                      >
+                        <Copy className='w-4 h-4' />
+                      </Button>
+                    </div>
+                  ) : (
+                    <p className='text-xs text-amber-700'>
+                      Enter a promo code to generate the landing URL
+                    </p>
+                  )}
                 </div>
               </div>
             </div>

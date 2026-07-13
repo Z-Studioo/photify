@@ -37,6 +37,7 @@ import { type MultiCanvasWallState } from './types';
 // favour of a clean, distraction-free editor backdrop.
 const DEFAULT_WALL_COLOR = '#f4efe7';
 import { useCart } from '@/context/CartContext';
+import { DiscountedAmount, useDiscountedPrice } from '@/components/shared/Price';
 import { resolveCanvasSizePrice } from '@/lib/canvas-size-price';
 import type { InchData } from '@/utils/ratio-sizes';
 import type { Product as LibProduct } from '@/lib/data/types';
@@ -545,8 +546,9 @@ export function MultiCanvasWallCustomizer() {
     : null;
 
   const currentTotalPrice = selectedSize
-    ? getWallPriceForSize(selectedSize).toFixed(2)
-    : '0.00';
+    ? getWallPriceForSize(selectedSize)
+    : 0;
+  const wallTotalDisplay = useDiscountedPrice(currentTotalPrice);
 
   // Handle add to cart
   const handleAddToCart = async () => {
@@ -1633,7 +1635,7 @@ export function MultiCanvasWallCustomizer() {
                 {filteredSizes.map(size => {
                   // Wall total honours admin's per-size price (config.sizePrices)
                   // first, then sizes.fixed_price, then base × area as fallback.
-                  const totalPrice = getWallPriceForSize(size).toFixed(2);
+                  const totalPrice = getWallPriceForSize(size);
                   const active = selectedSizeId === size.id;
                   return (
                     <button
@@ -1676,9 +1678,11 @@ export function MultiCanvasWallCustomizer() {
                         </div>
                       </div>
                       <div className='text-right ml-3 flex-shrink-0'>
-                        <div className='text-base sm:text-lg font-bold text-[#f63a9e]'>
-                          £{totalPrice}
-                        </div>
+                        <DiscountedAmount
+                          amount={totalPrice}
+                          stacked
+                          className='text-base sm:text-lg font-bold text-[#f63a9e]'
+                        />
                         <div className='text-[9px] sm:text-[10px] text-gray-500'>
                           Set of 3
                         </div>
@@ -1710,9 +1714,11 @@ export function MultiCanvasWallCustomizer() {
                     <p className='text-[10px] sm:text-xs text-gray-500'>
                       Total
                     </p>
-                    <p className='text-lg sm:text-xl font-bold text-[#f63a9e] leading-tight'>
-                      £{currentTotalPrice}
-                    </p>
+                    <DiscountedAmount
+                      amount={currentTotalPrice}
+                      stacked
+                      className='text-lg sm:text-xl font-bold text-[#f63a9e] leading-tight'
+                    />
                   </div>
                 </div>
               </div>
@@ -1733,7 +1739,11 @@ export function MultiCanvasWallCustomizer() {
                     3 - uploadCount === 1 ? '' : 's'
                   } to continue`
                 : selectedSizeId
-                  ? `Add to cart · £${currentTotalPrice}`
+                  ? `Add to cart · £${(
+                      wallTotalDisplay.hasDiscount
+                        ? wallTotalDisplay.discounted
+                        : currentTotalPrice
+                    ).toFixed(2)}`
                   : 'Pick a size to continue'}
             </Button>
 

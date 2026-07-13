@@ -31,6 +31,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { toast } from 'sonner';
 import { uploadFileToStorage } from '@/lib/supabase/storage';
 import { useCart } from '@/context/CartContext';
+import { DiscountedAmount, useDiscountedPrice } from '@/components/shared/Price';
 import {
   EVENT_CANVAS_PRODUCT,
   POSTER_SIZES,
@@ -382,8 +383,14 @@ export function EventCanvasCustomizer() {
 
   const calculateCanvasPrice = () =>
     state.posterWidth * state.posterHeight * productPrice;
-  const calculatePrice = () =>
-    (calculateCanvasPrice() + artFixedPrice).toFixed(2);
+  const calculatePriceNumber = () => calculateCanvasPrice() + artFixedPrice;
+  const eventPriceDisplay = useDiscountedPrice(
+    state.imageUrl
+      ? calculatePriceNumber()
+      : artFixedPrice > 0
+        ? 21.6 + artFixedPrice
+        : 21.6
+  );
 
   const handleAddToCart = async () => {
     if (!state.imageUrl) {
@@ -399,7 +406,9 @@ export function EventCanvasCustomizer() {
         : `${EVENT_CANVAS_PRODUCT.name} - ${state.posterWidth}" × ${state.posterHeight}"`;
 
       await addToCart({
-        id: EVENT_CANVAS_PRODUCT.id,
+        // Unique per customization so each uploaded design gets its own
+        // cart line instead of merging into an earlier one.
+        id: `${EVENT_CANVAS_PRODUCT.id}-${Date.now()}`,
         name: itemName,
         quantity: 1,
         price: totalPrice,
@@ -839,14 +848,20 @@ export function EventCanvasCustomizer() {
                     </p>
                     <div className='mt-2 sm:mt-3'>
                       <div className='flex items-baseline gap-1.5 sm:gap-2'>
-                        <span className='text-[#f63a9e] text-lg xs:text-xl sm:text-2xl md:text-3xl font-bold'>
-                          £
-                          {state.imageUrl
-                            ? calculatePrice()
-                            : artFixedPrice > 0
-                              ? (21.6 + artFixedPrice).toFixed(2)
-                              : '21.60'}
-                        </span>
+                        {eventPriceDisplay.hasDiscount ? (
+                          <>
+                            <span className='text-[#f63a9e] text-lg xs:text-xl sm:text-2xl md:text-3xl font-bold'>
+                              £{eventPriceDisplay.discounted.toFixed(2)}
+                            </span>
+                            <span className='text-sm text-gray-400 line-through'>
+                              £{eventPriceDisplay.original.toFixed(2)}
+                            </span>
+                          </>
+                        ) : (
+                          <span className='text-[#f63a9e] text-lg xs:text-xl sm:text-2xl md:text-3xl font-bold'>
+                            £{eventPriceDisplay.original.toFixed(2)}
+                          </span>
+                        )}
                         <span className='text-[10px] xs:text-xs sm:text-sm text-gray-600'>
                           ({state.posterWidth}&quot; × {state.posterHeight}
                           &quot;)
@@ -883,13 +898,11 @@ export function EventCanvasCustomizer() {
                     <div className='space-y-1.5 sm:space-y-2'>
                       {POSTER_SIZES.map(size => {
                         const area = size.width * size.height;
-                        const price = (area * productPrice).toFixed(2);
+                        const price = area * productPrice;
                         const isSelected =
                           state.posterWidth === size.width &&
                           state.posterHeight === size.height;
-                        const totalSizePrice = (
-                          parseFloat(price) + artFixedPrice
-                        ).toFixed(2);
+                        const totalSizePrice = price + artFixedPrice;
                         return (
                           <button
                             key={size.label}
@@ -912,14 +925,16 @@ export function EventCanvasCustomizer() {
                                 )}
                               </div>
                               <div className='flex flex-col items-end'>
-                                <span className='text-[#f63a9e] font-semibold text-[11px] xs:text-xs sm:text-sm md:text-base'>
-                                  £
-                                  {artFixedPrice > 0 ? totalSizePrice : price}
-                                </span>
+                                <DiscountedAmount
+                                  amount={
+                                    artFixedPrice > 0 ? totalSizePrice : price
+                                  }
+                                  className='text-[#f63a9e] font-semibold text-[11px] xs:text-xs sm:text-sm md:text-base'
+                                />
                                 {artFixedPrice > 0 && (
                                   <span className='text-[8px] xs:text-[9px] text-gray-400 leading-tight'>
                                     Art £{artFixedPrice.toFixed(2)} + Poster £
-                                    {price}
+                                    {price.toFixed(2)}
                                   </span>
                                 )}
                               </div>

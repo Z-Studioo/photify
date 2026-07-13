@@ -109,7 +109,10 @@ const QuantityControl: React.FC<QuantityControlProps> = ({
 
       addToCart({
         quantity: 1,
-        id: `${selectedProduct?.id || 'custom'}-${selectedRatio || 'custom'}-${selectedSize?.display_label || 'custom'}-${shape || 'rectangular'}`,
+        // Unique per customization so a second upload with the same
+        // size/shape becomes its own line item instead of merging into
+        // (and losing the photo of) an existing one.
+        id: `${selectedProduct?.id || 'custom'}-${selectedRatio || 'custom'}-${selectedSize?.display_label || 'custom'}-${shape || 'rectangular'}-${Date.now()}`,
         name: cartName,
         image: finalImageUrl,
         price: priceData.sellPrice,

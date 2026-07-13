@@ -52,6 +52,10 @@ export default [
     'pages/customize/photo-collage-creator/index.tsx'
   ),
   route(
+    'customize/photo-prints',
+    'pages/customize/photo-prints/index.tsx'
+  ),
+  route(
     'customize/product-3d-view',
     'pages/customize/product-3d-view/index.tsx'
   ),
@@ -64,6 +68,8 @@ export default [
   route('affiliate', 'pages/affiliate/index.tsx'),
   route('affiliate/apply', 'pages/affiliate/apply/index.tsx'),
   route('r/:code', 'pages/r/[code]/index.tsx'),
+  // Promo landing (cookie-applied discount, not affiliate)
+  route('p/:code', 'pages/p/[code]/index.tsx'),
 
   // Affiliate dashboard area (client-only, role-gated)
   layout('layouts/affiliate-layout.tsx', [

@@ -70,6 +70,7 @@ export function PromoDiscountProvider({ children }: { children: ReactNode }) {
     cartItems,
     userAppliedPromoCode,
     affiliateRef,
+    promoLandingRef,
     setPromoApplied,
     setDiscount,
     setAppliedPromoCode,
@@ -132,10 +133,11 @@ export function PromoDiscountProvider({ children }: { children: ReactNode }) {
   const candidateCodes = useMemo(() => {
     const codes = new Set<string>();
     if (userAppliedPromoCode) codes.add(userAppliedPromoCode);
+    if (promoLandingRef) codes.add(promoLandingRef);
     if (affiliateRef) codes.add(affiliateRef);
     if (autoApplyPromo?.code) codes.add(autoApplyPromo.code);
     return [...codes];
-  }, [userAppliedPromoCode, affiliateRef, autoApplyPromo?.code]);
+  }, [userAppliedPromoCode, promoLandingRef, affiliateRef, autoApplyPromo?.code]);
 
   useEffect(() => {
     let cancelled = false;
@@ -200,6 +202,19 @@ export function PromoDiscountProvider({ children }: { children: ReactNode }) {
       }
     }
 
+    if (promoLandingRef) {
+      const row = byCode.get(promoLandingRef.toUpperCase());
+      const percent = normalizePercent(row?.value);
+      if (percent > 0) {
+        candidates.push({
+          code: promoLandingRef.toUpperCase(),
+          percent,
+          source: 'manual',
+          scope: row ? rowScope(row) : normalizeScope(),
+        });
+      }
+    }
+
     if (affiliateRef) {
       const row = byCode.get(affiliateRef.toUpperCase());
       const percent = normalizePercent(row?.value);
@@ -226,13 +241,14 @@ export function PromoDiscountProvider({ children }: { children: ReactNode }) {
     }
 
     return pickHighestPromo(candidates);
-  }, [candidateRows, userAppliedPromoCode, affiliateRef, autoApplyPromo]);
+  }, [candidateRows, userAppliedPromoCode, promoLandingRef, affiliateRef, autoApplyPromo]);
 
   // Update resolved state and persist cookie when network resolution completes.
   // The cookie is reserved for sitewide auto-apply promos only: it exists to
   // pre-paint discounted pricing on first paint before any network call.
-  // Manual codes live in cart storage and affiliate codes in `photify_ref`,
-  // so we never persist those here (and we clear any stale cookie).
+  // Manual codes live in cart storage, landing codes in `photify_promo_land`,
+  // and affiliate codes in `photify_ref`, so we never persist those here
+  // (and we clear any stale cookie).
   useEffect(() => {
     if (computedResolved.winningCode) {
       setResolved(computedResolved);

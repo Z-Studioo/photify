@@ -25,7 +25,7 @@ folders) · `direct` (FE talks to Supabase with no BE route) · `none`.
 
 ### configurator
 
-- **FE** (partial): `components/product-configs/*`, `lib/configures/registry.ts`, `pages/customize/*`, `pages/upload`, `pages/crop`, `context/UploadContext.tsx`
+- **FE** (partial): `components/product-configs/*` (incl. `photo-prints`), `lib/configures/registry.ts`, `pages/customize/*`, `pages/upload`, `pages/crop`, `context/UploadContext.tsx`
 - **BE** (none): client-side; persists into `products.config`
 - **DB**: `products.config`, `sizes`, `aspect_ratios`
 - **SSOT target**: `modules/configurator` with a **single** registry (merge the two)
@@ -36,7 +36,7 @@ folders) · `direct` (FE talks to Supabase with no BE route) · `none`.
 - **BE** (module-ish): `routes/checkout.ts`, `routes/payment-intent.ts`, `routes/orders.ts`, `routes/address.ts`, `controllers/checkoutController.ts`, `controllers/paymentIntentController.ts`, `controllers/orderStatusController.ts`, `controllers/cancelOrderController.ts`, `lib/stripe.ts`
 - **DB**: `orders` (+ tracking/discount columns)
 - **SSOT debt**: `CartItem`/checkout body shapes redefined in FE and in both BE controllers → one shared contract
-- **Promo/pricing** (partial): FE consolidated in `app/src/lib/pricing/promo/` + `PromoDiscountContext`; server charge recompute in `server/src/lib/promo.ts`; DB `is_promotion_valid` + `get_active_auto_promo()`. Affiliate attribution (`photify_ref`) stays separate from promo session (`photify_promo`).
+- **Promo/pricing** (partial): FE consolidated in `app/src/lib/pricing/promo/` + `PromoDiscountContext`; server charge recompute in `server/src/lib/promo.ts`; DB `is_promotion_valid` + `get_active_auto_promo()`. Affiliate attribution (`photify_ref`) stays separate from promo session (`photify_promo`). Promo landing URLs use `/p/:code` + cookie `photify_promo_land` (no DB flag — URL is derived from promo code).
 
 ### affiliate
 
