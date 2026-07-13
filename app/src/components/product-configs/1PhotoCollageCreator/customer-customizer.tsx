@@ -56,6 +56,7 @@ import { Room3DPreview } from '../shared/3d/room-3d-preview';
 import { CollageMesh } from './collage-mesh';
 import { uploadDataURLToStorage } from '@/lib/supabase/storage';
 import { useDiscountedPrice } from '@/components/shared/Price';
+import { ratioKey } from '@/lib/configures/registry';
 
 type TabType = 'templates' | 'photos' | 'background';
 
@@ -317,41 +318,44 @@ export function CollageCustomizer() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [urlProductId]);
 
-  // Fetch aspect ratios and sizes when template is selected
+  // Fetch aspect ratios and sizes when template is selected.
+  // Match by width_ratio:height_ratio (not display label) — admin labels
+  // vary ("Square", "1:1 Square", etc.) but the numeric ratios are stable.
   useEffect(() => {
     const fetchSizeOptions = async () => {
       if (!selectedTemplate) return;
 
       try {
-        // Map template aspectRatio to database label
-        const aspectRatioLabelMap: Record<string, string> = {
-          '1:1': '1:1 Square',
-          '2:3': '2:3 Portrait',
-          '3:2': '3:2 Landscape',
-        };
-
-        const aspectRatioLabel =
-          aspectRatioLabelMap[selectedTemplate.aspectRatio];
-
-        // Fetch the matching aspect ratio from database
-        const { data: ratioData, error: ratioError } = await supabase
+        const { data: ratiosData, error: ratioError } = await supabase
           .from('aspect_ratios')
           .select('*')
-          .eq('label', aspectRatioLabel)
-          .eq('active', true)
-          .single();
+          .eq('active', true);
 
         if (ratioError) {
-          console.error('Error fetching aspect ratio:', ratioError);
+          console.error('Error fetching aspect ratios:', ratioError);
+          toast.error('Could not load size options for this template');
           return;
         }
 
-        if (!ratioData) return;
+        const ratioData = (ratiosData ?? []).find(
+          r => ratioKey(r) === selectedTemplate.aspectRatio
+        );
+
+        if (!ratioData) {
+          console.error(
+            'No aspect ratio row matches template ratio',
+            selectedTemplate.aspectRatio,
+            ratiosData
+          );
+          toast.error(
+            `No size options configured for ${selectedTemplate.aspectRatio} ratio`
+          );
+          return;
+        }
 
         setAspectRatios([ratioData]);
         setSelectedAspectRatioId(ratioData.id);
 
-        // Fetch sizes for this aspect ratio
         const { data: sizesData, error: sizesError } = await supabase
           .from('sizes')
           .select('*')
@@ -366,9 +370,10 @@ export function CollageCustomizer() {
 
         setSizes(sizesData || []);
 
-        // Auto-select first size
         if (sizesData && sizesData.length > 0) {
-          setSelectedSizeId(sizesData[0].id);
+          setSelectedSizeId(prev =>
+            prev && sizesData.some(s => s.id === prev) ? prev : sizesData[0].id
+          );
         }
       } catch (error) {
         console.error('Error in fetchSizeOptions:', error);
@@ -376,6 +381,7 @@ export function CollageCustomizer() {
     };
 
     fetchSizeOptions();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedTemplate]);
 
   const createPhotoFromFile = (file: File): Promise<CollagePhoto> => {
@@ -659,7 +665,11 @@ export function CollageCustomizer() {
     }
 
     if (!selectedAspectRatioId) {
-      toast.error('Please select a template first');
+      toast.error(
+        hasSelectedTemplate
+          ? 'Size options failed to load. Try selecting the template again.'
+          : 'Please select a template first'
+      );
       return;
     }
 
@@ -709,16 +719,18 @@ export function CollageCustomizer() {
         }
       }
 
-      // Navigate to Product3DView with storage URL and aspect ratio
+      // Navigate to Product3DView with storage URL and aspect ratio.
+      // Pass raw values — URLSearchParams encodes once; encodeURIComponent here
+      // would double-encode and break the 3D texture load (black canvas).
       const params = new URLSearchParams({
-        image: encodeURIComponent(publicUrl),
+        image: publicUrl,
         width: selection.canvasWidth.toString(),
         height: selection.canvasHeight.toString(),
         productId: urlProductId || COLLAGE_CANVAS_PRODUCT.id, // Use URL productId if provided, otherwise default
-        productName: encodeURIComponent('Photo Collage on Canvas'),
+        productName: 'Photo Collage on Canvas',
         aspectRatioId: selectedAspectRatioId, // Pass the specific aspect ratio
         wrapImage: 'false', // Collages should not wrap - use solid color sides
-        sideColor: encodeURIComponent(hexColor), // Pass the background color for canvas sides
+        sideColor: hexColor, // Pass the background color for canvas sides
       });
 
       navigate(`/customize/product-3d-view?${params.toString()}`);

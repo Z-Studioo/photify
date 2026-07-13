@@ -17,6 +17,22 @@ export const meta: Route.MetaFunction = () =>
     noindex: true,
   });
 
+/**
+ * `useSearchParams().get()` already decodes once. Older navigations double-encoded
+ * with encodeURIComponent + URLSearchParams, leaving values like `https%3A%2F%2F...`.
+ * Decode once more only when residual percent-encoding remains.
+ */
+function unwrapQueryValue(value: string): string {
+  try {
+    if (/%[0-9A-Fa-f]{2}/.test(value)) {
+      return decodeURIComponent(value);
+    }
+  } catch {
+    // Malformed encoding — use as-is
+  }
+  return value;
+}
+
 function Product3DViewContent() {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
@@ -56,14 +72,14 @@ function Product3DViewContent() {
 
   return (
     <Product3DView
-      imageUrl={decodeURIComponent(imageUrl)}
+      imageUrl={unwrapQueryValue(imageUrl)}
       canvasWidth={width ? parseFloat(width) : undefined}
       canvasHeight={height ? parseFloat(height) : undefined}
       productId={productId}
-      productName={productName ? decodeURIComponent(productName) : undefined}
+      productName={productName ? unwrapQueryValue(productName) : undefined}
       aspectRatioId={aspectRatioId || undefined} // Pass aspect ratio if provided
       wrapImage={wrapImage}
-      sideColor={sideColor ? decodeURIComponent(sideColor) : undefined}
+      sideColor={sideColor ? unwrapQueryValue(sideColor) : undefined}
       mirrorEdges={mirrorEdges}
       customSizeSelector={customSizeSelector} // Pass product-specific size selector
       enableImageEditor={enableImageEditor} // Enable crop editor for single-canvas
