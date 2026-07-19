@@ -694,6 +694,16 @@ export function CartPage() {
                   <ArrowRight className='ml-2 w-4 h-4' />
                 </Button>
 
+                <Button
+                  onClick={() => navigate('/')}
+                  variant='outline'
+                  className='mt-3 flex w-full border-2 border-gray-200 text-gray-700 hover:border-[#f63a9e] hover:text-[#f63a9e] hover:bg-[#FFF5FB] rounded-xl transition-colors'
+                  style={{ height: '48px', fontSize: '15px', fontWeight: '700' }}
+                >
+                  <ArrowLeft className='mr-2 w-4 h-4' />
+                  Continue shopping
+                </Button>
+
                 <div className='hidden lg:flex items-center justify-center gap-2 mt-3'>
                   <Shield className='w-3.5 h-3.5 text-gray-500' />
                   <span className='text-xs text-gray-600'>

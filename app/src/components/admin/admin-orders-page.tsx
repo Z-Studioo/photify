@@ -11,6 +11,8 @@ import {
   ChevronLeft,
   ChevronRight,
   RefreshCw,
+  Clock,
+  ArrowLeft,
 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -83,6 +85,10 @@ export function AdminOrdersPage() {
   const [searchInput, setSearchInput] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
+  // Pending orders (unpaid/abandoned checkouts) are hidden from the main
+  // table; this toggles a dedicated pending-only view.
+  const [showPending, setShowPending] = useState(false);
+  const [pendingCount, setPendingCount] = useState(0);
 
   const [orders, setOrders] = useState<Order[]>([]);
   const [totalCount, setTotalCount] = useState(0);
@@ -109,6 +115,11 @@ export function AdminOrdersPage() {
     setCurrentPage(1);
   }, []);
 
+  const handleTogglePending = useCallback(() => {
+    setShowPending(prev => !prev);
+    setCurrentPage(1);
+  }, []);
+
   // ── Server-side fetch (pagination + filtering) ─────────────────────────
   const fetchOrders = useCallback(async () => {
     setLoading(true);
@@ -128,8 +139,12 @@ export function AdminOrdersPage() {
         );
       }
 
-      if (statusFilter !== 'all') {
+      if (showPending) {
+        query = query.eq('status', 'pending');
+      } else if (statusFilter !== 'all') {
         query = query.eq('status', STATUS_DB_MAP[statusFilter] ?? statusFilter);
+      } else {
+        query = query.neq('status', 'pending');
       }
 
       const { data, error, count } = await query;
@@ -157,11 +172,21 @@ export function AdminOrdersPage() {
     } finally {
       setLoading(false);
     }
-  }, [supabase, currentPage, searchQuery, statusFilter]);
+  }, [supabase, currentPage, searchQuery, statusFilter, showPending]);
+
+  // Keep the pending badge count up to date regardless of the active view.
+  const fetchPendingCount = useCallback(async () => {
+    const { count, error } = await supabase
+      .from('orders')
+      .select('id', { count: 'exact', head: true })
+      .eq('status', 'pending');
+    if (!error) setPendingCount(count ?? 0);
+  }, [supabase]);
 
   useEffect(() => {
     void fetchOrders();
-  }, [fetchOrders]);
+    void fetchPendingCount();
+  }, [fetchOrders, fetchPendingCount]);
 
   // ── Print invoice ──────────────────────────────────────────────────────
   const handlePrintInvoice = useCallback((order: Order) => {
@@ -283,20 +308,53 @@ export function AdminOrdersPage() {
               className="font-['Bricolage_Grotesque',_sans-serif] mb-2"
               style={{ fontSize: '32px', fontWeight: '600' }}
             >
-              Orders Management
+              {showPending ? 'Pending Orders' : 'Orders Management'}
             </h1>
-            <p className='text-gray-600'>View and manage all customer orders</p>
+            <p className='text-gray-600'>
+              {showPending
+                ? 'Orders awaiting payment (abandoned or failed checkouts)'
+                : 'View and manage all customer orders'}
+            </p>
           </div>
-          <Button
-            variant='outline'
-            size='sm'
-            onClick={() => void fetchOrders()}
-            disabled={loading}
-            className='flex items-center gap-2 mt-1'
-          >
-            <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
-            Refresh
-          </Button>
+          <div className='flex items-center gap-2 mt-1'>
+            <Button
+              variant={showPending ? 'default' : 'outline'}
+              size='sm'
+              onClick={handleTogglePending}
+              className={`flex items-center gap-2 ${
+                showPending
+                  ? 'bg-[#f63a9e] hover:bg-[#e02d8d] text-white'
+                  : ''
+              }`}
+            >
+              {showPending ? (
+                <>
+                  <ArrowLeft className='w-4 h-4' />
+                  Back to Orders
+                </>
+              ) : (
+                <>
+                  <Clock className='w-4 h-4' />
+                  View Pending Orders
+                  {pendingCount > 0 && (
+                    <span className='ml-1 inline-flex items-center justify-center min-w-5 h-5 px-1.5 rounded-full bg-[#f63a9e] text-white text-xs font-medium'>
+                      {pendingCount}
+                    </span>
+                  )}
+                </>
+              )}
+            </Button>
+            <Button
+              variant='outline'
+              size='sm'
+              onClick={() => void fetchOrders()}
+              disabled={loading}
+              className='flex items-center gap-2'
+            >
+              <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
+              Refresh
+            </Button>
+          </div>
         </div>
 
         {/* Filters */}
@@ -312,20 +370,21 @@ export function AdminOrdersPage() {
               />
             </div>
 
-            <Select value={statusFilter} onValueChange={handleStatusChange}>
-              <SelectTrigger className='w-full md:w-[200px]'>
-                <Filter className='w-4 h-4 mr-2' />
-                <SelectValue placeholder='Filter by status' />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value='all'>All Status</SelectItem>
-                <SelectItem value='pending'>Pending</SelectItem>
-                <SelectItem value='processing'>Processing</SelectItem>
-                <SelectItem value='shipped'>Dispatched</SelectItem>
-                <SelectItem value='delivered'>Delivered</SelectItem>
-                <SelectItem value='cancelled'>Cancelled</SelectItem>
-              </SelectContent>
-            </Select>
+            {!showPending && (
+              <Select value={statusFilter} onValueChange={handleStatusChange}>
+                <SelectTrigger className='w-full md:w-[200px]'>
+                  <Filter className='w-4 h-4 mr-2' />
+                  <SelectValue placeholder='Filter by status' />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value='all'>All Status</SelectItem>
+                  <SelectItem value='processing'>Processing</SelectItem>
+                  <SelectItem value='shipped'>Dispatched</SelectItem>
+                  <SelectItem value='delivered'>Delivered</SelectItem>
+                  <SelectItem value='cancelled'>Cancelled</SelectItem>
+                </SelectContent>
+              </Select>
+            )}
           </div>
         </div>
 
@@ -367,7 +426,9 @@ export function AdminOrdersPage() {
                       colSpan={8}
                       className='py-12 text-center text-gray-500'
                     >
-                      No orders found matching your criteria.
+                      {showPending
+                        ? 'No pending orders.'
+                        : 'No orders found matching your criteria.'}
                     </td>
                   </tr>
                 ) : (

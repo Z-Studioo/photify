@@ -26,7 +26,6 @@ import ReactCrop, {
 import { cn } from '@/lib/utils';
 
 import 'react-image-crop/dist/ReactCrop.css';
-import { useDebounceEffect } from '@/hooks/useDebounceEffect';
 
 const centerAspectCrop = (
   mediaWidth: number,
@@ -49,6 +48,36 @@ const centerAspectCrop = (
     mediaHeight
   );
 
+const canvasToJpegBlob = (
+  canvas: HTMLCanvasElement,
+  quality: number
+): Promise<Blob> =>
+  new Promise((resolve, reject) =>
+    canvas.toBlob(
+      blob =>
+        blob ? resolve(blob) : reject(new Error('Failed to encode image')),
+      'image/jpeg',
+      quality
+    )
+  );
+
+const blobToDataUrl = (blob: Blob): Promise<string> =>
+  new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result as string);
+    reader.onerror = reject;
+    reader.readAsDataURL(blob);
+  });
+
+/**
+ * Crop the image at its FULL NATIVE RESOLUTION. `pixelCrop` is in displayed
+ * (on-screen) pixels; the output canvas is sized from the image's natural
+ * pixels so print files keep every pixel the source photo has (print needs
+ * 300 DPI — sizing from screen pixels used to produce ~50–75 DPI files).
+ *
+ * Output is JPEG. To stay under `maxImageSize` we step encoding quality
+ * down first and only downscale dimensions as a last resort.
+ */
 export const getCroppedPngImage = async (
   imageSrc: HTMLImageElement,
   scaleFactor: number = 1,
@@ -62,21 +91,14 @@ export const getCroppedPngImage = async (
     throw new Error('Canvas context is null');
   }
 
-  // Consider the device pixel ratio
-  const dpr = window.devicePixelRatio || 1;
-
-  // Use natural image dimensions and scale factor for crisp output
-  const width = pixelCrop.width * scaleFactor * dpr;
-  const height = pixelCrop.height * scaleFactor * dpr;
-
-  canvas.width = Math.round(width);
-  canvas.height = Math.round(height);
-
-  ctx.imageSmoothingEnabled = true; // smooth edges
-  ctx.imageSmoothingQuality = 'high'; // high quality scaling
-
   const scaleX = imageSrc.naturalWidth / imageSrc.width;
   const scaleY = imageSrc.naturalHeight / imageSrc.height;
+
+  canvas.width = Math.round(pixelCrop.width * scaleX * scaleFactor);
+  canvas.height = Math.round(pixelCrop.height * scaleY * scaleFactor);
+
+  ctx.imageSmoothingEnabled = true;
+  ctx.imageSmoothingQuality = 'high';
 
   ctx.drawImage(
     imageSrc,
@@ -90,22 +112,75 @@ export const getCroppedPngImage = async (
     canvas.height
   );
 
-  const croppedImageUrl = canvas.toDataURL('image/png');
-
-  // Check size and scale down slightly if too large
-  const response = await fetch(croppedImageUrl);
-  const blob = await response.blob();
-
-  if (blob.size > maxImageSize) {
-    return getCroppedPngImage(
-      imageSrc,
-      scaleFactor * 0.95,
-      pixelCrop,
-      maxImageSize
-    );
+  for (const quality of [0.92, 0.85, 0.8, 0.75]) {
+    const blob = await canvasToJpegBlob(canvas, quality);
+    if (blob.size <= maxImageSize) {
+      return blobToDataUrl(blob);
+    }
   }
 
-  return croppedImageUrl;
+  // Still too large at the lowest acceptable quality: shrink dimensions.
+  return getCroppedPngImage(imageSrc, scaleFactor * 0.9, pixelCrop, maxImageSize);
+};
+
+/**
+ * Center-crop an image source to `targetAspect` at full native resolution.
+ * Used to auto-fit a photo to its matched print ratio without requiring the
+ * user to go through the crop UI (they can still fine-tune afterwards).
+ * Returns a JPEG data URL, or null when the source can't be processed.
+ */
+export const getCenterCroppedImage = async (
+  src: string,
+  targetAspect: number,
+  maxImageSize: number = 1024 * 1024 * 15,
+  scaleFactor: number = 1
+): Promise<string | null> => {
+  const image = await new Promise<HTMLImageElement | null>(resolve => {
+    const img = new Image();
+    img.crossOrigin = 'anonymous';
+    img.onload = () => resolve(img);
+    img.onerror = () => resolve(null);
+    img.src = src;
+  });
+  if (!image?.naturalWidth || !image.naturalHeight || targetAspect <= 0) {
+    return null;
+  }
+
+  const iw = image.naturalWidth;
+  const ih = image.naturalHeight;
+  let cropW = iw;
+  let cropH = ih;
+  if (iw / ih > targetAspect) {
+    cropW = Math.round(ih * targetAspect);
+  } else {
+    cropH = Math.round(iw / targetAspect);
+  }
+  const x = Math.round((iw - cropW) / 2);
+  const y = Math.round((ih - cropH) / 2);
+
+  const canvas = document.createElement('canvas');
+  canvas.width = Math.max(1, Math.round(cropW * scaleFactor));
+  canvas.height = Math.max(1, Math.round(cropH * scaleFactor));
+  const ctx = canvas.getContext('2d');
+  if (!ctx) return null;
+
+  ctx.imageSmoothingEnabled = true;
+  ctx.imageSmoothingQuality = 'high';
+  ctx.drawImage(image, x, y, cropW, cropH, 0, 0, canvas.width, canvas.height);
+
+  try {
+    for (const quality of [0.92, 0.85, 0.8, 0.75]) {
+      const blob = await canvasToJpegBlob(canvas, quality);
+      if (blob.size <= maxImageSize) {
+        return blobToDataUrl(blob);
+      }
+    }
+  } catch {
+    return null;
+  }
+
+  // Still too large at the lowest acceptable quality: shrink dimensions.
+  return getCenterCroppedImage(src, targetAspect, maxImageSize, scaleFactor * 0.9);
 };
 
 type ImageCropContextType = {
@@ -148,17 +223,20 @@ export type ImageCropProps = {
   // NEW
   onChangeCustom?: (image: string) => void;
   generateImageOnChange?: boolean;
+  /** Called with each cropped-image generation promise, so consumers can await completion before applying. */
+  onGenerationStart?: (promise: Promise<void>) => void;
 } & Omit<ReactCropProps, 'onChange' | 'onComplete' | 'children'>;
 
 export const ImageCrop = ({
   file,
-  maxImageSize = 1024 * 1024 * 5,
+  maxImageSize = 1024 * 1024 * 15,
   onCrop,
   children,
   onChange,
   onComplete,
   generateImageOnChange,
   onChangeCustom,
+  onGenerationStart,
   ...reactCropProps
 }: ImageCropProps) => {
   const imgRef = useRef<HTMLImageElement | null>(null);
@@ -166,10 +244,8 @@ export const ImageCrop = ({
   const [crop, setCrop] = useState<PercentCrop>();
   const [completedCrop, setCompletedCrop] = useState<PixelCrop | null>(null);
   const [initialCrop, setInitialCrop] = useState<PercentCrop>();
-  const [debouncedCrop, setDebouncedCrop] = useState<{
-    pixel?: PixelCrop;
-    percent?: PercentCrop;
-  }>({});
+  // Monotonic id so a slow, older generation can't overwrite a newer crop.
+  const generationIdRef = useRef(0);
 
   useEffect(() => {
     const reader = new FileReader();
@@ -179,28 +255,44 @@ export const ImageCrop = ({
     reader.readAsDataURL(file);
   }, [file]);
 
-  // Debounce the expensive image generation
-  useDebounceEffect(
-    () => {
-      if (!generateImageOnChange || !imgRef.current || !debouncedCrop.pixel)
-        return;
+  // Discard in-flight generations on unmount (e.g. the user cancelled the
+  // crop view) so a late result can't repopulate the pending crop state.
+  useEffect(
+    () => () => {
+      generationIdRef.current++;
+    },
+    []
+  );
 
-      (async () => {
+  // Full-resolution generation is expensive, so it runs only when a crop is
+  // committed (image load + drag end), not on every change event. Starting
+  // immediately on drag end also means the result is ready by the time the
+  // user reaches the Apply button (the old 100ms debounce could hand Apply a
+  // stale previous crop).
+  const generateCroppedImage = useCallback(
+    (pixelCrop: PixelCrop) => {
+      if (!generateImageOnChange || !imgRef.current) return;
+      const generationId = ++generationIdRef.current;
+
+      const promise = (async () => {
         try {
           const croppedImage = await getCroppedPngImage(
             imgRef.current!,
             1,
-            debouncedCrop.pixel!,
+            pixelCrop,
             maxImageSize
           );
-          onChangeCustom?.(croppedImage);
+          if (generationId === generationIdRef.current) {
+            onChangeCustom?.(croppedImage);
+          }
         } catch (err) {
-          console.error('Failed to generate image on change:', err);
+          console.error('Failed to generate cropped image:', err);
         }
       })();
+
+      onGenerationStart?.(promise);
     },
-    100,
-    [debouncedCrop]
+    [generateImageOnChange, maxImageSize, onChangeCustom, onGenerationStart]
   );
 
   const onImageLoad = useCallback(
@@ -211,21 +303,15 @@ export const ImageCrop = ({
       setInitialCrop(newCrop);
 
       const pixelCrop = convertToPixelCrop(newCrop, width, height);
-      if (generateImageOnChange) {
-        setDebouncedCrop({ percent: newCrop, pixel: pixelCrop });
-      }
+      setCompletedCrop(pixelCrop);
+      generateCroppedImage(pixelCrop);
     },
-    [reactCropProps.aspect, generateImageOnChange]
+    [reactCropProps.aspect, generateCroppedImage]
   );
 
   const handleChange = (pixelCrop: PixelCrop, percentCrop: PercentCrop) => {
     setCrop(percentCrop);
     onChange?.(pixelCrop, percentCrop);
-
-    // store latest crop for debounce
-    if (generateImageOnChange) {
-      setDebouncedCrop({ pixel: pixelCrop, percent: percentCrop });
-    }
   };
 
   // biome-ignore lint/suspicious/useAwait: "onComplete is async"
@@ -235,6 +321,7 @@ export const ImageCrop = ({
   ) => {
     setCompletedCrop(pixelCrop);
     onComplete?.(pixelCrop, percentCrop);
+    generateCroppedImage(pixelCrop);
   };
 
   const applyCrop = async () => {

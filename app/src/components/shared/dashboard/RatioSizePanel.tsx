@@ -6,10 +6,20 @@ import { useView } from '@/context/ViewContext';
 import { AspectRatioIcon } from '../common/icons';
 import {
   fetchRatios,
+  findClosestRatio,
   getAllPrintSizes,
+  getImageAspectRatio,
+  getRatioValue,
+  getSmallestSize,
   type InchData,
   type RatioData,
 } from '@/utils/ratio-sizes';
+import { getCenterCroppedImage } from '@/components/ui/crop';
+import {
+  computePrintDpi,
+  printQualityLevel,
+  useImageDimensions,
+} from '@/hooks/use-print-quality';
 import { motion } from 'framer-motion';
 import { useQuery } from '@tanstack/react-query';
 import { cn } from '@/lib/utils';
@@ -46,6 +56,7 @@ const RatioSizePanel: React.FC<RatioSizePanelProps> = ({
   const {
     preview,
     originalPreview,
+    file,
     selectedRatio,
     setSelectedRatio,
     selectedSize,
@@ -53,6 +64,10 @@ const RatioSizePanel: React.FC<RatioSizePanelProps> = ({
     selectedProduct,
     hasUserOverriddenRatio,
     setHasUserOverriddenRatio,
+    commitSelection,
+    setPendingFile,
+    setPendingPreview,
+    applyPendingChanges,
   } = useUpload();
   /**
    * "Match my photo" should always match the *original uploaded* photo's
@@ -99,6 +114,10 @@ const RatioSizePanel: React.FC<RatioSizePanelProps> = ({
   const productForCanvasPricing =
     useProductCanvasPricingProduct(selectedProduct);
 
+  // Pixel dimensions of the image that will actually be printed (the
+  // cropped preview), used to show an estimated DPI per print size.
+  const previewDims = useImageDimensions(preview);
+
   // Default selection
   useEffect(() => {
     if (!ratios.length) return;
@@ -110,27 +129,24 @@ const RatioSizePanel: React.FC<RatioSizePanelProps> = ({
 
     if (!ratio) return;
 
-    const sizes = inches
-      .filter(i => ratio.sizes.includes(i))
-      .sort((a, b) => a.area_in2 - b.area_in2);
+    const smallest = getSmallestSize(ratio);
 
-    const smallest = sizes[0] ?? null;
-
-    if (!selectedRatio) setSelectedRatio(ratio.label);
-    if (!selectedSize && smallest) setSelectedSize(smallest);
+    // Defaults are the committed baseline — nothing earlier to cancel back to.
+    commitSelection(
+      selectedRatio ? null : ratio.label,
+      selectedSize ? null : smallest
+    );
 
     onSelectionChange?.(ratio.label, smallest);
-  }, [ratios]);
+  }, [ratios, inches]);
 
   const handleRatioClick = (ratio: RatioData) => {
-    const sizes = inches
-      .filter(i => ratio.sizes.includes(i))
-      .sort((a, b) => a.area_in2 - b.area_in2);
-
-    const smallest = sizes[0] ?? null;
+    const smallest = getSmallestSize(ratio);
 
     setHasUserOverriddenRatio(true);
     setIsAutoRatioSelected(false);
+    // Live (uncommitted) selection: cancelling the crop reverts to the
+    // committed ratio/size; applying the crop commits these.
     setSelectedRatio(ratio.label);
     setSelectedSize(smallest);
     onSelectionChange?.(ratio.label, smallest);
@@ -142,44 +158,32 @@ const RatioSizePanel: React.FC<RatioSizePanelProps> = ({
     });
   };
 
-  const getImageAspectRatio = (src: string): Promise<number | null> =>
-    new Promise(resolve => {
-      const image = new window.Image();
-      image.onload = () => {
-        if (!image.width || !image.height) {
-          resolve(null);
-          return;
-        }
-        resolve(image.width / image.height);
-      };
-      image.onerror = () => resolve(null);
-      image.src = src;
-    });
+  /**
+   * When the current preview doesn't fit the matched ratio, auto-apply a
+   * centered full-resolution crop of the original photo so the user can go
+   * straight to cart. The crop editor stays available for fine-tuning.
+   */
+  const autoCropToRatio = async (targetAspect: number) => {
+    if (!file || !sourceForAutoRatio || targetAspect <= 0) return;
 
-  const getClosestRatio = (
-    imageAspectRatio: number,
-    availableRatios: RatioData[]
-  ): RatioData | null => {
-    const validRatios = availableRatios.filter(r => r.sizes.length > 0);
-    if (!validRatios.length) return null;
+    // If the committed preview already matches (e.g. a restored crop), keep it.
+    const previewAspect = preview ? await getImageAspectRatio(preview) : null;
+    if (
+      previewAspect &&
+      Math.abs(previewAspect - targetAspect) / targetAspect <= 0.02
+    ) {
+      return;
+    }
 
-    const getRatioValue = (ratio: RatioData) => {
-      if (ratio.width_ratio > 0 && ratio.height_ratio > 0) {
-        return ratio.width_ratio / ratio.height_ratio;
-      }
-      const [w, h] = ratio.label.split(':').map(Number);
-      return w > 0 && h > 0 ? w / h : 1;
-    };
+    const autoCropped = await getCenterCroppedImage(
+      sourceForAutoRatio,
+      targetAspect
+    );
+    if (!autoCropped) return;
 
-    return validRatios.reduce((closest, current) => {
-      const closestDiff = Math.abs(
-        Math.log(getRatioValue(closest) / imageAspectRatio)
-      );
-      const currentDiff = Math.abs(
-        Math.log(getRatioValue(current) / imageAspectRatio)
-      );
-      return currentDiff < closestDiff ? current : closest;
-    });
+    setPendingFile(file);
+    setPendingPreview(autoCropped);
+    await applyPendingChanges();
   };
 
   const applyAutoRatio = async ({
@@ -190,22 +194,25 @@ const RatioSizePanel: React.FC<RatioSizePanelProps> = ({
     const imageAspectRatio = await getImageAspectRatio(sourceForAutoRatio);
     if (!imageAspectRatio) return false;
 
-    const closestRatio = getClosestRatio(imageAspectRatio, ratios);
+    const closestRatio = findClosestRatio(imageAspectRatio, ratios);
     if (!closestRatio) return false;
 
-    const autoSizes = inches
-      .filter(i => closestRatio.sizes.some(s => s.id === i.id))
-      .sort((a, b) => a.area_in2 - b.area_in2);
-    const smallest = autoSizes[0] ?? null;
+    const smallest = getSmallestSize(closestRatio);
 
     setIsAutoRatioSelected(true);
-    setSelectedRatio(closestRatio.label);
-    setSelectedSize(smallest);
+    // The matched ratio is the new baseline: commit it so a later crop-cancel
+    // can't revert the cropper to a stale ratio from a previous session
+    // (e.g. a square cropper on a 2:3 photo).
+    commitSelection(closestRatio.label, smallest);
     onSelectionChange?.(closestRatio.label, smallest);
     if (shouldSwitchToCrop) {
       setSelectedView('crop');
     }
     setAutoResolvedRatio(closestRatio.label);
+
+    // Fit the photo to the matched ratio automatically (centered crop), so
+    // proceeding to cart works without a mandatory manual crop step.
+    await autoCropToRatio(getRatioValue(closestRatio));
     return true;
   };
 
@@ -229,7 +236,9 @@ const RatioSizePanel: React.FC<RatioSizePanelProps> = ({
   const handleSizeClick = (size: InchData) => {
     setHasUserOverriddenRatio(true);
     setIsAutoRatioSelected(false);
-    setSelectedSize(size);
+    // Size changes within the current ratio apply immediately (no crop step),
+    // so commit them right away.
+    commitSelection(selectedRatio, size);
     onSelectionChange?.(selectedRatio!, size);
   };
 
@@ -346,6 +355,8 @@ const RatioSizePanel: React.FC<RatioSizePanelProps> = ({
             size!.height_in,
             size!.display_label
           );
+          const dpi = computePrintDpi(previewDims, size!);
+          const quality = dpi !== null ? printQualityLevel(dpi) : null;
 
           return (
             <motion.button
@@ -370,6 +381,22 @@ const RatioSizePanel: React.FC<RatioSizePanelProps> = ({
                   {!hideSecondary && (
                     <div className='mt-0.5 truncate text-xs text-zinc-500'>
                       {size!.display_label}
+                    </div>
+                  )}
+                  {quality && (
+                    <div
+                      className={cn(
+                        'mt-0.5 text-[11px] font-medium',
+                        quality === 'excellent' && 'text-green-600',
+                        quality === 'good' && 'text-amber-600',
+                        quality === 'low' && 'text-red-600'
+                      )}
+                    >
+                      {quality === 'excellent'
+                        ? `Excellent quality · ${dpi} DPI`
+                        : quality === 'good'
+                          ? `Good quality · ${dpi} DPI`
+                          : `Low quality · ${dpi} DPI`}
                     </div>
                   )}
                 </div>

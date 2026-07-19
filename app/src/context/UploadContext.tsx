@@ -4,7 +4,13 @@ import {
   type InchData,
   type RatioData,
 } from '@/utils/ratio-sizes';
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, {
+  createContext,
+  useContext,
+  useState,
+  useEffect,
+  useRef,
+} from 'react';
 import { get, set, del } from 'idb-keyval';
 import type { Product } from '@/lib/data';
 import { createClient } from '@/lib/supabase/client';
@@ -59,6 +65,12 @@ interface UploadContextType {
   setPendingFile: (f: File | null) => void;
   pendingPreview: string | null;
   setPendingPreview: (p: string | null) => void;
+  /**
+   * Register the in-flight cropped-image generation promise. `applyPendingChanges`
+   * awaits it so clicking "Apply crop" right after adjusting the crop can never
+   * commit a stale preview.
+   */
+  setPendingPreviewGeneration: (p: Promise<unknown> | null) => void;
   selectedRatio: string | null;
   setSelectedRatio: (r: string | null) => void;
   selectedSize: InchData | null;
@@ -81,8 +93,14 @@ interface UploadContextType {
   setQuantity: (q: number) => void;
   pendingQuantity: number | null;
   setPendingQuantity: (q: number) => void;
-  applyPendingChanges: () => void;
+  applyPendingChanges: () => Promise<void>;
   cancelPendingCropChanges: () => void;
+  /**
+   * Set ratio/size as the new committed baseline in one step. Used for
+   * selections that are immediately final (e.g. "Match my photo"), so a later
+   * crop-cancel doesn't revert them to a stale previous session's ratio.
+   */
+  commitSelection: (ratio: string | null, size: InchData | null) => void;
   /**
    * True once the user has explicitly chosen a specific aspect ratio or print
    * size (as opposed to the auto "Match my photo" pick). Persists across
@@ -197,6 +215,34 @@ export const UploadProvider = ({ children }: { children: React.ReactNode }) => {
 
   const [hasUserOverriddenRatio, setHasUserOverriddenRatio] = useState(false);
 
+  // Files whose preview/persistence has already been handled explicitly
+  // (IndexedDB restore, art preload, applied crops). The `[file]` effect
+  // below must skip these — otherwise it would overwrite a cropped
+  // `preview` with the original photo and persist that, silently losing
+  // the user's crop (which then gets ordered and printed uncropped).
+  const handledFileRef = useRef<File | null>(null);
+
+  // Refs mirror the pending crop state so `applyPendingChanges` can await an
+  // in-flight cropped-image generation and still read the freshest values
+  // (its closure state would be stale after the await).
+  const pendingFileRef = useRef<File | null>(null);
+  const pendingPreviewRef = useRef<string | null>(null);
+  const pendingGenerationRef = useRef<Promise<unknown> | null>(null);
+
+  const setPendingFileSynced = (f: File | null) => {
+    pendingFileRef.current = f;
+    setPendingFile(f);
+  };
+
+  const setPendingPreviewSynced = (p: string | null) => {
+    pendingPreviewRef.current = p;
+    setPendingPreview(p);
+  };
+
+  const setPendingPreviewGeneration = (p: Promise<unknown> | null) => {
+    pendingGenerationRef.current = p;
+  };
+
   const fileToBase64 = (file: File): Promise<string> =>
     new Promise((resolve, reject) => {
       const reader = new FileReader();
@@ -259,6 +305,9 @@ export const UploadProvider = ({ children }: { children: React.ReactNode }) => {
             data.fileName,
             data.fileType
           );
+          // Restored previews (possibly cropped) are authoritative; prevent
+          // the `[file]` effect from resetting them to the original photo.
+          handledFileRef.current = restoredFile;
           setFile(restoredFile);
           setPreview(data.preview);
           setOriginalPreview(data.originalPreview || data.preview);
@@ -297,6 +346,7 @@ export const UploadProvider = ({ children }: { children: React.ReactNode }) => {
           reader.readAsDataURL(artFile);
           await new Promise<void>(resolve => { reader.onload = () => resolve(); });
           const base64 = reader.result as string;
+          handledFileRef.current = artFile;
           setFile(artFile);
           setPreview(base64);
           setOriginalPreview(base64);
@@ -372,6 +422,10 @@ export const UploadProvider = ({ children }: { children: React.ReactNode }) => {
 
   useEffect(() => {
     if (!file) return;
+    // Only run for genuinely new uploads. Restored/cropped/art files set
+    // their own preview + persistence and must not be reprocessed here.
+    if (handledFileRef.current === file) return;
+    handledFileRef.current = file;
 
     (async () => {
       try {
@@ -409,17 +463,29 @@ export const UploadProvider = ({ children }: { children: React.ReactNode }) => {
     selectedProduct,
   ]);
 
+  const commitSelection = (ratio: string | null, size: InchData | null) => {
+    if (ratio) {
+      setSelectedRatio(ratio);
+      setCommittedRatio(ratio);
+    }
+    if (size) {
+      setSelectedSize(size);
+      setCommittedSize(size);
+    }
+  };
+
   const applyPendingChanges = async () => {
-    if (pendingRatio) {
-      setSelectedRatio(pendingRatio);
-      setCommittedRatio(pendingRatio);
-      setPendingRatio(null);
-    }
-    if (pendingSize) {
-      setSelectedSize(pendingSize);
-      setCommittedSize(pendingSize);
-      setPendingSize(null);
-    }
+    // Commit the LIVE ratio/size selection, not just pendings: the ratio/size
+    // panel mutates `selectedRatio`/`selectedSize` directly, so committing
+    // only `pendingRatio`/`pendingSize` (which nothing sets) left the
+    // committed baseline stale forever — any later crop-cancel then reverted
+    // the UI to a previous session's ratio (e.g. square cropper on a 2:3
+    // photo after "Match my photo").
+    const ratioToCommit = pendingRatio ?? selectedRatio;
+    const sizeToCommit = pendingSize ?? selectedSize;
+    commitSelection(ratioToCommit, sizeToCommit);
+    setPendingRatio(null);
+    setPendingSize(null);
 
     if (pendingQuality) {
       setQuality(pendingQuality);
@@ -441,13 +507,38 @@ export const UploadProvider = ({ children }: { children: React.ReactNode }) => {
       setPendingCornerStyle(null);
     }
     
-    if (pendingFile && pendingPreview) {
-      setFile(pendingFile);
-      setPreview(pendingPreview);
-      const origToStore = originalPreview || pendingPreview;
-      await persistFile(pendingFile, pendingPreview, origToStore);
-      setPendingFile(null);
-      setPendingPreview(null);
+    // Wait for any in-flight cropped-image generation so we never commit a
+    // stale preview when "Apply crop" is clicked right after a drag.
+    if (pendingGenerationRef.current) {
+      try {
+        await pendingGenerationRef.current;
+      } catch {
+        /* generation failure keeps the last good pending preview */
+      }
+      pendingGenerationRef.current = null;
+    }
+
+    const finalPendingFile = pendingFileRef.current;
+    const finalPendingPreview = pendingPreviewRef.current;
+    if (finalPendingFile && finalPendingPreview) {
+      // The (possibly cropped) preview is persisted explicitly here; mark the
+      // file as handled so the `[file]` effect doesn't overwrite the crop
+      // with the original photo.
+      handledFileRef.current = finalPendingFile;
+      // A different File means a brand-new photo (e.g. SelectPhoto commits
+      // uploads through the pending path), so refresh `originalPreview` too.
+      const isNewPhoto = finalPendingFile !== file;
+      const origToStore = isNewPhoto
+        ? await fileToBase64(finalPendingFile)
+        : originalPreview || finalPendingPreview;
+      if (isNewPhoto) {
+        setOriginalPreview(origToStore);
+      }
+      setFile(finalPendingFile);
+      setPreview(finalPendingPreview);
+      await persistFile(finalPendingFile, finalPendingPreview, origToStore);
+      setPendingFileSynced(null);
+      setPendingPreviewSynced(null);
     }
   };
 
@@ -485,8 +576,9 @@ export const UploadProvider = ({ children }: { children: React.ReactNode }) => {
       }
     }
 
-    setPendingFile(null);
-    setPendingPreview(null);
+    setPendingFileSynced(null);
+    setPendingPreviewSynced(null);
+    pendingGenerationRef.current = null;
     setPendingRatio(null);
     setPendingSize(null);
     setPendingEdgeType(null);
@@ -524,9 +616,10 @@ export const UploadProvider = ({ children }: { children: React.ReactNode }) => {
         shape,
         setShape,
         pendingFile,
-        setPendingFile,
+        setPendingFile: setPendingFileSynced,
         pendingPreview,
-        setPendingPreview,
+        setPendingPreview: setPendingPreviewSynced,
+        setPendingPreviewGeneration,
         selectedRatio,
         setSelectedRatio,
         selectedSize,
@@ -539,6 +632,7 @@ export const UploadProvider = ({ children }: { children: React.ReactNode }) => {
         setPendingSize,
         applyPendingChanges,
         cancelPendingCropChanges,
+        commitSelection,
         hasUserOverriddenRatio,
         setHasUserOverriddenRatio,
         reset,

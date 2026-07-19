@@ -8,11 +8,18 @@ import { useToast } from '@/components/shared/common/toast';
 import { useCart } from '@/context/CartContext';
 import { useNavigate, useSearchParams } from 'react-router';
 import { useUpload } from '@/context/UploadContext';
+import { useView } from '@/context/ViewContext';
 import { toast } from 'sonner';
 import { uploadFileToStorage } from '@/lib/supabase/storage';
 import { resolveCanvasSizePrice } from '@/lib/canvas-size-price';
 import { useProductCanvasPricingProduct } from '@/hooks/use-product-canvas-pricing';
 import { useDiscountedPrice, DiscountedAmount } from '@/components/shared/Price';
+import {
+  computePrintDpi,
+  TARGET_PRINT_DPI,
+  useImageDimensions,
+} from '@/hooks/use-print-quality';
+import { AlertTriangle } from 'lucide-react';
 
 interface QuantityControlProps {
   onConfirm: () => Promise<void> | void;
@@ -27,6 +34,22 @@ const dataUrlToFile = async (
   const blob = await response.blob();
   return new File([blob], fileName, { type: blob.type });
 };
+
+const getImageDimensions = (
+  src: string
+): Promise<{ width: number; height: number } | null> =>
+  new Promise(resolve => {
+    const img = new Image();
+    img.onload = () =>
+      img.naturalWidth && img.naturalHeight
+        ? resolve({ width: img.naturalWidth, height: img.naturalHeight })
+        : resolve(null);
+    img.onerror = () => resolve(null);
+    img.src = src;
+  });
+
+/** Allowed relative deviation between image aspect and ordered aspect. */
+const ASPECT_TOLERANCE = 0.02;
 
 const QuantityControl: React.FC<QuantityControlProps> = ({
   onConfirm,
@@ -53,7 +76,14 @@ const QuantityControl: React.FC<QuantityControlProps> = ({
     artName,
   } = useUpload();
   const pricingProduct = useProductCanvasPricingProduct(selectedProduct);
+  const { setSelectedView } = useView();
   const [params] = useSearchParams();
+
+  // Live print-quality estimate for the CURRENT preview at the selected size.
+  const previewSrc = preview || params.get('image') || null;
+  const previewDims = useImageDimensions(previewSrc);
+  const printDpi = computePrintDpi(previewDims, selectedSize);
+  const isLowDpi = printDpi !== null && printDpi < TARGET_PRINT_DPI;
 
   useEffect(() => {
     if (pricingProduct && selectedSize) {
@@ -76,6 +106,31 @@ const QuantityControl: React.FC<QuantityControlProps> = ({
     }
     setLocalConfirming(true);
     try {
+      // Guard against ordering an image whose aspect ratio doesn't match the
+      // selected print size (e.g. an uncropped photo on a 1:1 canvas) — this
+      // is exactly what the print shop receives.
+      if (selectedSize) {
+        const dims = await getImageDimensions(imageUrl);
+        if (dims) {
+          const targetAspect = selectedSize.width_in / selectedSize.height_in;
+          const actualAspect = dims.width / dims.height;
+          if (
+            Math.abs(actualAspect - targetAspect) / targetAspect >
+            ASPECT_TOLERANCE
+          ) {
+            toast.error(
+              `Your photo needs a quick crop to fit the ${selectedRatio || ''} format. Adjust the crop and press "Apply crop", then add to cart.`
+            );
+            setShowConfirmation(false);
+            setSelectedView('crop');
+            setLocalConfirming(false);
+            return;
+          }
+          // Low-DPI consent is collected in the confirmation dialog before
+          // this handler runs (see modal description below).
+        }
+      }
+
       await onConfirm();
       let finalImageUrl = imageUrl;
       if (imageUrl.startsWith('data:')) {
@@ -186,6 +241,21 @@ const QuantityControl: React.FC<QuantityControlProps> = ({
 
   return (
     <>
+      {isLowDpi && (
+        <motion.div
+          initial={{ opacity: 0, y: 6 }}
+          animate={{ opacity: 1, y: 0 }}
+          className='mb-2 flex w-full items-start gap-2 rounded-lg border border-amber-200 bg-amber-50 px-2.5 py-2'
+        >
+          <AlertTriangle className='mt-0.5 h-3.5 w-3.5 shrink-0 text-amber-600' />
+          <p className='text-[11px] leading-snug text-amber-900 sm:text-xs'>
+            This photo prints at about <strong>{printDpi} DPI</strong> on a{' '}
+            {selectedSize?.display_label ?? 'this'} canvas ({TARGET_PRINT_DPI}{' '}
+            DPI is ideal). A higher-resolution photo or a smaller size will
+            look sharper.
+          </p>
+        </motion.div>
+      )}
       <motion.div
         key='default-actions'
         initial={{ opacity: 0, y: 20 }}
@@ -224,11 +294,27 @@ const QuantityControl: React.FC<QuantityControlProps> = ({
         onOpenChange={setShowConfirmation}
         onConfirm={handleFinalConfirm}
         title='Confirm Order'
-        description={`Add this print to your cart for £${unitSell.toFixed(2)}? You can change quantity at checkout.${
-          artFixedPrice > 0
-            ? ` (art £${artFixedPrice.toFixed(2)} + canvas £${(priceData.sellPrice - artFixedPrice).toFixed(2)})`
-            : ''
-        }`}
+        description={
+          <>
+            {`Add this print to your cart for £${unitSell.toFixed(2)}? You can change quantity at checkout.${
+              artFixedPrice > 0
+                ? ` (art £${artFixedPrice.toFixed(2)} + canvas £${(priceData.sellPrice - artFixedPrice).toFixed(2)})`
+                : ''
+            }`}
+            {isLowDpi && (
+              <span className='mt-3 flex items-start gap-2 rounded-lg border border-amber-200 bg-amber-50 px-2.5 py-2'>
+                <AlertTriangle className='mt-0.5 h-3.5 w-3.5 shrink-0 text-amber-600' />
+                <span className='text-[11px] leading-snug text-amber-900'>
+                  Heads up: this photo prints at about{' '}
+                  <strong>{printDpi} DPI</strong> at this size (
+                  {TARGET_PRINT_DPI} DPI is ideal), so it may look a little
+                  soft. A higher-resolution photo or a smaller size would be
+                  sharper.
+                </span>
+              </span>
+            )}
+          </>
+        }
         confirmText={localConfirming ? 'Processing...' : 'Yes, add to cart'}
         cancelText='Cancel'
         isLoading={localConfirming}

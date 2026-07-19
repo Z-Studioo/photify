@@ -378,19 +378,21 @@ export function Product3DView({
       r => r.id === selectedAspectRatioId
     );
 
-    if (!imageUrl || !selectedSize || !selectedRatio || !product) {
+    if (!currentImageUrl || !selectedSize || !selectedRatio || !product) {
       toast.error('Please complete all selections before adding to basket');
       return;
     }
 
     const price = calculatePrice();
 
-    // Create cart item
+    // Create cart item — must use `currentImageUrl` (updated by the crop
+    // editor), not the original `imageUrl` prop, so the printed file matches
+    // what the customer saw in the preview.
     const cartItem = {
       id: `${productId}-${Date.now()}`, // Unique ID for each customization
       name: `${product.name} - ${selectedSize.display_label}`,
       price: price,
-      image: imageUrl,
+      image: currentImageUrl,
       size: `${selectedSize.display_label} (${selectedRatio.label})`,
       quantity: 1,
     };
