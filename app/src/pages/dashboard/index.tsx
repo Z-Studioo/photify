@@ -92,7 +92,7 @@ const Dashboard: React.FC = () => {
   const handleConfirmAndApply = async () => {
     setIsConfirming(true);
     try {
-      applyPendingChanges();
+      await applyPendingChanges();
       applyPendingEdgeType();
 
       if (selectedView === 'crop' || selectedView === 'optimization') {

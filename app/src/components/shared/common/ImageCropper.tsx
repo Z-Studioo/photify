@@ -7,8 +7,14 @@ interface ImageCropperProps {
 }
 
 export default function ImageCropper({ isVisible = true }: ImageCropperProps) {
-  const { file, selectedRatio, setPendingFile, setPendingPreview } =
-    useUpload();
+  const {
+    file,
+    selectedRatio,
+    selectedSize,
+    setPendingFile,
+    setPendingPreview,
+    setPendingPreviewGeneration,
+  } = useUpload();
   const [imageSize, setImageSize] = useState<{
     width: number;
     height: number;
@@ -32,14 +38,21 @@ export default function ImageCropper({ isVisible = true }: ImageCropperProps) {
     };
   }, [file]);
 
-  const aspect = selectedRatio
-    ? (() => {
-        const parts = selectedRatio.split(':');
-        return parts.length === 2
-          ? parseInt(parts[0], 10) / parseInt(parts[1], 10)
-          : 1;
-      })()
-    : 1;
+  // The crop frame must match the selected print exactly. Prefer the numeric
+  // print-size dimensions; fall back to parsing the ratio label ("2:3",
+  // "2:3 Portrait", …). Only default to square when neither is usable.
+  const aspect = (() => {
+    if (selectedSize && selectedSize.width_in > 0 && selectedSize.height_in > 0) {
+      return selectedSize.width_in / selectedSize.height_in;
+    }
+    if (selectedRatio) {
+      const [w, h] = selectedRatio.split(':').map(part => parseInt(part, 10));
+      if (Number.isFinite(w) && Number.isFinite(h) && w > 0 && h > 0) {
+        return w / h;
+      }
+    }
+    return 1;
+  })();
 
   if (!file || !isVisible || !imageSize) return null;
 
@@ -60,6 +73,7 @@ export default function ImageCropper({ isVisible = true }: ImageCropperProps) {
               file={file}
               aspect={aspect}
               generateImageOnChange={true}
+              onGenerationStart={setPendingPreviewGeneration}
               onChangeCustom={croppedImage => {
                 setPendingFile(file);
                 setPendingPreview(croppedImage);

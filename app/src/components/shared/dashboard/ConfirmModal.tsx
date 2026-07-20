@@ -3,17 +3,22 @@ import { motion, AnimatePresence } from 'motion/react';
 import { Button } from '@/components/ui/button';
 import { X, Loader2 } from 'lucide-react';
 import { type ReactNode } from 'react';
+import { cn } from '@/lib/utils';
 
 interface ConfirmationModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onConfirm: () => void;
-  title?: string;
+  title?: ReactNode;
   description?: string | ReactNode;
   confirmText?: string;
   cancelText?: string;
   disabled?: boolean;
   isLoading?: boolean;
+  /** Extra classes for the dialog card (e.g. a wider max-width). */
+  contentClassName?: string;
+  /** Extra classes for the confirm button (e.g. warning styling). */
+  confirmButtonClassName?: string;
 }
 
 export function ConfirmationModal({
@@ -26,6 +31,8 @@ export function ConfirmationModal({
   cancelText = 'Cancel',
   disabled = false,
   isLoading = false,
+  contentClassName,
+  confirmButtonClassName,
 }: ConfirmationModalProps) {
   const handleConfirm = () => {
     onConfirm();
@@ -49,7 +56,10 @@ export function ConfirmationModal({
 
             <Dialog.Content asChild>
               <motion.div
-                className='fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[85vw] max-w-xs bg-white p-4 rounded-lg shadow-lg z-50 focus:outline-none'
+                className={cn(
+                  'fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[85vw] max-w-xs bg-white p-4 rounded-lg shadow-lg z-50 focus:outline-none',
+                  contentClassName
+                )}
                 initial={{ opacity: 0, scale: 0.9, y: -20 }}
                 animate={{ opacity: 1, scale: 1, y: 0 }}
                 exit={{ opacity: 0, scale: 0.9, y: 20 }}
@@ -93,7 +103,10 @@ export function ConfirmationModal({
                   <Button
                     onClick={handleConfirm}
                     size='sm'
-                    className='text-xs px-3 flex items-center gap-2'
+                    className={cn(
+                      'text-xs px-3 flex items-center gap-2',
+                      confirmButtonClassName
+                    )}
                     disabled={disabled || isLoading}
                   >
                     {isLoading && <Loader2 className='h-3 w-3 animate-spin' />}

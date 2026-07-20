@@ -72,3 +72,59 @@ export function getAllPrintSizes(ratios: RatioData[]): InchData[] {
   });
   return Array.from(allSizesSet);
 }
+
+/** Numeric aspect value of a ratio, from DB columns with label fallback. */
+export function getRatioValue(ratio: RatioData): number {
+  if (ratio.width_ratio > 0 && ratio.height_ratio > 0) {
+    return ratio.width_ratio / ratio.height_ratio;
+  }
+  const [w, h] = ratio.label.split(':').map(Number);
+  return w > 0 && h > 0 ? w / h : 1;
+}
+
+/**
+ * Ratio (with at least one size) closest to the image aspect — the single
+ * source of truth for "Match my photo".
+ */
+export function findClosestRatio(
+  imageAspectRatio: number,
+  ratios: RatioData[]
+): RatioData | null {
+  const validRatios = ratios.filter(r => r.sizes.length > 0);
+  if (!validRatios.length) return null;
+
+  return validRatios.reduce((closest, current) => {
+    const closestDiff = Math.abs(
+      Math.log(getRatioValue(closest) / imageAspectRatio)
+    );
+    const currentDiff = Math.abs(
+      Math.log(getRatioValue(current) / imageAspectRatio)
+    );
+    return currentDiff < closestDiff ? current : closest;
+  });
+}
+
+/** Smallest (cheapest) active size of a ratio, or null when none exist. */
+export function getSmallestSize(ratio: RatioData): InchData | null {
+  return (
+    [...ratio.sizes]
+      .filter(s => s.active !== false)
+      .sort((a, b) => a.area_in2 - b.area_in2)[0] ?? null
+  );
+}
+
+/** Resolve an image source's aspect ratio (width / height), null on failure. */
+export function getImageAspectRatio(src: string): Promise<number | null> {
+  return new Promise(resolve => {
+    const image = new window.Image();
+    image.onload = () => {
+      if (!image.width || !image.height) {
+        resolve(null);
+        return;
+      }
+      resolve(image.width / image.height);
+    };
+    image.onerror = () => resolve(null);
+    image.src = src;
+  });
+}

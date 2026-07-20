@@ -66,7 +66,10 @@ const OptimizationView: React.FC<OptimizationViewProps> = ({ isVisible }) => {
           ctx.globalAlpha = 1.0;
         }
 
-        const enhanced = canvas.toDataURL('image/jpeg', q);
+        // The slider drives the visual enhancement filters only. Always
+        // encode at high JPEG quality — this image becomes the print file,
+        // so it must not be recompressed at the slider value.
+        const enhanced = canvas.toDataURL('image/jpeg', 0.92);
         resolve(enhanced);
       };
       img.onerror = reject;
@@ -75,7 +78,10 @@ const OptimizationView: React.FC<OptimizationViewProps> = ({ isVisible }) => {
   };
 
   useEffect(() => {
-    const basePreview = originalPreview || preview;
+    // Enhance the CURRENT preview (which may be a crop), not the original
+    // upload — otherwise applying optimization after cropping would replace
+    // the print image with the uncropped photo.
+    const basePreview = preview || originalPreview;
     if (!basePreview || !pendingQuality) return;
 
     const handler = setTimeout(async () => {
@@ -111,7 +117,7 @@ const OptimizationView: React.FC<OptimizationViewProps> = ({ isVisible }) => {
 
   if (!isVisible) return null;
 
-  const beforeImage = originalPreview || preview;
+  const beforeImage = preview || originalPreview;
   if (!beforeImage) {
     return (
       <div className='flex flex-col items-center justify-center w-full h-full bg-white text-gray-400 text-sm'>
