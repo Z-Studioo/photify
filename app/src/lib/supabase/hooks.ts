@@ -7,6 +7,11 @@ import type {
   RoomInspiration, 
   Category 
 } from '../data/types';
+import {
+  STORE_STATUS_KEY,
+  DEFAULT_STORE_STATUS,
+  parseStoreStatus,
+} from '../store-status';
 
 // Lazy singleton: deferring instantiation keeps the SSR bundle importable
 // even when VITE_SUPABASE_URL / VITE_SUPABASE_ANON_KEY aren't defined at
@@ -323,6 +328,31 @@ export const useSiteSetting = (key: string) => {
       .single();
     return { data, error };
   });
+};
+
+// Store open/close status (public setting; missing row = store open).
+export const useStoreStatus = () => {
+  const { data, loading, error, refetch } = useSupabaseQuery<{
+    setting_value: unknown;
+  }>(async () => {
+    const { data, error } = await supabase
+      .from('site_settings')
+      .select('setting_value')
+      .eq('setting_key', STORE_STATUS_KEY)
+      .maybeSingle();
+    return { data, error };
+  });
+
+  return {
+    status: loading
+      ? null
+      : data
+        ? parseStoreStatus(data.setting_value)
+        : DEFAULT_STORE_STATUS,
+    loading,
+    error,
+    refetch,
+  };
 };
 
 export const useSettingsByCategory = (category: string) => {

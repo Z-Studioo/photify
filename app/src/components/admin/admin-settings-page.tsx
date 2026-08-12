@@ -30,6 +30,7 @@ import {
 } from '@/components/ui/dialog';
 import { toast } from 'sonner';
 import { createClient } from '@/lib/supabase/client';
+import { StoreStatusCard } from './store-status-card';
 import {
   AlertDialog,
   AlertDialogCancel,
@@ -654,6 +655,8 @@ export function AdminSettingsPage() {
 
             {/* General Settings */}
             <TabsContent value='general' className='space-y-6 mt-0'>
+              <StoreStatusCard />
+
               <div className='bg-white rounded-lg border border-gray-200 p-6'>
                 <h2
                   className="font-['Bricolage_Grotesque',_sans-serif] mb-6"

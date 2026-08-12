@@ -5,6 +5,7 @@ import { config } from '@/config/environment';
 import { resolveAffiliateByCode } from '@/lib/affiliate';
 import { computePromoCharge } from '@/lib/promo';
 import { getEstimatedDeliveryDate } from '@/lib/sendgrid';
+import { isStoreClosed, STORE_CLOSED_ERROR } from '@/lib/store-status';
 
 interface CartItem {
   name: string;
@@ -53,6 +54,13 @@ export async function createCheckoutSession(
   res: Response
 ): Promise<void> {
   try {
+    // Server-side enforcement of the admin "store closed" switch — the
+    // storefront overlay alone would leave the API open to direct calls.
+    if (await isStoreClosed()) {
+      res.status(503).json({ error: STORE_CLOSED_ERROR });
+      return;
+    }
+
     const {
       cartItems,
       customerInfo,

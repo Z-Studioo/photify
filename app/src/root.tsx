@@ -21,6 +21,7 @@ import { ToastProvider } from '@/components/shared/common/toast';
 import { CookieConsent } from '@/components/shared/cookie-consent';
 import { PageViewTracker } from '@/components/shared/page-view-tracker';
 import { PromoQueryCapture } from '@/components/shared/promo-query-capture';
+import { StoreClosedGate } from '@/components/shared/store-closed-gate';
 import stylesheet from './index.css?url';
 import {
   SITE_LANG,
@@ -241,7 +242,9 @@ export default function Root() {
                     <PresetProvider>
                       <PageViewTracker />
                       <PromoQueryCapture />
-                      <Outlet />
+                      <StoreClosedGate>
+                        <Outlet />
+                      </StoreClosedGate>
                       <CookieConsent />
                     </PresetProvider>
                   </UploadProvider>

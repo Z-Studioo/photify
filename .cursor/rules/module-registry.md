@@ -52,6 +52,13 @@ folders) · `direct` (FE talks to Supabase with no BE route) · `none`.
 - **DB**: cross-domain (products, categories, orders, promotions, affiliates, art_products …)
 - **SSOT target**: `modules/admin` (FE); route writes through domain APIs/hooks
 
+### store-status (open/close switch)
+
+- **FE** (fragmented): `lib/store-status.ts` (shared contract + closed logic), `components/shared/store-closed-gate.tsx` (full-page gate mounted in `root.tsx`), `components/admin/store-status-card.tsx` (admin toggle on `/admin/settings`), `useStoreStatus` in `lib/supabase/hooks.ts`
+- **BE** (feature): `lib/store-status.ts` — guard in `paymentIntentController` + `checkoutController` (503 when closed)
+- **DB**: `site_settings` row `store_status` (`{closed, reopen_date, message}`, public) seeded by `20260812160500_store_status_setting.sql`
+- **SSOT debt**: the `StoreStatus` shape + closed logic is mirrored FE/BE by hand (`app/src/lib/store-status.ts` ↔ `server/src/lib/store-status.ts`)
+
 ### ai-tools
 
 - **FE** (fragmented): `pages/ai-*`, `components/ai-tools/*`, `lib/data/aiTools.ts`
